@@ -1,0 +1,13 @@
+<stack>
+  <description brief="slam_karto">slam_karto</description>
+  <author>Maintained by Bhaskara Marthi</author>
+  <license>BSD,LGPL</license>  
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/slam_karto</url>
+  <depend stack="common_msgs" /> <!-- nav_msgs, geometry_msgs, sensor_msgs -->
+  <depend stack="geometry" /> <!-- tf, eigen -->
+  <depend stack="ros" /> <!-- rosconsole, roscpp, message_filters -->
+  <depend stack="visualization_common" /> <!-- visualization_msgs -->
+  <depend stack="vslam" /> <!-- sba -->
+
+</stack>

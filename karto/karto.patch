@@ -1,0 +1,90 @@
+Index: source/OpenKarto/Karto.h
+===================================================================
+--- source/OpenKarto/Karto.h	(revision 23)
++++ source/OpenKarto/Karto.h	(working copy)
+@@ -3396,7 +3396,7 @@
+         throw Exception("Cannot register sensor:  already registered:  " + pSensor->GetName().ToString());
+       }
+ 
+-      std::cout << "Registering sensor: " << pSensor->GetName().ToString() << std::endl;
++      // std::cout << "Registering sensor: " << pSensor->GetName().ToString() << std::endl;
+       
+       m_Sensors[pSensor->GetName()] = pSensor;
+     }
+@@ -3411,7 +3411,7 @@
+ 
+       if(m_Sensors.find(pSensor->GetName()) != m_Sensors.end())
+       {
+-        std::cout << "Unregistering sensor: " << pSensor->GetName().ToString() << std::endl;
++        // std::cout << "Unregistering sensor: " << pSensor->GetName().ToString() << std::endl;
+ 
+         m_Sensors.erase(pSensor->GetName());
+       }
+@@ -3631,7 +3631,7 @@
+ 
+       if (math::DoubleEqual(GetRangeThreshold(), rangeThreshold) == false)
+       {
+-        std::cout << "Info: clipped range threshold to be within minimum and maximum range!" << std::endl;
++        // std::cout << "Info: clipped range threshold to be within minimum and maximum range!" << std::endl;
+       }
+     }
+ 
+@@ -3763,7 +3763,7 @@
+ 
+       if (math::InRange(GetRangeThreshold(), GetMinimumRange(), GetMaximumRange()) == false)
+       {
+-        std::cout << "Please set range threshold to a value between [" << GetMinimumRange() << ";" << GetMaximumRange() << "]" << std::endl;
++        // std::cout << "Please set range threshold to a value between [" << GetMinimumRange() << ";" << GetMaximumRange() << "]" << std::endl;
+         return false;
+       }
+ 
+Index: source/CMakeLists.txt
+===================================================================
+--- source/CMakeLists.txt	(revision 23)
++++ source/CMakeLists.txt	(working copy)
+@@ -14,6 +14,8 @@
+ # You should have received a copy of the GNU Lesser General Public License
+ # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ #
++
++cmake_minimum_required(VERSION 2.6)
+  
+ # set library name
+ SET(LIB_NAME OpenKarto)
+@@ -60,14 +62,35 @@
+   ${SOURCE_FILES}
+ )
+ 
++# Also build a shared version of the library
++ADD_LIBRARY(${LIB_NAME}-shared SHARED
++  ${KARTO_LIB_TYPE}
++  ${HEADER_FILES}
++  ${SOURCE_FILES}
++)
++
++# Prevent deletion of existing lib of same name
++SET_TARGET_PROPERTIES(${LIB_NAME}-shared PROPERTIES CLEAN_DIRECT_OUTPUT 1)
++# Set output name to be the same as shared lib (may not work on
++# Windows)
++SET_TARGET_PROPERTIES(${LIB_NAME}-shared PROPERTIES OUTPUT_NAME ${LIB_NAME})
++
++
++
+ install(
+   FILES ${SOURCE_FILES} 
+   DESTINATION source/${LIB_NAME}
+ )
+ 
++
+ # install dependent dlls 
+ if (UNIX)
+-  install (TARGETS ${LIB_NAME} DESTINATION lib)
++  INSTALL(TARGETS ${LIB_NAME}
++          ARCHIVE DESTINATION "lib")
++  INSTALL(TARGETS ${LIB_NAME}-shared
++          LIBRARY DESTINATION "lib")
++  INSTALL(FILES OpenKarto/Karto.h OpenKarto/Macros.h OpenKarto/Mapper.h OpenKarto/Math.h OpenKarto/Types.h
++          DESTINATION "include/karto")
+ endif(UNIX)
+ 
+ 

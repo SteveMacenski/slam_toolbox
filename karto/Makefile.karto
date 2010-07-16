@@ -1,0 +1,29 @@
+all: installed
+
+SVN_DIR = build/karto-svn
+SVN_URL = https://code.ros.org/svn/karto/trunk
+SVN_PATCH = karto.patch
+SVN_REVISION = -r 23
+include $(shell rospack find mk)/svn_checkout.mk
+
+CMAKE = cmake 
+CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
+             -D CMAKE_INSTALL_PREFIX=`rospack find karto`/karto
+
+installed: wiped $(SVN_DIR) patched
+	mkdir -p $(SVN_DIR)/build
+	cd $(SVN_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ../source
+	cd $(SVN_DIR)/build && make install
+	touch installed
+
+wipe: clean
+	rm -rf $(SVN_DIR)
+
+wiped: Makefile.karto
+	make -f Makefile.karto wipe
+	touch wiped
+
+clean:
+	-cd $(SVN_DIR)/build && make clean
+	-rm -rf karto installed patched
+
