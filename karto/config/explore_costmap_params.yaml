@@ -1,0 +1,26 @@
+loop_closure_planner:
+  allow_unknown: false
+explore_planner:
+  allow_unknown: false
+#Independent settings for the planner's costmap
+global_costmap: 
+  global_frame: /map
+  robot_base_frame: base_link
+  update_frequency: 5.0
+  publish_frequency: 0.0
+  static_map: true
+  rolling_window: false
+#  global_frame: /map
+#  robot_base_frame: base_link
+#  update_frequency: 1.0
+#  publish_frequency: 0.0
+#  raytrace_range: 5.0
+#  obstacle_range: 5.0
+#  static_map: false
+#  rolling_window: false
+#  width: 60.0
+#  height: 60.0
+#  resolution: 0.2
+#  origin_x: -30.0
+#  origin_y: -30.0
+#  track_unknown_space: true

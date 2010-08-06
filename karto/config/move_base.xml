@@ -1,0 +1,15 @@
+<launch>
+  <node ns="local_costmap" name="voxel_grid_throttle" pkg="topic_tools" type="throttle" args="messages voxel_grid 3.0 voxel_grid_throttled" />
+
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base_node" output="screen">
+    <param name="footprint_padding" value="0.01" />
+    <param name="controller_frequency" value="10.0" />
+    <param name="controller_patience" value="2.0" />
+
+    <rosparam file="$(find karto)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find karto)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find karto)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find karto)/config/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find karto)/config/base_local_planner_params.yaml" command="load" />
+  </node>
+</launch>
