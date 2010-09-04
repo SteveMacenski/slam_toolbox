@@ -41,7 +41,8 @@ const double DEFAULT_RANGE_THRESHOLD = 12.0;
 
 /// \brief Represents a 2d scan at some pose
 /// 
-/// The frame_id of scan is ignored.  It's treated instead as being in the frame at pose.
+/// The frame_id of \a scan is ignored.  It's treated instead as being in the sensor frame
+/// corresponding to the base frame being at \a pose.
 struct ScanWithPose
 {
   ScanWithPose (const sensor_msgs::LaserScan& scan, const geometry_msgs::Pose2D& pose)
