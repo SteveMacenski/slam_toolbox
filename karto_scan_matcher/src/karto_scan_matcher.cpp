@@ -59,7 +59,7 @@ karto::LocalizedRangeScan* convertLaserScan(karto::LaserRangeFinder* laser, cons
  ************************************************************/
 
 KartoScanMatcher::KartoScanMatcher (const sm::LaserScan& init_scan, const tf::TransformListener& tf,
-                                    const double search_space_size, const double search_grid_resolution)
+                                    const double search_space_size, const double search_grid_resolution) 
 {
   // Get the laser's pose, relative to base.
   tf::Stamped<tf::Pose> ident;
@@ -107,6 +107,7 @@ KartoScanMatcher::KartoScanMatcher (const sensor_msgs::LaserScan& init_scan, con
 void KartoScanMatcher::initialize (const sm::LaserScan& init_scan, const gm::Pose2D& laser_pose,
                                    const DoubleVector& search_sizes, const DoubleVector& search_resolutions)
 {
+  penalize_distance_ = true;
   string suffix;
   {
     boost::mutex::scoped_lock l(static_name_mutex);
@@ -155,7 +156,11 @@ void KartoScanMatcher::initialize (const sm::LaserScan& init_scan, const gm::Pos
   dataset_->Add(laser_);
 }
 
-
+void KartoScanMatcher::setPenalizeDistance (const bool penalize)
+{
+  penalize_distance_ = penalize;
+}
+  
 /************************************************************
  * Scan matching
  ************************************************************/
@@ -215,7 +220,7 @@ ScanMatchResult KartoScanMatcher::scanMatch (const sm::LaserScan& scan, const gm
                      current_estimate.x, current_estimate.y, current_estimate.theta);
     karto::Pose2 mean;
     karto::Matrix3 cov;
-    last_response = matcher->MatchScan(localized_scan, localized_reference_scans, mean, cov);
+    last_response = matcher->MatchScan(localized_scan, localized_reference_scans, mean, cov, penalize_distance_);
     current_estimate = subtractLaserOffset(mean, laser_->GetOffsetPose());
     ROS_DEBUG_NAMED ("karto", "  Response was %.4f.", last_response);
   }

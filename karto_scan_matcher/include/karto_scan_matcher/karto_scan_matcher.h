@@ -73,6 +73,8 @@ public:
   /// \param name Prefixed to the sensor name (since all karto instances in this process have a global namespace)
   /// \param search_space_size Size in meters of space to search over centered at initial estimate
   /// \param search_grid_resolution Resolution (m/cell) of discretization of search space
+  ///
+  /// Other parameters: penalize_distance is true on construction
   KartoScanMatcher(const sensor_msgs::LaserScan& init_scan, const tf::TransformListener& tf,
                    double search_space_size, double search_grid_resolution);
 
@@ -82,6 +84,8 @@ public:
   /// \param laser_pose Relative pose of the laser w.r.t. the base
   /// \param search_space_size Size in meters of space to search over centered at initial estimate
   /// \param search_grid_resolution Resolution (m/cell) of discretization of search space
+  ///
+  /// Other parameters: penalize_distance is true on construction
   KartoScanMatcher(const sensor_msgs::LaserScan& init_scan, const geometry_msgs::Pose2D& laser_pose,
                    double search_space_size, double search_grid_resolution);
 
@@ -92,6 +96,8 @@ public:
   /// \param search_space_sizes The sizes in meters of space to search over at each level (coarse to fine)
   /// \param search_grid_resolutions Resolutions (m/cells) of discretizations of search space
   /// (match up with the ones in search_space_sizes)
+  ///
+  /// Other parameters: penealize_distance is true on construction
   KartoScanMatcher(const sensor_msgs::LaserScan& init_scan, const geometry_msgs::Pose2D& laser_pose,
                    const DoubleVector& search_sizes, const DoubleVector& search_resolutions);
 
@@ -103,6 +109,10 @@ public:
   /// \retval a pair consisting of the optimal pose, and response value 
   ScanMatchResult scanMatch (const sensor_msgs::LaserScan& scan, const geometry_msgs::Pose2D& pose,
                              const vector<ScanWithPose>& reference_scans) const;
+  
+
+  /// \brief Set flag indicating whether to penalize distance from initial estimate in scan matching
+  void setPenalizeDistance (bool penalize);
   
 private:
 
@@ -117,6 +127,7 @@ private:
   std::vector<MapperPtr> mappers_;
   karto::LaserRangeFinder* laser_; // memory managed by dataset_
   
+  bool penalize_distance_; // the distancePenalty argument to matchScans
 };
 
 
