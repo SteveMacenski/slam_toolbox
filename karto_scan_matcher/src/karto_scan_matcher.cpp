@@ -215,12 +215,17 @@ ScanMatchResult KartoScanMatcher::scanMatch (const sm::LaserScan& scan, const gm
     // every time.  There seems to be no other effect of adding a laser scan to a dataset, so this should
     // be fine.
     ScanPtr scan_ptr(localized_scan); 
+    karto::Pose2 mean;
+    karto::Matrix3 cov;
+
+    // Karto sometimes exhibits strange behavior when refining (e.g., the response goes down after refining)
+    // so turn it off: can always refine by passing multiple resolutions to present class KartoScanMatcher 
+    const bool refine_match = false; 
 
     ROS_DEBUG_NAMED ("karto", "  Current estimate is %.2f, %.2f, %.2f, Calling scan matcher",
                      current_estimate.x, current_estimate.y, current_estimate.theta);
-    karto::Pose2 mean;
-    karto::Matrix3 cov;
-    last_response = matcher->MatchScan(localized_scan, localized_reference_scans, mean, cov, penalize_distance_);
+    last_response = matcher->MatchScan(localized_scan, localized_reference_scans, mean,
+                                       cov, penalize_distance_, refine_match);
     current_estimate = subtractLaserOffset(mean, laser_->GetOffsetPose());
     ROS_DEBUG_NAMED ("karto", "  Response was %.4f.", last_response);
   }
