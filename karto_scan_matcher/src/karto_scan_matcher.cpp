@@ -202,6 +202,7 @@ ScanMatchResult KartoScanMatcher::scanMatch (const sm::LaserScan& scan, const gm
 
   gm::Pose2D current_estimate = pose;
   double last_response = -42.42;
+  Eigen::Matrix3f covariance = Eigen::Matrix3f::Zero();
 
   // Repeatedly match with each matcher, using the previous matcher's estimate to initialize
   BOOST_FOREACH (const MatcherPtr matcher, matchers_) {
@@ -224,12 +225,15 @@ ScanMatchResult KartoScanMatcher::scanMatch (const sm::LaserScan& scan, const gm
     last_response = matcher->MatchScan(localized_scan, localized_reference_scans, mean,
                                        cov, penalize_distance_, refine_match);
     current_estimate = subtractLaserOffset(mean, laser_->GetOffsetPose());
+    for (unsigned i=0; i<3; i++)
+      covariance(i,i) = cov(i,i);
     ROS_DEBUG_NAMED ("karto", "  Response was %.4f.", last_response);
   }
   
-  ROS_DEBUG_NAMED ("karto", "Returning result %.2f, %.2f, %.2f",
-                   current_estimate.x, current_estimate.y, current_estimate.theta);
-  return ScanMatchResult(current_estimate, last_response);
+  ROS_DEBUG_NAMED ("karto", "Returning result %.2f, %.2f, %.2f with covariance diag(%.2f, %.2f, %.2f)",
+                   current_estimate.x, current_estimate.y, current_estimate.theta, covariance(0,0),
+                   covariance(1,1), covariance(2,2));
+  return ScanMatchResult(current_estimate, covariance, last_response);
 }
 
 

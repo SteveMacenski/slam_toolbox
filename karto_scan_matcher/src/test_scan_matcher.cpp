@@ -169,7 +169,7 @@ void ScanMatcherTest::attemptScanMatch (const ros::WallTimerEvent& e)
     ROS_INFO_STREAM ("True pose is " << true_pose << " and perturbed pose is " << perturbed_pose);
     ROS_INFO_STREAM ("First reference scan is at " << reference_scans.begin()->pose << 
                      " and last one is at " << (reference_scans.end()-1)->pose);
-    Pose2D estimated_pose = matcher_->scanMatch(scans_.back().scan, perturbed_pose, reference_scans).first;
+    Pose2D estimated_pose = matcher_->scanMatch(scans_.back().scan, perturbed_pose, reference_scans).pose;
     ROS_INFO_STREAM ("Estimated pose is " << estimated_pose);
   }
 }

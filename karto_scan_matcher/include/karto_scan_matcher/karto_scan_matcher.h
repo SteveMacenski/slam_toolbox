@@ -55,7 +55,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/optional.hpp>
 #include <vector>
-
+#include <Eigen/Dense>
 
 
 
@@ -83,7 +83,20 @@ struct ScanWithPose
   geometry_msgs::Pose2D pose;
 };
 
-typedef std::pair<geometry_msgs::Pose2D, double> ScanMatchResult;
+/// \brief Result of scan matching
+struct ScanMatchResult
+{
+  ScanMatchResult (const geometry_msgs::Pose2D& pose, const Eigen::Matrix3f& cov,
+                   const double response) :
+    pose(pose), cov(cov), response(response)
+  {}
+
+  geometry_msgs::Pose2D pose;
+  Eigen::Matrix3f cov;
+  double response;
+};
+
+
 typedef std::vector<double> DoubleVector;
 
 /// \brief Wraps the Karto Scan matcher
@@ -136,7 +149,7 @@ public:
   /// \param scan The current laser scan.
   /// \param pose The initial estimate of the pose at which this scan was taken.
   /// \param reference_scans Each of these is a scan, together with the pose at which it was taken
-  /// \retval a pair consisting of the optimal pose, and response value 
+  /// \retval The optimal pose, covariance, and response strength
   ScanMatchResult scanMatch (const sensor_msgs::LaserScan& scan, const geometry_msgs::Pose2D& pose,
                              const vector<ScanWithPose>& reference_scans) const;
   
