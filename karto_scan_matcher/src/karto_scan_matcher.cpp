@@ -225,14 +225,17 @@ ScanMatchResult KartoScanMatcher::scanMatch (const sm::LaserScan& scan, const gm
     last_response = matcher->MatchScan(localized_scan, localized_reference_scans, mean,
                                        cov, penalize_distance_, refine_match);
     current_estimate = subtractLaserOffset(mean, laser_->GetOffsetPose());
-    for (unsigned i=0; i<3; i++)
-      covariance(i,i) = cov(i,i);
+    for (unsigned i=0; i<3; i++) {
+      for (unsigned j=0; j<3; j++) {
+        covariance(i,j) = cov(i,j);
+      }
+    }
     ROS_DEBUG_NAMED ("karto", "  Response was %.4f.", last_response);
   }
   
-  ROS_DEBUG_NAMED ("karto", "Returning result %.2f, %.2f, %.2f with covariance diag(%.2f, %.2f, %.2f)",
+  ROS_DEBUG_NAMED ("karto", "Returning result %.2f, %.2f, %.2f with covariances (x-x: %.2f, y-y: %.2f, x-y: %.2f, th-th: %.2f)",
                    current_estimate.x, current_estimate.y, current_estimate.theta, covariance(0,0),
-                   covariance(1,1), covariance(2,2));
+                   covariance(1,1), covariance(0,1), covariance(2,2));
   return ScanMatchResult(current_estimate, covariance, last_response);
 }
 
