@@ -13,6 +13,7 @@ A C++ library that wraps Karto's laser scan matcher
   <depend package="karto"/>
   <depend package="tf"/>
   <depend package="geometry_msgs"/>
+  <depend package="eigen3"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lkarto_scan_matcher"/>

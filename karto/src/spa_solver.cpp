@@ -44,7 +44,7 @@ void SpaSolver::Compute()
 {
   corrections.clear();
 
-  typedef std::vector<sba::Node2d, Eigen::aligned_allocator<sba::Node2d> > NodeVector;
+  typedef std::vector<sba::Node2d, Eigen3::aligned_allocator<sba::Node2d> > NodeVector;
 
   ROS_INFO("Calling doSPA for loop closure");
   m_Spa.doSPA(40);
@@ -60,7 +60,7 @@ void SpaSolver::Compute()
 void SpaSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
 {
   karto::Pose2 pose = pVertex->GetObject()->GetCorrectedPose();
-  Eigen::Vector3d vector(pose.GetX(), pose.GetY(), pose.GetHeading());
+  Eigen3::Vector3d vector(pose.GetX(), pose.GetY(), pose.GetHeading());
   m_Spa.addNode2d(vector, pVertex->GetObject()->GetUniqueId());
 }
 
@@ -71,10 +71,10 @@ void SpaSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   karto::LinkInfo* pLinkInfo = (karto::LinkInfo*)(pEdge->GetLabel());
 
   karto::Pose2 diff = pLinkInfo->GetPoseDifference();
-  Eigen::Vector3d mean(diff.GetX(), diff.GetY(), diff.GetHeading());
+  Eigen3::Vector3d mean(diff.GetX(), diff.GetY(), diff.GetHeading());
 
   karto::Matrix3 precisionMatrix = pLinkInfo->GetCovariance().Inverse();
-  Eigen::Matrix<double,3,3> m;
+  Eigen3::Matrix<double,3,3> m;
   m(0,0) = precisionMatrix(0,0);
   m(0,1) = m(1,0) = precisionMatrix(0,1);
   m(0,2) = m(2,0) = precisionMatrix(0,2);
