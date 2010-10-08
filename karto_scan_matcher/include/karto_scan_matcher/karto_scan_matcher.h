@@ -55,7 +55,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/optional.hpp>
 #include <vector>
-#include <Eigen3/Dense>
+#include <Eigen/Dense>
 
 
 
@@ -86,13 +86,13 @@ struct ScanWithPose
 /// \brief Result of scan matching
 struct ScanMatchResult
 {
-  ScanMatchResult (const geometry_msgs::Pose2D& pose, const Eigen3::Matrix3f& cov,
+  ScanMatchResult (const geometry_msgs::Pose2D& pose, const Eigen::Matrix3f& cov,
                    const double response) :
     pose(pose), cov(cov), response(response)
   {}
 
   geometry_msgs::Pose2D pose;
-  Eigen3::Matrix3f cov;
+  Eigen::Matrix3f cov;
   double response;
 };
 
