@@ -9,7 +9,6 @@
   <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/karto</url>
-  <depend package="eigen3"/>
   <depend package="sba"/>
   <depend package="tf"/>
   <depend package="sensor_msgs"/>
