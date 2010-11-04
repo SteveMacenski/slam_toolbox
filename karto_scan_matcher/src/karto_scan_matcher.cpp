@@ -202,7 +202,7 @@ ScanMatchResult KartoScanMatcher::scanMatch (const sm::LaserScan& scan, const gm
 
   gm::Pose2D current_estimate = pose;
   double last_response = -42.42;
-  Eigen::Matrix3f covariance = Eigen::Matrix3f::Zero();
+  Eigen3::Matrix3f covariance = Eigen3::Matrix3f::Zero();
 
   // Repeatedly match with each matcher, using the previous matcher's estimate to initialize
   BOOST_FOREACH (const MatcherPtr matcher, matchers_) {
