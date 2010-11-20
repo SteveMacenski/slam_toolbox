@@ -6,8 +6,8 @@
   <url>http://ros.org/wiki/slam_karto</url>
   <depend stack="common_msgs" /> <!-- nav_msgs, geometry_msgs, sensor_msgs, visualization_msgs -->
   <depend stack="geometry" /> <!-- tf -->
-  <depend stack="point_cloud_perception" /> <!-- eigen3 -->
-  <depend stack="ros" /> <!-- rosconsole, roscpp, message_filters -->
+  <depend stack="ros" />
+  <depend stack="ros_comm" /> <!-- rosconsole, roscpp, message_filters -->
   <depend stack="vslam" /> <!-- sba -->
 
 </stack>
