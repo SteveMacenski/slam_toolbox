@@ -9,5 +9,6 @@
   <depend stack="ros" />
   <depend stack="ros_comm" /> <!-- rosconsole, roscpp, message_filters -->
   <depend stack="vslam" /> <!-- sba -->
+  <depend stack="point_cloud_perception" /> <!-- eigen3 -->
 
 </stack>
