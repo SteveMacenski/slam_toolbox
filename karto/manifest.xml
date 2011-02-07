@@ -17,7 +17,7 @@
   <depend package="rosconsole"/>
   <depend package="nav_msgs"/>
   <depend package="message_filters"/>
-  <depend package="eigen3"/>
+  <depend package="eigen"/>
 
   <export>
     <cpp cflags="-I${prefix}/karto/include" lflags="-Wl,-rpath,${prefix}/karto/lib -L${prefix}/karto/lib -lOpenKarto"/>
