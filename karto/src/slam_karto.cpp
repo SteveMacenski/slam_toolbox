@@ -99,6 +99,7 @@ class SlamKarto
     karto::Dataset* dataset_;
     SpaSolver* solver_;
     std::map<std::string, karto::LaserRangeFinder*> lasers_;
+    std::map<std::string, bool> lasers_inverted_;
 
     // Internal state
     bool got_map_;
@@ -106,6 +107,7 @@ class SlamKarto
     boost::thread* transform_thread_;
     tf::Transform map_to_odom_;
     unsigned marker_count_;
+    bool inverted_laser_;
 };
 
 SlamKarto::SlamKarto() :
@@ -238,6 +240,33 @@ SlamKarto::getLaser(const sensor_msgs::LaserScan::ConstPtr& scan)
 	     laser_pose.getOrigin().x(),
 	     laser_pose.getOrigin().y(),
 	     yaw);
+    // To account for lasers that are mounted upside-down, we determine the
+    // min, max, and increment angles of the laser in the base frame.
+    tf::Quaternion q;
+    q.setRPY(0.0, 0.0, scan->angle_min);
+    tf::Stamped<tf::Quaternion> min_q(q, scan->header.stamp,
+                                      scan->header.frame_id);
+    q.setRPY(0.0, 0.0, scan->angle_max);
+    tf::Stamped<tf::Quaternion> max_q(q, scan->header.stamp,
+                                      scan->header.frame_id);
+    try
+    {
+      tf_.transformQuaternion(base_frame_, min_q, min_q);
+      tf_.transformQuaternion(base_frame_, max_q, max_q);
+    }
+    catch(tf::TransformException& e)
+    {
+      ROS_WARN("Unable to transform min/max laser angles into base frame: %s",
+               e.what());
+      return false;
+    }
+
+    double angle_min = tf::getYaw(min_q);
+    double angle_max = tf::getYaw(max_q);
+    bool inverse =  lasers_inverted_[scan->header.frame_id] = angle_max < angle_min;
+    if (inverse)
+      ROS_INFO("laser is mounted upside-down");
+
 
     // Create a laser range finder device and copy in data from the first
     // scan
@@ -499,11 +528,21 @@ SlamKarto::addScan(karto::LaserRangeFinder* laser,
   
   // Create a vector of doubles for karto
   std::vector<kt_double> readings;
-  for(std::vector<float>::const_iterator it = scan->ranges.begin();
+
+  if (lasers_inverted_[scan->header.frame_id]) {
+    for(std::vector<float>::const_reverse_iterator it = scan->ranges.rbegin();
+      it != scan->ranges.rend();
+      ++it)
+    {
+      readings.push_back(*it);
+    }
+  } else {
+    for(std::vector<float>::const_iterator it = scan->ranges.begin();
       it != scan->ranges.end();
       ++it)
-  {
-    readings.push_back(*it);
+    {
+      readings.push_back(*it);
+    }
   }
   
   // create localized range scan
