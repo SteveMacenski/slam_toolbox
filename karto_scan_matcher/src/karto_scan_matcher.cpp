@@ -14,6 +14,8 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_types.h>
 
 namespace karto_scan_matcher
 {
@@ -25,6 +27,7 @@ using std::vector;
 using boost::bind;
 using boost::lexical_cast;
 
+typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
 
 // Since Karto has a global namespace for sensors, we need to autogenerate unique ones of these
 static boost::mutex static_name_mutex;
@@ -108,6 +111,8 @@ void KartoScanMatcher::initialize (const sm::LaserScan& init_scan, const gm::Pos
                                    const DoubleVector& search_sizes, const DoubleVector& search_resolutions)
 {
   penalize_distance_ = true;
+  laser_to_base_ = btTransform(tf::createQuaternionFromYaw(laser_pose.theta),
+                               btVector3(laser_pose.x, laser_pose.y, 0.0));
   string suffix;
   {
     boost::mutex::scoped_lock l(static_name_mutex);
@@ -141,11 +146,12 @@ void KartoScanMatcher::initialize (const sm::LaserScan& init_scan, const gm::Pos
 
   // This is copied over from slam_karto.cpp
   
-  // Create a laser range finder device and copy in data from the first
-  // scan
+  // Create a laser range finder device and copy in data from the first scan
   string name = init_scan.header.frame_id;
-  laser_ = karto::LaserRangeFinder::CreateLaserRangeFinder(karto::LaserRangeFinder_Custom, karto::Name(name+suffix));
-  laser_->SetOffsetPose(karto::Pose2(laser_pose.x, laser_pose.y, laser_pose.theta));
+  laser_ = karto::LaserRangeFinder::CreateLaserRangeFinder
+    (karto::LaserRangeFinder_Custom, karto::Name(name+suffix));
+  laser_->SetOffsetPose(karto::Pose2(laser_pose.x, laser_pose.y,
+                                     laser_pose.theta));
   laser_->SetMinimumRange(init_scan.range_min);
   laser_->SetMaximumRange(init_scan.range_max);
   laser_->SetMinimumAngle(init_scan.angle_min);
@@ -232,14 +238,83 @@ ScanMatchResult KartoScanMatcher::scanMatch (const sm::LaserScan& scan, const gm
     }
     ROS_DEBUG_NAMED ("karto", "  Response was %.4f.", last_response);
   }
+
+  if (vis_pub_)
+    visualizeResult(scan, pose, reference_scans, current_estimate);
   
   ROS_DEBUG_NAMED ("karto", "Returning result %.2f, %.2f, %.2f with covariances (x-x: %.2f, y-y: %.2f, x-y: %.2f, th-th: %.2f)",
                    current_estimate.x, current_estimate.y, current_estimate.theta, covariance(0,0),
                    covariance(1,1), covariance(0,1), covariance(2,2));
+
   return ScanMatchResult(current_estimate, covariance, last_response);
 }
 
+/************************************************************
+ * Visualization
+ ***********************************************************/
 
+void KartoScanMatcher::setVisualizationPublisher (const std::string& topic,
+                                                  const std::string& frame)
+{
+  nh_ = ros::NodeHandle();
+  vis_pub_ = nh_->advertise<PointCloud>(topic, 10);
+  vis_frame_ = frame;
+}
+
+void addPoints (PointCloud* cloud, const gm::Pose2D& pose,
+                const sm::LaserScan& scan, const char r,
+                const char g, const char b,
+                const btTransform& laser_to_base)
+{
+  double theta = scan.angle_min;
+  BOOST_FOREACH (const double range, scan.ranges)
+  {
+    if ((scan.range_min < range) && (range < scan.range_max))
+    {
+      // Point in laser frame
+      btVector3 p(range*cos(theta), range*sin(theta), 0);
+      btVector3 p2 = laser_to_base*p;
+      btVector3 p3 = btTransform(tf::createQuaternionFromYaw(pose.theta),
+                                 btVector3(pose.x, pose.y, 0))*p2;
+      pcl::PointXYZRGB pt;
+      pt.x = p3.x();
+      pt.y = p3.y();
+      pt.z = p3.z();
+      int rgb=0;
+      rgb |= (r<<16);
+      rgb |= (g<<8);
+      rgb |= b;
+      pt.rgb = *(float*)&rgb;
+      cloud->points.push_back(pt);
+    }
+    theta += scan.angle_increment;
+  }
+}
+
+void KartoScanMatcher::visualizeResult (const sm::LaserScan& scan,
+                                        const gm::Pose2D& pose, 
+                                        const vector<ScanWithPose>& ref,
+                                        const gm::Pose2D& corrected) const
+{
+  PointCloud cloud;
+
+  // Input initial estimate
+  addPoints(&cloud, pose, scan, 1, 0, 0, laser_to_base_);
+
+  // Corrected estimate
+  addPoints(&cloud, corrected, scan, 0, 1, 0, laser_to_base_);
+
+  // Reference scans
+  BOOST_FOREACH (const ScanWithPose& ref_scan, ref)
+    addPoints(&cloud, ref_scan.pose, ref_scan.scan, 0, 0, 1, laser_to_base_);
+
+  // Set cloud params and publish
+  cloud.header.frame_id = vis_frame_;
+  cloud.header.stamp = ros::Time::now();
+  cloud.height = 1;
+  cloud.width = cloud.points.size();
+  vis_pub_->publish(cloud);
+}
 
 
 } // namespace karto_scan_matcher

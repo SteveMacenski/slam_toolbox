@@ -140,7 +140,7 @@ public:
   /// \param search_grid_resolutions Resolutions (m/cells) of discretizations of search space
   /// (match up with the ones in search_space_sizes)
   ///
-  /// Other parameters: penealize_distance is true on construction
+  /// Other parameters: penalize_distance is true on construction
   KartoScanMatcher(const sensor_msgs::LaserScan& init_scan, const geometry_msgs::Pose2D& laser_pose,
                    const DoubleVector& search_sizes, const DoubleVector& search_resolutions);
 
@@ -150,17 +150,31 @@ public:
   /// \param pose The initial estimate of the pose at which this scan was taken.
   /// \param reference_scans Each of these is a scan, together with the pose at which it was taken
   /// \retval The optimal pose, covariance, and response strength
+  ///
+  /// If setVisualizationPublisher has been called, a visualization of the input scans
+  /// and result will be published on the given ROS topic.
   ScanMatchResult scanMatch (const sensor_msgs::LaserScan& scan, const geometry_msgs::Pose2D& pose,
                              const vector<ScanWithPose>& reference_scans) const;
+
   
+
 
   /// \brief Set flag indicating whether to penalize distance from initial estimate in scan matching
   void setPenalizeDistance (bool penalize);
+
+  /// \brief Sets the visualization topic.  Scan match results will be visualized on this
+  /// topic as PointCloud2 messages.
+  void setVisualizationPublisher (const std::string& topic,
+                                  const std::string& frame);
   
 private:
 
   void initialize (const sensor_msgs::LaserScan& init_scan, const geometry_msgs::Pose2D& laser_pose,
                    const DoubleVector& search_space_sizes, const DoubleVector& search_space_resolutions);
+
+  void visualizeResult (const sensor_msgs::LaserScan& scan, const geometry_msgs::Pose2D& pose,
+                        const vector<ScanWithPose>& reference_scans, const geometry_msgs::Pose2D& res) const;
+
 
   typedef boost::shared_ptr<karto::ScanMatcher> MatcherPtr;
   typedef boost::shared_ptr<karto::Mapper> MapperPtr;
@@ -169,8 +183,12 @@ private:
   std::vector<MatcherPtr> matchers_;
   std::vector<MapperPtr> mappers_;
   karto::LaserRangeFinder* laser_; // memory managed by dataset_
+  boost::optional<ros::NodeHandle> nh_;
+  boost::optional<ros::Publisher> vis_pub_;
+  std::string vis_frame_;
   
   bool penalize_distance_; // the distancePenalty argument to matchScans
+  btTransform laser_to_base_; // Pose of laser wrt base frame
 };
 
 
