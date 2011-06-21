@@ -14,8 +14,10 @@
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
+/*
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
+*/
 
 namespace karto_scan_matcher
 {
@@ -27,7 +29,7 @@ using std::vector;
 using boost::bind;
 using boost::lexical_cast;
 
-typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
+//typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
 
 // Since Karto has a global namespace for sensors, we need to autogenerate unique ones of these
 static boost::mutex static_name_mutex;
@@ -256,11 +258,14 @@ ScanMatchResult KartoScanMatcher::scanMatch (const sm::LaserScan& scan, const gm
 void KartoScanMatcher::setVisualizationPublisher (const std::string& topic,
                                                   const std::string& frame)
 {
+
   nh_ = ros::NodeHandle();
+  /*
   vis_pub_ = nh_->advertise<PointCloud>(topic, 10);
   vis_frame_ = frame;
+  */
 }
-
+/*
 void addPoints (PointCloud* cloud, const gm::Pose2D& pose,
                 const sm::LaserScan& scan, const char r,
                 const char g, const char b,
@@ -290,12 +295,14 @@ void addPoints (PointCloud* cloud, const gm::Pose2D& pose,
     theta += scan.angle_increment;
   }
 }
+*/
 
 void KartoScanMatcher::visualizeResult (const sm::LaserScan& scan,
                                         const gm::Pose2D& pose, 
                                         const vector<ScanWithPose>& ref,
                                         const gm::Pose2D& corrected) const
 {
+  /*
   PointCloud cloud;
 
   // Input initial estimate
@@ -314,6 +321,7 @@ void KartoScanMatcher::visualizeResult (const sm::LaserScan& scan,
   cloud.height = 1;
   cloud.width = cloud.points.size();
   vis_pub_->publish(cloud);
+  */
 }
 
 
