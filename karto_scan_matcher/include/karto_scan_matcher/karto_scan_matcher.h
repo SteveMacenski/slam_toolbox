@@ -91,6 +91,8 @@ struct ScanMatchResult
     pose(pose), cov(cov), response(response)
   {}
 
+  ScanMatchResult () {}
+
   geometry_msgs::Pose2D pose;
   Eigen::Matrix3f cov;
   double response;
@@ -183,7 +185,6 @@ private:
   std::vector<MatcherPtr> matchers_;
   std::vector<MapperPtr> mappers_;
   karto::LaserRangeFinder* laser_; // memory managed by dataset_
-  boost::optional<ros::NodeHandle> nh_;
   boost::optional<ros::Publisher> vis_pub_;
   std::string vis_frame_;
   

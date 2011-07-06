@@ -259,7 +259,7 @@ void KartoScanMatcher::setVisualizationPublisher (const std::string& topic,
                                                   const std::string& frame)
 {
 
-  nh_ = ros::NodeHandle();
+  //nh_ = ros::NodeHandle();
   /*
   vis_pub_ = nh_->advertise<PointCloud>(topic, 10);
   vis_frame_ = frame;
