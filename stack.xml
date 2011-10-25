@@ -5,6 +5,7 @@
   <review status="experimental" notes=""/>
   <url>http://ros.org/wiki/slam_karto</url>
   <depend stack="common_msgs" /> <!-- nav_msgs, geometry_msgs, sensor_msgs, visualization_msgs -->
+  <depend stack="common_rosdeps" /> <!-- common_rosdeps -->
   <depend stack="geometry" /> <!-- tf -->
   <depend stack="ros" />
   <depend stack="ros_comm" /> <!-- rosconsole, roscpp, message_filters -->

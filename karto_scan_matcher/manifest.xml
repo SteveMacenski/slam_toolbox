@@ -13,6 +13,8 @@ A C++ library that wraps Karto's laser scan matcher
   <depend package="karto"/>
   <depend package="tf"/>
   <depend package="geometry_msgs"/>
+  <depend package="common_rosdeps"/>
+  <rosdep name="eigen"/>
   <!--
   <depend package="pcl_ros"/>
   -->

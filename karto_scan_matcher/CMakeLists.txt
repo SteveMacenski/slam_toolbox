@@ -16,6 +16,9 @@ find_package(PythonLibs REQUIRED)
 include_directories(${PYTHON_INCLUDE_PATH})
 link_libraries(${PYTHON_LIBRARIES})
 
+find_package(Eigen REQUIRED)
+include_directories(${Eigen_INCLUDE_DIRS})
+
 
 rosbuild_add_library(karto_scan_matcher src/karto_scan_matcher.cpp)
 target_link_libraries(karto_scan_matcher OpenKarto)
