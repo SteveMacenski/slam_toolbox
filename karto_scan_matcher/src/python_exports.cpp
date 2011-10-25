@@ -46,7 +46,8 @@ namespace karto_scan_matcher
 namespace sm=sensor_msgs;
 namespace gm=geometry_msgs;
 
-BOOST_PYTHON_MODULE(karto_scan_matcher)
+
+BOOST_PYTHON_MODULE(karto_scan_matching)
 {
   using namespace boost::python;
   using sm::LaserScan;

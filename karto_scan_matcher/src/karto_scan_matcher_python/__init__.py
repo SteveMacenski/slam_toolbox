@@ -6,6 +6,10 @@ import sensor_msgs.msg as sm
 
 from karto_scan_matching import *
 
+############################################################
+# Public interface
+############################################################
+
 def make_matcher(init_scan, laser_pose, search_size, search_resolution):
     """
     @param init_scan: Initial scan used only to read parameters of laser scanner
@@ -14,7 +18,7 @@ def make_matcher(init_scan, laser_pose, search_size, search_resolution):
     @type laser_pose: Tuple of form (x, y, theta)
     @param search_size: Radius of square to do matching in (meters)
     @param search_resolution: Resolution of grid search (meters)
-    @return Object of type KartoScanMatcher, which can be used as an argument to match_scans.
+    @return Opaque object of type KartoScanMatcher, which can be used as an argument to repeated calls to match_scans.
     """
     scan = scan_from_ros(init_scan)
     pose = pose_from_tuple(p)
@@ -56,7 +60,9 @@ def scan_from_ros(s):
     
 def pose_from_tuple(p):
     pose = Pose2D()
-    pose.x, pose.y, pose.theta = *p
+    pose.x = p[0]
+    pose.y = p[1]
+    pose.z = p[2]
     return pose
 
 def convert_ref_scan(ref_scan):

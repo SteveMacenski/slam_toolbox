@@ -9,7 +9,6 @@
   <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/karto</url>
-  <depend package="sba"/>
   <depend package="tf"/>
   <depend package="sensor_msgs"/>
   <depend package="visualization_msgs"/>
@@ -17,7 +16,6 @@
   <depend package="rosconsole"/>
   <depend package="nav_msgs"/>
   <depend package="message_filters"/>
-  <depend package="eigen"/>
 
   <export>
     <cpp cflags="-I${prefix}/karto/include" lflags="-Wl,-rpath,${prefix}/karto/lib -L${prefix}/karto/lib -lOpenKarto"/>
