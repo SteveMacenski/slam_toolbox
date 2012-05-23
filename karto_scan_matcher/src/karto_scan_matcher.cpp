@@ -68,7 +68,7 @@ KartoScanMatcher::KartoScanMatcher (const sm::LaserScan& init_scan, const tf::Tr
 {
   // Get the laser's pose, relative to base.
   tf::Stamped<tf::Pose> ident;
-  tf::Stamped<btTransform> laser_to_base;
+  tf::Stamped<tf::Pose> laser_to_base;
   ident.setIdentity();
   ident.frame_id_ = init_scan.header.frame_id;
   ident.stamp_ = ros::Time();
@@ -113,7 +113,7 @@ void KartoScanMatcher::initialize (const sm::LaserScan& init_scan, const gm::Pos
                                    const DoubleVector& search_sizes, const DoubleVector& search_resolutions)
 {
   penalize_distance_ = true;
-  laser_to_base_ = btTransform(tf::createQuaternionFromYaw(laser_pose.theta),
+  laser_to_base_ = btTransform(tf::createQuaternionFromYaw(laser_pose.theta).asBt(),
                                btVector3(laser_pose.x, laser_pose.y, 0.0));
   string suffix;
   {
@@ -175,9 +175,9 @@ void KartoScanMatcher::setPenalizeDistance (const bool penalize)
 
 gm::Pose2D subtractLaserOffset (const karto::Pose2& pose, const karto::Pose2& offset)
 {
-  btTransform laser_to_base(tf::createQuaternionFromYaw(offset.GetHeading()),
+  btTransform laser_to_base(tf::createQuaternionFromYaw(offset.GetHeading()).asBt(),
                             btVector3(offset.GetX(), offset.GetY(), 0.0));
-  btTransform laser_to_map(tf::createQuaternionFromYaw(pose.GetHeading()),
+  btTransform laser_to_map(tf::createQuaternionFromYaw(pose.GetHeading()).asBt(),
                            btVector3(pose.GetX(), pose.GetY(), 0.0));
   btTransform base_to_map = laser_to_map*laser_to_base.inverse();
   gm::Pose2D result;
