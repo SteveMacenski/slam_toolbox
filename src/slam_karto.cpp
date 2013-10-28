@@ -36,7 +36,7 @@
 #include "sensor_msgs/LaserScan.h"
 #include "nav_msgs/GetMap.h"
 
-#include "karto/Mapper.h"
+#include "OpenKarto/Mapper.h"
 
 #include "spa_solver.h"
 
@@ -218,7 +218,7 @@ SlamKarto::getLaser(const sensor_msgs::LaserScan::ConstPtr& scan)
 
     // Get the laser's pose, relative to base.
     tf::Stamped<tf::Pose> ident;
-    tf::Stamped<btTransform> laser_pose;
+    tf::Stamped<tf::Transform> laser_pose;
     ident.setIdentity();
     ident.frame_id_ = scan->header.frame_id;
     ident.stamp_ = scan->header.stamp;
@@ -298,9 +298,9 @@ bool
 SlamKarto::getOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
 {
   // Get the robot's pose
-  tf::Stamped<tf::Pose> ident (btTransform(tf::createQuaternionFromRPY(0,0,0),
-                                           btVector3(0,0,0)), t, base_frame_);
-  tf::Stamped<btTransform> odom_pose;
+  tf::Stamped<tf::Pose> ident (tf::Transform(tf::createQuaternionFromRPY(0,0,0),
+                                           tf::Vector3(0,0,0)), t, base_frame_);
+  tf::Stamped<tf::Transform> odom_pose;
   try
   {
     tf_.transformPose(odom_frame_, ident, odom_pose);
@@ -563,8 +563,8 @@ SlamKarto::addScan(karto::LaserRangeFinder* laser,
     tf::Stamped<tf::Pose> odom_to_map;
     try
     {
-      tf_.transformPose(odom_frame_,tf::Stamped<tf::Pose> (btTransform(tf::createQuaternionFromRPY(0, 0, corrected_pose.GetHeading()),
-                                                                    btVector3(corrected_pose.GetX(), corrected_pose.GetY(), 0.0)).inverse(),
+      tf_.transformPose(odom_frame_,tf::Stamped<tf::Pose> (tf::Transform(tf::createQuaternionFromRPY(0, 0, corrected_pose.GetHeading()),
+                                                                    tf::Vector3(corrected_pose.GetX(), corrected_pose.GetY(), 0.0)).inverse(),
                                                                     scan->header.stamp, base_frame_),odom_to_map);
     }
     catch(tf::TransformException e)

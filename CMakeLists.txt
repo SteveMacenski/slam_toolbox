@@ -1,17 +1,17 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(slam_karto)
 
-# Append to CPACK_SOURCE_IGNORE_FILES a semicolon-separated list of
-# directories (or patterns, but directories should suffice) that should
-# be excluded from the distro.  This is not the place to put things that
-# should be ignored everywhere, like "build" directories; that happens in
-# rosbuild/rosbuild.cmake.  Here should be listed packages that aren't
-# ready for inclusion in a distro.
-#
-# This list is combined with the list in rosbuild/rosbuild.cmake.  Note
-# that CMake 2.6 may be required to ensure that the two lists are combined
-# properly.  CMake 2.4 seems to have unpredictable scoping rules for such
-# variables.
-#list(APPEND CPACK_SOURCE_IGNORE_FILES /core/experimental)
+# should also find_package open_karto but it isn't a proper catkin package yet
+set(ROS_DEPS tf sensor_msgs visualization_msgs roscpp rosconsole nav_msgs message_filters sba open_karto)
 
-rosbuild_make_distribution(0.4.0)
+find_package(catkin REQUIRED COMPONENTS ${ROS_DEPS})
+find_package(Eigen REQUIRED)
+
+include_directories(${catkin_INCLUDE_DIRS} ${EIGEN_INCLUDE_DIRS})
+add_definitions(${EIGEN_DEFINITIONS})
+
+catkin_package(
+)
+
+add_executable(slam_karto src/slam_karto.cpp src/spa_solver.cpp)
+target_link_libraries(slam_karto ${catkin_LIBRARIES})
