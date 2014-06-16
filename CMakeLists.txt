@@ -9,8 +9,8 @@ find_package(catkin REQUIRED
     open_karto
     rosconsole
     roscpp
-    sba
     sensor_msgs
+    sparse_bundle_adjustment
     tf
     visualization_msgs
 )
