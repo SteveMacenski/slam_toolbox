@@ -6,7 +6,7 @@
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
  * COPYRIGHT AND/OR OTHER APPLICABLE LAW. ANY USE OF THE WORK OTHER THAN AS
  * AUTHORIZED UNDER THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED.
- * 
+ *
  * BY EXERCISING ANY RIGHTS TO THE WORK PROVIDED HERE, YOU ACCEPT AND AGREE TO
  * BE BOUND BY THE TERMS OF THIS LICENSE. THE LICENSOR GRANTS YOU THE RIGHTS
  * CONTAINED HERE IN CONSIDERATION OF YOUR ACCEPTANCE OF SUCH TERMS AND
@@ -69,7 +69,7 @@ class SlamKarto
     void publishTransform();
     void publishLoop(double transform_publish_period);
     void publishGraphVisualization();
-    
+
     // ROS handles
     ros::NodeHandle node_;
     tf::TransformListener tf_;
@@ -111,7 +111,7 @@ class SlamKarto
 };
 
 SlamKarto::SlamKarto() :
-        got_map_(false), 
+        got_map_(false),
         laser_count_(0),
         transform_thread_(NULL),
         marker_count_(0)
@@ -159,7 +159,7 @@ SlamKarto::SlamKarto() :
   // Initialize Karto structures
   mapper_ = new karto::Mapper();
   dataset_ = new karto::Dataset();
-  
+
   // Set solver to be used in loop closure
   solver_ = new SpaSolver();
   mapper_->SetScanSolver(solver_);
@@ -186,7 +186,7 @@ SlamKarto::~SlamKarto()
   // I'm supposed to do that.
 }
 
-void 
+void
 SlamKarto::publishLoop(double transform_publish_period)
 {
   if(transform_publish_period == 0)
@@ -200,7 +200,7 @@ SlamKarto::publishLoop(double transform_publish_period)
   }
 }
 
-void 
+void
 SlamKarto::publishTransform()
 {
   boost::mutex::scoped_lock(map_to_odom_mutex_);
@@ -258,7 +258,7 @@ SlamKarto::getLaser(const sensor_msgs::LaserScan::ConstPtr& scan)
     {
       ROS_WARN("Unable to transform min/max laser angles into base frame: %s",
                e.what());
-      return false;
+      return NULL;
     }
 
     double angle_min = tf::getYaw(min_q);
