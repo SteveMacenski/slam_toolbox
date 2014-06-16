@@ -18,7 +18,7 @@
 #ifndef KARTO_SPASOLVER_H
 #define KARTO_SPASOLVER_H
 
-#include <OpenKarto/Mapper.h>
+#include <open_karto/Mapper.h>
 
 #ifndef EIGEN_USE_NEW_STDVECTOR
 #define EIGEN_USE_NEW_STDVECTOR

@@ -36,7 +36,7 @@
 #include "sensor_msgs/LaserScan.h"
 #include "nav_msgs/GetMap.h"
 
-#include "OpenKarto/Mapper.h"
+#include "open_karto/Mapper.h"
 
 #include "spa_solver.h"
 
