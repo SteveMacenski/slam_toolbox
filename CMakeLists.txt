@@ -23,3 +23,7 @@ catkin_package()
 
 add_executable(slam_karto src/slam_karto.cpp src/spa_solver.cpp)
 target_link_libraries(slam_karto ${catkin_LIBRARIES})
+
+install(TARGETS slam_karto
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)

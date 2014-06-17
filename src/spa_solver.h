@@ -27,7 +27,7 @@
 #define EIGEN_DEFAULT_IO_FORMAT Eigen::IOFormat(10)
 #include <Eigen/Eigen>
 
-#include "sba/spa2d.h"
+#include <sparse_bundle_adjustment/spa2d.h>
 
 typedef std::vector<karto::Matrix3> CovarianceVector;
 
