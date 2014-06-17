@@ -2,6 +2,11 @@
 Changelog for package slam_karto
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* build updates for sba, fix install
+* Contributors: Michael Ferguson
+
 0.7.0 (2014-06-15)
 ------------------
 * First release in a very, very long time.
