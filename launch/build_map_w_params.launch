@@ -1,0 +1,8 @@
+<launch>
+
+  <node pkg="slam_karto" type="slam_karto" name="slam_karto" output="screen">
+    <remap from="scan" to="base_scan" />
+    <rosparam command="load" file="$(find slam_karto)/config/mapper_params.yaml" />
+  </node>
+
+</launch>

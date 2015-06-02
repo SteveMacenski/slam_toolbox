@@ -160,6 +160,125 @@ SlamKarto::SlamKarto() :
   mapper_ = new karto::Mapper();
   dataset_ = new karto::Dataset();
 
+  // Setting General Parameters from the Parameter Server
+  bool use_scan_matching;
+  if(private_nh_.getParam("use_scan_matching", use_scan_matching))
+    mapper_->setParamUseScanMatching(use_scan_matching);
+  
+  bool use_scan_barycenter;
+  if(private_nh_.getParam("use_scan_barycenter", use_scan_barycenter))
+    mapper_->setParamUseScanBarycenter(use_scan_barycenter);
+
+  double minimum_travel_distance;
+  if(private_nh_.getParam("minimum_travel_distance", minimum_travel_distance))
+    mapper_->setParamMinimumTravelDistance(minimum_travel_distance);
+
+  int minimum_travel_heading;
+  if(private_nh_.getParam("minimum_travel_heading", minimum_travel_heading))
+    mapper_->setParamMinimumTravelHeading(minimum_travel_heading);
+
+  int scan_buffer_size;
+  if(private_nh_.getParam("scan_buffer_size", scan_buffer_size))
+    mapper_->setParamScanBufferSize(scan_buffer_size);
+
+  double scan_buffer_maximum_scan_distance;
+  if(private_nh_.getParam("scan_buffer_maximum_scan_distance", scan_buffer_maximum_scan_distance))
+    mapper_->setParamScanBufferMaximumScanDistance(scan_buffer_maximum_scan_distance);
+
+  double link_match_minimum_response_fine;
+  if(private_nh_.getParam("link_match_minimum_response_fine", link_match_minimum_response_fine));
+    mapper_->setParamLinkMatchMinimumResponseFine(link_match_minimum_response_fine);
+
+  double link_scan_maximum_distance;
+  if(private_nh_.getParam("link_scan_maximum_distance", link_scan_maximum_distance))
+    mapper_->setParamLinkScanMaximumDistance(link_scan_maximum_distance);
+
+  double loop_search_maximum_distance;
+  if(private_nh_.getParam("loop_search_maximum_distance", loop_search_maximum_distance))
+    mapper_->setParamLoopSearchMaximumDistance(loop_search_maximum_distance);
+
+  bool do_loop_closing;
+  if(private_nh_.getParam("do_loop_closing", do_loop_closing))
+    mapper_->setParamDoLoopClosing(do_loop_closing);
+
+  int loop_match_minimum_chain_size;
+  if(private_nh_.getParam("loop_match_minimum_chain_size", loop_match_minimum_chain_size))
+    mapper_->setParamLoopMatchMinimumChainSize(loop_match_minimum_chain_size);
+
+  double loop_match_maximum_variance_coarse;
+  if(private_nh_.getParam("loop_match_maximum_variance_coarse", loop_match_maximum_variance_coarse))
+    mapper_->setParamLoopMatchMaximumVarianceCoarse(loop_match_maximum_variance_coarse);
+
+  double loop_match_minimum_response_coarse;
+  if(private_nh_.getParam("loop_match_minimum_response_coarse", loop_match_minimum_response_coarse))
+    mapper_->setParamLoopMatchMinimumResponseCoarse(loop_match_minimum_response_coarse);
+
+  double loop_match_minimum_response_fine;
+  if(private_nh_.getParam("loop_match_minimum_response_fine", loop_match_minimum_response_fine))
+    mapper_->setParamLoopMatchMinimumResponseFine(loop_match_minimum_response_fine);
+
+  // Setting Correlation Parameters from the Parameter Server
+
+  double correlation_search_space_dimension;
+  if(private_nh_.getParam("correlation_search_space_dimension", correlation_search_space_dimension))
+    mapper_->setParamCorrelationSearchSpaceDimension(correlation_search_space_dimension);
+
+  double correlation_search_space_resolution;
+  if(private_nh_.getParam("correlation_search_space_resolution", correlation_search_space_resolution))
+    mapper_->setParamCorrelationSearchSpaceResolution(correlation_search_space_resolution);
+
+  double correlation_search_space_smear_deviation;
+  if(private_nh_.getParam("correlation_search_space_smear_deviation", correlation_search_space_smear_deviation))
+    mapper_->setParamCorrelationSearchSpaceSmearDeviation(correlation_search_space_smear_deviation);
+
+  // Setting Correlation Parameters, Loop Closure Parameters from the Parameter Server
+
+  double loop_search_space_dimension;
+  if(private_nh_.getParam("loop_search_space_dimension", loop_search_space_dimension))
+    mapper_->setParamLoopSearchSpaceDimension(loop_search_space_dimension);
+
+  double loop_search_space_resolution;
+  if(private_nh_.getParam("loop_search_space_resolution", loop_search_space_resolution))
+    mapper_->setParamLoopSearchSpaceResolution(loop_search_space_resolution);
+
+  double loop_search_space_smear_deviation;
+  if(private_nh_.getParam("loop_search_space_smear_deviation", loop_search_space_smear_deviation))
+    mapper_->setParamLoopSearchSpaceSmearDeviation(loop_search_space_smear_deviation);
+
+  // Setting Scan Matcher Parameters from the Parameter Server
+
+  double distance_variance_penalty;
+  if(private_nh_.getParam("distance_variance_penalty", distance_variance_penalty))
+    mapper_->setParamDistanceVariancePenalty(distance_variance_penalty);
+
+  double angle_variance_penalty;
+  if(private_nh_.getParam("angle_variance_penalty", angle_variance_penalty))
+    mapper_->setParamAngleVariancePenalty(angle_variance_penalty);
+
+  double fine_search_angle_offset;
+  if(private_nh_.getParam("fine_search_angle_offset", fine_search_angle_offset))
+    mapper_->setParamFineSearchAngleOffset(fine_search_angle_offset);
+
+  double coarse_search_angle_offset;
+  if(private_nh_.getParam("coarse_search_angle_offset", coarse_search_angle_offset))
+    mapper_->setParamCoarseSearchAngleOffset(coarse_search_angle_offset);
+
+  double coarse_angle_resolution;
+  if(private_nh_.getParam("coarse_angle_resolution", coarse_angle_resolution))
+    mapper_->setParamCoarseAngleResolution(coarse_angle_resolution);
+
+  double minimum_angle_penalty;
+  if(private_nh_.getParam("minimum_angle_penalty", minimum_angle_penalty))
+    mapper_->setParamMinimumAnglePenalty(minimum_angle_penalty);
+
+  double minimum_distance_penalty;
+  if(private_nh_.getParam("minimum_distance_penalty", minimum_distance_penalty))
+    mapper_->setParamMinimumDistancePenalty(minimum_distance_penalty);
+
+  bool use_response_expansion;
+  if(private_nh_.getParam("use_response_expansion", use_response_expansion))
+    mapper_->setParamUseResponseExpansion(use_response_expansion);
+
   // Set solver to be used in loop closure
   solver_ = new SpaSolver();
   mapper_->SetScanSolver(solver_);
