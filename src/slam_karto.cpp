@@ -173,7 +173,7 @@ SlamKarto::SlamKarto() :
   if(private_nh_.getParam("minimum_travel_distance", minimum_travel_distance))
     mapper_->setParamMinimumTravelDistance(minimum_travel_distance);
 
-  int minimum_travel_heading;
+  double minimum_travel_heading;
   if(private_nh_.getParam("minimum_travel_heading", minimum_travel_heading))
     mapper_->setParamMinimumTravelHeading(minimum_travel_heading);
 
