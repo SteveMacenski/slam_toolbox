@@ -186,7 +186,7 @@ SlamKarto::SlamKarto() :
     mapper_->setParamScanBufferMaximumScanDistance(scan_buffer_maximum_scan_distance);
 
   double link_match_minimum_response_fine;
-  if(private_nh_.getParam("link_match_minimum_response_fine", link_match_minimum_response_fine));
+  if(private_nh_.getParam("link_match_minimum_response_fine", link_match_minimum_response_fine))
     mapper_->setParamLinkMatchMinimumResponseFine(link_match_minimum_response_fine);
 
   double link_scan_maximum_distance;
