@@ -2,8 +2,8 @@
 Changelog for package slam_karto
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.2 (2015-07-18)
+------------------
 * Added in parameter server settings for Mapper within slam_karto
 * Contributors: Luc Bettaieb, Michael Ferguson
 
