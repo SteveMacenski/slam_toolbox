@@ -361,7 +361,7 @@ SlamKarto::getLaser(const sensor_msgs::LaserScan::ConstPtr& scan)
 	     yaw);
     // To account for lasers that are mounted upside-down,
     // we create a point 1m above the laser and transform it into the laser frame
-    // if the point is <=0, it is upside-down
+    // if the point's z-value is <=0, it is upside-down
 
     tf::Vector3 v;
     v.setValue(0, 0, 1 + laser_pose.getOrigin().z());
