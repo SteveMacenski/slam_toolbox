@@ -2,8 +2,8 @@
 Changelog for package slam_karto
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.7.3 (2016-02-04)
+------------------
 * fixed the upside-down detection
 * update maintainer email
 * Contributors: Michael Ferguson, mgerdzhev
