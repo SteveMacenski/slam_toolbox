@@ -4,7 +4,7 @@ Assumes an 'odom_combined' frame, that provides reasonably accurate odometry
 -->
 
 <launch>
-  <node pkg="karto" type="slam_karto" name="slam_karto" output="screen">
+  <node pkg="slam_karto" type="slam_karto" name="slam_karto" output="screen">
     <remap from="scan" to="base_scan"/>
     <param name="odom_frame" value="odom_combined"/>
     <param name="map_update_interval" value="25"/>
