@@ -1,11 +1,11 @@
 <launch>
   <param name="/use_sim_time" value="true"/>
-  <include file="$(find karto)/config/move_base.xml"/>
-  <node pkg="stage" type="stageros" name="stageros" args="$(find karto)/worlds/willow-pr2-5cm.world" respawn="false" >
+  <include file="$(find slam_karto)/config/move_base.xml"/>
+  <node pkg="stage_ros" type="stageros" name="stageros" args="$(find slam_karto)/worlds/willow-pr2-5cm.world" respawn="false" >
     <param name="base_watchdog_timeout" value="0.2"/>
   </node>
   <include file="$(find pr2_navigation_global)/rviz/rviz_move_base.launch"/>
-  <node pkg="karto" type="slam_karto" name="slam_karto" output="screen">
+  <node pkg="slam_karto" type="slam_karto" name="slam_karto" output="screen">
     <remap from="scan" to="base_scan"/>
   </node>
 </launch>

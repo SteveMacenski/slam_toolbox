@@ -6,10 +6,10 @@
     <param name="controller_frequency" value="10.0" />
     <param name="controller_patience" value="2.0" />
 
-    <rosparam file="$(find karto)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
-    <rosparam file="$(find karto)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
-    <rosparam file="$(find karto)/config/local_costmap_params.yaml" command="load" />
-    <rosparam file="$(find karto)/config/global_costmap_params.yaml" command="load" />
-    <rosparam file="$(find karto)/config/base_local_planner_params.yaml" command="load" />
+    <rosparam file="$(find slam_karto)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find slam_karto)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find slam_karto)/config/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find slam_karto)/config/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find slam_karto)/config/base_local_planner_params.yaml" command="load" />
   </node>
 </launch>

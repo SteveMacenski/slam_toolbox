@@ -4,12 +4,13 @@ define block model
   gui_nose 0
 )
 
-define topurg laser
+define topurg ranger
 (
-
-  range_max 30.0
-  fov 270.25
-  samples 1081
+  sensor(
+    range_max 30.0
+    fov 270.25
+    samples 1081
+  )
   # generic model properties
   color "black"
   size [ 0.05 0.05 0.1 ]
@@ -38,7 +39,7 @@ define floorplan model
   gui_outline 0
   gripper_return 0
   fiducial_return 0
-  laser_return 1
+  ranger_return 1
 )
 
 # set the resolution of the underlying raytrace model in meters
