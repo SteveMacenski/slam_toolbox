@@ -322,7 +322,7 @@ SlamKarto::publishLoop(double transform_publish_period)
 void
 SlamKarto::publishTransform()
 {
-  boost::mutex::scoped_lock(map_to_odom_mutex_);
+  boost::mutex::scoped_lock lock(map_to_odom_mutex_);
   ros::Time tf_expiration = ros::Time::now() + ros::Duration(0.05);
   tfB_->sendTransform(tf::StampedTransform (map_to_odom_, ros::Time::now(), map_frame_, odom_frame_));
 }
@@ -560,7 +560,7 @@ SlamKarto::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 bool
 SlamKarto::updateMap()
 {
-  boost::mutex::scoped_lock(map_mutex_);
+  boost::mutex::scoped_lock lock(map_mutex_);
 
   karto::OccupancyGrid* occ_grid = 
           karto::OccupancyGrid::CreateFromScans(mapper_->GetAllProcessedScans(), resolution_);
@@ -707,7 +707,7 @@ bool
 SlamKarto::mapCallback(nav_msgs::GetMap::Request  &req,
                        nav_msgs::GetMap::Response &res)
 {
-  boost::mutex::scoped_lock(map_mutex_);
+  boost::mutex::scoped_lock lock(map_mutex_);
   if(got_map_ && map_.map.info.width && map_.map.info.height)
   {
     res = map_;
