@@ -6,6 +6,7 @@
   </description>
   <version>0.7.3</version>
   <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="lbettaieb@fetchrobotics.com">Luc Bettaieb</maintainer>
   <author>Brian Gerkey</author>
   <license>LGPL</license>
 
