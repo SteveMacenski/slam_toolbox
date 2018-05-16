@@ -27,11 +27,14 @@
 
 #include <slam_karto/slam_karto.hpp>
 
+
+/*****************************************************************************/
 SlamKarto::SlamKarto() :
         got_map_(false),
         laser_count_(0),
         transform_thread_(NULL),
         marker_count_(0)
+/*****************************************************************************/
 {
   map_to_odom_.setIdentity();
   // Retrieve parameters
@@ -203,7 +206,9 @@ SlamKarto::SlamKarto() :
   mapper_->SetScanSolver(solver_);
 }
 
+/*****************************************************************************/
 SlamKarto::~SlamKarto()
+/*****************************************************************************/
 {
   if(transform_thread_)
   {
@@ -229,8 +234,9 @@ SlamKarto::~SlamKarto()
   }
 }
 
-void
-SlamKarto::publishLoop(double transform_publish_period)
+/*****************************************************************************/
+void SlamKarto::publishLoop(double transform_publish_period)
+/*****************************************************************************/
 {
   if(transform_publish_period == 0)
     return;
@@ -243,16 +249,18 @@ SlamKarto::publishLoop(double transform_publish_period)
   }
 }
 
-void
-SlamKarto::publishTransform()
+/*****************************************************************************/
+void SlamKarto::publishTransform()
+/*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(map_to_odom_mutex_);
   ros::Time tf_expiration = ros::Time::now() + ros::Duration(0.05);
   tfB_->sendTransform(tf::StampedTransform (map_to_odom_, ros::Time::now(), map_frame_, odom_frame_));
 }
 
-karto::LaserRangeFinder*
-SlamKarto::getLaser(const sensor_msgs::LaserScan::ConstPtr& scan)
+/*****************************************************************************/
+karto::LaserRangeFinder* SlamKarto::getLaser(const sensor_msgs::LaserScan::ConstPtr& scan)
+/*****************************************************************************/
 {
   // Check whether we know about this laser yet
   if(lasers_.find(scan->header.frame_id) == lasers_.end())
@@ -333,8 +341,9 @@ SlamKarto::getLaser(const sensor_msgs::LaserScan::ConstPtr& scan)
   return lasers_[scan->header.frame_id];
 }
 
-bool
-SlamKarto::getOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
+/*****************************************************************************/
+bool SlamKarto::getOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
+/*****************************************************************************/
 {
   // Get the robot's pose
   tf::Stamped<tf::Pose> ident (tf::Transform(tf::createQuaternionFromRPY(0,0,0),
@@ -358,8 +367,9 @@ SlamKarto::getOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
   return true;
 }
 
-void
-SlamKarto::publishGraphVisualization()
+/*****************************************************************************/
+void SlamKarto::publishGraphVisualization()
+/*****************************************************************************/
 {
   std::vector<float> graph;
   solver_->getGraph(graph);
@@ -439,8 +449,9 @@ SlamKarto::publishGraphVisualization()
   marker_publisher_.publish(marray);
 }
 
-void
-SlamKarto::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
+/*****************************************************************************/
+void SlamKarto::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
+/*****************************************************************************/
 {
   laser_count_++;
   if ((laser_count_ % throttle_scans_) != 0)
@@ -481,8 +492,9 @@ SlamKarto::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
   }
 }
 
-bool
-SlamKarto::updateMap()
+/*****************************************************************************/
+bool SlamKarto::updateMap()
+/*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(map_mutex_);
 
@@ -559,10 +571,11 @@ SlamKarto::updateMap()
   return true;
 }
 
-bool
-SlamKarto::addScan(karto::LaserRangeFinder* laser,
+/*****************************************************************************/
+bool SlamKarto::addScan(karto::LaserRangeFinder* laser,
 		   const sensor_msgs::LaserScan::ConstPtr& scan, 
                    karto::Pose2& karto_pose)
+/*****************************************************************************/
 {
   if(!getOdomPose(karto_pose, scan->header.stamp))
      return false;
@@ -629,9 +642,10 @@ SlamKarto::addScan(karto::LaserRangeFinder* laser,
   return processed;
 }
 
-bool 
-SlamKarto::mapCallback(nav_msgs::GetMap::Request  &req,
+/*****************************************************************************/
+bool SlamKarto::mapCallback(nav_msgs::GetMap::Request  &req,
                        nav_msgs::GetMap::Response &res)
+/*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(map_mutex_);
   if(got_map_ && map_.map.info.width && map_.map.info.height)
@@ -643,8 +657,9 @@ SlamKarto::mapCallback(nav_msgs::GetMap::Request  &req,
     return false;
 }
 
-int
-main(int argc, char** argv)
+/*****************************************************************************/
+int main(int argc, char** argv)
+/*****************************************************************************/
 {
   ros::init(argc, argv, "slam_karto");
 
