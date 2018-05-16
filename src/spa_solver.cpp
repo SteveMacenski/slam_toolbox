@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "spa_solver.h"
+#include "slam_karto/spa_solver.h"
 #include <open_karto/Karto.h>
 
 #include "ros/console.h"
