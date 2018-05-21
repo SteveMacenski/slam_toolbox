@@ -32,6 +32,7 @@
 #include "tf/transform_listener.h"
 #include "tf/message_filter.h"
 #include "visualization_msgs/MarkerArray.h"
+#include <pluginlib/class_loader.h>
 
 #include "nav_msgs/MapMetaData.h"
 #include "sensor_msgs/LaserScan.h"
@@ -39,7 +40,7 @@
 
 #include "open_karto/Mapper.h"
 
-#include "slam_karto/spa_solver.h"
+#include "../solvers/spa_solver.hpp"
 
 #include <boost/thread.hpp>
 
@@ -52,62 +53,70 @@
 
 class SlamKarto
 {
-  public:
-    SlamKarto();
-    ~SlamKarto();
+public:
+  SlamKarto();
+  ~SlamKarto();
 
-    void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
-    bool mapCallback(nav_msgs::GetMap::Request  &req,
-                     nav_msgs::GetMap::Response &res);
+private:
 
-  private:
-    bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
-    karto::LaserRangeFinder* getLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
-    bool addScan(karto::LaserRangeFinder* laser,
-                 const sensor_msgs::LaserScan::ConstPtr& scan,
-                 karto::Pose2& karto_pose);
-    bool updateMap();
-    void publishTransform();
-    void publishLoop(double transform_publish_period);
-    void publishGraphVisualization();
+  void setParams(ros::NodeHandle& nh);
+  void setSolver(ros::NodeHandle& private_nh_);
 
-    // ROS handles
-    ros::NodeHandle node_;
-    tf::TransformListener tf_;
-    tf::TransformBroadcaster* tfB_;
-    message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
-    tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
-    ros::Publisher sst_;
-    ros::Publisher marker_publisher_;
-    ros::Publisher sstm_;
-    ros::ServiceServer ss_;
+  void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
+  bool mapCallback(nav_msgs::GetMap::Request  &req,
+                   nav_msgs::GetMap::Response &res);
 
-    // The map that will be published / send to service callers
-    nav_msgs::GetMap::Response map_;
+  bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
+  karto::LaserRangeFinder* getLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
+  bool addScan(karto::LaserRangeFinder* laser,
+               const sensor_msgs::LaserScan::ConstPtr& scan,
+               karto::Pose2& karto_pose);
+  bool updateMap();
+  void publishTransform();
+  void publishLoop(double transform_publish_period);
+  void publishGraphVisualization();
 
-    // Storage for ROS parameters
-    std::string odom_frame_;
-    std::string map_frame_;
-    std::string base_frame_;
-    int throttle_scans_;
-    ros::Duration map_update_interval_;
-    double resolution_;
-    boost::mutex map_mutex_;
-    boost::mutex map_to_odom_mutex_;
+  // ROS handles
+  ros::NodeHandle node_;
+  tf::TransformListener tf_;
+  tf::TransformBroadcaster* tfB_;
+  message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
+  tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
+  ros::Publisher sst_;
+  ros::Publisher marker_publisher_;
+  ros::Publisher sstm_;
+  ros::ServiceServer ss_;
 
-    // Karto bookkeeping
-    karto::Mapper* mapper_;
-    karto::Dataset* dataset_;
-    SpaSolver* solver_;
-    std::map<std::string, karto::LaserRangeFinder*> lasers_;
-    std::map<std::string, bool> lasers_inverted_;
+  // The map that will be published / send to service callers
+  nav_msgs::GetMap::Response map_;
 
-    // Internal state
-    bool got_map_;
-    int laser_count_;
-    boost::thread* transform_thread_;
-    tf::Transform map_to_odom_;
-    unsigned marker_count_;
-    bool inverted_laser_;
-    bool publish_occupancy_map_;
+  // Storage for ROS parameters
+  std::string odom_frame_;
+  std::string map_frame_;
+  std::string base_frame_;
+  int throttle_scans_;
+  ros::Duration map_update_interval_;
+  double resolution_;
+  boost::mutex map_mutex_;
+  boost::mutex map_to_odom_mutex_;
+  bool publish_occupancy_map_;
+
+  // Karto bookkeeping
+  karto::Mapper* mapper_;
+  karto::Dataset* dataset_;
+  std::map<std::string, karto::LaserRangeFinder*> lasers_;
+  std::map<std::string, bool> lasers_inverted_;
+
+  // Internal state
+  bool got_map_;
+  int laser_count_;
+  boost::thread* transform_thread_;
+  tf::Transform map_to_odom_;
+  unsigned marker_count_;
+  bool inverted_laser_;
+  double max_laser_range_;
+
+  // pluginlib
+  pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;
+  boost::shared_ptr<karto::ScanSolver> solver_;
 };

@@ -15,10 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "slam_karto/spa_solver.h"
+#include "spa_solver.hpp"
 #include <open_karto/Karto.h>
 
 #include "ros/console.h"
+#include <pluginlib/class_list_macros.h>
+
+PLUGINLIB_EXPORT_CLASS(solver_plugins::SpaSolver, karto::ScanSolver)
+
+namespace solver_plugins
+{
 
 SpaSolver::SpaSolver()
 {
@@ -84,3 +90,5 @@ void SpaSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 
   m_Spa.addConstraint(pSource->GetUniqueId(), pTarget->GetUniqueId(), mean, m);
 }
+
+} // end namespace

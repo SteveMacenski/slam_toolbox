@@ -1,0 +1,12 @@
+<library path="libspa_solver_plugin">
+  <class type="solver_plugins::SpaSolver" base_class_type="karto::ScanSolver">
+    <description> SPA Optimizer for karto </description>
+  </class>
+
+</library>
+<library path="libg2O_solver_plugin">
+  <class type="solver_plugins::G2OSolver" base_class_type="karto::ScanSolver">
+    <description> G2O Optimizer for karto </description>
+  </class>
+</library>
+

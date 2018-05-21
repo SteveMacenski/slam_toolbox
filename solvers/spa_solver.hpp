@@ -29,6 +29,9 @@
 
 #include <sparse_bundle_adjustment/spa2d.h>
 
+namespace solver_plugins
+{
+
 typedef std::vector<karto::Matrix3> CovarianceVector;
 
 class SpaSolver : public karto::ScanSolver
@@ -48,13 +51,15 @@ public:
   // Get the underlying graph from SBA
   // return the graph of constraints
   /// x,y -> x',y'   4 floats per connection
-  void getGraph(std::vector<float> &g) { m_Spa.getGraph(g); }
+  virtual void getGraph(std::vector<float> &g) { m_Spa.getGraph(g); }
 
 private:
   karto::ScanSolver::IdPoseVector corrections;
 
   sba::SysSPA2d m_Spa;
 };
+
+}
 
 #endif // KARTO_SPASOLVER_H
 

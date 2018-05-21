@@ -27,41 +27,23 @@
 
 #include <slam_karto/slam_karto.hpp>
 
-
 /*****************************************************************************/
 SlamKarto::SlamKarto() :
-        got_map_(false),
-        laser_count_(0),
-        transform_thread_(NULL),
-        marker_count_(0)
+                         got_map_(false),
+                         laser_count_(0),
+                         transform_thread_(NULL),
+                         marker_count_(0),
+                         solver_loader_("slam_karto", "karto::ScanSolver")
 /*****************************************************************************/
 {
-  map_to_odom_.setIdentity();
+  // Initialize Karto structures
+  mapper_ = new karto::Mapper();
+  dataset_ = new karto::Dataset();
+
   // Retrieve parameters
   ros::NodeHandle private_nh_("~");
-  if(!private_nh_.getParam("odom_frame", odom_frame_))
-    odom_frame_ = "odom";
-  if(!private_nh_.getParam("map_frame", map_frame_))
-    map_frame_ = "map";
-  if(!private_nh_.getParam("base_frame", base_frame_))
-    base_frame_ = "base_link";
-  if(!private_nh_.getParam("throttle_scans", throttle_scans_))
-    throttle_scans_ = 1;
-  if(!private_nh_.getParam("publish_occupancy_map", publish_occupancy_map_))
-    publish_occupancy_map_ = false;
-  double tmp;
-  if(!private_nh_.getParam("map_update_interval", tmp))
-    tmp = 5.0;
-  map_update_interval_.fromSec(tmp);
-  if(!private_nh_.getParam("resolution", resolution_))
-  {
-    // Compatibility with slam_gmapping, which uses "delta" to mean
-    // resolution
-    if(!private_nh_.getParam("delta", resolution_))
-      resolution_ = 0.05;
-  }
-  double transform_publish_period;
-  private_nh_.param("transform_publish_period", transform_publish_period, 0.05);
+  setParams(private_nh_);
+  setSolver(private_nh_);
 
   // Set up advertisements and subscriptions
   tfB_ = new tf::TransformBroadcaster();
@@ -76,12 +58,65 @@ SlamKarto::SlamKarto() :
   // Create a thread to periodically publish the latest map->odom
   // transform; it needs to go out regularly, uninterrupted by potentially
   // long periods of computation in our main loop.
+  double transform_publish_period;
+  private_nh_.param("transform_publish_period", transform_publish_period, 0.05);
   transform_thread_ = new boost::thread(boost::bind(&SlamKarto::publishLoop, this, transform_publish_period));
+}
 
-  // Initialize Karto structures
-  mapper_ = new karto::Mapper();
-  dataset_ = new karto::Dataset();
+/*****************************************************************************/
+void SlamKarto::setSolver(ros::NodeHandle& private_nh_)
+/*****************************************************************************/
+{
+  // Set solver to be used in loop closure
+  std::string solver_plugin;
+  if(!private_nh_.getParam("solver_plugin", solver_plugin))
+  {
+    ROS_WARN("unable to find requested solver plugin, defaulting to SPA");
+    solver_plugin = "solver_plugins::SpaSolver";
+  }
+  try 
+  {
+    solver_ = solver_loader_.createInstance(solver_plugin);
+    ROS_INFO("Using plugin %s", solver_plugin.c_str());
+  } 
+  catch (const pluginlib::PluginlibException& ex)
+  {
+    ROS_FATAL("Failed to create %s, is it registered and built? Exception: %s.", 
+                                            solver_plugin.c_str(), ex.what());
+    exit(1);
+  }
+  mapper_->SetScanSolver(solver_.get());
+}
 
+/*****************************************************************************/
+void SlamKarto::setParams(ros::NodeHandle& private_nh_)
+/*****************************************************************************/
+{
+  map_to_odom_.setIdentity();
+
+  if(!private_nh_.getParam("odom_frame", odom_frame_))
+    odom_frame_ = "odom";
+  if(!private_nh_.getParam("map_frame", map_frame_))
+    map_frame_ = "map";
+  if(!private_nh_.getParam("base_frame", base_frame_))
+    base_frame_ = "base_link";
+  if(!private_nh_.getParam("throttle_scans", throttle_scans_))
+    throttle_scans_ = 1;
+  if(!private_nh_.getParam("publish_occupancy_map", publish_occupancy_map_))
+    publish_occupancy_map_ = false;
+  if(!private_nh_.getParam("max_laser_range", max_laser_range_))
+    max_laser_range_ = 25.0;
+  double tmp;
+  if(!private_nh_.getParam("map_update_interval", tmp))
+    tmp = 5.0;
+  map_update_interval_.fromSec(tmp);
+  if(!private_nh_.getParam("resolution", resolution_))
+  {
+    // Compatibility with slam_gmapping, which uses "delta" to mean
+    // resolution
+    if(!private_nh_.getParam("delta", resolution_))
+      resolution_ = 0.05;
+  }
   // Setting General Parameters from the Parameter Server
   bool use_scan_matching;
   if(private_nh_.getParam("use_scan_matching", use_scan_matching))
@@ -201,9 +236,10 @@ SlamKarto::SlamKarto() :
   if(private_nh_.getParam("use_response_expansion", use_response_expansion))
     mapper_->setParamUseResponseExpansion(use_response_expansion);
 
-  // Set solver to be used in loop closure
-  solver_ = new SpaSolver();
-  mapper_->SetScanSolver(solver_);
+  // double minimum_time_interval;
+  // if(private_nh_.getParam("minimum_time_interval", minimum_time_interval))
+  //   mapper_->setParamMinimumTimeInterval(minimum_time_interval);
+
 }
 
 /*****************************************************************************/
@@ -219,8 +255,6 @@ SlamKarto::~SlamKarto()
     delete scan_filter_;
   if (scan_filter_sub_)
     delete scan_filter_sub_;
-  if (solver_)
-    delete solver_;
   if (mapper_)
     delete mapper_;
   if (dataset_)
@@ -319,7 +353,7 @@ karto::LaserRangeFinder* SlamKarto::getLaser(const sensor_msgs::LaserScan::Const
     // scan
     std::string name = scan->header.frame_id;
     karto::LaserRangeFinder* laser = 
-      karto::LaserRangeFinder::CreateLaserRangeFinder(karto::LaserRangeFinder_Custom, karto::Name(name));
+      karto::LaserRangeFinder::CreateLaserRangeFinder(karto::LaserRangeFinder_Custom, karto::Name("Custom Described Lidar"));
     laser->SetOffsetPose(karto::Pose2(laser_pose.getOrigin().x(),
 				      laser_pose.getOrigin().y(),
 				      yaw));
@@ -328,8 +362,7 @@ karto::LaserRangeFinder* SlamKarto::getLaser(const sensor_msgs::LaserScan::Const
     laser->SetMinimumAngle(scan->angle_min);
     laser->SetMaximumAngle(scan->angle_max);
     laser->SetAngularResolution(scan->angle_increment);
-    // TODO: expose this, and many other parameters
-    //laser_->SetRangeThreshold(12.0);
+    laser->SetRangeThreshold(max_laser_range_);
 
     // Store this laser device for later
     lasers_[scan->header.frame_id] = laser;
@@ -603,7 +636,7 @@ bool SlamKarto::addScan(karto::LaserRangeFinder* laser,
   karto::LocalizedRangeScan* range_scan = 
     new karto::LocalizedRangeScan(laser->GetName(), readings);
   range_scan->SetOdometricPose(karto_pose);
-  range_scan->SetCorrectedPose(karto_pose);
+  range_scan->SetCorrectedPose(karto_pose); // TODO Steve is this correct?
 
   // Add the localized range scan to the mapper
   bool processed;
