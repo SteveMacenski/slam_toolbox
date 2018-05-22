@@ -40,8 +40,6 @@
 
 #include "open_karto/Mapper.h"
 
-#include "../solvers/spa_solver.hpp"
-
 #include <boost/thread.hpp>
 
 #include <string>

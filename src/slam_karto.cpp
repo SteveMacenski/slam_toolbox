@@ -17,19 +17,10 @@
 /* Author: Brian Gerkey */
 /* Modified: Steven Macenski */
 
-/**
-
-@mainpage karto_gmapping
-
-@htmlinclude manifest.html
-
-*/
-
 #include <slam_karto/slam_karto.hpp>
 
 /*****************************************************************************/
-SlamKarto::SlamKarto() :
-                         got_map_(false),
+SlamKarto::SlamKarto() : got_map_(false),
                          laser_count_(0),
                          transform_thread_(NULL),
                          marker_count_(0),
@@ -53,11 +44,8 @@ SlamKarto::SlamKarto() :
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node_, "scan", 5);
   scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
   scan_filter_->registerCallback(boost::bind(&SlamKarto::laserCallback, this, _1));
-  marker_publisher_ = node_.advertise<visualization_msgs::MarkerArray>("visualization_marker_array",1);
+  marker_publisher_ = node_.advertise<visualization_msgs::MarkerArray>("graph_visualization",1);
 
-  // Create a thread to periodically publish the latest map->odom
-  // transform; it needs to go out regularly, uninterrupted by potentially
-  // long periods of computation in our main loop.
   double transform_publish_period;
   private_nh_.param("transform_publish_period", transform_publish_period, 0.05);
   transform_thread_ = new boost::thread(boost::bind(&SlamKarto::publishLoop, this, transform_publish_period));
@@ -239,7 +227,6 @@ void SlamKarto::setParams(ros::NodeHandle& private_nh_)
   // double minimum_time_interval;
   // if(private_nh_.getParam("minimum_time_interval", minimum_time_interval))
   //   mapper_->setParamMinimumTimeInterval(minimum_time_interval);
-
 }
 
 /*****************************************************************************/
@@ -289,18 +276,19 @@ void SlamKarto::publishTransform()
 {
   boost::mutex::scoped_lock lock(map_to_odom_mutex_);
   ros::Time tf_expiration = ros::Time::now() + ros::Duration(0.05);
-  tfB_->sendTransform(tf::StampedTransform (map_to_odom_, ros::Time::now(), map_frame_, odom_frame_));
+  tfB_->sendTransform(tf::StampedTransform (map_to_odom_, 
+                                   ros::Time::now(), map_frame_, odom_frame_));
 }
 
 /*****************************************************************************/
-karto::LaserRangeFinder* SlamKarto::getLaser(const sensor_msgs::LaserScan::ConstPtr& scan)
+karto::LaserRangeFinder* SlamKarto::getLaser(const \
+                                        sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
 {
   // Check whether we know about this laser yet
   if(lasers_.find(scan->header.frame_id) == lasers_.end())
   {
     // New laser; need to create a Karto device for it.
-
     // Get the laser's pose, relative to base.
     tf::Stamped<tf::Pose> ident;
     tf::Stamped<tf::Transform> laser_pose;
@@ -353,7 +341,8 @@ karto::LaserRangeFinder* SlamKarto::getLaser(const sensor_msgs::LaserScan::Const
     // scan
     std::string name = scan->header.frame_id;
     karto::LaserRangeFinder* laser = 
-      karto::LaserRangeFinder::CreateLaserRangeFinder(karto::LaserRangeFinder_Custom, karto::Name("Custom Described Lidar"));
+      karto::LaserRangeFinder::CreateLaserRangeFinder(karto::LaserRangeFinder_Custom, \
+                                                      karto::Name("Custom Described Lidar"));
     laser->SetOffsetPose(karto::Pose2(laser_pose.getOrigin().x(),
 				      laser_pose.getOrigin().y(),
 				      yaw));
@@ -532,7 +521,8 @@ bool SlamKarto::updateMap()
   boost::mutex::scoped_lock lock(map_mutex_);
 
   karto::OccupancyGrid* occ_grid = 
-          karto::OccupancyGrid::CreateFromScans(mapper_->GetAllProcessedScans(), resolution_);
+          karto::OccupancyGrid::CreateFromScans(mapper_->GetAllProcessedScans(), 
+                                                resolution_);
 
   if(!occ_grid)
     return false;
@@ -636,13 +626,12 @@ bool SlamKarto::addScan(karto::LaserRangeFinder* laser,
   karto::LocalizedRangeScan* range_scan = 
     new karto::LocalizedRangeScan(laser->GetName(), readings);
   range_scan->SetOdometricPose(karto_pose);
-  range_scan->SetCorrectedPose(karto_pose); // TODO Steve is this correct?
+  range_scan->SetCorrectedPose(karto_pose);
 
   // Add the localized range scan to the mapper
   bool processed;
   if((processed = mapper_->Process(range_scan)))
   {
-    //std::cout << "Pose: " << range_scan->GetOdometricPose() << " Corrected Pose: " << range_scan->GetCorrectedPose() << std::endl;
     
     karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
 
