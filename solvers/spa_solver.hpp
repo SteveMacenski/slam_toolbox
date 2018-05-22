@@ -24,7 +24,6 @@
 #define EIGEN_USE_NEW_STDVECTOR
 #endif // EIGEN_USE_NEW_STDVECTOR
 
-#define EIGEN_DEFAULT_IO_FORMAT Eigen::IOFormat(10)
 #include <Eigen/Eigen>
 
 #include <sparse_bundle_adjustment/spa2d.h>
@@ -48,10 +47,7 @@ public:
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex);
   virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge);
 
-  // Get the underlying graph from SBA
-  // return the graph of constraints
-  /// x,y -> x',y'   4 floats per connection
-  virtual void getGraph(std::vector<float> &g) { m_Spa.getGraph(g); }
+  virtual void getGraph(std::vector<Eigen::Vector2d> &g);
 
 private:
   karto::ScanSolver::IdPoseVector corrections;

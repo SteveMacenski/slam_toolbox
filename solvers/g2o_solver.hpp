@@ -71,7 +71,7 @@ class G2OSolver : public karto::ScanSolver
      * 
      * @param g the graph
      */
-    void getGraph(std::vector<Eigen::Vector2d> &nodes, std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges);
+    void getGraph(std::vector<Eigen::Vector2d> &nodes); // std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges);
 
     /**
      * @brief Use robust kernel in back-end

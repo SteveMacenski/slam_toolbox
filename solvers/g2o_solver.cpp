@@ -211,69 +211,43 @@ void G2OSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 
 }
 
-void G2OSolver::getGraph(std::vector<Eigen::Vector2d> &nodes, std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges)
+void G2OSolver::getGraph(std::vector<Eigen::Vector2d> &nodes) //std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges)
 {
-  using namespace g2o;
-
-  //HyperGraph::VertexIDMap vertexMap = optimizer_.vertices();
-
-  //HyperGraph::EdgeSet edgeSet = optimizer_.edges();
-
   double *data = new double[3];
-
-  for (SparseOptimizer::VertexIDMap::iterator it = optimizer_.vertices().begin(); it != optimizer_.vertices().end(); ++it) 
+  for (g2o::SparseOptimizer::VertexIDMap::iterator it = optimizer_.vertices().begin(); it != optimizer_.vertices().end(); ++it) 
   {
-
-    VertexSE2* v = dynamic_cast<VertexSE2*>(it->second);
-    
+    g2o::VertexSE2* v = dynamic_cast<g2o::VertexSE2*>(it->second); 
     if(v) 
     {
-      
       v->getEstimateData(data);
-
       Eigen::Vector2d pose(data[0], data[1]);
-
       nodes.push_back(pose);
-
     }
   }
-
-  double *data1 = new double[3];
-
-  double *data2 = new double[3];
-
-  // for (SparseOptimizer::EdgeSet::iterator it = optimizer_.edges().begin(); it != optimizer_.edges().end(); ++it) 
-  // {
-
-  //   EdgeSE2* e = dynamic_cast<EdgeSE2*>(*it);
-    
-  //   if(e) 
-  //   {
-      
-  //     VertexSE2* v1 = dynamic_cast<VertexSE2*>(e->vertices()[0]);
-
-  //     v1->getEstimateData(data1);
-
-  //     Eigen::Vector2d poseFrom(data1[0], data1[1]);
-
-  //     VertexSE2* v2 = dynamic_cast<VertexSE2*>(e->vertices()[1]);
-
-  //     v2->getEstimateData(data2);
-
-  //     Eigen::Vector2d poseTo(data2[0], data2[1]);
-
-  //     edges.push_back(std::make_pair(poseFrom, poseTo));
-
-  //   }
-
-  // }
-
   delete data;
 
-  delete data1;
+  //using namespace g2o;
+  //HyperGraph::VertexIDMap vertexMap = optimizer_.vertices();
+  //HyperGraph::EdgeSet edgeSet = optimizer_.edges();
 
-  delete data2;
-
+  // double *data1 = new double[3];
+  // double *data2 = new double[3];
+  // for (SparseOptimizer::EdgeSet::iterator it = optimizer_.edges().begin(); it != optimizer_.edges().end(); ++it) 
+  // {
+  //   EdgeSE2* e = dynamic_cast<EdgeSE2*>(*it);
+  //   if(e) 
+  //   {
+  //     VertexSE2* v1 = dynamic_cast<VertexSE2*>(e->vertices()[0]);
+  //     v1->getEstimateData(data1);
+  //     Eigen::Vector2d poseFrom(data1[0], data1[1]);
+  //     VertexSE2* v2 = dynamic_cast<VertexSE2*>(e->vertices()[1]);
+  //     v2->getEstimateData(data2);
+  //     Eigen::Vector2d poseTo(data2[0], data2[1]);
+  //     edges.push_back(std::make_pair(poseFrom, poseTo));
+  //   }
+  // }
+  // delete data1;
+  // delete data2;
 }
 
 } // end namespace

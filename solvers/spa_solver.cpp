@@ -91,4 +91,21 @@ void SpaSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   m_Spa.addConstraint(pSource->GetUniqueId(), pTarget->GetUniqueId(), mean, m);
 }
 
+void SpaSolver::getGraph(std::vector<Eigen::Vector2d> &g)
+{
+  std::vector<float> raw_graph;
+  m_Spa.getGraph(raw_graph);
+
+  g.reserve(raw_graph.size()/4);
+
+  Eigen::Vector2d pose;
+  for (size_t i=0; i!=raw_graph.size()/4; i++)
+  {
+    pose(0) = raw_graph[4*i];
+    pose(1) = raw_graph[4*i+1];
+    g.push_back(pose);
+  }
+}
+
+
 } // end namespace

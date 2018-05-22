@@ -39,7 +39,7 @@ public:
   // Get the underlying graph
   // return the graph of constraints
   /// x,y -> x',y'   4 floats per connection
-  virtual void getGraph(std::vector<float> &g); //Get graph stored
+  virtual void getGraph(std::vector<Eigen::Vector2d> &g); //Get graph stored
 
 private:
   // karto
@@ -54,6 +54,7 @@ private:
 
   // graph
   std::unordered_map<int, Eigen::Vector3d>* nodes_;
+  std::vector<Eigen::Vector2d>* node_vec_;
   Eigen::Vector3d first_node_;
 };
 

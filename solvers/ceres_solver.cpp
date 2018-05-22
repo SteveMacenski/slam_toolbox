@@ -16,7 +16,8 @@ namespace solver_plugins
 
 /*****************************************************************************/
 CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>()),
-                             problem_(new ceres::Problem())
+                             problem_(new ceres::Problem()),
+                             node_vec_(new std::vector<Eigen::Vector2d>())
 /*****************************************************************************/
 {
   // set params
@@ -38,20 +39,33 @@ CeresSolver::~CeresSolver()
   {
     delete loss_function_;
   }
-  delete nodes_;
-  delete problem_;
-  delete angle_local_parameterization_;
+  if (nodes_ != NULL)
+  {
+    delete nodes_;
+  }
+  if (node_vec_ != NULL)
+  {
+    delete node_vec_;
+  }
+  if (problem_ != NULL)
+  {
+    delete problem_;  
+  }
+  if (angle_local_parameterization_ != NULL)
+  {
+    delete angle_local_parameterization_;
+  }
 }
 
 /*****************************************************************************/
 void CeresSolver::Compute()
 /*****************************************************************************/
 {
-  ROS_ERROR("Compute");
-  corrections_.clear();
+  ROS_INFO("Compute started");
 
   if (nodes_->size() == 0)
   {
+    ROS_ERROR("Ceres was called when there are no nodes. This shouldn't happen.");
     return;
   }
 
@@ -63,11 +77,10 @@ void CeresSolver::Compute()
   //   problem_->SetParameterBlockConstant(&first_node_(2));
   //   was_constant_set_ = !was_constant_set_;
   // }
-  ROS_INFO("set param blacks before solve");
-
+  ROS_INFO("Solver started");
   ceres::Solver::Summary summary;
   ceres::Solve(options_, problem_, &summary);
-  //std::cout << summary.FullReport() << '\n';
+  ROS_INFO("Solver ended");
 
   if (!summary.IsSolutionUsable())
   {
@@ -76,13 +89,22 @@ void CeresSolver::Compute()
   }
 
   // store corrected poses
+  if (!corrections_.empty())
+  {
+    corrections_.clear();
+  }
   corrections_.reserve(nodes_->size());
+  karto::Pose2 pose;
   std::unordered_map<int, Eigen::Vector3d>::const_iterator iter = nodes_->begin();
   for ( iter; iter != nodes_->end(); ++iter )
   {
-    const karto::Pose2 pose(iter->second(0), iter->second(1), iter->second(2));
+    pose.SetX(iter->second(0));
+    pose.SetY(iter->second(1));
+    pose.SetHeading(iter->second(2));
+    //const karto::Pose2 pose(iter->second(0), iter->second(1), iter->second(2)); //TODO check efficiency of adding this way. about 100ms after 2.5 aisles
     corrections_.push_back(std::make_pair(iter->first, pose));
   }
+  ROS_INFO("Ended correction updates");
 }
 
 /*****************************************************************************/
@@ -96,7 +118,6 @@ const karto::ScanSolver::IdPoseVector& CeresSolver::GetCorrections() const
 void CeresSolver::Clear()
 /*****************************************************************************/
 {
-  ROS_INFO("Clearing corrections");
   corrections_.clear();
 }
 
@@ -114,6 +135,7 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
   }
 
   nodes_->insert(std::pair<int,Eigen::Vector3d>(pVertex->GetObject()->GetUniqueId(),pose2d));
+  node_vec_->push_back(Eigen::Vector2d(pose2d(0), pose2d(1)));
 }
 
 /*****************************************************************************/
@@ -125,7 +147,6 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   // get IDs in graph for this edge
   const int node1 = pEdge->GetSource()->GetObject()->GetUniqueId();
   std::unordered_map<int, Eigen::Vector3d>::iterator node1it = nodes_->find(node1);
-
   const int node2 = pEdge->GetTarget()->GetObject()->GetUniqueId();
   std::unordered_map<int, Eigen::Vector3d>::iterator node2it = nodes_->find(node2);
 
@@ -149,7 +170,7 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   sqrt_information(1,2) = sqrt_information(2,1) = precisionMatrix(1,2);
   sqrt_information(2,2) = precisionMatrix(2,2);
 
-  // populate residual
+  // populate residual and parameterization for heading normalization
   ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create( pose2d(0), 
                                             pose2d(1), pose2d(2), sqrt_information);
   problem_->AddResidualBlock( cost_function, loss_function_, 
@@ -160,12 +181,10 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 }
 
 /*****************************************************************************/
-void CeresSolver::getGraph(std::vector<float> &g)
+void CeresSolver::getGraph(std::vector<Eigen::Vector2d> &g)
 /*****************************************************************************/
 {
-
-
-
+  g = *node_vec_;
 }
 
 } // end namespace

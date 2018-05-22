@@ -142,46 +142,28 @@ void GTSAMSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   
 }
 
-void GTSAMSolver::getGraph(std::vector<Eigen::Vector2d> &nodes, std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges)
+void GTSAMSolver::getGraph(std::vector<Eigen::Vector2d> &nodes) //std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges)
 {
-  using namespace gtsam;
-
   nodes = graphNodes_;
-
+  // using namespace gtsam;
   // double *data1 = new double[3];
-
   // double *data2 = new double[3];
-
   // for (SparseOptimizer::EdgeSet::iterator it = optimizer_.edges().begin(); it != optimizer_.edges().end(); ++it) 
   // {
-
   //   EdgeSE2* e = dynamic_cast<EdgeSE2*>(*it);
-    
   //   if(e) 
   //   {
-      
   //     VertexSE2* v1 = dynamic_cast<VertexSE2*>(e->vertices()[0]);
-
   //     v1->getEstimateData(data1);
-
   //     Eigen::Vector2d poseFrom(data1[0], data1[1]);
-
   //     VertexSE2* v2 = dynamic_cast<VertexSE2*>(e->vertices()[1]);
-
   //     v2->getEstimateData(data2);
-
   //     Eigen::Vector2d poseTo(data2[0], data2[1]);
-
   //     edges.push_back(std::make_pair(poseFrom, poseTo));
-
   //   }
-
   // }
-
   // delete data1;
-
   // delete data2;
-
 }
 
 } // end namespace
