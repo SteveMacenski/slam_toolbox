@@ -1,6 +1,6 @@
 /*
- * Copyright 2018 Simbe Robotics
- * Author: Steve Macenski
+ * Copyright 2018 Simbe Robotics, Inc.
+ * Author: Steve Macenski (stevenmacenski@gmail.com)
  */
 
 #ifndef KARTO_CERESSOLVER_H
@@ -35,10 +35,6 @@ public:
 
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex); //Adds a node to the solver
   virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge); //Adds a constraint to the solver
-
-  // Get the underlying graph
-  // return the graph of constraints
-  /// x,y -> x',y'   4 floats per connection
   virtual void getGraph(std::vector<Eigen::Vector2d> &g); //Get graph stored
 
 private:
@@ -54,7 +50,6 @@ private:
 
   // graph
   std::unordered_map<int, Eigen::Vector3d>* nodes_;
-  std::vector<Eigen::Vector2d>* node_vec_;
   Eigen::Vector3d first_node_;
 };
 

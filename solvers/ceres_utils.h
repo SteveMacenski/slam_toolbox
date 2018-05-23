@@ -42,6 +42,20 @@ class AngleLocalParameterization
 /*****************************************************************************/
 /*****************************************************************************/
 
+template <typename T>
+Eigen::Matrix<T, 2, 2> RotationMatrix2D(T yaw_radians)
+{
+  const T cos_yaw = ceres::cos(yaw_radians);
+  const T sin_yaw = ceres::sin(yaw_radians);
+  Eigen::Matrix<T, 2, 2> rotation;
+  rotation << cos_yaw, -sin_yaw, sin_yaw, cos_yaw;
+  return rotation;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
 class PoseGraph2dErrorTerm
 {
  public:
@@ -68,15 +82,7 @@ class PoseGraph2dErrorTerm
     return (new ceres::AutoDiffCostFunction<PoseGraph2dErrorTerm, 3, 1, 1, 1, 1, 1, 1>(new PoseGraph2dErrorTerm(x_ab, y_ab, yaw_ab_radians, sqrt_information)));
   }
 
-  template <typename T>
-  Eigen::Matrix<T, 2, 2> RotationMatrix2D(T yaw_radians)
-  {
-    const T cos_yaw = ceres::cos(yaw_radians);
-    const T sin_yaw = ceres::sin(yaw_radians);
-    Eigen::Matrix<T, 2, 2> rotation;
-    rotation << cos_yaw, -sin_yaw, sin_yaw, cos_yaw;
-    return rotation;
-  }
+
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:
@@ -87,3 +93,4 @@ class PoseGraph2dErrorTerm
   // The inverse square root of the measurement covariance matrix.
   const Eigen::Matrix3d sqrt_information_;
 };
+

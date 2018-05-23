@@ -1,6 +1,6 @@
 /*
- * Copyright 2018 Simbe Robotics
- * Author: Steve Macenski
+ * Copyright 2018 Simbe Robotics, Inc.
+ * Author: Steve Macenski (stevenmacenski@gmail.com)
  */
 
 #include "ceres_solver.hpp"
@@ -16,8 +16,7 @@ namespace solver_plugins
 
 /*****************************************************************************/
 CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>()),
-                             problem_(new ceres::Problem()),
-                             node_vec_(new std::vector<Eigen::Vector2d>())
+                             problem_(new ceres::Problem())
 /*****************************************************************************/
 {
   // set params
@@ -25,10 +24,33 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
 
   // formulate problem
   angle_local_parameterization_ = AngleLocalParameterization::Create();
-  loss_function_ = NULL; //TODO
+  loss_function_ = NULL; //HuberLoss, SoftLOneLoss, CauchyLoss, CauchyLoss 
 
   options_.max_num_iterations = 100;
-  options_.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY; //ceres::DENSE_SCHUR
+  options_.linear_solver_type = ceres::DENSE_SCHUR; // DENSE_SCHUR, SPARSE_NORMAL_CHOLESKY, DENSE_NORMAL_CHOLESKY, DENSE_QR, SPARSE_SCHUR, ITERATIVE_SCHUR, CGNR
+  options_.num_threads = 50;
+
+  /*
+  options_minimizer_type = LEVENBERG_MARQUARDT;
+  options_.tau = 1e-4;
+  options_.min_mu = 1e-20;
+  options_.min_relative_decrease = 1e-3;
+  options_.function_tolerance = 1e-6;
+  options_.gradient_tolerance = 1e-10;
+  options_.parameter_tolerance = 1e-8;
+  options_.preconditioner_type = JACOBI;
+  options_.num_linear_solver_threads = 1;
+  options_.num_eliminate_blocks = 0;
+  options_.ordering_type = NATURAL;
+  options_.linear_solver_max_num_iterations = 500;
+  options_.eta = 1e-1;
+  options_.jacobi_scaling = true;
+  options_.logging_type = PER_MINIMIZER_ITERATION;
+  options_.minimizer_progress_to_stdout = false;
+  options_.check_gradients = false;
+  options_.gradient_check_relative_precision = 1e-8;
+  options_.numeric_derivative_relative_step_size = 1e-6;
+  */
 }
 
 /*****************************************************************************/
@@ -42,10 +64,6 @@ CeresSolver::~CeresSolver()
   if (nodes_ != NULL)
   {
     delete nodes_;
-  }
-  if (node_vec_ != NULL)
-  {
-    delete node_vec_;
   }
   if (problem_ != NULL)
   {
@@ -101,10 +119,9 @@ void CeresSolver::Compute()
     pose.SetX(iter->second(0));
     pose.SetY(iter->second(1));
     pose.SetHeading(iter->second(2));
-    //const karto::Pose2 pose(iter->second(0), iter->second(1), iter->second(2)); //TODO check efficiency of adding this way. about 100ms after 2.5 aisles
     corrections_.push_back(std::make_pair(iter->first, pose));
   }
-  ROS_INFO("Ended correction updates");
+  return;
 }
 
 /*****************************************************************************/
@@ -135,15 +152,12 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
   }
 
   nodes_->insert(std::pair<int,Eigen::Vector3d>(pVertex->GetObject()->GetUniqueId(),pose2d));
-  node_vec_->push_back(Eigen::Vector2d(pose2d(0), pose2d(1)));
 }
 
 /*****************************************************************************/
 void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 /*****************************************************************************/
 {
-  // store edges, for now just add to graph
-
   // get IDs in graph for this edge
   const int node1 = pEdge->GetSource()->GetObject()->GetUniqueId();
   std::unordered_map<int, Eigen::Vector3d>::iterator node1it = nodes_->find(node1);
@@ -178,13 +192,20 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
                      &node2it->second(0), &node2it->second(1), &node2it->second(2));
   problem_->SetParameterization(&node1it->second(2), angle_local_parameterization_);
   problem_->SetParameterization(&node2it->second(2), angle_local_parameterization_);
+  return;
 }
 
 /*****************************************************************************/
 void CeresSolver::getGraph(std::vector<Eigen::Vector2d> &g)
 /*****************************************************************************/
 {
-  g = *node_vec_;
+  g.reserve(nodes_->size());
+  std::unordered_map<int,Eigen::Vector3d>::const_iterator it = nodes_->begin();
+  for (it; it!=nodes_->end(); ++it)
+  {
+    g.push_back(Eigen::Vector2d(it->second(0), it->second(1)));
+  }
+  return;
 }
 
 } // end namespace

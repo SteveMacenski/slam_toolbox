@@ -21,6 +21,7 @@ find_package(catkin REQUIRED
     tf
     visualization_msgs
     pluginlib
+    message_generation
 )
 
 find_package(PkgConfig REQUIRED)
@@ -43,6 +44,12 @@ include_directories(include ${catkin_INCLUDE_DIRS}
 
 add_definitions(${EIGEN3_DEFINITIONS})
 
+add_service_files(DIRECTORY srvs
+  FILES
+  Pause.srv
+)
+generate_messages()
+
 catkin_package(
     INCLUDE_DIRS include
     LIBRARIES spa_solver_plugin g2O_solver_plugin ceres_solver_plugin #GTSAM_solver_plugin
@@ -57,6 +64,7 @@ catkin_package(
       tf
       visualization_msgs
       pluginlib
+      message_runtime
 )
 
 #### SPA

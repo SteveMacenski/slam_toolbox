@@ -1,54 +1,10 @@
-# # ROS params
-# solver_plugin: solver_plugins::CeresSolver
-# odom_frame: odom
-# map_frame: map
-# base_frame: base_link
-# throttle_scans: 1
-# publish_occupancy_map: true
-# transform_publish_period: 0 #if 0 never publishes odometry
-# use_spa: true
-# map_update_interval: 5.0
-# resolution: 0.05
-# max_laser_range: 20.0
-# #minimum_time_interval: 0
 
-# # General Parameters
-# use_scan_matching: true
-# use_scan_barycenter: true
-# minimum_travel_distance: 0.45
-# minimum_travel_heading: 0.18         # 0.52         #in radians
-# scan_buffer_size: 1000
-# scan_buffer_maximum_scan_distance: 100.0 #25
-# link_match_minimum_response_fine: 0.4   #0.6 ros ansers  #0.8 #probability 0-1. scans are linked only if correlation response value is greater than this TODO
+# link_match_minimum_response_fine: 0.4 
 # link_scan_maximum_distance: 20.0
 # loop_search_maximum_distance: 50.0
-# do_loop_closing: true                       # loop closures
-# loop_match_minimum_chain_size: 10           # default 10 number of scans between which there must be to loop closure
-# loop_match_maximum_variance_coarse: 10.0     # default 0.16 covariance value for a loop closure have to be less than this to be allowed
-# loop_match_minimum_response_coarse: 0.5     # default 0.70 if response is larger than this, start loop closure search at course resolutions
-# loop_match_minimum_response_fine: 0.4 #0.4  # default 0.70 if response is larger than this, start loop closure search at fine resolutions
-
-# # Correlation Parameters - Correlation Parameters
-# correlation_search_space_dimension: 0.9 #0.6 ##0.3
-# correlation_search_space_resolution: 0.01
-# correlation_search_space_smear_deviation: 0.1 #0.03
-
-# # Correlation Parameters - Loop Closure Parameters
-# loop_search_space_dimension: 8.0
-# loop_search_space_resolution: 0.05
-# loop_search_space_smear_deviation: 0.13 #0.13 MORE OPTIMAL #0.03 
-
-# # Scan Matcher Parameters
-# distance_variance_penalty: 1.8              # penalty for variance of scan matcher vs. odometry. lower values if odometry is accurate 0.3
-# angle_variance_penalty: 0.20           #20     # deg2rad(20)
-# fine_search_angle_offset: 0.00349      #0.02         # in degrees (gets converted to radians)
-# coarse_search_angle_offset: 0.349      # 20     # in degrees (gets converted to radians)
-# coarse_angle_resolution: 0.0349        #2 ros answers        # in degrees (gets converted to radians)
+# distance_variance_penalty: 1.8             
+# angle_variance_penalty: 0.20    
 # minimum_angle_penalty: 1.6 #0.9
-# minimum_distance_penalty: 0.5
-# use_response_expansion: true
-
-################## Jari #####################
 
 # ROS params
 solver_plugin: solver_plugins::CeresSolver
@@ -58,16 +14,16 @@ base_frame: base_link
 throttle_scans: 1
 publish_occupancy_map: true
 transform_publish_period: 0 #if 0 never publishes odometry
-use_spa: true
-map_update_interval: 5.0
+map_update_interval: 20.0
 resolution: 0.05
 max_laser_range: 20.0
+minimum_time_interval: 0.5
 
 # General Parameters
 use_scan_matching: true
 use_scan_barycenter: true
 minimum_travel_distance: 0.5
-minimum_travel_heading: 0.7
+minimum_travel_heading: 0.5 #0.7
 scan_buffer_size: 10
 scan_buffer_maximum_scan_distance: 10
 link_match_minimum_response_fine: 0.1  
