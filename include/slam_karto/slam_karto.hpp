@@ -18,14 +18,6 @@
 /* Author: Brian Gerkey */
 /* Modified: Steven Macenski */
 
-/**
-
-@mainpage karto_gmapping
-
-@htmlinclude manifest.html
-
-*/
-
 #include "ros/ros.h"
 #include "ros/console.h"
 #include "message_filters/subscriber.h"
@@ -70,6 +62,7 @@ public:
   ~SlamKarto();
 
   void Run();
+  void publishVisualizations();
 
 private:
   void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
@@ -129,9 +122,8 @@ private:
   std::map<std::string, bool> lasers_inverted_;
 
   // Internal state
-  bool got_map_;
   int laser_count_;
-  boost::thread *transform_thread_, *run_thread_;
+  boost::thread *transform_thread_, *run_thread_, *visualization_thread_;
   tf::Transform map_to_odom_;
   bool inverted_laser_;
   double max_laser_range_;

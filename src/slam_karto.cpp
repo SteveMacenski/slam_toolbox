@@ -21,10 +21,10 @@
 #include <slam_karto/slam_karto.hpp>
 
 /*****************************************************************************/
-SlamKarto::SlamKarto() : got_map_(false),
-                         laser_count_(0),
+SlamKarto::SlamKarto() : laser_count_(0),
                          transform_thread_(NULL),
                          run_thread_(NULL),
+                         visualization_thread_(NULL),
                          solver_loader_("slam_karto", "karto::ScanSolver"),
                          last_scan_time_(0),
                          paused_(false),
@@ -43,6 +43,7 @@ SlamKarto::SlamKarto() : got_map_(false),
   private_nh_.param("transform_publish_period", transform_publish_period, 0.05);
   transform_thread_ = new boost::thread(boost::bind(&SlamKarto::publishLoop, this, transform_publish_period));
   run_thread_ = new boost::thread(boost::bind(&SlamKarto::Run, this));
+  visualization_thread_ = new boost::thread(boost::bind(&SlamKarto::publishVisualizations, this));
 }
 
 /*****************************************************************************/
@@ -244,6 +245,11 @@ SlamKarto::~SlamKarto()
     run_thread_->join();
     delete run_thread_;
   }
+  if(visualization_thread_)
+  {
+    visualization_thread_->join();
+    delete visualization_thread_;
+  }
   if (scan_filter_)
     delete scan_filter_;
   if (scan_filter_sub_)
@@ -273,6 +279,28 @@ void SlamKarto::publishLoop(double transform_publish_period)
     ros::Time tf_expiration = ros::Time::now() + ros::Duration(0.05);
     tfB_->sendTransform(tf::StampedTransform (map_to_odom_, 
                                      ros::Time::now(), map_frame_, odom_frame_));
+    r.sleep();
+  }
+}
+
+/*****************************************************************************/
+void SlamKarto::publishVisualizations()
+/*****************************************************************************/
+{
+  map_.map.info.resolution = resolution_;
+  map_.map.info.origin.position.x = 0.0;
+  map_.map.info.origin.position.y = 0.0;
+  map_.map.info.origin.position.z = 0.0;
+  map_.map.info.origin.orientation.x = 0.0;
+  map_.map.info.origin.orientation.y = 0.0;
+  map_.map.info.origin.orientation.z = 0.0;
+  map_.map.info.origin.orientation.w = 1.0;
+
+  ros::Rate r(1.0 / map_update_interval_.toSec());
+  while(ros::ok())
+  {
+    updateMap();
+    publishGraphVisualization();
     r.sleep();
   }
 }
@@ -444,7 +472,7 @@ void SlamKarto::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 bool SlamKarto::updateMap()
 /*****************************************************************************/
 {
-  if (!publish_occupancy_map_)
+  if (!publish_occupancy_map_ || sst_.getNumSubscribers() == 0)
   {
     return true;
   }
@@ -457,17 +485,6 @@ bool SlamKarto::updateMap()
 
   if(!occ_grid)
     return false;
-
-  if(!got_map_) {
-    map_.map.info.resolution = resolution_;
-    map_.map.info.origin.position.x = 0.0;
-    map_.map.info.origin.position.y = 0.0;
-    map_.map.info.origin.position.z = 0.0;
-    map_.map.info.origin.orientation.x = 0.0;
-    map_.map.info.origin.orientation.y = 0.0;
-    map_.map.info.origin.orientation.z = 0.0;
-    map_.map.info.origin.orientation.w = 1.0;
-  } 
 
   // Translate to ROS format
   kt_int32s width = occ_grid->GetWidth();
@@ -527,10 +544,7 @@ bool SlamKarto::addScan(karto::LaserRangeFinder* laser,
 		   const sensor_msgs::LaserScan::ConstPtr& scan, 
                    karto::Pose2& karto_pose)
 /*****************************************************************************/
-{
-  if(!getOdomPose(karto_pose, scan->header.stamp))
-     return false;
-  
+{  
   // Create a vector of doubles for karto
   std::vector<kt_double> readings;
 
@@ -597,7 +611,7 @@ bool SlamKarto::mapCallback(nav_msgs::GetMap::Request  &req,
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(map_mutex_);
-  if(got_map_ && map_.map.info.width && map_.map.info.height)
+  if(map_.map.info.width && map_.map.info.height)
   {
     res = map_;
     return true;
@@ -650,8 +664,6 @@ void SlamKarto::Run()
       if ((laser_count_ % throttle_scans_) != 0)
         break;
 
-      static ros::Time last_map_update(0,0);
-
       // Check whether we know about this laser yet
       karto::LaserRangeFinder* laser = getLaser(scan);
 
@@ -661,19 +673,7 @@ void SlamKarto::Run()
            scan->header.frame_id.c_str());
         break;
       }
-
-      if(addScan(laser, scan, odom_pose))
-      {
-        if(!got_map_ || (scan->header.stamp - last_map_update) > map_update_interval_)
-        {
-          if(updateMap())
-          {
-            last_map_update = scan->header.stamp;
-            got_map_ = true;
-            publishGraphVisualization();
-          }
-        }
-      }
+      addScan(laser, scan, odom_pose);
     }
     r.sleep();
   }

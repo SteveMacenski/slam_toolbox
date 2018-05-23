@@ -23,7 +23,7 @@ minimum_time_interval: 0.5
 use_scan_matching: true
 use_scan_barycenter: true
 minimum_travel_distance: 0.5
-minimum_travel_heading: 0.5 #0.7
+minimum_travel_heading: 0.5
 scan_buffer_size: 10
 scan_buffer_maximum_scan_distance: 10
 link_match_minimum_response_fine: 0.1  
