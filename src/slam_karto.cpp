@@ -403,6 +403,11 @@ bool SlamKarto::getOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
 void SlamKarto::publishGraphVisualization()
 /*****************************************************************************/
 {
+  if (marker_publisher_.getNumSubscribers() == 0)
+  {
+    return;
+  }
+
   std::vector<Eigen::Vector2d> graph;
   solver_->getGraph(graph);
 
