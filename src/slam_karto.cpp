@@ -482,8 +482,6 @@ bool SlamKarto::updateMap()
     return true;
   }
 
-  boost::mutex::scoped_lock lock(map_mutex_);
-
   karto::OccupancyGrid* occ_grid = 
           karto::OccupancyGrid::CreateFromScans(mapper_->GetAllProcessedScans(), 
                                                 resolution_);
@@ -495,6 +493,8 @@ bool SlamKarto::updateMap()
   kt_int32s width = occ_grid->GetWidth();
   kt_int32s height = occ_grid->GetHeight();
   karto::Vector2<kt_double> offset = occ_grid->GetCoordinateConverter()->GetOffset();
+
+  boost::mutex::scoped_lock lock(map_mutex_);
 
   if(map_.map.info.width != (unsigned int) width || 
      map_.map.info.height != (unsigned int) height ||
@@ -512,9 +512,7 @@ bool SlamKarto::updateMap()
   {
     for (kt_int32s x=0; x<width; x++) 
     {
-      // Getting the value at position x,y
       kt_int8u value = occ_grid->GetValue(karto::Vector2<kt_int32s>(x, y));
-
       switch (value)
       {
         case karto::GridStates_Unknown:
@@ -579,7 +577,6 @@ bool SlamKarto::addScan(karto::LaserRangeFinder* laser,
   bool processed;
   if((processed = mapper_->Process(range_scan)))
   {
-    
     karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
 
     // Compute the map->odom transform
@@ -596,11 +593,11 @@ bool SlamKarto::addScan(karto::LaserRangeFinder* laser,
       odom_to_map.setIdentity();
     }
 
-    map_to_odom_mutex_.lock();
-    map_to_odom_ = tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
-                                 tf::Point( odom_to_map.getOrigin() ) ).inverse();
-    map_to_odom_mutex_.unlock();
-
+    {
+      boost::mutex::scoped_lock lock(map_to_odom_mutex_);
+      map_to_odom_ = tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
+                                   tf::Point( odom_to_map.getOrigin() ) ).inverse();
+    }
     // Add the localized range scan to the dataset (for memory management)
     dataset_->Add(range_scan);
   }
@@ -615,9 +612,9 @@ bool SlamKarto::mapCallback(nav_msgs::GetMap::Request  &req,
                             nav_msgs::GetMap::Response &res)
 /*****************************************************************************/
 {
-  boost::mutex::scoped_lock lock(map_mutex_);
   if(map_.map.info.width && map_.map.info.height)
   {
+    boost::mutex::scoped_lock lock(map_mutex_);
     res = map_;
     return true;
   }
