@@ -50,7 +50,8 @@ private:
 
   // graph
   std::unordered_map<int, Eigen::Vector3d>* nodes_;
-  Eigen::Vector3d first_node_;
+  std::unordered_map<int, Eigen::Vector3d>::iterator first_node_;
+  boost::mutex nodes_mutex_;
 };
 
 }

@@ -36,6 +36,7 @@
 #include <boost/thread.hpp>
 
 #include "slam_karto/Pause.h"
+#include "slam_karto/ClearQueue.h"
 
 #include <string>
 #include <map>
@@ -61,30 +62,36 @@ public:
   SlamKarto();
   ~SlamKarto();
 
+private:
+  // threads
   void Run();
   void publishVisualizations();
+  void publishLoop(double transform_publish_period);
 
-private:
-  void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
-
+  // setup
   void setParams(ros::NodeHandle& nh);
   void setSolver(ros::NodeHandle& private_nh_);
   void setROSInterfaces();
 
+  // callbacks
+  void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
   bool mapCallback(nav_msgs::GetMap::Request  &req,
                    nav_msgs::GetMap::Response &res);
   bool pauseCallback(slam_karto::Pause::Request& req,
                      slam_karto::Pause::Response& resp);
+  bool clearQueueCallback(slam_karto::ClearQueue::Request& req,
+                          slam_karto::ClearQueue::Response& resp);
 
+  // functional bits
   bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
   karto::LaserRangeFinder* getLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
   bool addScan(karto::LaserRangeFinder* laser,
                const sensor_msgs::LaserScan::ConstPtr& scan,
                karto::Pose2& karto_pose);
   bool updateMap();
-  void publishLoop(double transform_publish_period);
   void publishGraphVisualization();
 
+  // state
   bool isPaused();
   void togglePause();
 
@@ -94,25 +101,15 @@ private:
   tf::TransformBroadcaster* tfB_;
   message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
   tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
-  ros::Publisher sst_;
-  ros::Publisher marker_publisher_;
-  ros::Publisher sstm_;
-  ros::ServiceServer ss_;
-  ros::ServiceServer ssPause_;
-
-  // The map that will be published / send to service callers
+  ros::Publisher sst_, sstm_, marker_publisher_;
+  ros::ServiceServer ssMap_, ssPause_, ssClear_;
   nav_msgs::GetMap::Response map_;
 
   // Storage for ROS parameters
-  std::string odom_frame_;
-  std::string map_frame_;
-  std::string base_frame_;
+  std::string odom_frame_, map_frame_, base_frame_;
   int throttle_scans_;
   ros::Duration map_update_interval_;
-  double resolution_;
-  boost::mutex map_mutex_;
-  boost::mutex map_to_odom_mutex_;
-  boost::mutex pause_mutex_;
+  double resolution_, minimum_time_interval_;
   bool publish_occupancy_map_;
 
   // Karto bookkeeping
@@ -125,16 +122,13 @@ private:
   int laser_count_;
   boost::thread *transform_thread_, *run_thread_, *visualization_thread_;
   tf::Transform map_to_odom_;
-  bool inverted_laser_;
-  double max_laser_range_;
-  bool paused_;
+  bool paused_, inverted_laser_;
+  double last_scan_time_, max_laser_range_;
+  karto::Pose2 current_pose_;
+  std::queue<posed_scan> q_;
+  boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_;
 
   // pluginlib
   pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;
   boost::shared_ptr<karto::ScanSolver> solver_;
-
-  std::queue<posed_scan> q_;
-  double minimum_time_interval_;
-  double last_scan_time_;
-
 };

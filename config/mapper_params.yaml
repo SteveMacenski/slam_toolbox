@@ -11,12 +11,13 @@ solver_plugin: solver_plugins::CeresSolver
 odom_frame: odom
 map_frame: map
 base_frame: base_link
+debug_logging: false
 throttle_scans: 1
 publish_occupancy_map: true
 transform_publish_period: 0 #if 0 never publishes odometry
 map_update_interval: 20.0
 resolution: 0.05
-max_laser_range: 20.0
+max_laser_range: 20.0 #for rastering images
 minimum_time_interval: 0.5
 
 # General Parameters

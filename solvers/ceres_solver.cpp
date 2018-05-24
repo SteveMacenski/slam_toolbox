@@ -25,10 +25,11 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   // formulate problem
   angle_local_parameterization_ = AngleLocalParameterization::Create();
   loss_function_ = NULL; //HuberLoss, SoftLOneLoss, CauchyLoss, CauchyLoss 
+  first_node_ = nodes_->end();
 
   options_.max_num_iterations = 100;
-  options_.linear_solver_type = ceres::DENSE_SCHUR; // DENSE_SCHUR, SPARSE_NORMAL_CHOLESKY, DENSE_NORMAL_CHOLESKY, DENSE_QR, SPARSE_SCHUR, ITERATIVE_SCHUR, CGNR
-  options_.num_threads = 50;
+  options_.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY; // DENSE_SCHUR, SPARSE_NORMAL_CHOLESKY, DENSE_NORMAL_CHOLESKY, DENSE_QR, SPARSE_SCHUR, ITERATIVE_SCHUR, CGNR
+  options_.num_threads = 5;
 
   /*
   options_minimizer_type = LEVENBERG_MARQUARDT;
@@ -79,8 +80,6 @@ CeresSolver::~CeresSolver()
 void CeresSolver::Compute()
 /*****************************************************************************/
 {
-  ROS_INFO("Compute started");
-
   if (nodes_->size() == 0)
   {
     ROS_ERROR("Ceres was called when there are no nodes. This shouldn't happen.");
@@ -88,17 +87,18 @@ void CeresSolver::Compute()
   }
 
   // populate contraint for static initial pose
-  // if (!was_constant_set_)
-  // {
-  //   problem_->SetParameterBlockConstant(&first_node_(0));
-  //   problem_->SetParameterBlockConstant(&first_node_(1));
-  //   problem_->SetParameterBlockConstant(&first_node_(2));
-  //   was_constant_set_ = !was_constant_set_;
-  // }
-  ROS_INFO("Solver started");
+  if (!was_constant_set_ && first_node_ != nodes_->end())
+  {
+    problem_->SetParameterBlockConstant(&first_node_->second(0));
+    problem_->SetParameterBlockConstant(&first_node_->second(1));
+    problem_->SetParameterBlockConstant(&first_node_->second(2));
+    was_constant_set_ = !was_constant_set_;
+  }
+
+  const ros::Time start_time = ros::Time::now();
   ceres::Solver::Summary summary;
   ceres::Solve(options_, problem_, &summary);
-  ROS_INFO("Solver ended");
+  ROS_INFO("Loop Closure Solve time: %f seconds", (ros::Time::now() - start_time).toSec());
 
   if (!summary.IsSolutionUsable())
   {
@@ -146,12 +146,15 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
   karto::Pose2 pose = pVertex->GetObject()->GetCorrectedPose();
   Eigen::Vector3d pose2d(pose.GetX(), pose.GetY(), pose.GetHeading());
 
-  if (nodes_->size() == 0)
-  {
-    first_node_ = pose2d;
-  }
+  const int id = pVertex->GetObject()->GetUniqueId();
 
-  nodes_->insert(std::pair<int,Eigen::Vector3d>(pVertex->GetObject()->GetUniqueId(),pose2d));
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+  nodes_->insert(std::pair<int,Eigen::Vector3d>(id,pose2d));
+
+  if (nodes_->size() == 1)
+  {
+    first_node_ = nodes_->find(id);
+  }
 }
 
 /*****************************************************************************/
@@ -159,6 +162,7 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 /*****************************************************************************/
 {
   // get IDs in graph for this edge
+  boost::mutex::scoped_lock lock(nodes_mutex_);
   const int node1 = pEdge->GetSource()->GetObject()->GetUniqueId();
   std::unordered_map<int, Eigen::Vector3d>::iterator node1it = nodes_->find(node1);
   const int node2 = pEdge->GetTarget()->GetObject()->GetUniqueId();
@@ -199,6 +203,7 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 void CeresSolver::getGraph(std::vector<Eigen::Vector2d> &g)
 /*****************************************************************************/
 {
+  boost::mutex::scoped_lock lock(nodes_mutex_);
   g.reserve(nodes_->size());
   std::unordered_map<int,Eigen::Vector3d>::const_iterator it = nodes_->begin();
   for (it; it!=nodes_->end(); ++it)

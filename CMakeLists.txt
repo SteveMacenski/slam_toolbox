@@ -47,6 +47,7 @@ add_definitions(${EIGEN3_DEFINITIONS})
 add_service_files(DIRECTORY srvs
   FILES
   Pause.srv
+  ClearQueue.srv
 )
 generate_messages()
 
