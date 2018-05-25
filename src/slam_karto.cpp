@@ -26,7 +26,6 @@ SlamKarto::SlamKarto() : laser_count_(0),
                          run_thread_(NULL),
                          visualization_thread_(NULL),
                          solver_loader_("slam_karto", "karto::ScanSolver"),
-                         last_scan_time_(0),
                          paused_(false),
                          tf_(ros::Duration(14400.)) // 4 hours
 /*****************************************************************************/
@@ -116,9 +115,9 @@ void SlamKarto::setParams(ros::NodeHandle& private_nh_)
   if(private_nh_.getParam("use_scan_barycenter", use_scan_barycenter))
     mapper_->setParamUseScanBarycenter(use_scan_barycenter);
 
-  double minimum_travel_distance;
-  if(private_nh_.getParam("minimum_travel_distance", minimum_travel_distance))
-    mapper_->setParamMinimumTravelDistance(minimum_travel_distance);
+  minimum_travel_distance_ = 0.5;
+  if(private_nh_.getParam("minimum_travel_distance", minimum_travel_distance_))
+    mapper_->setParamMinimumTravelDistance(minimum_travel_distance_);
 
   double minimum_travel_heading;
   if(private_nh_.getParam("minimum_travel_heading", minimum_travel_heading))
@@ -312,7 +311,6 @@ void SlamKarto::publishVisualizations()
   {
     while(ros::ok())
     {
-      ROS_INFO("looping");
       updateMap();
       publishGraphVisualization();
       r.sleep();
@@ -431,6 +429,8 @@ void SlamKarto::publishGraphVisualization()
   std::vector<Eigen::Vector2d> graph;
   solver_->getGraph(graph);
 
+  ROS_INFO_THROTTLE(15.,"Graph size: %i",(int)graph.size());
+
   visualization_msgs::MarkerArray marray;
 
   visualization_msgs::Marker m;
@@ -467,21 +467,28 @@ void SlamKarto::publishGraphVisualization()
 void SlamKarto::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
 {
+  static karto::Pose2 last_pose;
+  static double last_scan_time = 0.;
+  static double min_dist2 = minimum_travel_distance_*minimum_travel_distance_;
+
+  // we are in a paused mode, reject incomming information
   if(isPaused())
   {
-    // we are in a paused mode, reject incomming information
+    return;
+  }
+
+  // throttled out
+  laser_count_++;
+  if ((laser_count_ % throttle_scans_) != 0)
+  {
     return;
   }
 
   // not enough time
-  if ( (scan->header.stamp.toSec() - last_scan_time_ ) < minimum_time_interval_)
+  if ( (scan->header.stamp.toSec() - last_scan_time ) < minimum_time_interval_)
   {
     return;
   }
-
-  laser_count_++;
-  if ((laser_count_ % throttle_scans_) != 0)
-    return;
 
   // no odom info
   karto::Pose2 pose;
@@ -490,9 +497,18 @@ void SlamKarto::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     return;
   }
 
-  // ok... maybe valid
+  // check moved enough, within 10% for correction error
+  const double dist2 = fabs((last_pose.GetX() - pose.GetX())*(last_pose.GetX() - pose.GetX()) + 
+                       (last_pose.GetY() - pose.GetY())*(last_pose.GetX() - pose.GetY()));
+  if(dist2 < 0.8*min_dist2 || laser_count_ < 5)
+  {
+    return;
+  }
+
+  // ok... maybe valid we can try
   q_.push(posed_scan(scan, pose));
-  last_scan_time_ = scan->header.stamp.toSec(); 
+  last_scan_time = scan->header.stamp.toSec(); 
+  last_pose = pose;
   return;
 }
 

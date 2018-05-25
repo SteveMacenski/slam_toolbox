@@ -1,11 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(slam_karto)
 
-# if (catkin_FOUND), else(), endif() for compiling only things with dependencies available. QUIET option
-
 add_compile_options(-std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
-set(CMAKE_CXX_FLAGS "-fpermissive -std=c++0x")                                                                            
+set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")                                                                            
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive") 
 
 find_package(catkin REQUIRED
@@ -22,6 +20,7 @@ find_package(catkin REQUIRED
     visualization_msgs
     pluginlib
     message_generation
+    std_srvs
 )
 
 find_package(PkgConfig REQUIRED)
@@ -29,10 +28,6 @@ find_package(Eigen3 REQUIRED)
 find_package(CSparse REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Cholmod REQUIRED)
-
-#find_package(MKL REQUIRED)
-#find_package(GTSAM REQUIRED)
-
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
 include_directories(include ${catkin_INCLUDE_DIRS} 
@@ -49,11 +44,14 @@ add_service_files(DIRECTORY srvs
   Pause.srv
   ClearQueue.srv
 )
-generate_messages()
+generate_messages(
+  DEPENDENCIES
+  std_srvs
+)
 
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES spa_solver_plugin g2O_solver_plugin ceres_solver_plugin #GTSAM_solver_plugin
+    LIBRARIES spa_solver_plugin g2O_solver_plugin ceres_solver_plugin
     CATKIN_DEPENDS
       message_filters
       nav_msgs
@@ -66,6 +64,7 @@ catkin_package(
       visualization_msgs
       pluginlib
       message_runtime
+      std_srvs
 )
 
 #### SPA
@@ -92,19 +91,11 @@ target_link_libraries(g2O_solver_plugin ${catkin_LIBRARIES}
                                         ${CSPARSE_LIBRARY}
 )
 
-#### GTSAM
-#add_library(GTSAM_solver_plugin solvers/GTSAM_solver.cpp)
-#target_link_libraries(GTSAM_solver_plugin ${catkin_LIBRARIES}
-#                                          ${MKL_LIBRARIES}
-#                                          ${GTSAM_INCLUDE_DIRS}
-#                                          ${GTSAM_INCLUDE_DIR}
-#                                          ${GTSAM_LIBRARIES}
-#)
-
 add_executable(slam_karto src/slam_karto.cpp)
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(slam_karto ${catkin_LIBRARIES})
 
-install(TARGETS slam_karto spa_solver_plugin g2O_solver_plugin ceres_solver_plugin  #GTSAM_solver_plugin
+install(TARGETS slam_karto spa_solver_plugin g2O_solver_plugin ceres_solver_plugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

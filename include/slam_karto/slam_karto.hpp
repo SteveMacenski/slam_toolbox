@@ -109,7 +109,7 @@ private:
   std::string odom_frame_, map_frame_, base_frame_;
   int throttle_scans_;
   ros::Duration map_update_interval_;
-  double resolution_, minimum_time_interval_;
+  double resolution_, minimum_time_interval_, minimum_travel_distance_;
   bool publish_occupancy_map_;
 
   // Karto bookkeeping
@@ -123,7 +123,7 @@ private:
   boost::thread *transform_thread_, *run_thread_, *visualization_thread_;
   tf::Transform map_to_odom_;
   bool paused_, inverted_laser_;
-  double last_scan_time_, max_laser_range_;
+  double max_laser_range_;
   karto::Pose2 current_pose_;
   std::queue<posed_scan> q_;
   boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_;

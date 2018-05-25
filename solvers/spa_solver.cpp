@@ -52,9 +52,11 @@ void SpaSolver::Compute()
 
   typedef std::vector<sba::Node2d, Eigen::aligned_allocator<sba::Node2d> > NodeVector;
 
-  ROS_INFO("Calling doSPA for loop closure");
-  m_Spa.doSPA(40);
-  ROS_INFO("Finished doSPA for loop closure");
+
+  const ros::Time start_time = ros::Time::now();
+  m_Spa.doSPA(40, 1.0e-4, 1);
+  ROS_INFO("Loop Closure Solve time: %f seconds", (ros::Time::now() - start_time).toSec());
+
   NodeVector nodes = m_Spa.getNodes();
   forEach(NodeVector, &nodes)
   {
