@@ -481,14 +481,15 @@ void SlamKarto::publishGraph()
     }
   }
 
-  if(interactive_mode_)
+  if(!interactive_mode_)
   {
-    interactive_server_->applyChanges();
+    interactive_server_->clear();
   }
-  else
-  {
-    marker_publisher_.publish(marray);
-  }
+
+  // if disabled, clears out old markers
+  interactive_server_->applyChanges();
+  marker_publisher_.publish(marray);
+
   return;
 }
 
@@ -514,7 +515,7 @@ void SlamKarto::processInteractiveFeedback(const \
       tf::quaternionMsgToTF(feedback->pose.orientation, quat);
       tf::Matrix3x3 mat(quat);
       mat.getRPY(roll, pitch, yaw);
-      MoveNode(id-1, Eigen::Vector3d(feedback->pose.position.x,feedback->pose.position.y, yaw));
+      MoveNode(id-1, Eigen::Vector3d(feedback->pose.position.x,feedback->pose.position.y, yaw), true);
       publishGraph();  
     }
   }
@@ -739,6 +740,24 @@ bool SlamKarto::pauseCallback(slam_karto::Pause::Request  &req,
 }
 
 /*****************************************************************************/
+bool SlamKarto::manualLoopClosureCallback(slam_karto::LoopClosure::Request  &req,
+                                          slam_karto::LoopClosure::Response &resp)
+/*****************************************************************************/
+{
+  // do something to take change feedback from rviz interactive marker(s)
+
+  // give to move node
+
+  // optimize
+
+  // republish
+
+
+  return true;
+}
+
+
+/*****************************************************************************/
 bool SlamKarto::InteractiveCallback(slam_karto::ToggleInteractive::Request  &req,
                                     slam_karto::ToggleInteractive::Response &resp)
 /*****************************************************************************/
@@ -838,11 +857,14 @@ void SlamKarto::Run()
 }
 
 /*****************************************************************************/
-void SlamKarto::MoveNode(const int& id, const Eigen::Vector3d& pose)
+void SlamKarto::MoveNode(const int& id, const Eigen::Vector3d& pose, const bool correct)
 /*****************************************************************************/
 {
   solver_->ModifyNode(id, pose);
-  mapper_->CorrectPoses();
+  if (correct)
+  {
+    mapper_->CorrectPoses();
+  }
 }
 
 /*****************************************************************************/

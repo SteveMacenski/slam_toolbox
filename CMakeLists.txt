@@ -48,6 +48,7 @@ add_service_files(DIRECTORY srvs
   ToggleInteractive.srv
   Clear.srv
   SaveMap.srv
+  LoopClosure.srv
 )
 generate_messages(
   DEPENDENCIES

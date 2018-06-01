@@ -48,6 +48,7 @@
 #include "slam_karto/ToggleInteractive.h"
 #include "slam_karto/Clear.h"
 #include "slam_karto/SaveMap.h"
+#include "slam_karto/LoopClosure.h"
 
 #include <string>
 #include <map>
@@ -99,6 +100,8 @@ private:
                             slam_karto::Clear::Response &resp);
   bool saveMapCallback(slam_karto::SaveMap::Request  &req,
                        slam_karto::SaveMap::Response &resp);
+  bool manualLoopClosureCallback(slam_karto::LoopClosure::Request  &req,
+                                 slam_karto::LoopClosure::Response &resp);
 
   // functional bits
   bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
@@ -108,7 +111,7 @@ private:
                karto::Pose2& karto_pose);
   bool updateMap();
   void publishGraph();
-  void MoveNode(const int& id, const Eigen::Vector3d& pose);
+  void MoveNode(const int& id, const Eigen::Vector3d& pose, const bool correct = true);
   void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
   // state
