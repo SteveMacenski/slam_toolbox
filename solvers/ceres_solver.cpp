@@ -16,42 +16,83 @@ namespace solver_plugins
 
 /*****************************************************************************/
 CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>()),
-                             problem_(new ceres::Problem())
+                             problem_(new ceres::Problem()), was_constant_set_(false)
 /*****************************************************************************/
 {
-  // set params
-  was_constant_set_ = false;
+  ros::NodeHandle nh;
+  _times_server = nh.advertiseService("/get_times", &CeresSolver::get_times, this);
+
+  corrections_.clear();
 
   // formulate problem
   angle_local_parameterization_ = AngleLocalParameterization::Create();
-  loss_function_ = NULL; //HuberLoss, SoftLOneLoss, CauchyLoss, CauchyLoss 
+  loss_function_ = NULL; //HuberLoss, CauchyLoss
   first_node_ = nodes_->end();
 
-  options_.max_num_iterations = 100;
-  options_.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY; // DENSE_SCHUR, SPARSE_NORMAL_CHOLESKY, DENSE_NORMAL_CHOLESKY, DENSE_QR, SPARSE_SCHUR, ITERATIVE_SCHUR, CGNR
-  options_.num_threads = 5;
+  options_.linear_solver_type = ceres::SPARSE_SCHUR; // SPARSE_NORMAL_CHOLESKY, SPARSE_SCHUR
+  options_.preconditioner_type = ceres::IDENTITY; //JACOBI; IDENTITY, **SCHUR_JACOBI
 
-  /*
-  options_minimizer_type = LEVENBERG_MARQUARDT;
-  options_.tau = 1e-4;
-  options_.min_mu = 1e-20;
-  options_.min_relative_decrease = 1e-3;
-  options_.function_tolerance = 1e-6;
-  options_.gradient_tolerance = 1e-10;
-  options_.parameter_tolerance = 1e-8;
-  options_.preconditioner_type = JACOBI;
-  options_.num_linear_solver_threads = 1;
-  options_.num_eliminate_blocks = 0;
-  options_.ordering_type = NATURAL;
-  options_.linear_solver_max_num_iterations = 500;
-  options_.eta = 1e-1;
-  options_.jacobi_scaling = true;
-  options_.logging_type = PER_MINIMIZER_ITERATION;
-  options_.minimizer_progress_to_stdout = false;
-  options_.check_gradients = false;
-  options_.gradient_check_relative_precision = 1e-8;
-  options_.numeric_derivative_relative_step_size = 1e-6;
-  */
+  if (options_.preconditioner_type == ceres::CLUSTER_JACOBI || options_.preconditioner_type == ceres::CLUSTER_TRIDIAGONAL)
+  {
+    options_.visibility_clustering_type = ceres::CANONICAL_VIEWS; //CANONICAL_VIEWS ***SINGLE_LINKAGE 
+  }
+
+  options_.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT; //LEVENBERG_MARQUARDT, DOGLEG 
+
+  if(options_.trust_region_strategy_type == ceres::DOGLEG)
+  {
+    options_.dogleg_type = ceres::TRADITIONAL_DOGLEG; //TRADITIONAL_DOGLEG, SUBSPACE_DOGLEG
+  }
+
+  // could be that residual is too small so autodifferentiation is too slow
+  // could be that we have a pretty "solved" problem we're refining, bound more
+
+
+
+
+  options_.jacobi_scaling = true; //true
+
+  options_.function_tolerance = 1e-2; //1e-6    //e-10 F
+  options_.gradient_tolerance = 1e-6; //1e-10
+  options_.parameter_tolerance = 1e-4; //1e-8
+  options_.eta = 1e-1; //1e-1   Ge-2
+
+  options_.use_nonmonotonic_steps = true; // false
+  options_.min_relative_decrease = 1e-3; //1e-3
+
+  options_.initial_trust_region_radius = 1e4; //1e4
+  options_.max_trust_region_radius = 1e8; //1e16
+  options_.min_trust_region_radius = 1e-16; //1e-32
+
+  options_.min_lm_diagonal = 1e-6; //1e-6
+  options_.max_lm_diagonal = 1e32; //1e32
+
+  // immutable.
+  options_.sparse_linear_algebra_library_type = ceres::SUITE_SPARSE;
+  options_.minimizer_type = ceres::TRUST_REGION;
+  options_.max_num_iterations = 50;
+  options_.max_num_consecutive_invalid_steps = 3;
+  options_.max_consecutive_nonmonotonic_steps = 3;
+  options_.num_threads = 50;
+  if(options_.linear_solver_type == ceres::SPARSE_NORMAL_CHOLESKY)
+  {
+    options_.dynamic_sparsity = true; // ~10-20% speed up as graph grows with CHOL
+  }
+  else if(options_.linear_solver_type == ceres::ITERATIVE_SCHUR)
+  {
+    options_.use_explicit_schur_complement = false; // can help significantly for small to medium sized problems
+  }
+}
+
+bool CeresSolver::get_times(std_srvs::Empty::Request& e, std_srvs::Empty::Response& e2)
+{
+  std::string s;
+  for (int i=0; i!=_times.size();i++)
+  {
+    s += " " + std::to_string(_times[i]);
+  }
+  ROS_INFO("%s", s.c_str());
+  return true;
 }
 
 /*****************************************************************************/
@@ -82,13 +123,15 @@ void CeresSolver::Compute()
 {
   if (nodes_->size() == 0)
   {
-    ROS_ERROR("Ceres was called when there are no nodes. This shouldn't happen.");
+    ROS_ERROR("CeresSolver: Ceres was called when there are no nodes."
+              " This shouldn't happen.");
     return;
   }
 
   // populate contraint for static initial pose
   if (!was_constant_set_ && first_node_ != nodes_->end())
   {
+    ROS_INFO("CeresSolver: Setting first node as a constant pose.");
     problem_->SetParameterBlockConstant(&first_node_->second(0));
     problem_->SetParameterBlockConstant(&first_node_->second(1));
     problem_->SetParameterBlockConstant(&first_node_->second(2));
@@ -98,11 +141,14 @@ void CeresSolver::Compute()
   const ros::Time start_time = ros::Time::now();
   ceres::Solver::Summary summary;
   ceres::Solve(options_, problem_, &summary);
-  ROS_INFO("Loop Closure Solve time: %f seconds", (ros::Time::now() - start_time).toSec());
+  std::cout << summary.FullReport() << '\n';
+  _times.push_back((ros::Time::now() - start_time).toSec());
+  ROS_INFO("Loop Closure Solve time: %f seconds", _times.back());
 
   if (!summary.IsSolutionUsable())
   {
-    ROS_WARN("Ceres could not find a usable solution to optimize.");
+    ROS_WARN("CeresSolver: "
+                          "Ceres could not find a usable solution to optimize.");
     return;
   }
 
@@ -113,7 +159,7 @@ void CeresSolver::Compute()
   }
   corrections_.reserve(nodes_->size());
   karto::Pose2 pose;
-  std::unordered_map<int, Eigen::Vector3d>::const_iterator iter = nodes_->begin();
+  const_graph_iterator iter = nodes_->begin();
   for ( iter; iter != nodes_->end(); ++iter )
   {
     pose.SetX(iter->second(0));
@@ -164,13 +210,13 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   // get IDs in graph for this edge
   boost::mutex::scoped_lock lock(nodes_mutex_);
   const int node1 = pEdge->GetSource()->GetObject()->GetUniqueId();
-  std::unordered_map<int, Eigen::Vector3d>::iterator node1it = nodes_->find(node1);
+  graph_iterator node1it = nodes_->find(node1);
   const int node2 = pEdge->GetTarget()->GetObject()->GetUniqueId();
-  std::unordered_map<int, Eigen::Vector3d>::iterator node2it = nodes_->find(node2);
+  graph_iterator node2it = nodes_->find(node2);
 
   if (node1it ==  nodes_->end() || node2it == nodes_->end() || node1it == node2it)
   {
-    ROS_WARN("Failed to add constraint, could not find nodes.");
+    ROS_WARN("CeresSolver: Failed to add constraint, could not find nodes.");
     return;
   }
 
@@ -200,15 +246,27 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 }
 
 /*****************************************************************************/
+void CeresSolver::ModifyNode(const int& unique_id, Eigen::Vector3d& pose)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+  graph_iterator it = nodes_->find(unique_id);
+  if (it != nodes_->end())
+  {
+    it->second = pose;
+  }
+}
+
+/*****************************************************************************/
 void CeresSolver::getGraph(std::vector<Eigen::Vector2d> &g)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(nodes_mutex_);
-  g.reserve(nodes_->size());
-  std::unordered_map<int,Eigen::Vector3d>::const_iterator it = nodes_->begin();
+  g.resize(nodes_->size());
+  const_graph_iterator it = nodes_->begin();
   for (it; it!=nodes_->end(); ++it)
   {
-    g.push_back(Eigen::Vector2d(it->second(0), it->second(1)));
+    g[it->first] = Eigen::Vector2d(it->second(0), it->second(1));
   }
   return;
 }

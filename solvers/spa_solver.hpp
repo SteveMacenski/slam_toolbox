@@ -49,6 +49,8 @@ public:
 
   virtual void getGraph(std::vector<Eigen::Vector2d> &g);
 
+  virtual void ModifyNode(const int& unique_id, const Eigen::Vector3d& pose);
+
 private:
   karto::ScanSolver::IdPoseVector corrections;
 

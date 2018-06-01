@@ -27,9 +27,12 @@ SlamKarto::SlamKarto() : laser_count_(0),
                          visualization_thread_(NULL),
                          solver_loader_("slam_karto", "karto::ScanSolver"),
                          paused_(false),
+                         interactive_mode_(false),
                          tf_(ros::Duration(14400.)) // 4 hours
 /*****************************************************************************/
 {
+  interactive_server_ = new interactive_markers::InteractiveMarkerServer("slam_2d_toolbox","",true);
+
   mapper_ = new karto::Mapper();
   dataset_ = new karto::Dataset();
 
@@ -106,7 +109,7 @@ void SlamKarto::setParams(ros::NodeHandle& private_nh_)
       ros::console::notifyLoggerLevelsChanged();   
     }
   }
-  // Setting General Parameters from the Parameter Server
+  // Setting General Parameters
   bool use_scan_matching;
   if(private_nh_.getParam("use_scan_matching", use_scan_matching))
     mapper_->setParamUseScanMatching(use_scan_matching);
@@ -163,7 +166,7 @@ void SlamKarto::setParams(ros::NodeHandle& private_nh_)
   if(private_nh_.getParam("loop_match_minimum_response_fine", loop_match_minimum_response_fine))
     mapper_->setParamLoopMatchMinimumResponseFine(loop_match_minimum_response_fine);
 
-  // Setting Correlation Parameters from the Parameter Server
+  // Setting Correlation Parameters
   double correlation_search_space_dimension;
   if(private_nh_.getParam("correlation_search_space_dimension", correlation_search_space_dimension))
     mapper_->setParamCorrelationSearchSpaceDimension(correlation_search_space_dimension);
@@ -176,7 +179,7 @@ void SlamKarto::setParams(ros::NodeHandle& private_nh_)
   if(private_nh_.getParam("correlation_search_space_smear_deviation", correlation_search_space_smear_deviation))
     mapper_->setParamCorrelationSearchSpaceSmearDeviation(correlation_search_space_smear_deviation);
 
-  // Setting Correlation Parameters, Loop Closure Parameters from the Parameter Server
+  // Setting Correlation Parameters, Loop Closure Parameters
   double loop_search_space_dimension;
   if(private_nh_.getParam("loop_search_space_dimension", loop_search_space_dimension))
     mapper_->setParamLoopSearchSpaceDimension(loop_search_space_dimension);
@@ -189,7 +192,7 @@ void SlamKarto::setParams(ros::NodeHandle& private_nh_)
   if(private_nh_.getParam("loop_search_space_smear_deviation", loop_search_space_smear_deviation))
     mapper_->setParamLoopSearchSpaceSmearDeviation(loop_search_space_smear_deviation);
 
-  // Setting Scan Matcher Parameters from the Parameter Server
+  // Setting Scan Matcher Parameters
   double distance_variance_penalty;
   if(private_nh_.getParam("distance_variance_penalty", distance_variance_penalty))
     mapper_->setParamDistanceVariancePenalty(distance_variance_penalty);
@@ -233,10 +236,11 @@ void SlamKarto::setROSInterfaces()
   ssMap_ = node_.advertiseService("dynamic_map", &SlamKarto::mapCallback, this);
   ssPause_ = node_.advertiseService("pause", &SlamKarto::pauseCallback, this);
   ssClear_ = node_.advertiseService("clear_queue", &SlamKarto::clearQueueCallback, this);
+  ssInteractive_ = node_.advertiseService("toggle_interactive_mode", &SlamKarto::InteractiveCallback,this);
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node_, "scan", 5);
   scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
   scan_filter_->registerCallback(boost::bind(&SlamKarto::laserCallback, this, _1));
-  marker_publisher_ = node_.advertise<visualization_msgs::MarkerArray>("graph_visualization",1);
+  marker_publisher_ = node_.advertise<visualization_msgs::MarkerArray>("karto_graph_visualization",1);
 }
 
 /*****************************************************************************/
@@ -270,6 +274,10 @@ SlamKarto::~SlamKarto()
   for (it; it!=lasers_.end(); ++it)
   {
     delete it->second;
+  }
+  if (interactive_server_)
+  {
+    delete interactive_server_;
   }
 }
 
@@ -312,7 +320,7 @@ void SlamKarto::publishVisualizations()
     while(ros::ok())
     {
       updateMap();
-      publishGraphVisualization();
+      publishGraph();
       r.sleep();
     }
   }
@@ -418,49 +426,103 @@ bool SlamKarto::getOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
 }
 
 /*****************************************************************************/
-void SlamKarto::publishGraphVisualization()
+void SlamKarto::publishGraph()
 /*****************************************************************************/
 {
-  if (marker_publisher_.getNumSubscribers() == 0)
-  {
-    return;
-  }
-
   std::vector<Eigen::Vector2d> graph;
   solver_->getGraph(graph);
 
   ROS_INFO_THROTTLE(15.,"Graph size: %i",(int)graph.size());
 
   visualization_msgs::MarkerArray marray;
-
   visualization_msgs::Marker m;
   m.header.frame_id = "map";
   m.header.stamp = ros::Time::now();
-  m.id = 0;
-  m.ns = "2d_slam_toolbox";
+  m.ns = "slam_2d_toolbox";
   m.type = visualization_msgs::Marker::SPHERE;
-  m.pose.position.x = 0.0;
-  m.pose.position.y = 0.0;
   m.pose.position.z = 0.0;
-  m.scale.x = 0.1;
-  m.scale.y = 0.1;
-  m.scale.z = 0.1;
-  m.color.r = 1.0;
-  m.color.g = 0;
-  m.color.b = 0.0;
-  m.color.a = 1.0;
+  m.pose.orientation.w = 1.;
+  m.scale.x = 0.1; m.scale.y = 0.1; m.scale.z = 0.1;
+  m.color.r = 1.0; m.color.g = 0; m.color.b = 0.0; m.color.a = 1.0;
   m.action = visualization_msgs::Marker::ADD;
   m.lifetime = ros::Duration(0.);
 
   uint i=0;
-  for (i; i<graph.size(); i++) 
+  for (i; i < graph.size(); i++) 
   {
-    m.id = i;
+    m.id = i+1;
     m.pose.position.x = graph[i](0);
     m.pose.position.y = graph[i](1);
-    marray.markers.push_back(visualization_msgs::Marker(m));
+
+    if (interactive_mode_)
+    {
+      visualization_msgs::InteractiveMarker int_marker;
+      int_marker.header.frame_id = "map";
+      int_marker.header.stamp = ros::Time::now();
+      int_marker.description = "slam_2d_toolbox";
+      int_marker.name = std::to_string(i+1);
+      int_marker.pose.orientation.w = 1.;
+
+      visualization_msgs::InteractiveMarkerControl control;
+      control.always_visible = true;
+      control.markers.push_back( m );
+      control.orientation.w = 0;
+      control.orientation.x = 0.7071;
+      control.orientation.y = 0;
+      control.orientation.z = 0.7071;
+      control.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
+      int_marker.controls.push_back( control );
+
+      interactive_server_->insert(int_marker, boost::bind(&SlamKarto::processInteractiveFeedback, this, _1));
+    }
+    else
+    {
+      marray.markers.push_back(visualization_msgs::Marker(m));
+    }
   }
-  marker_publisher_.publish(marray);
+
+  if(interactive_mode_)
+  {
+    interactive_server_->applyChanges();
+  }
+  else
+  {
+    marker_publisher_.publish(marray);
+  }
+  return;
+}
+
+/*****************************************************************************/
+void SlamKarto::processInteractiveFeedback(const \
+               visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+/*****************************************************************************/
+{
+
+  // if moved and then button push, do
+  // how to reset // not disappear while modifying (mode and passes this thread until unlocked)
+
+  if (feedback->event_type == \
+                   visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
+  {
+    const int id = std::stoi(feedback->marker_name,nullptr,10);
+    ROS_INFO_STREAM( id << " is now at " << feedback->pose.position.x << ", " << feedback->pose.position.y << ", " << feedback->pose.position.z );
+
+    if(false) //button to save changes
+    {
+      tfScalar yaw, pitch, roll;
+      tf::Quaternion quat;
+      tf::quaternionMsgToTF(feedback->pose.orientation, quat);
+      tf::Matrix3x3 mat(quat);
+      mat.getRPY(roll, pitch, yaw);
+      MoveNode(id-1, Eigen::Vector3d(feedback->pose.position.x,feedback->pose.position.y, yaw));
+      publishGraph();  
+    }
+  }
+  else if (feedback->event_type == \
+                   visualization_msgs::InteractiveMarkerFeedback::MOUSE_DOWN)
+  {
+    //  publish underlying laser scan message in the frame of the marker to help
+  }
 }
 
 /*****************************************************************************/
@@ -677,6 +739,28 @@ bool SlamKarto::pauseCallback(slam_karto::Pause::Request  &req,
 }
 
 /*****************************************************************************/
+bool SlamKarto::InteractiveCallback(slam_karto::ToggleInteractive::Request  &req,
+                                    slam_karto::ToggleInteractive::Response &resp)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(interactive_mutex_);
+  interactive_mode_ = !interactive_mode_;
+  ROS_INFO("SlamKarto: Toggling %s interactive mode.", 
+                                             interactive_mode_ ? "on" : "off");
+  publishGraph();
+  return true;
+}
+
+/*****************************************************************************/
+bool SlamKarto::clearChangesCallback(slam_karto::Clear::Request  &req,
+                                     slam_karto::Clear::Response &resp)
+/*****************************************************************************/
+{
+  publishGraph();
+  return true;
+}
+
+/*****************************************************************************/
 bool SlamKarto::clearQueueCallback(slam_karto::ClearQueue::Request& req,
                                    slam_karto::ClearQueue::Response& resp)
 /*****************************************************************************/
@@ -684,6 +768,26 @@ bool SlamKarto::clearQueueCallback(slam_karto::ClearQueue::Request& req,
   std::queue<posed_scan> empty;
   std::swap( q_, empty );
   resp.status = true;
+  return true;
+}
+
+/*****************************************************************************/
+bool SlamKarto::saveMapCallback(slam_karto::SaveMap::Request  &req,
+                                slam_karto::SaveMap::Response &resp)
+/*****************************************************************************/
+{
+  const std::string name = req.name.data;
+  if (name != "")
+  {
+    ROS_INFO("SlamKarto: Saving map as %s.", name.c_str());
+    system(("rosrun map_server map_saver -f " + name).c_str());
+  }
+  else
+  {
+    ROS_INFO("SlamKarto: Saving map in current directory.");
+    system("rosrun map_server map_saver");
+  }
+  ros::Duration(1.0).sleep();
   return true;
 }
 
@@ -731,6 +835,14 @@ void SlamKarto::Run()
     }
     r.sleep();
   }
+}
+
+/*****************************************************************************/
+void SlamKarto::MoveNode(const int& id, const Eigen::Vector3d& pose)
+/*****************************************************************************/
+{
+  solver_->ModifyNode(id, pose);
+  mapper_->CorrectPoses();
 }
 
 /*****************************************************************************/

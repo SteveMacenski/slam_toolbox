@@ -24,7 +24,15 @@
 #include "tf/transform_broadcaster.h"
 #include "tf/transform_listener.h"
 #include "tf/message_filter.h"
+#include <tf/LinearMath/Matrix3x3.h>
+#include <tf/transform_datatypes.h>
 #include "visualization_msgs/MarkerArray.h"
+#include <visualization_msgs/InteractiveMarker.h>
+#include <visualization_msgs/InteractiveMarkerControl.h> 
+#include <visualization_msgs/InteractiveMarkerFeedback.h>
+
+#include <interactive_markers/interactive_marker_server.h>
+#include <interactive_markers/menu_handler.h>
 #include <pluginlib/class_loader.h>
 
 #include "nav_msgs/MapMetaData.h"
@@ -37,11 +45,15 @@
 
 #include "slam_karto/Pause.h"
 #include "slam_karto/ClearQueue.h"
+#include "slam_karto/ToggleInteractive.h"
+#include "slam_karto/Clear.h"
+#include "slam_karto/SaveMap.h"
 
 #include <string>
 #include <map>
 #include <vector>
 #include <queue>
+#include <cstdlib>
 
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
@@ -81,6 +93,12 @@ private:
                      slam_karto::Pause::Response& resp);
   bool clearQueueCallback(slam_karto::ClearQueue::Request& req,
                           slam_karto::ClearQueue::Response& resp);
+  bool InteractiveCallback(slam_karto::ToggleInteractive::Request  &req,
+                           slam_karto::ToggleInteractive::Response &resp);
+  bool clearChangesCallback(slam_karto::Clear::Request  &req,
+                            slam_karto::Clear::Response &resp);
+  bool saveMapCallback(slam_karto::SaveMap::Request  &req,
+                       slam_karto::SaveMap::Response &resp);
 
   // functional bits
   bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
@@ -89,7 +107,9 @@ private:
                const sensor_msgs::LaserScan::ConstPtr& scan,
                karto::Pose2& karto_pose);
   bool updateMap();
-  void publishGraphVisualization();
+  void publishGraph();
+  void MoveNode(const int& id, const Eigen::Vector3d& pose);
+  void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
   // state
   bool isPaused();
@@ -102,7 +122,7 @@ private:
   message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
   tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
   ros::Publisher sst_, sstm_, marker_publisher_;
-  ros::ServiceServer ssMap_, ssPause_, ssClear_;
+  ros::ServiceServer ssMap_, ssPause_, ssClear_, ssInteractive_;
   nav_msgs::GetMap::Response map_;
 
   // Storage for ROS parameters
@@ -126,7 +146,11 @@ private:
   double max_laser_range_;
   karto::Pose2 current_pose_;
   std::queue<posed_scan> q_;
-  boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_;
+  boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_, interactive_mutex_;
+
+  // visualization
+  interactive_markers::InteractiveMarkerServer* interactive_server_;
+  bool interactive_mode_;
 
   // pluginlib
   pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;

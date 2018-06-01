@@ -82,8 +82,6 @@ class PoseGraph2dErrorTerm
     return (new ceres::AutoDiffCostFunction<PoseGraph2dErrorTerm, 3, 1, 1, 1, 1, 1, 1>(new PoseGraph2dErrorTerm(x_ab, y_ab, yaw_ab_radians, sqrt_information)));
   }
 
-
-
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:
   // The position of B relative to A in the A frame.

@@ -84,6 +84,8 @@ class G2OSolver : public karto::ScanSolver
         useRobustKernel_ = flag;
     }
 
+    virtual void ModifyNode(const int& unique_id, const Eigen::Vector3d& pose); // change a node's pose
+
   private:
     
     karto::ScanSolver::IdPoseVector corrections_;

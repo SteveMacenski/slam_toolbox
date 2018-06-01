@@ -27,6 +27,8 @@
   <build_depend>visualization_msgs</build_depend>
   <build_depend>message_generation</build_depend>
   <build_depend>std_srvs</build_depend>
+  <build_depend>interactive_markers</build_depend>
+  <build_depend>std_msgs</build_depend>
   <run_depend>eigen</run_depend>
   <run_depend>pluginlib</run_depend>
   <run_depend>message_filters</run_depend>
@@ -40,6 +42,8 @@
   <run_depend>visualization_msgs</run_depend>
   <run_depend>message_runtime</run_depend>
   <run_depend>std_srvs</run_depend>
+  <run_depend>interactive_markers</run_depend>
+  <run_depend>std_msgs</run_depend>
 
   <export>
     <slam_karto plugin="${prefix}/solver_plugins.xml" />

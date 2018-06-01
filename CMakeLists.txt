@@ -21,6 +21,8 @@ find_package(catkin REQUIRED
     pluginlib
     message_generation
     std_srvs
+    std_msgs
+    interactive_markers
 )
 
 find_package(PkgConfig REQUIRED)
@@ -43,10 +45,14 @@ add_service_files(DIRECTORY srvs
   FILES
   Pause.srv
   ClearQueue.srv
+  ToggleInteractive.srv
+  Clear.srv
+  SaveMap.srv
 )
 generate_messages(
   DEPENDENCIES
   std_srvs
+  std_msgs
 )
 
 catkin_package(
@@ -65,6 +71,8 @@ catkin_package(
       pluginlib
       message_runtime
       std_srvs
+      std_msgs
+      interactive_markers
 )
 
 #### SPA

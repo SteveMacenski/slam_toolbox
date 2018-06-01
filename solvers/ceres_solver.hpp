@@ -6,6 +6,9 @@
 #ifndef KARTO_CERESSOLVER_H
 #define KARTO_CERESSOLVER_H
 
+#include <ros/ros.h>
+#include <std_srvs/Empty.h>
+
 #include <vector>
 #include <unordered_map>
 #include <utility>
@@ -14,6 +17,7 @@
 #include <ceres/ceres.h>
 #include <ceres/local_parameterization.h>
 #include <cmath>
+#include <math.h>
 
 #include "ceres_utils.h"
 
@@ -21,6 +25,8 @@ namespace solver_plugins
 {
 
 typedef std::vector<karto::Matrix3> CovarianceVector;
+typedef std::unordered_map<int, Eigen::Vector3d>::iterator graph_iterator;
+typedef std::unordered_map<int, Eigen::Vector3d>::const_iterator const_graph_iterator;
 
 class CeresSolver : public karto::ScanSolver
 {
@@ -37,6 +43,8 @@ public:
   virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge); //Adds a constraint to the solver
   virtual void getGraph(std::vector<Eigen::Vector2d> &g); //Get graph stored
 
+  virtual void ModifyNode(const int& unique_id, Eigen::Vector3d& pose); // change a node's pose
+
 private:
   // karto
   karto::ScanSolver::IdPoseVector corrections_;
@@ -52,6 +60,11 @@ private:
   std::unordered_map<int, Eigen::Vector3d>* nodes_;
   std::unordered_map<int, Eigen::Vector3d>::iterator first_node_;
   boost::mutex nodes_mutex_;
+
+  // temp logging 
+  std::vector<double> _times;
+  ros::ServiceServer _times_server;
+  bool get_times(std_srvs::Empty::Request& e, std_srvs::Empty::Response& e2);
 };
 
 }

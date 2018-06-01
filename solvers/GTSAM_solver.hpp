@@ -77,18 +77,16 @@ class GTSAMSolver : public karto::ScanSolver
      * 
      * @param g the graph
      */
-    void getGraph(std::vector<Eigen::Vector2d> &nodes); // std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges);
+    virtual void getGraph(std::vector<Eigen::Vector2d> &nodes); // std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges);
+
+    virtual void ModifyNode(const int& unique_id, const Eigen::Vector3d& pose); // change a node's pose
 
   private:
     
     karto::ScanSolver::IdPoseVector corrections_;
-
     gtsam::NonlinearFactorGraph graph_;
-
     gtsam::Values initialGuess_;
-
     std::vector<Eigen::Vector2d> graphNodes_;
-
 };
 
 } // end namespace 
