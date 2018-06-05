@@ -30,6 +30,7 @@ find_package(Eigen3 REQUIRED)
 find_package(CSparse REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Cholmod REQUIRED)
+find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
 include_directories(include ${catkin_INCLUDE_DIRS} 
