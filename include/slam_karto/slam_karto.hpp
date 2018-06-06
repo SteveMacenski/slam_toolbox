@@ -113,6 +113,8 @@ private:
   void publishGraph();
   void MoveNode(const int& id, const Eigen::Vector3d& pose, const bool correct = true);
   void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void ClearMovedNodes();
+  void AddMovedNodes(const int& id, Eigen::Vector3d vec);
 
   // state
   bool isPaused();
@@ -149,11 +151,12 @@ private:
   double max_laser_range_;
   karto::Pose2 current_pose_;
   std::queue<posed_scan> q_;
-  boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_, interactive_mutex_;
+  boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_, interactive_mutex_, moved_nodes_mutex;
 
   // visualization
   interactive_markers::InteractiveMarkerServer* interactive_server_;
   bool interactive_mode_;
+  std::map<int, Eigen::Vector3d> moved_nodes_;
 
   // pluginlib
   pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;

@@ -6,7 +6,14 @@
 # angle_variance_penalty: 0.20    
 # minimum_angle_penalty: 1.6 #0.9
 
-# ROS params
+# Ceres params
+ceres_linear_solver: SPARSE_NORMAL_CHOLESKY #ITERATIVE_SCHUR CGNR SPARSE_SCHUR
+ceres_preconditioner: JACOBI #IDENTITY SCHUR_JACOBI
+ceres_trust_strategy: LEVENBERG_MARQUARDT # DOGLEG 
+ceres_dogleg_type: TRADITIONAL_DOGLEG #SUBSPACE_DOGLEG
+ceres_loss_function: None
+
+# ROS Parameters
 solver_plugin: solver_plugins::CeresSolver
 odom_frame: odom
 map_frame: map

@@ -19,37 +19,91 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
                              problem_(new ceres::Problem()), was_constant_set_(false)
 /*****************************************************************************/
 {
-  ros::NodeHandle nh;
+  ros::NodeHandle nh("~");
   _times_server = nh.advertiseService("/get_times", &CeresSolver::get_times, this);
+  std::string solver_type, preconditioner_type, dogleg_type, trust_strategy, loss_fn;
+  nh.getParam("ceres_linear_solver", solver_type);
+  nh.getParam("ceres_preconditioner", preconditioner_type);
+  nh.getParam("ceres_dogleg_type", dogleg_type);
+  nh.getParam("ceres_trust_strategy", trust_strategy);
+  nh.getParam("ceres_loss_function", loss_fn);
 
   corrections_.clear();
+  first_node_ = nodes_->end();
 
   // formulate problem
   angle_local_parameterization_ = AngleLocalParameterization::Create();
-  loss_function_ = NULL; //HuberLoss, CauchyLoss
-  first_node_ = nodes_->end();
 
-  options_.linear_solver_type = ceres::SPARSE_SCHUR; // SPARSE_NORMAL_CHOLESKY, SPARSE_SCHUR
-  options_.preconditioner_type = ceres::IDENTITY; //JACOBI; IDENTITY, **SCHUR_JACOBI
-
-  if (options_.preconditioner_type == ceres::CLUSTER_JACOBI || options_.preconditioner_type == ceres::CLUSTER_TRIDIAGONAL)
+  // choose loss function default squared loss (NULL)
+  loss_function_ = NULL;
+  if (loss_fn == "HuberLoss")
   {
-    options_.visibility_clustering_type = ceres::CANONICAL_VIEWS; //CANONICAL_VIEWS ***SINGLE_LINKAGE 
+    ROS_INFO("CeresSolver: Using HuberLoss loss function.");
+    loss_function_ = new HuberLoss(0.7);
+  }
+  else if (loss_fn == "CauchyLoss")
+  {
+    ROS_INFO("CeresSolver: Using CauchyLoss loss function.");
+    loss_function_ = new CauchyLoss(0.7);
   }
 
-  options_.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT; //LEVENBERG_MARQUARDT, DOGLEG 
+  // choose linear solver default CHOL
+  options_.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+  if (solver_type == "SPARSE_SCHUR")
+  {
+    ROS_INFO("CeresSolver: Using SPARSE_SCHUR solver.");
+    options_.linear_solver_type = ceres::SPARSE_SCHUR;
+  }
+  else if (solver_type == "ITERATIVE_SCHUR")
+  {
+    ROS_INFO("CeresSolver: Using ITERATIVE_SCHUR solver.");
+    options_.linear_solver_type = ceres::ITERATIVE_SCHUR;
+  }
+  else if (solver_type == "CGNR")
+  {
+    ROS_INFO("CeresSolver: Using CGNR solver.");
+    options_.linear_solver_type = ceres::CGNR;
+  }
 
+  // choose preconditioner default Jacobi
+  options_.preconditioner_type = ceres::JACOBI;
+  if (preconditioner_type == "IDENTITY")
+  {
+    ROS_INFO("CeresSolver: Using IDENTITY preconditioner.");
+    options_.preconditioner_type = ceres::IDENTITY;
+  }
+  else if (preconditioner_type == "SCHUR_JACOBI")
+  {
+    ROS_INFO("CeresSolver: Using SCHUR_JACOBI preconditioner.");
+    options_.preconditioner_type = ceres::SCHUR_JACOBI;
+  }
+
+  if (options_.preconditioner_type == ceres::CLUSTER_JACOBI || 
+      options_.preconditioner_type == ceres::CLUSTER_TRIDIAGONAL)
+  {
+    options_.visibility_clustering_type = ceres::SINGLE_LINKAGE;
+  }
+
+  // choose trust region strategy default LM
+  options_.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
+  if (trust_strategy == "DOGLEG")
+  {
+    ROS_INFO("CeresSolver: Using DOGLEG trust region strategy.");
+    options_.trust_region_strategy_type = ceres::DOGLEG;
+  }
+
+  // choose dogleg type default traditional
   if(options_.trust_region_strategy_type == ceres::DOGLEG)
   {
-    options_.dogleg_type = ceres::TRADITIONAL_DOGLEG; //TRADITIONAL_DOGLEG, SUBSPACE_DOGLEG
+    options_.dogleg_type = ceres::TRADITIONAL_DOGLEG;
+    if (dogleg_type == "SUBSPACE_DOGLEG")
+    {
+      ROS_INFO("CeresSolver: Using SUBSPACE_DOGLEG dogleg type.");
+      options_.dogleg_type = ceres::SUBSPACE_DOGLEG;
+    }
   }
 
-  // could be that residual is too small so autodifferentiation is too slow
-  // could be that we have a pretty "solved" problem we're refining, bound more
-
-
-
-
+  // solving dials
   options_.jacobi_scaling = true; //true
 
   options_.function_tolerance = 1e-2; //1e-6    //e-10 F
@@ -67,9 +121,8 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   options_.min_lm_diagonal = 1e-6; //1e-6
   options_.max_lm_diagonal = 1e32; //1e32
 
-  // immutable.
+  // constants
   options_.sparse_linear_algebra_library_type = ceres::SUITE_SPARSE;
-  options_.minimizer_type = ceres::TRUST_REGION;
   options_.max_num_iterations = 50;
   options_.max_num_consecutive_invalid_steps = 3;
   options_.max_consecutive_nonmonotonic_steps = 3;
@@ -78,10 +131,8 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   {
     options_.dynamic_sparsity = true; // ~10-20% speed up as graph grows with CHOL
   }
-  else if(options_.linear_solver_type == ceres::ITERATIVE_SCHUR)
-  {
-    options_.use_explicit_schur_complement = false; // can help significantly for small to medium sized problems
-  }
+
+  return;
 }
 
 bool CeresSolver::get_times(std_srvs::Empty::Request& e, std_srvs::Empty::Response& e2)
@@ -125,6 +176,15 @@ void CeresSolver::Compute()
   {
     ROS_ERROR("CeresSolver: Ceres was called when there are no nodes."
               " This shouldn't happen.");
+    return;
+  }
+
+  boost::mutex::scoped_lock lock(nodes_mutex_, boost::try_to_lock);
+  if (!lock)
+  {
+    ROS_WARN("CeresSolver: Did not achieve lock to compute, "
+              "someone else must be already optimizing "
+              " it's okay, this isn't time critical.");
     return;
   }
 
@@ -253,7 +313,9 @@ void CeresSolver::ModifyNode(const int& unique_id, Eigen::Vector3d& pose)
   graph_iterator it = nodes_->find(unique_id);
   if (it != nodes_->end())
   {
+    double yaw_init = it->second(2);
     it->second = pose;
+    it->second(2)+= yaw_init;
   }
 }
 

@@ -27,7 +27,7 @@ SlamKarto::SlamKarto() : laser_count_(0),
                          visualization_thread_(NULL),
                          solver_loader_("slam_karto", "karto::ScanSolver"),
                          paused_(false),
-                         interactive_mode_(false),
+                         interactive_mode_(true),
                          tf_(ros::Duration(14400.)) // 4 hours
 /*****************************************************************************/
 {
@@ -498,31 +498,27 @@ void SlamKarto::processInteractiveFeedback(const \
                visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
 /*****************************************************************************/
 {
+  // orientation TODO
 
-  // if moved and then button push, do
-  // how to reset // not disappear while modifying (mode and passes this thread until unlocked)
-
+  // was depressed, something moved, and now released
   if (feedback->event_type == \
-                   visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
+      visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP && feedback->mouse_point_valid)
   {
-    const int id = std::stoi(feedback->marker_name,nullptr,10);
-    ROS_INFO_STREAM( id << " is now at " << feedback->pose.position.x << ", " << feedback->pose.position.y << ", " << feedback->pose.position.z );
+    // we offset by 1
+    const int id = std::stoi(feedback->marker_name,nullptr,10) - 1;
+    ROS_INFO_STREAM( id << " is now at " 
+                        << feedback->mouse_point.x << ", " 
+                        << feedback->mouse_point.y << ", " 
+                        << feedback->mouse_point.z );
 
-    if(false) //button to save changes
-    {
-      tfScalar yaw, pitch, roll;
-      tf::Quaternion quat;
-      tf::quaternionMsgToTF(feedback->pose.orientation, quat);
-      tf::Matrix3x3 mat(quat);
-      mat.getRPY(roll, pitch, yaw);
-      MoveNode(id-1, Eigen::Vector3d(feedback->pose.position.x,feedback->pose.position.y, yaw), true);
-      publishGraph();  
-    }
-  }
-  else if (feedback->event_type == \
-                   visualization_msgs::InteractiveMarkerFeedback::MOUSE_DOWN)
-  {
-    //  publish underlying laser scan message in the frame of the marker to help
+    // get yaw
+    tfScalar yaw, pitch, roll;
+    tf::Quaternion quat;
+    tf::quaternionMsgToTF(feedback->pose.orientation, quat); // relative
+    tf::Matrix3x3 mat(quat);
+    mat.getRPY(roll, pitch, yaw);
+
+    AddMovedNodes(id, Eigen::Vector3d(feedback->mouse_point.x, feedback->mouse_point.y, yaw));
   }
 }
 
@@ -715,6 +711,23 @@ bool SlamKarto::addScan(karto::LaserRangeFinder* laser,
 }
 
 /*****************************************************************************/
+void  SlamKarto::ClearMovedNodes()
+/*****************************************************************************/
+
+{
+  boost::mutex::scoped_lock lock(moved_nodes_mutex);
+  moved_nodes_.clear();
+}
+
+/*****************************************************************************/
+void SlamKarto::AddMovedNodes(const int& id, Eigen::Vector3d vec)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(moved_nodes_mutex);
+  moved_nodes_[id] = vec;
+}
+
+/*****************************************************************************/
 bool SlamKarto::mapCallback(nav_msgs::GetMap::Request  &req,
                             nav_msgs::GetMap::Response &res)
 /*****************************************************************************/
@@ -744,15 +757,22 @@ bool SlamKarto::manualLoopClosureCallback(slam_karto::LoopClosure::Request  &req
                                           slam_karto::LoopClosure::Response &resp)
 /*****************************************************************************/
 {
-  // do something to take change feedback from rviz interactive marker(s)
-
-  // give to move node
+  {
+    boost::mutex::scoped_lock lock(moved_nodes_mutex);
+    // for each in node map
+    std::map<int, Eigen::Vector3d>::const_iterator it = moved_nodes_.begin();
+    for (it;it!=moved_nodes_.end();++it)
+    {
+      MoveNode(it->first, Eigen::Vector3d(it->second(0),it->second(1), it->second(2)), false);
+    }
+  }
 
   // optimize
+  mapper_->CorrectPoses();
 
-  // republish
-
-
+  // update visualization and clear out nodes completed
+  publishGraph();  
+  ClearMovedNodes();
   return true;
 }
 
@@ -767,6 +787,7 @@ bool SlamKarto::InteractiveCallback(slam_karto::ToggleInteractive::Request  &req
   ROS_INFO("SlamKarto: Toggling %s interactive mode.", 
                                              interactive_mode_ ? "on" : "off");
   publishGraph();
+  ClearMovedNodes();
   return true;
 }
 
@@ -776,6 +797,7 @@ bool SlamKarto::clearChangesCallback(slam_karto::Clear::Request  &req,
 /*****************************************************************************/
 {
   publishGraph();
+  ClearMovedNodes();
   return true;
 }
 
