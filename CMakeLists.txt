@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(slam_karto)
+project(slam_toolbox)
 
 add_compile_options(-std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
@@ -101,11 +101,11 @@ target_link_libraries(g2O_solver_plugin ${catkin_LIBRARIES}
                                         ${CSPARSE_LIBRARY}
 )
 
-add_executable(slam_karto src/slam_karto.cpp)
+add_executable(slam_toolbox src/slam_toolbox.cpp)
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(slam_karto ${catkin_LIBRARIES})
+target_link_libraries(slam_toolbox ${catkin_LIBRARIES})
 
-install(TARGETS slam_karto spa_solver_plugin g2O_solver_plugin ceres_solver_plugin
+install(TARGETS slam_toolbox spa_solver_plugin g2O_solver_plugin ceres_solver_plugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

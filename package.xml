@@ -1,12 +1,9 @@
 <package>
-  <name>slam_karto</name>
+  <name>slam_toolbox</name>
   <description>
-     This package pulls in the Karto mapping library, and provides a ROS
-     wrapper for using it.
+     This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
   </description>
   <version>0.7.3</version>
-  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
-  <maintainer email="lbettaieb@fetchrobotics.com">Luc Bettaieb</maintainer>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <author>Brian Gerkey</author>
   <license>LGPL</license>

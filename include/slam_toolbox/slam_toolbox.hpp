@@ -1,7 +1,7 @@
 /*
- * slam_karto
+ * slam_toolbox
  * Copyright (c) 2008, Willow Garage, Inc.
- * Copyright Work Modifications (c) 2017, Simbe Robotics, Inc.
+ * Copyright Work Modifications (c) 2018, Simbe Robotics, Inc.
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
@@ -43,12 +43,12 @@
 
 #include <boost/thread.hpp>
 
-#include "slam_karto/Pause.h"
-#include "slam_karto/ClearQueue.h"
-#include "slam_karto/ToggleInteractive.h"
-#include "slam_karto/Clear.h"
-#include "slam_karto/SaveMap.h"
-#include "slam_karto/LoopClosure.h"
+#include "slam_toolbox/Pause.h"
+#include "slam_toolbox/ClearQueue.h"
+#include "slam_toolbox/ToggleInteractive.h"
+#include "slam_toolbox/Clear.h"
+#include "slam_toolbox/SaveMap.h"
+#include "slam_toolbox/LoopClosure.h"
 
 #include <string>
 #include <map>
@@ -90,18 +90,18 @@ private:
   void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
   bool mapCallback(nav_msgs::GetMap::Request  &req,
                    nav_msgs::GetMap::Response &res);
-  bool pauseCallback(slam_karto::Pause::Request& req,
-                     slam_karto::Pause::Response& resp);
-  bool clearQueueCallback(slam_karto::ClearQueue::Request& req,
-                          slam_karto::ClearQueue::Response& resp);
-  bool InteractiveCallback(slam_karto::ToggleInteractive::Request  &req,
-                           slam_karto::ToggleInteractive::Response &resp);
-  bool clearChangesCallback(slam_karto::Clear::Request  &req,
-                            slam_karto::Clear::Response &resp);
-  bool saveMapCallback(slam_karto::SaveMap::Request  &req,
-                       slam_karto::SaveMap::Response &resp);
-  bool manualLoopClosureCallback(slam_karto::LoopClosure::Request  &req,
-                                 slam_karto::LoopClosure::Response &resp);
+  bool pauseCallback(slam_toolbox::Pause::Request& req,
+                     slam_toolbox::Pause::Response& resp);
+  bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req,
+                          slam_toolbox::ClearQueue::Response& resp);
+  bool InteractiveCallback(slam_toolbox::ToggleInteractive::Request  &req,
+                           slam_toolbox::ToggleInteractive::Response &resp);
+  bool clearChangesCallback(slam_toolbox::Clear::Request  &req,
+                            slam_toolbox::Clear::Response &resp);
+  bool saveMapCallback(slam_toolbox::SaveMap::Request  &req,
+                       slam_toolbox::SaveMap::Response &resp);
+  bool manualLoopClosureCallback(slam_toolbox::LoopClosure::Request  &req,
+                                 slam_toolbox::LoopClosure::Response &resp);
 
   // functional bits
   bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t);

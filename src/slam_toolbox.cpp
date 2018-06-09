@@ -1,5 +1,5 @@
 /*
- * slam_karto
+ * slam_toolbox
  * Copyright (c) 2008, Willow Garage, Inc.
  * Copyright Work Modifications (c) 2017, Simbe Robotics, Inc.
  *
@@ -18,20 +18,20 @@
 /* Author: Brian Gerkey */
 /* Modified: Steven Macenski */
 
-#include <slam_karto/slam_karto.hpp>
+#include <slam_toolbox/slam_toolbox.hpp>
 
 /*****************************************************************************/
 SlamKarto::SlamKarto() : laser_count_(0),
                          transform_thread_(NULL),
                          run_thread_(NULL),
                          visualization_thread_(NULL),
-                         solver_loader_("slam_karto", "karto::ScanSolver"),
+                         solver_loader_("slam_toolbox", "karto::ScanSolver"),
                          paused_(false),
                          interactive_mode_(false),
                          tf_(ros::Duration(14400.)) // 4 hours
 /*****************************************************************************/
 {
-  interactive_server_ = new interactive_markers::InteractiveMarkerServer("slam_2d_toolbox","",true);
+  interactive_server_ = new interactive_markers::InteractiveMarkerServer("slam_toolbox","",true);
 
   mapper_ = new karto::Mapper();
   dataset_ = new karto::Dataset();
@@ -442,7 +442,7 @@ void SlamKarto::publishGraph()
   visualization_msgs::Marker m;
   m.header.frame_id = "map";
   m.header.stamp = ros::Time::now();
-  m.ns = "slam_2d_toolbox";
+  m.ns = "slam_toolbox";
   m.type = visualization_msgs::Marker::SPHERE;
   m.pose.position.z = 0.0;
   m.pose.orientation.w = 1.;
@@ -463,7 +463,7 @@ void SlamKarto::publishGraph()
       visualization_msgs::InteractiveMarker int_marker;
       int_marker.header.frame_id = "map";
       int_marker.header.stamp = ros::Time::now();
-      int_marker.description = "slam_2d_toolbox";
+      int_marker.description = "slam_toolbox";
       int_marker.name = std::to_string(i+1);
       int_marker.pose.orientation.w = 1.;
 
@@ -748,8 +748,8 @@ bool SlamKarto::mapCallback(nav_msgs::GetMap::Request  &req,
 }
 
 /*****************************************************************************/
-bool SlamKarto::pauseCallback(slam_karto::Pause::Request  &req,
-                              slam_karto::Pause::Response &resp)
+bool SlamKarto::pauseCallback(slam_toolbox::Pause::Request  &req,
+                              slam_toolbox::Pause::Response &resp)
 /*****************************************************************************/
 {
   togglePause();
@@ -758,8 +758,8 @@ bool SlamKarto::pauseCallback(slam_karto::Pause::Request  &req,
 }
 
 /*****************************************************************************/
-bool SlamKarto::manualLoopClosureCallback(slam_karto::LoopClosure::Request  &req,
-                                          slam_karto::LoopClosure::Response &resp)
+bool SlamKarto::manualLoopClosureCallback(slam_toolbox::LoopClosure::Request  &req,
+                                          slam_toolbox::LoopClosure::Response &resp)
 /*****************************************************************************/
 {
   {
@@ -785,8 +785,8 @@ bool SlamKarto::manualLoopClosureCallback(slam_karto::LoopClosure::Request  &req
 
 
 /*****************************************************************************/
-bool SlamKarto::InteractiveCallback(slam_karto::ToggleInteractive::Request  &req,
-                                    slam_karto::ToggleInteractive::Response &resp)
+bool SlamKarto::InteractiveCallback(slam_toolbox::ToggleInteractive::Request  &req,
+                                    slam_toolbox::ToggleInteractive::Response &resp)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(interactive_mutex_);
@@ -799,8 +799,8 @@ bool SlamKarto::InteractiveCallback(slam_karto::ToggleInteractive::Request  &req
 }
 
 /*****************************************************************************/
-bool SlamKarto::clearChangesCallback(slam_karto::Clear::Request  &req,
-                                     slam_karto::Clear::Response &resp)
+bool SlamKarto::clearChangesCallback(slam_toolbox::Clear::Request  &req,
+                                     slam_toolbox::Clear::Response &resp)
 /*****************************************************************************/
 {
   ROS_INFO("SlamKarto: Clearing manual loop closure nodes.");
@@ -810,8 +810,8 @@ bool SlamKarto::clearChangesCallback(slam_karto::Clear::Request  &req,
 }
 
 /*****************************************************************************/
-bool SlamKarto::clearQueueCallback(slam_karto::ClearQueue::Request& req,
-                                   slam_karto::ClearQueue::Response& resp)
+bool SlamKarto::clearQueueCallback(slam_toolbox::ClearQueue::Request& req,
+                                   slam_toolbox::ClearQueue::Response& resp)
 /*****************************************************************************/
 {
   ROS_INFO("SlamKarto: Clearing all queued scans to add to map.");
@@ -822,8 +822,8 @@ bool SlamKarto::clearQueueCallback(slam_karto::ClearQueue::Request& req,
 }
 
 /*****************************************************************************/
-bool SlamKarto::saveMapCallback(slam_karto::SaveMap::Request  &req,
-                                slam_karto::SaveMap::Response &resp)
+bool SlamKarto::saveMapCallback(slam_toolbox::SaveMap::Request  &req,
+                                slam_toolbox::SaveMap::Response &resp)
 /*****************************************************************************/
 {
   const std::string name = req.name.data;
@@ -902,7 +902,7 @@ void SlamKarto::MoveNode(const int& id, const Eigen::Vector3d& pose, const bool 
 int main(int argc, char** argv)
 /*****************************************************************************/
 {
-  ros::init(argc, argv, "slam_karto");
+  ros::init(argc, argv, "slam_toolbox");
   SlamKarto kn;
   ros::spin();
   return 0;
