@@ -27,7 +27,7 @@ SlamKarto::SlamKarto() : laser_count_(0),
                          visualization_thread_(NULL),
                          solver_loader_("slam_karto", "karto::ScanSolver"),
                          paused_(false),
-                         interactive_mode_(true),
+                         interactive_mode_(false),
                          tf_(ros::Duration(14400.)) // 4 hours
 /*****************************************************************************/
 {
@@ -231,11 +231,12 @@ void SlamKarto::setROSInterfaces()
 /*****************************************************************************/
 {
   tfB_ = new tf::TransformBroadcaster();
-  sst_ = node_.advertise<nav_msgs::OccupancyGrid>("map", 1, true);
-  sstm_ = node_.advertise<nav_msgs::MapMetaData>("map_metadata", 1, true);
+  sst_ = node_.advertise<nav_msgs::OccupancyGrid>("/map", 1, true);
+  sstm_ = node_.advertise<nav_msgs::MapMetaData>("/map_metadata", 1, true);
   ssMap_ = node_.advertiseService("dynamic_map", &SlamKarto::mapCallback, this);
   ssPause_ = node_.advertiseService("pause", &SlamKarto::pauseCallback, this);
   ssClear_ = node_.advertiseService("clear_queue", &SlamKarto::clearQueueCallback, this);
+  ssLoopClosure_ = node_.advertiseService("manual_loop_closure", &SlamKarto::manualLoopClosureCallback, this);
   ssInteractive_ = node_.advertiseService("toggle_interactive_mode", &SlamKarto::InteractiveCallback,this);
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node_, "scan", 5);
   scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
@@ -320,7 +321,10 @@ void SlamKarto::publishVisualizations()
     while(ros::ok())
     {
       updateMap();
-      publishGraph();
+      if(!isPaused())
+      {
+        publishGraph();
+      }
       r.sleep();
     }
   }
@@ -713,7 +717,6 @@ bool SlamKarto::addScan(karto::LaserRangeFinder* laser,
 /*****************************************************************************/
 void  SlamKarto::ClearMovedNodes()
 /*****************************************************************************/
-
 {
   boost::mutex::scoped_lock lock(moved_nodes_mutex);
   moved_nodes_.clear();
@@ -723,6 +726,8 @@ void  SlamKarto::ClearMovedNodes()
 void SlamKarto::AddMovedNodes(const int& id, Eigen::Vector3d vec)
 /*****************************************************************************/
 {
+  ROS_INFO(
+    "SlamKarto: Node %i's new manual loop closure pose has been recorded.",id);
   boost::mutex::scoped_lock lock(moved_nodes_mutex);
   moved_nodes_[id] = vec;
 }
@@ -759,6 +764,8 @@ bool SlamKarto::manualLoopClosureCallback(slam_karto::LoopClosure::Request  &req
 {
   {
     boost::mutex::scoped_lock lock(moved_nodes_mutex);
+    ROS_INFO("SlamKarto: Attempting to manual loop close with %i moved nodes.", 
+                                                     (int)moved_nodes_.size());
     // for each in node map
     std::map<int, Eigen::Vector3d>::const_iterator it = moved_nodes_.begin();
     for (it;it!=moved_nodes_.end();++it)
@@ -796,6 +803,7 @@ bool SlamKarto::clearChangesCallback(slam_karto::Clear::Request  &req,
                                      slam_karto::Clear::Response &resp)
 /*****************************************************************************/
 {
+  ROS_INFO("SlamKarto: Clearing manual loop closure nodes.");
   publishGraph();
   ClearMovedNodes();
   return true;
@@ -806,6 +814,7 @@ bool SlamKarto::clearQueueCallback(slam_karto::ClearQueue::Request& req,
                                    slam_karto::ClearQueue::Response& resp)
 /*****************************************************************************/
 {
+  ROS_INFO("SlamKarto: Clearing all queued scans to add to map.");
   std::queue<posed_scan> empty;
   std::swap( q_, empty );
   resp.status = true;

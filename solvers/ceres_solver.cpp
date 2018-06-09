@@ -39,12 +39,12 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   if (loss_fn == "HuberLoss")
   {
     ROS_INFO("CeresSolver: Using HuberLoss loss function.");
-    loss_function_ = new HuberLoss(0.7);
+    loss_function_ = new ceres::HuberLoss(0.7);
   }
   else if (loss_fn == "CauchyLoss")
   {
     ROS_INFO("CeresSolver: Using CauchyLoss loss function.");
-    loss_function_ = new CauchyLoss(0.7);
+    loss_function_ = new ceres::CauchyLoss(0.7);
   }
 
   // choose linear solver default CHOL
@@ -81,6 +81,8 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   if (options_.preconditioner_type == ceres::CLUSTER_JACOBI || 
       options_.preconditioner_type == ceres::CLUSTER_TRIDIAGONAL)
   {
+    //default canonical view is O(n^2) which is unacceptable for 
+    // problems of this size
     options_.visibility_clustering_type = ceres::SINGLE_LINKAGE;
   }
 
@@ -306,7 +308,7 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 }
 
 /*****************************************************************************/
-void CeresSolver::ModifyNode(const int& unique_id, Eigen::Vector3d& pose)
+void CeresSolver::ModifyNode(const int& unique_id, Eigen::Vector3d pose)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(nodes_mutex_);

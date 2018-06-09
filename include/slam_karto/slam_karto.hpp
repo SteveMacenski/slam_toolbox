@@ -127,7 +127,7 @@ private:
   message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
   tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
   ros::Publisher sst_, sstm_, marker_publisher_;
-  ros::ServiceServer ssMap_, ssPause_, ssClear_, ssInteractive_;
+  ros::ServiceServer ssMap_, ssPause_, ssClear_, ssInteractive_, ssLoopClosure_;
   nav_msgs::GetMap::Response map_;
 
   // Storage for ROS parameters

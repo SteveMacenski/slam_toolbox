@@ -43,7 +43,7 @@ public:
   virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge); //Adds a constraint to the solver
   virtual void getGraph(std::vector<Eigen::Vector2d> &g); //Get graph stored
 
-  virtual void ModifyNode(const int& unique_id, Eigen::Vector3d& pose); // change a node's pose
+  virtual void ModifyNode(const int& unique_id, Eigen::Vector3d pose); // change a node's pose
 
 private:
   // karto
