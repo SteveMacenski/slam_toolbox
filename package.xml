@@ -47,7 +47,7 @@
   <run_depend>liblapack-dev</run_depend>
 
   <export>
-    <slam_karto plugin="${prefix}/solver_plugins.xml" />
+    <slam_toolbox plugin="${prefix}/solver_plugins.xml" />
   </export>
 
 </package>

@@ -106,15 +106,11 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   }
 
   // solving dials
-  options_.jacobi_scaling = true; //true
-
-  options_.function_tolerance = 1e-2; //1e-6    //e-10 F
+  options_.function_tolerance = 1e-2; //1e-6
   options_.gradient_tolerance = 1e-6; //1e-10
   options_.parameter_tolerance = 1e-4; //1e-8
-  options_.eta = 1e-1; //1e-1   Ge-2
 
-  options_.use_nonmonotonic_steps = true; // false
-  options_.min_relative_decrease = 1e-3; //1e-3
+  options_.min_relative_decrease = 1e-1; //1e-3
 
   options_.initial_trust_region_radius = 1e4; //1e4
   options_.max_trust_region_radius = 1e8; //1e16
@@ -129,6 +125,8 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   options_.max_num_consecutive_invalid_steps = 3;
   options_.max_consecutive_nonmonotonic_steps = 3;
   options_.num_threads = 50;
+  options_.use_nonmonotonic_steps = true;
+  options_.jacobi_scaling = true;
   if(options_.linear_solver_type == ceres::SPARSE_NORMAL_CHOLESKY)
   {
     options_.dynamic_sparsity = true; // ~10-20% speed up as graph grows with CHOL
