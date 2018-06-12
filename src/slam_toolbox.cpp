@@ -95,7 +95,7 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
     minimum_time_interval_ = 0.5;
   double map_update_interval;
   if(!private_nh_.getParam("map_update_interval", map_update_interval))
-    map_update_interval = 5.0;
+    map_update_interval = 10.0;
   map_update_interval_.fromSec(map_update_interval);
   if(!private_nh_.getParam("resolution", resolution_))
   {
