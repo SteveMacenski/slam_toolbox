@@ -69,59 +69,58 @@ struct posed_scan
   karto::Pose2 pose;
 };
 
-class SlamKarto
+class SlamToolbox
 {
 public:
-  SlamKarto();
-  ~SlamKarto();
+  SlamToolbox();
+  ~SlamToolbox();
 
 private:
   // threads
   void Run();
-  void publishVisualizations();
-  void publishLoop(double transform_publish_period);
+  void PublishVisualizations();
+  void PublishLoop(double transform_publish_period);
 
   // setup
-  void setParams(ros::NodeHandle& nh);
-  void setSolver(ros::NodeHandle& private_nh_);
-  void setROSInterfaces();
+  void SetParams(ros::NodeHandle& nh);
+  void SetSolver(ros::NodeHandle& private_nh_);
+  void SetROSInterfaces(ros::NodeHandle& node);
 
   // callbacks
-  void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
-  bool mapCallback(nav_msgs::GetMap::Request  &req,
+  void LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
+  bool MapCallback(nav_msgs::GetMap::Request  &req,
                    nav_msgs::GetMap::Response &res);
-  bool pauseCallback(slam_toolbox::Pause::Request& req,
+  bool PauseCallback(slam_toolbox::Pause::Request& req,
                      slam_toolbox::Pause::Response& resp);
-  bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req,
+  bool ClearQueueCallback(slam_toolbox::ClearQueue::Request& req,
                           slam_toolbox::ClearQueue::Response& resp);
   bool InteractiveCallback(slam_toolbox::ToggleInteractive::Request  &req,
                            slam_toolbox::ToggleInteractive::Response &resp);
-  bool clearChangesCallback(slam_toolbox::Clear::Request  &req,
+  bool ClearChangesCallback(slam_toolbox::Clear::Request  &req,
                             slam_toolbox::Clear::Response &resp);
-  bool saveMapCallback(slam_toolbox::SaveMap::Request  &req,
+  bool SaveMapCallback(slam_toolbox::SaveMap::Request  &req,
                        slam_toolbox::SaveMap::Response &resp);
-  bool manualLoopClosureCallback(slam_toolbox::LoopClosure::Request  &req,
+  bool ManualLoopClosureCallback(slam_toolbox::LoopClosure::Request  &req,
                                  slam_toolbox::LoopClosure::Response &resp);
 
   // functional bits
-  bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
-  karto::LaserRangeFinder* getLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
-  bool addScan(karto::LaserRangeFinder* laser,
+  bool GetOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
+  karto::LaserRangeFinder* GetLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
+  bool AddScan(karto::LaserRangeFinder* laser,
                const sensor_msgs::LaserScan::ConstPtr& scan,
                karto::Pose2& karto_pose);
-  bool updateMap();
-  void publishGraph();
+  bool UpdateMap();
+  void PublishGraph();
   void MoveNode(const int& id, const Eigen::Vector3d& pose, const bool correct = true);
-  void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void ClearMovedNodes();
   void AddMovedNodes(const int& id, Eigen::Vector3d vec);
 
   // state
-  bool isPaused();
-  void togglePause();
+  bool IsPaused(); // stops incoming information from being added to queue and pauses processing 
+  void TogglePause();
 
-  // ROS handles
-  ros::NodeHandle node_;
+  // ROS-y-ness
   tf::TransformListener tf_;
   tf::TransformBroadcaster* tfB_;
   message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;

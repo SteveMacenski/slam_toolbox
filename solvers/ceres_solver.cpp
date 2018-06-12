@@ -106,27 +106,28 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   }
 
   // solving dials
-  options_.function_tolerance = 1e-2; //1e-6
-  options_.gradient_tolerance = 1e-6; //1e-10
-  options_.parameter_tolerance = 1e-4; //1e-8
+  options_.function_tolerance = 1e-2; //1e-6, 
+  options_.gradient_tolerance = 1e-4; //1e-10, 
+  options_.parameter_tolerance = 1e-2; //1e-8, e-4 = mm range each thing is only 5cm
 
-  options_.min_relative_decrease = 1e-1; //1e-3
-
-  options_.initial_trust_region_radius = 1e4; //1e4
-  options_.max_trust_region_radius = 1e8; //1e16
-  options_.min_trust_region_radius = 1e-16; //1e-32
-
-  options_.min_lm_diagonal = 1e-6; //1e-6
-  options_.max_lm_diagonal = 1e32; //1e32
+  // readdress later
+  options_.min_lm_diagonal = 1e-12; //1e-6 CURRENT for now
+  options_.max_lm_diagonal = 1e64; //1e32 CURRENT for now
 
   // constants
   options_.sparse_linear_algebra_library_type = ceres::SUITE_SPARSE;
-  options_.max_num_iterations = 50;
   options_.max_num_consecutive_invalid_steps = 3;
-  options_.max_consecutive_nonmonotonic_steps = 3;
+  options_.max_consecutive_nonmonotonic_steps = options_.max_num_consecutive_invalid_steps;
   options_.num_threads = 50;
   options_.use_nonmonotonic_steps = true;
   options_.jacobi_scaling = true;
+
+  options_.min_relative_decrease = 1e-3;
+
+  options_.initial_trust_region_radius = 1e4;
+  options_.max_trust_region_radius = 1e8;
+  options_.min_trust_region_radius = 1e-16;
+
   if(options_.linear_solver_type == ceres::SPARSE_NORMAL_CHOLESKY)
   {
     options_.dynamic_sparsity = true; // ~10-20% speed up as graph grows with CHOL
@@ -182,7 +183,7 @@ void CeresSolver::Compute()
   boost::mutex::scoped_lock lock(nodes_mutex_, boost::try_to_lock);
   if (!lock)
   {
-    ROS_WARN("CeresSolver: Did not achieve lock to compute, "
+    ROS_DEBUG("CeresSolver: Did not achieve lock to compute, "
               "someone else must be already optimizing "
               " it's okay, this isn't time critical.");
     return;
@@ -191,7 +192,7 @@ void CeresSolver::Compute()
   // populate contraint for static initial pose
   if (!was_constant_set_ && first_node_ != nodes_->end())
   {
-    ROS_INFO("CeresSolver: Setting first node as a constant pose.");
+    ROS_DEBUG("CeresSolver: Setting first node as a constant pose.");
     problem_->SetParameterBlockConstant(&first_node_->second(0));
     problem_->SetParameterBlockConstant(&first_node_->second(1));
     problem_->SetParameterBlockConstant(&first_node_->second(2));
@@ -203,7 +204,6 @@ void CeresSolver::Compute()
   ceres::Solve(options_, problem_, &summary);
   std::cout << summary.FullReport() << '\n';
   _times.push_back((ros::Time::now() - start_time).toSec());
-  ROS_INFO("Loop Closure Solve time: %f seconds", _times.back());
 
   if (!summary.IsSolutionUsable())
   {

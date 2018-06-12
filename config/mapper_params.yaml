@@ -6,7 +6,8 @@
 # angle_variance_penalty: 0.20    
 # minimum_angle_penalty: 1.6 #0.9
 
-# Ceres params
+# Plugin params
+solver_plugin: solver_plugins::CeresSolver
 ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
 ceres_preconditioner: SCHUR_JACOBI
 ceres_trust_strategy: LEVENBERG_MARQUARDT
@@ -14,7 +15,6 @@ ceres_dogleg_type: TRADITIONAL_DOGLEG
 ceres_loss_function: None
 
 # ROS Parameters
-solver_plugin: solver_plugins::CeresSolver
 odom_frame: odom
 map_frame: map
 base_frame: base_link
@@ -22,7 +22,7 @@ debug_logging: false
 throttle_scans: 1
 publish_occupancy_map: true
 transform_publish_period: 0 #if 0 never publishes odometry
-map_update_interval: 6.0
+map_update_interval: 10.0
 resolution: 0.05
 max_laser_range: 20.0 #for rastering images
 minimum_time_interval: 0.5
@@ -47,7 +47,6 @@ loop_match_minimum_response_fine: 0.45
 correlation_search_space_dimension: 0.5
 correlation_search_space_resolution: 0.01
 correlation_search_space_smear_deviation: 0.1 
-
 
 # Correlation Parameters - Loop Closure Parameters
 loop_search_space_dimension: 8.0
