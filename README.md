@@ -2,6 +2,8 @@
 
 Fork on slam_karto. I've renamed since really there's about 5% of the code that's the same, everything else has been restructured or removed entirely. 
 
+## Introduction 
+
 ### Solver Plugins
 
 I have generated pluginlib plugins for a few different solvers that people might be interested in. I like to swap them out for benchmarking and make sure its the same code running for all. I have supported G2O, SPA, and GTSAM. I'm probably going to wrap my own Ceres one as well since no one's open-sourced it but I know _certain_ people are using it. 
@@ -16,13 +18,21 @@ I have spent a extremely long time working with Ceres to optimize it for creatio
 
 Manual loop closure, pausing and resuming SLAM, interspection and modification of the pose graph, synchronous SLAM (no missing laser scans) for online or offline application alike without change, more exposed options, rviz plugin for visual interspection and assisting in mapping
 
+### Metrics
+
+If you're a weirdo like me and you want to see how I came up with the settings I had, see below.
+
+![ceres_solver_comparison](https://user-images.githubusercontent.com/14944147/41320076-295d3dae-6e53-11e8-82c3-39da7667f45c.png)
+
+The data sets present solve time vs number of nodes in the pose graph on a large dataset, as that is not open source, but suffice to say that the settings I recommend work well. I think anyone would be hardset in a normal application to exceed or find that another solver type is better. Benchmark on a low power 7th gen i7 machine.
+
 ### Performance
 
 It can map _very_ large spaces with reasonable CPU and memory consumption. Default settings increase O(N) on number of elements in the pose graph. I recommend from extensive testing to use the SPARSE_NORMAL_CHOLESKY solver with Ceres and the SCHUR_JACOBI preconditioner. Using LM at the trust region strategy is comparable to the dogleg subspace strategy, but LM is much better supported so why argue with it. 
 
 You can get away without a loss function if your odometry is good (ie likelihood for outliers is extremely low). If you have an abnormal application, I might recommend a HuberLoss function. All these options and more are available from the ROS parameter server.
 
-### Parameters
+## Parameters
 
 On top of ordinary Slam Karto, the following settings and options are exposed to you. My default configuration is given in `config` directory.
 
@@ -46,10 +56,20 @@ On top of ordinary Slam Karto, the following settings and options are exposed to
 
 All other parameters, see SlamKarto documentation. They're all just the inputs to OpenKarto so that documentation would be identical as well. 
 
-### Metrics
+## Installation
 
-If you're a weirdo like me and you want to see how I came up with the settings I had, see below.
+ROSDep will take care of Ceres, G2O, and SBA if you are familiar. Otherwise,
 
-![ceres_solver_comparison](https://user-images.githubusercontent.com/14944147/41320076-295d3dae-6e53-11e8-82c3-39da7667f45c.png)
+You'll need to install Ceres [from source instructions here](http://ceres-solver.org/installation.html) or `sudo ap-get install libceres-dev`
 
-The data sets present solve time vs number of nodes in the pose graph on a large dataset, as that is not open source, but suffice to say that the settings I recommend work well. I think anyone would be hardset in a normal application to exceed or find that another solver type is better. Benchmark on a low power 7th gen i7 machine.
+G2O: `sudo apt-get install ros-kinetic-libg2o`
+
+SBA: `sudo ap-get install ros-kinetic-sparse-bundle-adjustment`
+
+
+Then: add my fork of OpenKarto (i.e. KartoSDK-slam_toolbox) to your workspace. 
+
+Run your catkin build procedure of choice.
+
+You can run via `roslaunch slam_toolbox build_map_w_params.launch
+`
