@@ -60,11 +60,6 @@ private:
   std::unordered_map<int, Eigen::Vector3d>* nodes_;
   std::unordered_map<int, Eigen::Vector3d>::iterator first_node_;
   boost::mutex nodes_mutex_;
-
-  // temp logging 
-  std::vector<double> _times;
-  ros::ServiceServer _times_server;
-  bool get_times(std_srvs::Empty::Request& e, std_srvs::Empty::Response& e2);
 };
 
 }

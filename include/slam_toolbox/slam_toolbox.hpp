@@ -16,7 +16,7 @@
  */
 
 /* Author: Brian Gerkey */
-/* Modified: Steven Macenski */
+/* Heavily Modified: Steven Macenski */
 
 #include "ros/ros.h"
 #include "ros/console.h"
@@ -69,6 +69,13 @@ struct posed_scan
   karto::Pose2 pose;
 };
 
+enum PausedApplication
+{
+  PROCESSING = 0,
+  VISUALIZING_GRAPH = 1,
+  NEW_MEASUREMENTS = 2
+};
+
 class SlamToolbox
 {
 public:
@@ -90,7 +97,9 @@ private:
   void LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
   bool MapCallback(nav_msgs::GetMap::Request  &req,
                    nav_msgs::GetMap::Response &res);
-  bool PauseCallback(slam_toolbox::Pause::Request& req,
+  bool PauseProcessingCallback(slam_toolbox::Pause::Request& req,
+                     slam_toolbox::Pause::Response& resp);
+  bool PauseNewMeasurementsCallback(slam_toolbox::Pause::Request& req,
                      slam_toolbox::Pause::Response& resp);
   bool ClearQueueCallback(slam_toolbox::ClearQueue::Request& req,
                           slam_toolbox::ClearQueue::Response& resp);
@@ -117,8 +126,7 @@ private:
   void AddMovedNodes(const int& id, Eigen::Vector3d vec);
 
   // state
-  bool IsPaused(); // stops incoming information from being added to queue and pauses processing 
-  void TogglePause();
+  bool IsPaused(const PausedApplication& app);
 
   // ROS-y-ness
   tf::TransformListener tf_;
@@ -126,7 +134,7 @@ private:
   message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
   tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
   ros::Publisher sst_, sstm_, marker_publisher_;
-  ros::ServiceServer ssMap_, ssPause_, ssClear_, ssInteractive_, ssLoopClosure_;
+  ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_processing_, ssPause_measurements_;
   nav_msgs::GetMap::Response map_;
 
   // Storage for ROS parameters
@@ -146,7 +154,7 @@ private:
   int laser_count_;
   boost::thread *transform_thread_, *run_thread_, *visualization_thread_;
   tf::Transform map_to_odom_;
-  bool paused_, inverted_laser_;
+  bool inverted_laser_, pause_graph_, pause_processing_, pause_new_measurements_, interactive_mode_;
   double max_laser_range_;
   karto::Pose2 current_pose_;
   std::queue<posed_scan> q_;
@@ -154,7 +162,6 @@ private:
 
   // visualization
   interactive_markers::InteractiveMarkerServer* interactive_server_;
-  bool interactive_mode_;
   std::map<int, Eigen::Vector3d> moved_nodes_;
 
   // pluginlib

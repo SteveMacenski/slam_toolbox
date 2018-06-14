@@ -23,6 +23,7 @@ find_package(catkin REQUIRED
     std_srvs
     std_msgs
     interactive_markers
+    rviz
 )
 
 find_package(PkgConfig REQUIRED)
@@ -32,6 +33,30 @@ find_package(G2O REQUIRED)
 find_package(Cholmod REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
+
+if(rviz_QT_VERSION VERSION_LESS "5")
+  find_package(Qt4 ${rviz_QT_VERSION} REQUIRED QtCore QtGui)
+  include(${QT_USE_FILE})
+  macro(qt_wrap_ui)
+    qt4_wrap_ui(${ARGN})
+  endmacro()
+  macro(qt_wrap_cpp)
+    qt4_wrap_cpp(${ARGN})
+  endmacro()
+else()
+  find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
+  set(QT_LIBRARIES Qt5::Widgets)
+  macro(qt_wrap_ui)
+    qt5_wrap_ui(${ARGN})
+  endmacro()
+  macro(qt_wrap_cpp)
+    qt5_wrap_cpp(${ARGN})
+  endmacro()
+endif()
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
+add_definitions(-DQT_NO_KEYWORDS)
 
 include_directories(include ${catkin_INCLUDE_DIRS} 
                             ${EIGEN3_INCLUDE_DIRS} 
@@ -68,6 +93,7 @@ catkin_package(
       roscpp
       sparse_bundle_adjustment
       sensor_msgs
+      rviz
       tf
       visualization_msgs
       pluginlib
@@ -101,11 +127,17 @@ target_link_libraries(g2O_solver_plugin ${catkin_LIBRARIES}
                                         ${CSPARSE_LIBRARY}
 )
 
+#### rviz Plugin
+qt_wrap_cpp(MOC_FILES mapping_plugin/slam_toolbox_rviz_plugin.hpp)
+set(SOURCE_FILES mapping_plugin/slam_toolbox_rviz_plugin.cpp)
+add_library(SlamToolboxPlugin ${SOURCE_FILES})
+target_link_libraries(SlamToolboxPlugin ${QT_LIBRARIES} ${catkin_LIBRARIES} ${rviz_DEFAULT_PLUGIN_LIBRARIES})
+
 add_executable(slam_toolbox src/slam_toolbox.cpp)
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(slam_toolbox ${catkin_LIBRARIES})
 
-install(TARGETS slam_toolbox spa_solver_plugin g2O_solver_plugin ceres_solver_plugin
+install(TARGETS slam_toolbox spa_solver_plugin g2O_solver_plugin ceres_solver_plugin SlamToolboxPlugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -123,6 +155,6 @@ install(DIRECTORY config
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
-install(FILES solver_plugins.xml
+install(FILES solver_plugins.xml rviz_plugin.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

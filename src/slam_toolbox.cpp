@@ -1,7 +1,7 @@
 /*
  * slam_toolbox
  * Copyright (c) 2008, Willow Garage, Inc.
- * Copyright Work Modifications (c) 2017, Simbe Robotics, Inc.
+ * Copyright Work Modifications (c) 2018, Simbe Robotics, Inc.
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
@@ -16,18 +16,26 @@
  */
 
 /* Author: Brian Gerkey */
-/* Modified: Steven Macenski */
+/* Heavily Modified: Steven Macenski */
 
 #include <slam_toolbox/slam_toolbox.hpp>
 
 /*****************************************************************************/
-SlamToolbox::SlamToolbox() : laser_count_(0),
+SlamToolbox::SlamToolbox() : 
                          transform_thread_(NULL),
                          run_thread_(NULL),
                          visualization_thread_(NULL),
+                         mapper_(NULL),
+                         dataset_(NULL),
+                         scan_filter_sub_(NULL),
+                         tfB_(NULL),
+                         interactive_server_(NULL),
                          solver_loader_("slam_toolbox", "karto::ScanSolver"),
-                         paused_(false),
+                         pause_graph_(false),
+                         pause_processing_(false),
+                         pause_new_measurements_(false),
                          interactive_mode_(false),
+                         laser_count_(0),
                          tf_(ros::Duration(14400.)) // 4 hours
 /*****************************************************************************/
 {
@@ -234,8 +242,9 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   sst_ = node.advertise<nav_msgs::OccupancyGrid>("/map", 1, true);
   sstm_ = node.advertise<nav_msgs::MapMetaData>("/map_metadata", 1, true);
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::MapCallback, this);
-  ssPause_ = node.advertiseService("pause", &SlamToolbox::PauseCallback, this);
   ssClear_ = node.advertiseService("clear_queue", &SlamToolbox::ClearQueueCallback, this);
+  ssPause_processing_ = node.advertiseService("pause_processing", &SlamToolbox::PauseProcessingCallback, this);
+  ssPause_measurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::PauseNewMeasurementsCallback, this);
   ssLoopClosure_ = node.advertiseService("manual_loop_closure", &SlamToolbox::ManualLoopClosureCallback, this);
   ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::InteractiveCallback,this);
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node, "/scan", 5);
@@ -316,22 +325,17 @@ void SlamToolbox::PublishVisualizations()
   map_.map.info.origin.orientation.w = 1.0;
 
   ros::Rate r(1.0 / map_update_interval_.toSec());
-  try
+
+  while(ros::ok())
   {
-    while(ros::ok())
+    UpdateMap();
+    if(!IsPaused(VISUALIZING_GRAPH))
     {
-      UpdateMap();
-      if(!IsPaused())
-      {
-        PublishGraph();
-      }
-      r.sleep();
+      PublishGraph();
     }
+    r.sleep();
   }
-  catch (...)
-  {
-    ROS_DEBUG("visualization thread died, segfault");
-  }
+
 }
 
 /*****************************************************************************/
@@ -442,6 +446,11 @@ void SlamToolbox::PublishGraph()
   }
 
   ROS_INFO_THROTTLE(15.,"Graph size: %i",(int)graph.size());
+  bool interactive_mode = false;
+  {
+    boost::mutex::scoped_lock lock(interactive_mutex_);
+    interactive_mode = interactive_mode_;
+  }
 
   visualization_msgs::MarkerArray marray;
   visualization_msgs::Marker m;
@@ -463,7 +472,7 @@ void SlamToolbox::PublishGraph()
     m.pose.position.x = graph[i](0);
     m.pose.position.y = graph[i](1);
 
-    if (interactive_mode_)
+    if (interactive_mode)
     {
       visualization_msgs::InteractiveMarker int_marker;
       int_marker.header.frame_id = "map";
@@ -490,7 +499,7 @@ void SlamToolbox::PublishGraph()
     }
   }
 
-  if(!interactive_mode_)
+  if(!interactive_mode)
   {
     interactive_server_->clear();
   }
@@ -539,7 +548,7 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
   static double min_dist2 = minimum_travel_distance_*minimum_travel_distance_;
 
   // we are in a paused mode, reject incomming information
-  if(IsPaused())
+  if(IsPaused(NEW_MEASUREMENTS))
   {
     return;
   }
@@ -731,7 +740,7 @@ void SlamToolbox::AddMovedNodes(const int& id, Eigen::Vector3d vec)
 /*****************************************************************************/
 {
   ROS_INFO(
-    "SlamToolbox: Node %i's new manual loop closure pose has been recorded.",id);
+    "SlamToolbox: Node %i new manual loop closure pose has been recorded.",id);
   boost::mutex::scoped_lock lock(moved_nodes_mutex);
   moved_nodes_[id] = vec;
 }
@@ -752,18 +761,9 @@ bool SlamToolbox::MapCallback(nav_msgs::GetMap::Request  &req,
 }
 
 /*****************************************************************************/
-bool SlamToolbox::PauseCallback(slam_toolbox::Pause::Request  &req,
-                              slam_toolbox::Pause::Response &resp)
-/*****************************************************************************/
-{
-  TogglePause();
-  resp.status = true;
-  return true;
-}
-
-/*****************************************************************************/
-bool SlamToolbox::ManualLoopClosureCallback(slam_toolbox::LoopClosure::Request  &req,
-                                          slam_toolbox::LoopClosure::Response &resp)
+bool SlamToolbox::ManualLoopClosureCallback( \
+                                     slam_toolbox::LoopClosure::Request  &req,
+                                     slam_toolbox::LoopClosure::Response &resp)
 /*****************************************************************************/
 {
   {
@@ -774,7 +774,8 @@ bool SlamToolbox::ManualLoopClosureCallback(slam_toolbox::LoopClosure::Request  
     std::map<int, Eigen::Vector3d>::const_iterator it = moved_nodes_.begin();
     for (it;it!=moved_nodes_.end();++it)
     {
-      MoveNode(it->first, Eigen::Vector3d(it->second(0),it->second(1), it->second(2)), false);
+      MoveNode(it->first, \
+            Eigen::Vector3d(it->second(0),it->second(1), it->second(2)), false);
     }
   }
 
@@ -789,18 +790,67 @@ bool SlamToolbox::ManualLoopClosureCallback(slam_toolbox::LoopClosure::Request  
 
 
 /*****************************************************************************/
-bool SlamToolbox::InteractiveCallback(slam_toolbox::ToggleInteractive::Request  &req,
-                                    slam_toolbox::ToggleInteractive::Response &resp)
+bool SlamToolbox::InteractiveCallback( \
+                               slam_toolbox::ToggleInteractive::Request  &req,
+                               slam_toolbox::ToggleInteractive::Response &resp)
 /*****************************************************************************/
 {
-  boost::mutex::scoped_lock lock(interactive_mutex_);
-  interactive_mode_ = !interactive_mode_;
+  bool interactive_mode;
+  {
+    boost::mutex::scoped_lock lock_i(interactive_mutex_);
+    interactive_mode_ = !interactive_mode_;   
+    interactive_mode = interactive_mode_;
+  }
+
   ROS_INFO("SlamToolbox: Toggling %s interactive mode.", 
-                                             interactive_mode_ ? "on" : "off");
+                                             interactive_mode ? "on" : "off");
   PublishGraph();
   ClearMovedNodes();
+
+  boost::mutex::scoped_lock lock_p(pause_mutex_); 
+  if (interactive_mode)
+  {
+    // stop publishing so we can move things in peace
+    pause_graph_  = true;
+  }
+  else
+  {
+    // exiting interactive mode, continue publishing
+    pause_graph_ = false;
+  }
+
   return true;
 }
+
+
+/*****************************************************************************/
+bool SlamToolbox::PauseProcessingCallback(slam_toolbox::Pause::Request& req,
+                                          slam_toolbox::Pause::Response& resp)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(pause_mutex_); 
+  pause_processing_ = !pause_processing_;
+  ROS_INFO("SlamToolbox: Toggled to %s", \
+              pause_processing_ ? "paused processing." : "active processing.");
+  resp.status = true;
+  return true;
+}
+
+/*****************************************************************************/
+bool SlamToolbox::PauseNewMeasurementsCallback( \
+                                          slam_toolbox::Pause::Request& req,
+                                          slam_toolbox::Pause::Response& resp)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(pause_mutex_); 
+  pause_new_measurements_ = !pause_new_measurements_;
+  ROS_INFO("SlamToolbox: Toggled to %s", \
+    pause_new_measurements_ ? "pause taking new measurements." : 
+    "actively taking new measurements.");
+  resp.status = true;
+  return true;
+}
+
 
 /*****************************************************************************/
 bool SlamToolbox::ClearChangesCallback(slam_toolbox::Clear::Request  &req,
@@ -846,20 +896,23 @@ bool SlamToolbox::SaveMapCallback(slam_toolbox::SaveMap::Request  &req,
 }
 
 /*****************************************************************************/
-bool SlamToolbox::IsPaused()
+bool SlamToolbox::IsPaused(const PausedApplication& app)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(pause_mutex_);
-  return paused_;
-}
-
-/*****************************************************************************/
-void SlamToolbox::TogglePause()
-/*****************************************************************************/
-{
-  boost::mutex::scoped_lock lock(pause_mutex_);
-  paused_ = !paused_;
-  ROS_INFO("SlamToolbox: Toggled to %s", IsPaused() ? "paused." : "active.");
+  if (app == NEW_MEASUREMENTS)
+  {
+    return pause_new_measurements_;
+  }
+  else if (app == PROCESSING)
+  {
+    return pause_processing_;
+  }
+  else if (app == VISUALIZING_GRAPH)
+  {
+    return pause_graph_;
+  }
+  return false; // then assume working
 }
 
 /*****************************************************************************/
@@ -869,7 +922,7 @@ void SlamToolbox::Run()
   ros::Rate r(60);
   while(ros::ok())
   {
-    if (!q_.empty() && !IsPaused())
+    if (!q_.empty() && !IsPaused(PROCESSING))
     {
       posed_scan scan_w_pose = q_.front();
       q_.pop();
@@ -891,7 +944,8 @@ void SlamToolbox::Run()
 }
 
 /*****************************************************************************/
-void SlamToolbox::MoveNode(const int& id, const Eigen::Vector3d& pose, const bool correct)
+void SlamToolbox::MoveNode(const int& id, const Eigen::Vector3d& pose, \
+                           const bool correct)
 /*****************************************************************************/
 {
   solver_->ModifyNode(id, pose);

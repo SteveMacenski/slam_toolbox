@@ -20,7 +20,6 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
 /*****************************************************************************/
 {
   ros::NodeHandle nh("~");
-  _times_server = nh.advertiseService("/get_times", &CeresSolver::get_times, this);
   std::string solver_type, preconditioner_type, dogleg_type, trust_strategy, loss_fn;
   nh.getParam("ceres_linear_solver", solver_type);
   nh.getParam("ceres_preconditioner", preconditioner_type);
@@ -105,16 +104,11 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
     }
   }
 
-  // solving dials
-  options_.function_tolerance = 1e-2; //1e-6, 
-  options_.gradient_tolerance = 1e-4; //1e-10, 
-  options_.parameter_tolerance = 1e-2; //1e-8, e-4 = mm range each thing is only 5cm
+  // a typical ros map is 5cm, this is 0.001, 50x the resolution
+  options_.function_tolerance = 1e-3;
+  options_.gradient_tolerance = 1e-6;
+  options_.parameter_tolerance = 1e-3; 
 
-  // readdress later
-  options_.min_lm_diagonal = 1e-12; //1e-6 CURRENT for now
-  options_.max_lm_diagonal = 1e64; //1e32 CURRENT for now
-
-  // constants
   options_.sparse_linear_algebra_library_type = ceres::SUITE_SPARSE;
   options_.max_num_consecutive_invalid_steps = 3;
   options_.max_consecutive_nonmonotonic_steps = options_.max_num_consecutive_invalid_steps;
@@ -128,23 +122,14 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   options_.max_trust_region_radius = 1e8;
   options_.min_trust_region_radius = 1e-16;
 
+  options_.min_lm_diagonal = 1e-6;
+  options_.max_lm_diagonal = 1e32;
+
   if(options_.linear_solver_type == ceres::SPARSE_NORMAL_CHOLESKY)
   {
-    options_.dynamic_sparsity = true; // ~10-20% speed up as graph grows with CHOL
+    options_.dynamic_sparsity = true;
   }
-
   return;
-}
-
-bool CeresSolver::get_times(std_srvs::Empty::Request& e, std_srvs::Empty::Response& e2)
-{
-  std::string s;
-  for (int i=0; i!=_times.size();i++)
-  {
-    s += " " + std::to_string(_times[i]);
-  }
-  ROS_INFO("%s", s.c_str());
-  return true;
 }
 
 /*****************************************************************************/
@@ -203,7 +188,6 @@ void CeresSolver::Compute()
   ceres::Solver::Summary summary;
   ceres::Solve(options_, problem_, &summary);
   std::cout << summary.FullReport() << '\n';
-  _times.push_back((ros::Time::now() - start_time).toSec());
 
   if (!summary.IsSolutionUsable())
   {
