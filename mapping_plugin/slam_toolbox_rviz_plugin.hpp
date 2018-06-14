@@ -30,7 +30,16 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QtGui>
+#include <QLabel>
+
+#include "slam_toolbox/Pause.h"
+#include "slam_toolbox/ClearQueue.h"
+#include "slam_toolbox/ToggleInteractive.h"
+#include "slam_toolbox/Clear.h"
+#include "slam_toolbox/SaveMap.h"
+#include "slam_toolbox/LoopClosure.h"
 
 class QLineEdit;
 class QSpinBox;
@@ -43,19 +52,44 @@ namespace slam_toolbox
 
 class SlamToolboxPlugin: public rviz::Panel
 {
-    Q_OBJECT
+  Q_OBJECT
 
 public:
-    SlamToolboxPlugin(QWidget* parent = 0);
+  SlamToolboxPlugin(QWidget* parent = 0);
 
 public Q_SLOTS:
 protected Q_SLOTS:
+  void ClearChanges();
+  void SaveChanges();
+  void SaveMap();
+  void ClearQueue();
+  void InteractiveCb(int state);
+  void PauseProcessingCb(int state);
+  void PauseMeasurementsCb(int state);
 
 protected:
-    QVBoxLayout* _vbox;
+  QVBoxLayout* _vbox;
+  QHBoxLayout* _hbox1;
+  QHBoxLayout* _hbox2;
+  QHBoxLayout* _hbox3;
+  QHBoxLayout* _hbox4;
 
-    QPushButton* _button1;
-    QPushButton* _button2;
+  QPushButton* _button1;
+  QPushButton* _button2;
+  QPushButton* _button3;
+  QPushButton* _button4;
+
+  QLineEdit* _line1;
+
+  QCheckBox* _check1;
+  QCheckBox* _check2;
+  QCheckBox* _check3;
+
+  QLabel* _label1;
+  QLabel* _label2;
+  QLabel* _label3;
+
+  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_processing, _pause_measurements;
 };
 
 } // end namespace

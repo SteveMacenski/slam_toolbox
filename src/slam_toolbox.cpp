@@ -247,6 +247,8 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   ssPause_measurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::PauseNewMeasurementsCallback, this);
   ssLoopClosure_ = node.advertiseService("manual_loop_closure", &SlamToolbox::ManualLoopClosureCallback, this);
   ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::InteractiveCallback,this);
+  ssClear_manual_ = node.advertiseService("clear_changes", &SlamToolbox::ClearChangesCallback, this);
+  ssSave_map_ = node.advertiseService("save_map", &SlamToolbox::SaveMapCallback, this);
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node, "/scan", 5);
   scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::LaserCallback, this, _1));
@@ -768,6 +770,13 @@ bool SlamToolbox::ManualLoopClosureCallback( \
 {
   {
     boost::mutex::scoped_lock lock(moved_nodes_mutex);
+
+    if (moved_nodes_.size() == 0)
+    {
+      ROS_WARN("No moved nodes to attempt manual loop closure.");
+      return true;
+    }
+
     ROS_INFO("SlamToolbox: Attempting to manual loop close with %i moved nodes.", 
                                                      (int)moved_nodes_.size());
     // for each in node map
@@ -854,7 +863,7 @@ bool SlamToolbox::PauseNewMeasurementsCallback( \
 
 /*****************************************************************************/
 bool SlamToolbox::ClearChangesCallback(slam_toolbox::Clear::Request  &req,
-                                     slam_toolbox::Clear::Response &resp)
+                                       slam_toolbox::Clear::Response &resp)
 /*****************************************************************************/
 {
   ROS_INFO("SlamToolbox: Clearing manual loop closure nodes.");
@@ -880,6 +889,14 @@ bool SlamToolbox::SaveMapCallback(slam_toolbox::SaveMap::Request  &req,
                                 slam_toolbox::SaveMap::Response &resp)
 /*****************************************************************************/
 {
+  std::vector<Eigen::Vector2d> graph;
+  solver_->getGraph(graph);
+  if (graph.size() == 0)
+  {
+    ROS_WARN("Graph is empty, no map to save.");
+    return true;
+  }
+
   const std::string name = req.name.data;
   if (name != "")
   {
