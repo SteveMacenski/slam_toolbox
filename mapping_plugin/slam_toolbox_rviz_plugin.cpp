@@ -50,17 +50,20 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   connect(_button4, SIGNAL(clicked()), this, SLOT(ClearQueue()));
 
   _label1 = new QLabel(this);
-  _label1->setText("Interactive Mode");
+  _label1->setText("Interactive");
   _label2 = new QLabel(this);
-  _label2->setText("Taking New Measurements");
+  _label2->setText("Allow New Scans");
   _label3 = new QLabel(this);
-  _label3->setText("Processing Measurements");
+  _label3->setText("Process Scans");
 
   _check1 = new QCheckBox();
+  _check1->setChecked(false);
   connect(_check1, SIGNAL(stateChanged(int)), this, SLOT(InteractiveCb(int)));
   _check2 = new QCheckBox();
+  _check2->setChecked(true);
   connect(_check2, SIGNAL(stateChanged(int)), this, SLOT(PauseMeasurementsCb(int)));
   _check3 = new QCheckBox();
+  _check3->setChecked(true);
   connect(_check3, SIGNAL(stateChanged(int)), this, SLOT(PauseProcessingCb(int)));
 
   _line1 = new QLineEdit();
@@ -74,12 +77,12 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _check3->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _line1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
-  _hbox1->addWidget(_label1);
   _hbox1->addWidget(_check1);
-  _hbox1->addWidget(_label2);
+  _hbox1->addWidget(_label1);
   _hbox1->addWidget(_check2);
-  _hbox1->addWidget(_label3);
+  _hbox1->addWidget(_label2);
   _hbox1->addWidget(_check3);
+  _hbox1->addWidget(_label3);
 
   _hbox2->addWidget(_button1);
   _hbox2->addWidget(_button2);

@@ -16,6 +16,17 @@ I have spent a extremely long time working with Ceres to optimize it for creatio
 
 Manual loop closure, pausing and resuming SLAM, interspection and modification of the pose graph, synchronous SLAM (no missing laser scans) for online or offline application alike without change, more exposed options, rviz plugin for visual interspection and assisting in mapping
 
+### Rviz Plugin
+
+An rviz plugin is furnished to help with manual loop closures and online / offline mapping. By default interactive mode is off (allowing you to move nodes) as this takes quite a toll on rviz. When you want to move nodes, tick the interactive box, move what you want, and save changes to prompt a manual loop closure. Clear if you made a mistake. When done, exit interactive mode again. 
+
+There's also a tool to help you control online and offline data. You can at any time stop processing new scans or accepting new scans into the queue. this is desirable when you want to allow the package to catch up while the robot sits still or you want to stop processing new scans while you do a manual loop closure / manual "help". If there's more in the queue than you want, you may also clear it.
+
+The interface is shown below.
+
+![rviz_plugin](https://user-images.githubusercontent.com/14944147/41443842-2e2628b2-6ff4-11e8-9c62-15132d5edc31.png)
+
+
 ### Metrics
 
 If you're a weirdo like me and you want to see how I came up with the settings I had, see below.
