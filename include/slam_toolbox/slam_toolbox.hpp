@@ -129,6 +129,7 @@ private:
   bool IsPaused(const PausedApplication& app);
 
   // ROS-y-ness
+  ros::NodeHandle nh_;
   tf::TransformListener tf_;
   tf::TransformBroadcaster* tfB_;
   message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;

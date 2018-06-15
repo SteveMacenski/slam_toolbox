@@ -30,6 +30,20 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
     rviz::Panel(parent)
 /*****************************************************************************/    
 {
+  ros::NodeHandle nh;
+  bool paused_measure = false, paused_process = false, interactive = false;
+  nh.getParam("/slam_toolbox/paused_new_measurements", paused_measure);
+  nh.getParam("/slam_toolbox/paused_processing", paused_process);
+  nh.getParam("/slam_toolbox/interactive_mode", interactive);
+
+  _clearChanges = nh.serviceClient<slam_toolbox::Clear>("/slam_toolbox/clear_changes");
+  _saveChanges = nh.serviceClient<slam_toolbox::LoopClosure>("/slam_toolbox/manual_loop_closure");
+  _saveMap = nh.serviceClient<slam_toolbox::SaveMap>("/slam_toolbox/save_map");
+  _clearQueue = nh.serviceClient<slam_toolbox::ClearQueue>("/slam_toolbox/clear_queue");
+  _interactive = nh.serviceClient<slam_toolbox::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
+  _pause_processing = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_processing");
+  _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
+
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();
   _hbox2 = new QHBoxLayout();
@@ -57,13 +71,13 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _label3->setText("Process Scans");
 
   _check1 = new QCheckBox();
-  _check1->setChecked(false);
+  _check1->setChecked(interactive);
   connect(_check1, SIGNAL(stateChanged(int)), this, SLOT(InteractiveCb(int)));
   _check2 = new QCheckBox();
-  _check2->setChecked(true);
+  _check2->setChecked(!paused_measure);
   connect(_check2, SIGNAL(stateChanged(int)), this, SLOT(PauseMeasurementsCb(int)));
   _check3 = new QCheckBox();
-  _check3->setChecked(true);
+  _check3->setChecked(!paused_process);
   connect(_check3, SIGNAL(stateChanged(int)), this, SLOT(PauseProcessingCb(int)));
 
   _line1 = new QLineEdit();
@@ -98,15 +112,6 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _vbox->addLayout(_hbox4);
 
   setLayout(_vbox);
-
-  ros::NodeHandle nh;
-  _clearChanges = nh.serviceClient<slam_toolbox::Clear>("/slam_toolbox/clear_changes");
-  _saveChanges = nh.serviceClient<slam_toolbox::LoopClosure>("/slam_toolbox/manual_loop_closure");
-  _saveMap = nh.serviceClient<slam_toolbox::SaveMap>("/slam_toolbox/save_map");
-  _clearQueue = nh.serviceClient<slam_toolbox::ClearQueue>("/slam_toolbox/clear_queue");
-  _interactive = nh.serviceClient<slam_toolbox::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
-  _pause_processing = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_processing");
-  _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
 }
 
 /*****************************************************************************/

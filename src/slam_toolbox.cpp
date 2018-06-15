@@ -45,13 +45,18 @@ SlamToolbox::SlamToolbox() :
   mapper_ = new karto::Mapper();
   dataset_ = new karto::Dataset();
 
-  ros::NodeHandle private_nh_("~");
-  SetParams(private_nh_);
-  SetSolver(private_nh_);
-  SetROSInterfaces(private_nh_);
+  ros::NodeHandle private_nh("~");
+  nh_ = private_nh;
+  SetParams(private_nh);
+  SetSolver(private_nh);
+  SetROSInterfaces(private_nh);
+
+  nh_.setParam("paused_processing", pause_processing_);
+  nh_.setParam("paused_new_measurements", pause_new_measurements_);
+  nh_.setParam("interactive_mode", interactive_mode_);
 
   double transform_publish_period;
-  private_nh_.param("transform_publish_period", 
+  private_nh.param("transform_publish_period", 
                                                transform_publish_period, 0.05);
   transform_thread_ = new boost::thread(boost::bind(&SlamToolbox::PublishLoop, 
                                               this, transform_publish_period));
@@ -838,6 +843,7 @@ bool SlamToolbox::InteractiveCallback( \
     boost::mutex::scoped_lock lock_i(interactive_mutex_);
     interactive_mode_ = !interactive_mode_;   
     interactive_mode = interactive_mode_;
+    nh_.setParam("interactive_mode", interactive_mode_);
   }
 
   ROS_INFO("SlamToolbox: Toggling %s interactive mode.", 
@@ -851,12 +857,14 @@ bool SlamToolbox::InteractiveCallback( \
     // stop publishing and processing new measurements so we can move things in peace
     pause_graph_  = true;
     pause_processing_ = true;
+    nh_.setParam("paused_processing", pause_processing_);
   }
   else
   {
     // exiting interactive mode, continue publishing and processing new measurements
     pause_graph_ = false;
     pause_processing_ = false;
+    nh_.setParam("paused_processing", pause_processing_);
   }
 
   return true;
@@ -870,6 +878,7 @@ bool SlamToolbox::PauseProcessingCallback(slam_toolbox::Pause::Request& req,
 {
   boost::mutex::scoped_lock lock(pause_mutex_); 
   pause_processing_ = !pause_processing_;
+  nh_.setParam("paused_processing", pause_processing_);
   ROS_INFO("SlamToolbox: Toggled to %s", \
               pause_processing_ ? "paused processing." : "active processing.");
   resp.status = true;
@@ -884,6 +893,7 @@ bool SlamToolbox::PauseNewMeasurementsCallback( \
 {
   boost::mutex::scoped_lock lock(pause_mutex_); 
   pause_new_measurements_ = !pause_new_measurements_;
+  nh_.setParam("paused_measurements", pause_new_measurements_);
   ROS_INFO("SlamToolbox: Toggled to %s", \
     pause_new_measurements_ ? "pause taking new measurements." : 
     "actively taking new measurements.");
