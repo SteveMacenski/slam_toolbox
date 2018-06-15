@@ -34,6 +34,8 @@
 #include <QtGui>
 #include <QLabel>
 
+#include <thread>
+
 #include "slam_toolbox/Pause.h"
 #include "slam_toolbox/ClearQueue.h"
 #include "slam_toolbox/ToggleInteractive.h"
@@ -56,6 +58,7 @@ class SlamToolboxPlugin: public rviz::Panel
 
 public:
   SlamToolboxPlugin(QWidget* parent = 0);
+  ~SlamToolboxPlugin();
 
 public Q_SLOTS:
 protected Q_SLOTS:
@@ -66,6 +69,8 @@ protected Q_SLOTS:
   void InteractiveCb(int state);
   void PauseProcessingCb(int state);
   void PauseMeasurementsCb(int state);
+
+  void updateCheckStateIfExternalChange();
 
 protected:
   QVBoxLayout* _vbox;
@@ -90,6 +95,8 @@ protected:
   QLabel* _label3;
 
   ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_processing, _pause_measurements;
+
+  std::thread* _thread;
 };
 
 } // end namespace

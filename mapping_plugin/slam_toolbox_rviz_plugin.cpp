@@ -27,7 +27,8 @@ namespace slam_toolbox
 
 /*****************************************************************************/
 SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
-    rviz::Panel(parent)
+    rviz::Panel(parent),
+    _thread(NULL)
 /*****************************************************************************/    
 {
   ros::NodeHandle nh;
@@ -112,7 +113,20 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _vbox->addLayout(_hbox4);
 
   setLayout(_vbox);
+
+  _thread = new std::thread(&SlamToolboxPlugin::updateCheckStateIfExternalChange, this);
 }
+
+/*****************************************************************************/
+SlamToolboxPlugin::~SlamToolboxPlugin()
+/*****************************************************************************/
+{
+  if (_thread)
+  {
+    delete _thread;
+  }
+}
+
 
 /*****************************************************************************/
 void SlamToolboxPlugin::ClearChanges()
@@ -191,6 +205,24 @@ void SlamToolboxPlugin::PauseMeasurementsCb(int state)
   if (!_pause_measurements.call(msg))
   {
     ROS_WARN("Failed to toggle pause measurements, is service running?");
+  }
+}
+
+void SlamToolboxPlugin::updateCheckStateIfExternalChange()
+{
+  ros::Rate r(0.2); // 5 seconds
+  ros::NodeHandle nh;
+  bool paused_measure = false, paused_process = false, interactive = false;
+  while (ros::ok())
+  {
+    nh.getParam("/slam_toolbox/paused_new_measurements", paused_measure);
+    nh.getParam("/slam_toolbox/paused_processing", paused_process);
+    nh.getParam("/slam_toolbox/interactive_mode", interactive);
+
+    _check1->setChecked(interactive);
+    _check2->setChecked(!paused_measure);
+    _check3->setChecked(!paused_process);
+    r.sleep();
   }
 }
 
