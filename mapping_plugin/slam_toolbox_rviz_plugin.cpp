@@ -210,7 +210,7 @@ void SlamToolboxPlugin::PauseMeasurementsCb(int state)
 
 void SlamToolboxPlugin::updateCheckStateIfExternalChange()
 {
-  ros::Rate r(0.2); // 5 seconds
+  ros::Rate r(1); //1 hz
   ros::NodeHandle nh;
   bool paused_measure = false, paused_process = false, interactive = false;
   while (ros::ok())
