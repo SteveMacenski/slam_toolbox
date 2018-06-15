@@ -258,7 +258,7 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   const int node2 = pEdge->GetTarget()->GetObject()->GetUniqueId();
   graph_iterator node2it = nodes_->find(node2);
 
-  if (node1it ==  nodes_->end() || node2it == nodes_->end() || node1it == node2it)
+  if (node1it == nodes_->end() || node2it == nodes_->end() || node1it == node2it)
   {
     ROS_WARN("CeresSolver: Failed to add constraint, could not find nodes.");
     return;
@@ -279,8 +279,8 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   sqrt_information(2,2) = precisionMatrix(2,2);
 
   // populate residual and parameterization for heading normalization
-  ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create( pose2d(0), 
-                                            pose2d(1), pose2d(2), sqrt_information);
+  ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create(pose2d(0), 
+                                       pose2d(1), pose2d(2), sqrt_information);
   problem_->AddResidualBlock( cost_function, loss_function_, 
                      &node1it->second(0), &node1it->second(1), &node1it->second(2),
                      &node2it->second(0), &node2it->second(1), &node2it->second(2));
