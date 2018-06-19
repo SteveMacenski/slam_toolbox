@@ -1,0 +1,38 @@
+name: slam-toolbox
+version: '0.1.0'
+summary: Slam Toolbox based on Karto's SDK.
+description: |
+  A toolbox for building high quality maps of large spaces with a LIDAR.
+
+grade: stable
+confinement: devmode
+
+type: app
+
+apps:
+  slam-toolbox:
+    command: roslaunch slam_toolbox build_map_w_params.launch
+    environment: 
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/lapack:$SNAP/usr/lib/libblas  # pluginlib (lapack, blas)
+    plugs: [network, network-bind]
+
+  rviz:
+    command: desktop-launch $SNAP/opt/ros/kinetic/lib/rviz/rviz -d $ROS_PACKAGE_PATH/slam_toolbox/config/slam_toolbox_default.rviz
+    environment:
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/x86_64-linux-gnu/OGRE-1.9.0 # rviz plugin (ogre)
+    plugs: [network, network-bind, home, x11, opengl]
+
+  roscore:
+    command: roscore
+    plugs: [network, network-bind]
+
+parts:
+  workspace:
+    plugin: catkin
+    source-space: src
+    include-roscore: true
+    rosdistro: kinetic
+    catkin-ros-master-uri: http://localhost:11311
+    catkin-packages: [open_karto, slam_toolbox, rviz]
+    recursive-rosinstall: false
+    after: [desktop-qt4]
