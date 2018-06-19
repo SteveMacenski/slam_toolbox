@@ -31,9 +31,9 @@ The interface is shown below.
 
 If you're a weirdo like me and you want to see how I came up with the settings I had, see below.
 
-![ceres_solver_comparison](https://user-images.githubusercontent.com/14944147/41320076-295d3dae-6e53-11e8-82c3-39da7667f45c.png)
+![ceres_solver_comparison](https://user-images.githubusercontent.com/14944147/41576505-a6802d76-733c-11e8-8eca-334da2c8bd50.png)
 
-The data sets present solve time vs number of nodes in the pose graph on a large dataset, as that is not open source, but suffice to say that the settings I recommend work well. I think anyone would be hardset in a normal application to exceed or find that another solver type is better. Benchmark on a low power 7th gen i7 machine.
+The data sets present solve time vs number of nodes in the pose graph on a large dataset, as that is not open source, but suffice to say that the settings I recommend work well. I think anyone would be hardset in a normal application to exceed or find that another solver type is better (that super low curve on the bottom one, yeah, that's it). Benchmark on a low power 7th gen i7 machine.
 
 ### Performance
 
@@ -67,7 +67,9 @@ All other parameters, see SlamKarto documentation. They're all just the inputs t
 
 ## Installation
 
-ROSDep will take care of Ceres, G2O, and SBA if you are familiar. Otherwise,
+ROSDep will take care of Ceres, G2O, and SBA if you are familiar. 
+
+I also have a Snap built for this that's super easy to install if you know snaps, named `slam-toolbox`. Otherwise,
 
 You'll need to install Ceres [from source instructions here](http://ceres-solver.org/installation.html) or `sudo ap-get install libceres-dev`
 
