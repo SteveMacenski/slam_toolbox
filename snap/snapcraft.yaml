@@ -35,4 +35,4 @@ parts:
     catkin-ros-master-uri: http://localhost:11311
     catkin-packages: [open_karto, slam_toolbox, rviz]
     recursive-rosinstall: false
-    after: [desktop-qt4]
+    after: [desktop-qt5]

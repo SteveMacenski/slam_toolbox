@@ -25,7 +25,6 @@
 // STL
 #include <stdlib.h>
 #include <stdio.h>
-#include <thread>
 // QT
 #include <QPushButton>
 #include <QCheckBox>
@@ -35,6 +34,9 @@
 #include <QHBoxLayout>
 #include <QtGui>
 #include <QLabel>
+
+#include <thread>
+
 // msgs
 #include "slam_toolbox/Pause.h"
 #include "slam_toolbox/ClearQueue.h"
