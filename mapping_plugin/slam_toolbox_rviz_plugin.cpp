@@ -16,11 +16,19 @@
 
 /* Author: Steven Macenski */
 
+// Header
 #include "slam_toolbox_rviz_plugin.hpp"
-
+// QT
+#include <QPushButton>
+#include <QCheckBox>
+#include <QLineEdit>
+#include <QComboBox>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QtGui>
+#include <QLabel>
+// ROS
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(slam_toolbox::SlamToolboxPlugin, rviz::Panel)
-
 
 namespace slam_toolbox
 {
@@ -219,11 +227,14 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
     nh.getParam("/slam_toolbox/paused_processing", paused_process);
     nh.getParam("/slam_toolbox/interactive_mode", interactive);
 
-    _check1->setChecked(interactive);
-    _check2->setChecked(!paused_measure);
-    _check3->setChecked(!paused_process);
+    // TODO oscillation condition since it calls the callback
+    // _check1->setChecked(interactive);
+    // _check2->setChecked(!paused_measure);
+    // _check3->setChecked(!paused_process);
     r.sleep();
   }
 }
 
 } // end namespace
+
+PLUGINLIB_EXPORT_CLASS(slam_toolbox::SlamToolboxPlugin, rviz::Panel)

@@ -19,12 +19,14 @@
 #ifndef SLAM_TOOLBOX_PANEL_H
 #define SLAM_TOOLBOX_PANEL_H
 
-#ifndef Q_MOC_RUN
+// ROS
 #include <ros/ros.h>
 #include <rviz/panel.h>
-#endif
+// STL
 #include <stdlib.h>
 #include <stdio.h>
+#include <thread>
+// QT
 #include <QPushButton>
 #include <QCheckBox>
 #include <QLineEdit>
@@ -33,9 +35,7 @@
 #include <QHBoxLayout>
 #include <QtGui>
 #include <QLabel>
-
-#include <thread>
-
+// msgs
 #include "slam_toolbox/Pause.h"
 #include "slam_toolbox/ClearQueue.h"
 #include "slam_toolbox/ToggleInteractive.h"
