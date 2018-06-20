@@ -3,8 +3,7 @@ project(slam_toolbox)
 
 add_compile_options(-std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
-set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")                                                                            
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive") 
+set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11") #-lboost_serialization                                                                            
 
 find_package(catkin REQUIRED
   COMPONENTS
@@ -33,6 +32,7 @@ find_package(G2O REQUIRED)
 find_package(Cholmod REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
+find_package(Boost REQUIRED system serialization filesystem)
 
 if(rviz_QT_VERSION VERSION_LESS "5")
   find_package(Qt4 ${rviz_QT_VERSION} REQUIRED QtCore QtGui)
@@ -63,6 +63,7 @@ include_directories(include ${catkin_INCLUDE_DIRS}
                             ${CHOLMOD_INCLUDE_DIR}
                             #${MKL_INCLUDE_DIR}
                             #${GTSAM_INCLUDE_DIRS}
+                            ${Boost_INCLUDE_DIR}
 )
 
 add_definitions(${EIGEN3_DEFINITIONS})
@@ -75,6 +76,9 @@ add_service_files(DIRECTORY srvs
   Clear.srv
   SaveMap.srv
   LoopClosure.srv
+  MergeMaps.srv
+  AddSubmap.srv
+  SerializePoseGraph.srv
 )
 generate_messages(
   DEPENDENCIES
@@ -133,11 +137,17 @@ set(SOURCE_FILES mapping_plugin/slam_toolbox_rviz_plugin.cpp )
 add_library(SlamToolboxPlugin ${SOURCE_FILES})
 target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES}  ${catkin_LIBRARIES} )
 
+#### Main tool for mapping
 add_executable(slam_toolbox src/slam_toolbox.cpp)
-add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(slam_toolbox ${catkin_LIBRARIES})
+add_dependencies(slam_toolbox ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(slam_toolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-install(TARGETS slam_toolbox spa_solver_plugin g2O_solver_plugin ceres_solver_plugin SlamToolboxPlugin
+#### Merging maps tool
+add_executable(merge_maps_tool src/merge_maps_tool.cpp)
+add_dependencies(merge_maps_tool ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(merge_maps_tool ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+install(TARGETS slam_toolbox merge_maps_tool spa_solver_plugin g2O_solver_plugin ceres_solver_plugin SlamToolboxPlugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
@@ -155,6 +165,6 @@ install(DIRECTORY config
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
-install(FILES solver_plugins.xml rviz_plugin.xml
+install(FILES solver_plugins.xml rviz_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

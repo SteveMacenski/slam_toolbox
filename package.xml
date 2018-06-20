@@ -50,7 +50,7 @@
 
   <export>
     <slam_toolbox plugin="${prefix}/solver_plugins.xml" />
-    <rviz plugin="${prefix}/rviz_plugin.xml"/>
+    <rviz plugin="${prefix}/rviz_plugins.xml"/>
   </export>
 
 </package>

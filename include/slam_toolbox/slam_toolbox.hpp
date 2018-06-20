@@ -49,12 +49,18 @@
 #include "slam_toolbox/Clear.h"
 #include "slam_toolbox/SaveMap.h"
 #include "slam_toolbox/LoopClosure.h"
+#include "slam_toolbox/SerializePoseGraph.h"
 
 #include <string>
 #include <map>
 #include <vector>
 #include <queue>
 #include <cstdlib>
+#include <fstream>
+
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/vector.hpp>
 
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
@@ -111,7 +117,8 @@ private:
                        slam_toolbox::SaveMap::Response &resp);
   bool ManualLoopClosureCallback(slam_toolbox::LoopClosure::Request  &req,
                                  slam_toolbox::LoopClosure::Response &resp);
-
+  bool SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
+                                  slam_toolbox::SerializePoseGraph::Response &resp);
   // functional bits
   bool GetOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
   karto::LaserRangeFinder* GetLaser(const sensor_msgs::LaserScan::ConstPtr& scan);

@@ -27,6 +27,7 @@
 #include <QHBoxLayout>
 #include <QtGui>
 #include <QLabel>
+#include <QFrame>
 // ROS
 #include <pluginlib/class_list_macros.h>
 
@@ -52,12 +53,20 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _interactive = nh.serviceClient<slam_toolbox::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
   _pause_processing = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_processing");
   _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
+  _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/merge_map_tool/add_submap");
+  _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/merge_map_tool/merge_maps");
 
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();
   _hbox2 = new QHBoxLayout();
   _hbox3 = new QHBoxLayout();
   _hbox4 = new QHBoxLayout();
+  _hbox5 = new QHBoxLayout();
+  _hbox6 = new QHBoxLayout();
+
+  QFrame* _line = new QFrame();
+  _line->setFrameShape(QFrame::HLine);
+  _line->setFrameShadow(QFrame::Sunken);
 
   _button1 = new QPushButton(this);
   _button1->setText("Clear Changes");
@@ -71,6 +80,12 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _button4 = new QPushButton(this);
   _button4->setText("Clear Measurement Queue");
   connect(_button4, SIGNAL(clicked()), this, SLOT(ClearQueue()));
+  _button5 = new QPushButton(this);
+  _button5->setText("Load Pose Graph");
+  connect(_button5, SIGNAL(clicked()), this, SLOT(LoadPoseGraph()));
+  _button6 = new QPushButton(this);
+  _button6->setText("Generate Map");
+  connect(_button6, SIGNAL(clicked()), this, SLOT(GenerateMap()));
 
   _label1 = new QLabel(this);
   _label1->setText("Interactive");
@@ -78,6 +93,12 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _label2->setText("Allow New Scans");
   _label3 = new QLabel(this);
   _label3->setText("Process Scans");
+  _label4 = new QLabel(this);
+  _label4->setText("Merge Map Tool");
+  _label4->setAlignment(Qt::AlignCenter);
+  _label5 = new QLabel(this);
+  _label5->setText("Create Map Tool");
+  _label5->setAlignment(Qt::AlignCenter);
 
   _check1 = new QCheckBox();
   _check1->setChecked(interactive);
@@ -90,6 +111,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   connect(_check3, SIGNAL(stateChanged(int)), this, SLOT(PauseProcessingCb(int)));
 
   _line1 = new QLineEdit();
+  _line2 = new QLineEdit();
 
   _button1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _button2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -115,10 +137,20 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
 
   _hbox4->addWidget(_button4);
 
+  _hbox5->addWidget(_button5);
+  _hbox5->addWidget(_line2);
+
+  _hbox6->addWidget(_button6);
+
+  _vbox->addWidget(_label5);
   _vbox->addLayout(_hbox1);
   _vbox->addLayout(_hbox2);
   _vbox->addLayout(_hbox3);
   _vbox->addLayout(_hbox4);
+  _vbox->addWidget(_line);
+  _vbox->addWidget(_label4);
+  _vbox->addLayout(_hbox5);
+  _vbox->addLayout(_hbox6);
 
   setLayout(_vbox);
 
@@ -135,6 +167,27 @@ SlamToolboxPlugin::~SlamToolboxPlugin()
   }
 }
 
+/*****************************************************************************/
+void SlamToolboxPlugin::LoadPoseGraph()
+/*****************************************************************************/
+{
+  slam_toolbox::AddSubmap msg;
+  msg.request.filename = _line2->text().toStdString();
+  if (!_load_submap.call(msg))
+  {
+    ROS_WARN("Failed to load pose graph from file, is service running?");
+  }}
+
+/*****************************************************************************/
+void SlamToolboxPlugin::GenerateMap()
+/*****************************************************************************/
+{
+  slam_toolbox::MergeMaps msg;
+  if (!_merge.call(msg))
+  {
+    ROS_WARN("Failed to merge maps, is service running?");
+  }
+}
 
 /*****************************************************************************/
 void SlamToolboxPlugin::ClearChanges()

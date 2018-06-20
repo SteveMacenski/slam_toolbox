@@ -1014,6 +1014,17 @@ void SlamToolbox::MoveNode(const int& id, const Eigen::Vector3d& pose, \
 }
 
 /*****************************************************************************/
+bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
+                                             slam_toolbox::SerializePoseGraph::Response &resp)
+/*****************************************************************************/
+{
+  std::ofstream ofs(req.filename);
+  boost::archive::text_oarchive oa(ofs);
+  oa << mapper_->GetAllProcessedScans();
+  return true;
+}
+
+/*****************************************************************************/
 int main(int argc, char** argv)
 /*****************************************************************************/
 {
