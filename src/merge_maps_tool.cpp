@@ -84,10 +84,19 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   }
 
   // deseralize file
-  std::ifstream ifs(req.filename);
+  std::ifstream ifs(req.filename.c_str());
   boost::archive::text_iarchive ia(ifs);
   karto::LocalizedRangeScanVector scans;
-  ia >> scans;
+  if (ifs.good())
+  {
+    ia >> scans;
+    ROS_INFO("MergeMapTool: Deserialized file correctly!");
+  }
+  else
+  {
+    ROS_WARN("MergeMapTool: Serialized file may be corrupted, exiting.");
+    return true;
+  }
 
   // num_submaps_++ and name frame appropriately
   num_submaps_++;

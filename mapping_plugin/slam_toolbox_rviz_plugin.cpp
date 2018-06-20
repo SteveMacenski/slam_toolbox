@@ -53,8 +53,9 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _interactive = nh.serviceClient<slam_toolbox::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
   _pause_processing = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_processing");
   _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
-  _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/merge_map_tool/add_submap");
-  _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/merge_map_tool/merge_maps");
+  _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/merge_maps_tool/add_submap");
+  _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/merge_maps_tool/merge_maps");
+  _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/slam_toolbox/serialize_map");
 
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();
@@ -63,6 +64,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _hbox4 = new QHBoxLayout();
   _hbox5 = new QHBoxLayout();
   _hbox6 = new QHBoxLayout();
+  _hbox7 = new QHBoxLayout();
 
   QFrame* _line = new QFrame();
   _line->setFrameShape(QFrame::HLine);
@@ -86,6 +88,9 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _button6 = new QPushButton(this);
   _button6->setText("Generate Map");
   connect(_button6, SIGNAL(clicked()), this, SLOT(GenerateMap()));
+  _button7 = new QPushButton(this);
+  _button7->setText("Serialize Map");
+  connect(_button7, SIGNAL(clicked()), this, SLOT(SerializeMap()));
 
   _label1 = new QLabel(this);
   _label1->setText("Interactive");
@@ -112,6 +117,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
 
   _line1 = new QLineEdit();
   _line2 = new QLineEdit();
+  _line3 = new QLineEdit();
 
   _button1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _button2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -142,10 +148,14 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
 
   _hbox6->addWidget(_button6);
 
+  _hbox7->addWidget(_button7);
+  _hbox7->addWidget(_line3);
+
   _vbox->addWidget(_label5);
   _vbox->addLayout(_hbox1);
   _vbox->addLayout(_hbox2);
   _vbox->addLayout(_hbox3);
+  _vbox->addLayout(_hbox7);
   _vbox->addLayout(_hbox4);
   _vbox->addWidget(_line);
   _vbox->addWidget(_label4);
@@ -168,6 +178,18 @@ SlamToolboxPlugin::~SlamToolboxPlugin()
 }
 
 /*****************************************************************************/
+void SlamToolboxPlugin::SerializeMap()
+/*****************************************************************************/
+{
+  slam_toolbox::SerializePoseGraph msg;
+  msg.request.filename = _line3->text().toStdString();
+  if (!_serialize.call(msg))
+  {
+    ROS_WARN("Failed to serialize pose graph to file, is service running?");
+  }
+}
+
+/*****************************************************************************/
 void SlamToolboxPlugin::LoadPoseGraph()
 /*****************************************************************************/
 {
@@ -176,7 +198,8 @@ void SlamToolboxPlugin::LoadPoseGraph()
   if (!_load_submap.call(msg))
   {
     ROS_WARN("Failed to load pose graph from file, is service running?");
-  }}
+  }
+}
 
 /*****************************************************************************/
 void SlamToolboxPlugin::GenerateMap()

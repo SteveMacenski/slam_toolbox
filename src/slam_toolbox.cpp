@@ -258,6 +258,7 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::InteractiveCallback,this);
   ssClear_manual_ = node.advertiseService("clear_changes", &SlamToolbox::ClearChangesCallback, this);
   ssSave_map_ = node.advertiseService("save_map", &SlamToolbox::SaveMapCallback, this);
+  ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::SerializePoseGraphCallback, this);
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node, "/scan", 5);
   scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::LaserCallback, this, _1));
@@ -991,7 +992,7 @@ void SlamToolbox::Run()
 
       if(!laser)
       {
-        ROS_WARN("Failed to create laser device for %s; discarding scan",
+        ROS_WARN("SlamToolbox: Failed to create laser device for %s; discarding scan",
            scan_w_pose.scan->header.frame_id.c_str());
         break;
       }
@@ -1020,7 +1021,11 @@ bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::R
 {
   std::ofstream ofs(req.filename);
   boost::archive::text_oarchive oa(ofs);
-  oa << mapper_->GetAllProcessedScans();
+  karto::LocalizedRangeScanVector data = mapper_->GetAllProcessedScans();
+  oa << data;
+  ofs.close();
+  
+  ROS_INFO("SlamToolbox: Serialized pose graph.");
   return true;
 }
 

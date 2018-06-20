@@ -1,0 +1,6 @@
+<launch>
+
+  <node pkg="slam_toolbox" type="merge_maps_tool" name="merge_maps_tool" output="screen">
+  </node>
+
+</launch>

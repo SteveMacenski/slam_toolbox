@@ -47,6 +47,7 @@
 #include "slam_toolbox/LoopClosure.h"
 #include "slam_toolbox/MergeMaps.h"
 #include "slam_toolbox/AddSubmap.h"
+#include "slam_toolbox/SerializePoseGraph.h"
 
 class QLineEdit;
 class QSpinBox;
@@ -76,6 +77,7 @@ protected Q_SLOTS:
   void PauseMeasurementsCb(int state);
   void LoadPoseGraph();
   void GenerateMap();
+  void SerializeMap();
 
   void updateCheckStateIfExternalChange();
 
@@ -87,6 +89,7 @@ protected:
   QHBoxLayout* _hbox4;
   QHBoxLayout* _hbox5;
   QHBoxLayout* _hbox6;
+  QHBoxLayout* _hbox7;
 
   QPushButton* _button1;
   QPushButton* _button2;
@@ -94,9 +97,11 @@ protected:
   QPushButton* _button4;
   QPushButton* _button5;
   QPushButton* _button6;
+  QPushButton* _button7;
 
   QLineEdit* _line1;
   QLineEdit* _line2;
+  QLineEdit* _line3;
 
   QCheckBox* _check1;
   QCheckBox* _check2;
@@ -110,7 +115,7 @@ protected:
 
   QFrame* _line;
 
-  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_processing, _pause_measurements, _load_submap, _merge;
+  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_processing, _pause_measurements, _load_submap, _merge, _serialize;
 
   std::thread* _thread;
 };
