@@ -134,7 +134,7 @@ private:
   tf::TransformBroadcaster* tfB_;
   message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
   tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
-  ros::Publisher sst_, sstm_, marker_publisher_;
+  ros::Publisher sst_, sstm_, marker_publisher_, scan_publisher_;
   ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_processing_, ssPause_measurements_, ssClear_manual_, ssSave_map_;
   nav_msgs::GetMap::Response map_;
 
@@ -164,6 +164,7 @@ private:
   // visualization
   interactive_markers::InteractiveMarkerServer* interactive_server_;
   std::map<int, Eigen::Vector3d> moved_nodes_;
+  std::vector<sensor_msgs::LaserScan> current_scans_;
 
   // pluginlib
   pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;

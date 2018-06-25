@@ -44,6 +44,7 @@ public:
   virtual void getGraph(std::vector<Eigen::Vector2d> &g); //Get graph stored
 
   virtual void ModifyNode(const int& unique_id, Eigen::Vector3d pose); // change a node's pose
+  virtual void GetNodeOrientation(const int& unique_id, double& pose); // get a node's current pose yaw
 
 private:
   // karto

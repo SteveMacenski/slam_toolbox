@@ -216,7 +216,10 @@ void SlamToolboxPlugin::PauseMeasurementsCb(int state)
   }
 }
 
+/*****************************************************************************/
 void SlamToolboxPlugin::updateCheckStateIfExternalChange()
+/*****************************************************************************/
+
 {
   ros::Rate r(1); //1 hz
   ros::NodeHandle nh;
@@ -227,10 +230,11 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
     nh.getParam("/slam_toolbox/paused_processing", paused_process);
     nh.getParam("/slam_toolbox/interactive_mode", interactive);
 
-    // TODO oscillation condition since it calls the callback
-    // _check1->setChecked(interactive);
-    // _check2->setChecked(!paused_measure);
-    // _check3->setChecked(!paused_process);
+    //    TODO plugin right now wont restart its outwards state when slam_toolbox is restarted
+    //   _check1->setChecked(interactive);
+    //   _check2->setChecked(!paused_measure);
+    //   _check3->setChecked(!paused_process);
+
     r.sleep();
   }
 }

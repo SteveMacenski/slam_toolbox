@@ -262,6 +262,7 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::LaserCallback, this, _1));
   marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>("karto_graph_visualization",1);
+  scan_publisher_ = node.advertise<sensor_msgs::LaserScan>("karto_scan_visualization",10);
 }
 
 /*****************************************************************************/
@@ -554,20 +555,63 @@ void SlamToolbox::ProcessInteractiveFeedback(const \
   {
     // we offset by 1
     const int id = std::stoi(feedback->marker_name,nullptr,10) - 1;
-    ROS_DEBUG_STREAM( id << " is now at " 
-                        << feedback->mouse_point.x << ", " 
-                        << feedback->mouse_point.y << ", " 
-                        << feedback->mouse_point.z );
 
     // get yaw
     tfScalar yaw, pitch, roll;
-    tf::Quaternion quat;
+    tf::Quaternion quat(0.,0.,0.,1.0);
     tf::quaternionMsgToTF(feedback->pose.orientation, quat); // relative
     tf::Matrix3x3 mat(quat);
     mat.getRPY(roll, pitch, yaw);
 
     AddMovedNodes(id, Eigen::Vector3d(feedback->mouse_point.x, \
                   feedback->mouse_point.y, yaw));
+  }
+  if (feedback->event_type == \
+      visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
+  {
+    // get scan
+    const int id = std::stoi(feedback->marker_name,nullptr,10) - 1;
+    sensor_msgs::LaserScan scan = current_scans_[id];
+
+    // create correct frame
+    tf::Transform transform;
+    transform.setOrigin(tf::Vector3(feedback->pose.position.x, \
+                                    feedback->pose.position.y, 0.));
+
+    // get correct orientation
+    tf::Quaternion quat(0.,0.,0.,1.0), msg_quat;
+
+    double node_yaw, first_node_yaw;
+    solver_->GetNodeOrientation(id, node_yaw);
+    solver_->GetNodeOrientation(0, first_node_yaw);
+
+    quat *= tf::Quaternion(0., 0., node_yaw- 3.14159);
+    quat *= tf::Quaternion(0., 0., 3.14159); 
+
+
+    if (lasers_inverted_[scan.header.frame_id])
+    {
+      sensor_msgs::LaserScan temp;
+      for (int i=scan.ranges.size() ;i!=0;i--)
+      {
+        temp.ranges.push_back(scan.ranges[i]);
+        temp.intensities.push_back(scan.intensities[i]);
+      }
+      scan.ranges = temp.ranges;
+      scan.intensities = temp.intensities;
+    }
+
+    // interfactive move
+    tf::quaternionMsgToTF(feedback->pose.orientation, msg_quat);
+    quat *= msg_quat;
+    quat.normalize();
+
+    transform.setRotation(quat);
+    tfB_->sendTransform(tf::StampedTransform(transform, 
+                       ros::Time::now(), "map", "karto_scan_visualization"));
+    scan.header.frame_id = "karto_scan_visualization";
+    scan.header.stamp = ros::Time::now();
+    scan_publisher_.publish(scan);
   }
 }
 
@@ -618,6 +662,7 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
   q_.push(posed_scan(scan, pose));
   last_scan_time = scan->header.stamp.toSec(); 
   last_pose = pose;
+
   return;
 }
 
@@ -732,6 +777,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   bool processed;
   if((processed = mapper_->Process(range_scan)))
   {
+    current_scans_.push_back(*scan);
     karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
 
     // Compute the map->odom transform
