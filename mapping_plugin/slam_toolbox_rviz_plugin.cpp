@@ -230,10 +230,17 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
     nh.getParam("/slam_toolbox/paused_processing", paused_process);
     nh.getParam("/slam_toolbox/interactive_mode", interactive);
 
-    //    TODO plugin right now wont restart its outwards state when slam_toolbox is restarted
-    //   _check1->setChecked(interactive);
-    //   _check2->setChecked(!paused_measure);
-    //   _check3->setChecked(!paused_process);
+    bool oldState = _check1->blockSignals(true);
+    _check1->setChecked(interactive);
+    _check1->blockSignals(oldState);
+
+    oldState = _check2->blockSignals(true);
+    _check2->setChecked(!paused_measure);
+    _check2->blockSignals(oldState);
+
+    oldState = _check3->blockSignals(true);
+    _check3->setChecked(!paused_process);
+    _check3->blockSignals(oldState);
 
     r.sleep();
   }
