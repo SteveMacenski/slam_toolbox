@@ -20,15 +20,12 @@
 #include "serialization.cpp"
 
 /*****************************************************************************/
-MergeMapTool::MergeMapTool() : mapper_(NULL), dataset_(NULL), 
-                               interactive_server_(NULL)
+MergeMapTool::MergeMapTool() : interactive_server_(NULL)
 /*****************************************************************************/
 {
   ROS_INFO("MergeMapTool: Starting up!");
   interactive_server_ = \
    new interactive_markers::InteractiveMarkerServer("merge_maps_tool","",true);
-  mapper_ = new karto::Mapper();
-  dataset_ = new karto::Dataset();
 
   ros::NodeHandle nh_tmp("~");
   nh_ = nh_tmp;
@@ -63,10 +60,6 @@ void MergeMapTool::SetConfigs()
 MergeMapTool::~MergeMapTool()
 /*****************************************************************************/
 {
-  if (mapper_)
-    delete mapper_;
-  if (dataset_)
-    delete dataset_;
   if (interactive_server_)
   {
     delete interactive_server_;
@@ -85,8 +78,9 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
     return true;
   }
 
-  karto::LocalizedRangeScanVector scans;
-  serialization::Read(req.filename, scans);
+  karto::Mapper mapper;
+  serialization::Read(req.filename, mapper);
+  karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans(); // TODO should I be saving a vect or of these mapper objects? / scans, A: YES
 
   // num_submaps_++ and name frame appropriately
   num_submaps_++;

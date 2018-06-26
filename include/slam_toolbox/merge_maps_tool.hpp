@@ -91,10 +91,6 @@ private:
   int num_submaps_;
   nav_msgs::GetMap::Response map_;
 
-  // Karto bookkeeping
-  karto::Mapper* mapper_;
-  karto::Dataset* dataset_;
-
   // TF
   tf::TransformBroadcaster* tfB_;
 

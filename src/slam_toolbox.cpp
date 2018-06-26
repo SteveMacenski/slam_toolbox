@@ -1066,9 +1066,7 @@ bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::R
                                              slam_toolbox::SerializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
-  karto::LocalizedRangeScanVector data = mapper_->GetAllProcessedScans();
-  serialization::Write(req.filename, data);
-  ROS_INFO("SlamToolbox: Serialized pose graph.");
+  serialization::Write(req.filename, *mapper_);
   return true;
 }
 

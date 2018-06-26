@@ -19,22 +19,39 @@
 #include <vector>
 #include <string>
 #include <ros/ros.h>
+#include <open_karto/Karto.h>
+#include <open_karto/Mapper.h>
+
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/archive/xml_oarchive.hpp>
+#include <boost/archive/xml_iarchive.hpp>
 
 namespace serialization
 {
-void Write(const std::string& filename, const karto::LocalizedRangeScanVector& data)
+
+void Write(const std::string& filename, const karto::Mapper& mapper)
 {
-  std::ofstream ofs(filename);
-  boost::archive::text_oarchive oa(ofs);
-  oa << data;
-  ofs.close();
+  try
+  {
+    mapper->SaveToFile(filename + std::string(".st"));
+  }
+  catch (boost::archive::archive_exception e)
+  {
+    ROS_ERROR("Failed to write file: Exception %s", e.what());
+  }
 }
 
-void Read(const std::string& filename, karto::LocalizedRangeScanVector& data)
+void Read(const std::string& filename, karto::Mapper& mapper)
 {
-  std::ifstream ifs(filename.c_str());
-  boost::archive::text_iarchive ia(ifs);
-  ia >> data;
+  try
+  {
+    mapper->LoadFromFile(filename + std::string(".st"));
+  }
+  catch (boost::archive::archive_exception e)
+  {
+    ROS_ERROR("Failed to read file: Exception %s", e.what());
+  }
 }
 
 } // end namespace
