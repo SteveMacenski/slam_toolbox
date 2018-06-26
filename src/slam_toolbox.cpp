@@ -19,6 +19,7 @@
 /* Heavily Modified: Steven Macenski */
 
 #include <slam_toolbox/slam_toolbox.hpp>
+#include "serialization.cpp"
 
 /*****************************************************************************/
 SlamToolbox::SlamToolbox() : 
@@ -1019,12 +1020,8 @@ bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::R
                                              slam_toolbox::SerializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
-  std::ofstream ofs(req.filename);
-  boost::archive::text_oarchive oa(ofs);
   karto::LocalizedRangeScanVector data = mapper_->GetAllProcessedScans();
-  oa << data;
-  ofs.close();
-  
+  serialization::Write(req.filename, data);
   ROS_INFO("SlamToolbox: Serialized pose graph.");
   return true;
 }

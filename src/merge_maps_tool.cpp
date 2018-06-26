@@ -17,6 +17,7 @@
 /* Author: Steven Macenski */
 
 #include <slam_toolbox/merge_maps_tool.hpp>
+#include "serialization.cpp"
 
 /*****************************************************************************/
 MergeMapTool::MergeMapTool() : mapper_(NULL), dataset_(NULL), 
@@ -48,7 +49,8 @@ void MergeMapTool::SetConfigs()
   }
 
   sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>("/map", 1, true));
-  sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>("/map_metadata", 1, true));
+  sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>( \
+                                                    "/map_metadata", 1, true));
   ssMap_ = nh_.advertiseService("merge_maps", 
                                         &MergeMapTool::MergeMapCallback, this);
   ssSubmap_ = nh_.advertiseService("add_submap", 
@@ -83,28 +85,18 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
     return true;
   }
 
-  // deseralize file
-  std::ifstream ifs(req.filename.c_str());
-  boost::archive::text_iarchive ia(ifs);
   karto::LocalizedRangeScanVector scans;
-  if (ifs.good())
-  {
-    ia >> scans;
-    ROS_INFO("MergeMapTool: Deserialized file correctly!");
-  }
-  else
-  {
-    ROS_WARN("MergeMapTool: Serialized file may be corrupted, exiting.");
-    return true;
-  }
+  serialization::Read(req.filename, scans);
 
   // num_submaps_++ and name frame appropriately
   num_submaps_++;
   submap_locations_[num_submaps_] = Eigen::Vector3d(0.,0.,0.);
 
   // create and publish map with marker that will move the map around
-  sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>("/map_"+std::to_string(num_submaps_), 1, true));
-  sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>("/map_metadata_" + std::to_string(num_submaps_), 1, true));
+  sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>( \
+                            "/map_"+std::to_string(num_submaps_), 1, true));
+  sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>( \
+                 "/map_metadata_" + std::to_string(num_submaps_), 1, true));
   ros::Duration(1.).sleep();
 
   KartoToROSOccupancyGrid(scans);
@@ -142,7 +134,8 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
 
   // translate control
   visualization_msgs::InteractiveMarkerControl control;
-  control.orientation_mode =  visualization_msgs::InteractiveMarkerControl::FIXED;
+  control.orientation_mode = \
+                          visualization_msgs::InteractiveMarkerControl::FIXED;
   control.always_visible = true;
   control.orientation.w = 0;
   control.orientation.x = 0.7071;
@@ -155,7 +148,8 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
 
   // rotate control
   visualization_msgs::InteractiveMarkerControl control_rot;
-  control_rot.orientation_mode =  visualization_msgs::InteractiveMarkerControl::FIXED;
+  control_rot.orientation_mode = \
+                          visualization_msgs::InteractiveMarkerControl::FIXED;
   control_rot.always_visible = true;
   control_rot.orientation.w = 0;
   control_rot.orientation.x = 0.7071;
@@ -173,7 +167,28 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
 }
 
 /*****************************************************************************/
-void MergeMapTool::KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans)
+bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
+                                    slam_toolbox::MergeMaps::Response &resp)
+/*****************************************************************************/
+{
+  //TODO
+  // take submaps and project all positions into map frame,submap_locations_
+  // scans
+
+  // create map using kartooccupany grid from all in same frame
+  // KartoToROSOccupancyGrid(scans)
+
+  // publish it for visualization/map_saver using sstMS_[0]'s for meta and normal'
+
+  // later, take nodes in graph mutually closest to each other and scana match
+  // against them to make a new inter-graph contraint list to optimize over
+  // then generate new composite map
+  // (this same technique can then be applied with manual loop closures)
+}
+
+/*****************************************************************************/
+void MergeMapTool::KartoToROSOccupancyGrid( \
+                                  const karto::LocalizedRangeScanVector& scans)
 /*****************************************************************************/
 {
   karto::OccupancyGrid* occ_grid = NULL;
@@ -229,22 +244,6 @@ void MergeMapTool::KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector
 }
 
 /*****************************************************************************/
-bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
-                      slam_toolbox::MergeMaps::Response &resp)
-/*****************************************************************************/
-{
-  // take all submaps and project all positions into map frame, submap_locations_
-  // scans
-
-  // create map using kartooccupany grid
-  // KartoToROSOccupancyGrid(scans)
-
-  // publish it for visualization using sstMS_[0] which is raw map and map_metadata
-
-  // TODO saving service afterwards
-}
-
-/*****************************************************************************/
 void MergeMapTool::ProcessInteractiveFeedback(const \
                visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
 /*****************************************************************************/
@@ -270,13 +269,15 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
 
     // add the map_N frame there
     tf::Transform transform;
-    transform.setOrigin(tf::Vector3(submap_locations_[id](0), submap_locations_[id](1), 0.));
+    transform.setOrigin(tf::Vector3(submap_locations_[id](0), \
+                                    submap_locations_[id](1), 0.));
     transform.setRotation(quat);
     tfB_->sendTransform(tf::StampedTransform (transform, 
-                                   ros::Time::now(), "/map", "/map_"+std::to_string(id)));
+                       ros::Time::now(), "/map", "/map_"+std::to_string(id)));
   }
 
-  if (feedback->event_type == visualization_msgs::InteractiveMarkerFeedback::MOUSE_DOWN)
+  if (feedback->event_type == \
+                   visualization_msgs::InteractiveMarkerFeedback::MOUSE_DOWN)
   {
     const int id = std::stoi(feedback->marker_name,nullptr,10);
 
@@ -289,10 +290,11 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
 
     // add the map_N frame there
     tf::Transform transform;
-    transform.setOrigin(tf::Vector3(feedback->pose.position.x, feedback->pose.position.y, 0.));
+    transform.setOrigin(tf::Vector3(feedback->pose.position.x, \
+                                    feedback->pose.position.y, 0.));
     transform.setRotation(quat);
     tfB_->sendTransform(tf::StampedTransform (transform, 
-                                   ros::Time::now(), "/map", "/map_"+std::to_string(id)));
+                       ros::Time::now(), "/map", "/map_"+std::to_string(id)));
   }
 }
 
