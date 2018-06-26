@@ -304,6 +304,18 @@ void CeresSolver::ModifyNode(const int& unique_id, Eigen::Vector3d pose)
 }
 
 /*****************************************************************************/
+void CeresSolver::GetNodeOrientation(const int& unique_id, double& pose)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+  graph_iterator it = nodes_->find(unique_id);
+  if (it != nodes_->end())
+  {
+    pose = it->second(2);
+  }
+}
+
+/*****************************************************************************/
 void CeresSolver::getGraph(std::vector<Eigen::Vector2d> &g)
 /*****************************************************************************/
 {
