@@ -3,7 +3,9 @@ project(slam_toolbox)
 
 add_compile_options(-std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
-set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")                                                                        
+set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")                                                                            
+
+find_package(Boost REQUIRED system serialization filesystem)
 
 find_package(catkin REQUIRED
   COMPONENTS
@@ -32,7 +34,6 @@ find_package(G2O REQUIRED)
 find_package(Cholmod REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
-find_package(Boost REQUIRED system serialization filesystem)
 
 if(rviz_QT_VERSION VERSION_LESS "5")
   find_package(Qt4 ${rviz_QT_VERSION} REQUIRED QtCore QtGui)
@@ -57,6 +58,7 @@ endif()
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 add_definitions(-DQT_NO_KEYWORDS)
+find_package(Boost REQUIRED COMPONENTS thread serialization) 
 
 include_directories(include ${catkin_INCLUDE_DIRS} 
                             ${EIGEN3_INCLUDE_DIRS} 

@@ -58,7 +58,7 @@ class QComboBox;
 namespace slam_toolbox
 {
 
-class SlamToolboxPlugin: public rviz::Panel
+class SlamToolboxPlugin : public rviz::Panel
 {
   Q_OBJECT
 

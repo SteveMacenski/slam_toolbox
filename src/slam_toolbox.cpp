@@ -1066,7 +1066,8 @@ bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::R
                                              slam_toolbox::SerializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
-  serialization::Write(req.filename, *mapper_);
+  const std::string filename = req.filename + std::string(".st");
+  serialization::Write(filename, mapper_);
   return true;
 }
 

@@ -28,8 +28,6 @@
 #include <QtGui>
 #include <QLabel>
 #include <QFrame>
-// ROS
-#include <pluginlib/class_list_macros.h>
 
 namespace slam_toolbox
 {
@@ -324,4 +322,5 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
 
 } // end namespace
 
+#include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(slam_toolbox::SlamToolboxPlugin, rviz::Panel)

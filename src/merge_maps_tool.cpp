@@ -72,14 +72,15 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
 /*****************************************************************************/
 {
   // find if file exists
-  if (!FileExists(req.filename))
+  const std::string filename = req.filename + std::string(".st");
+  if (!FileExists(filename))
   {
-    ROS_ERROR("MergeMapTool: Failed to open requested submap.");
+    ROS_ERROR("MergeMapTool: Failed to open requested submap %s.", filename.c_str());
     return true;
   }
 
-  karto::Mapper mapper;
-  serialization::Read(req.filename, mapper);
+  karto::Mapper* mapper = new karto::Mapper();
+  serialization::Read(filename, mapper);
   karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans(); // TODO should I be saving a vect or of these mapper objects? / scans, A: YES
 
   // num_submaps_++ and name frame appropriately

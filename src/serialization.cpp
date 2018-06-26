@@ -30,11 +30,11 @@
 namespace serialization
 {
 
-void Write(const std::string& filename, const karto::Mapper& mapper)
+void Write(const std::string& filename, karto::Mapper* mapper)
 {
   try
   {
-    mapper->SaveToFile(filename + std::string(".st"));
+    mapper->SaveToFile(filename);
   }
   catch (boost::archive::archive_exception e)
   {
@@ -42,11 +42,11 @@ void Write(const std::string& filename, const karto::Mapper& mapper)
   }
 }
 
-void Read(const std::string& filename, karto::Mapper& mapper)
+void Read(const std::string& filename, karto::Mapper* mapper)
 {
   try
   {
-    mapper->LoadFromFile(filename + std::string(".st"));
+    mapper->LoadFromFile(filename);
   }
   catch (boost::archive::archive_exception e)
   {
