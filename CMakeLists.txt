@@ -131,6 +131,7 @@ target_link_libraries(g2O_solver_plugin ${catkin_LIBRARIES}
 qt_wrap_cpp(MOC_FILES mapping_plugin/slam_toolbox_rviz_plugin.hpp)
 set(SOURCE_FILES mapping_plugin/slam_toolbox_rviz_plugin.cpp )
 add_library(SlamToolboxPlugin ${SOURCE_FILES})
+add_dependencies(SlamToolboxPlugin ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES}  ${catkin_LIBRARIES} )
 
 add_executable(slam_toolbox src/slam_toolbox.cpp)
