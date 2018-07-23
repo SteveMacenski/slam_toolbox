@@ -71,7 +71,7 @@ ROSDep will take care of Ceres, G2O, and SBA if you are familiar.
 
 I also have a Snap built for this that's super easy to install if you know snaps, named `slam-toolbox`. Otherwise,
 
-You'll need to install Ceres [from source instructions here](http://ceres-solver.org/installation.html) or `sudo ap-get install libceres-dev`
+If manual, You'll need to install Ceres [from source instructions here](http://ceres-solver.org/installation.html) or `sudo ap-get install libceres-dev`
 
 G2O: `sudo apt-get install ros-kinetic-libg2o`
 
