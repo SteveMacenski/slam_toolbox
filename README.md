@@ -12,6 +12,8 @@ GTSAM is currently "unsupported" although all the code is there. I was having pr
 
 I have spent a extremely long time working with Ceres to optimize it for creation of massive maps, so unless you feel your application is very unique, I'd use my recommended settings. 
 
+I have commented out G2O to speed up build time as I really don't recommend using it. SPA + Ceres are the way to go here I believe. 
+
 ### Tools
 
 Manual loop closure, pausing and resuming SLAM, interspection and modification of the pose graph, synchronous SLAM (no missing laser scans) for online or offline application alike without change, more exposed options, rviz plugin for visual interspection and assisting in mapping

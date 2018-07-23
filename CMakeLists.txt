@@ -114,17 +114,17 @@ target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES}
 )
 
 #### G2O
-add_library(g2O_solver_plugin solvers/g2o_solver.cpp)
-target_link_libraries(g2O_solver_plugin ${catkin_LIBRARIES}
-                                        ${G2O_CORE_LIBRARY}
-                                        ${G2O_STUFF_LIBRARY}
-                                        ${G2O_TYPES_SLAM2D}
-                                        ${G2O_SOLVER_CHOLMOD}
-                                        ${G2O_SOLVER_CSPARSE}
-                                        ${G2O_SOLVER_CSPARSE_EXTENSION}
-                                        ${CHOLMOD_LIBRARIES}
-                                        ${CSPARSE_LIBRARY}
-)
+#add_library(g2O_solver_plugin solvers/g2o_solver.cpp)
+#target_link_libraries(g2O_solver_plugin ${catkin_LIBRARIES}
+#                                        ${G2O_CORE_LIBRARY}
+#                                        ${G2O_STUFF_LIBRARY}
+#                                        ${G2O_TYPES_SLAM2D}
+#                                        ${G2O_SOLVER_CHOLMOD}
+#                                        ${G2O_SOLVER_CSPARSE}
+#                                        ${G2O_SOLVER_CSPARSE_EXTENSION}
+#                                        ${CHOLMOD_LIBRARIES}
+#                                        ${CSPARSE_LIBRARY}
+#)
 
 #### rviz Plugin
 qt_wrap_cpp(MOC_FILES mapping_plugin/slam_toolbox_rviz_plugin.hpp)
@@ -137,7 +137,7 @@ add_executable(slam_toolbox src/slam_toolbox.cpp)
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(slam_toolbox ${catkin_LIBRARIES})
 
-install(TARGETS slam_toolbox spa_solver_plugin g2O_solver_plugin ceres_solver_plugin SlamToolboxPlugin
+install(TARGETS slam_toolbox spa_solver_plugin ceres_solver_plugin SlamToolboxPlugin #g2O_solver_plugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
