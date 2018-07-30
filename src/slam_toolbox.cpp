@@ -36,7 +36,8 @@ SlamToolbox::SlamToolbox() :
                          pause_new_measurements_(false),
                          interactive_mode_(false),
                          laser_count_(0),
-                         tf_(ros::Duration(14400.)) // 4 hours
+                         tf_(ros::Duration(14400.)),
+                         first_measurement_(true) // 4 hours
 /*****************************************************************************/
 {
   interactive_server_ = \
@@ -626,6 +627,21 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
   // we are in a paused mode, reject incomming information
   if(IsPaused(NEW_MEASUREMENTS))
   {
+    return;
+  }
+
+  // let the first measurement pass to start the ball rolling
+  if (first_measurement_)
+  {
+    karto::Pose2 pose;
+    if(!GetOdomPose(pose, scan->header.stamp))
+    {
+      return;
+    }
+    q_.push(posed_scan(scan, pose));
+    last_scan_time = scan->header.stamp.toSec(); 
+    last_pose = pose;
+    first_measurement_ = false;
     return;
   }
 
