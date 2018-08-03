@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# make workspace
+mkdir -p snap_ws/src
+cd snap_ws && catkin_init_workspace
+cd src
+
+# add all the necessary things to it
+git clone -b kinetic-devel https://github.com/SteveMacenski/slam_toolbox.git
+git clone -b kinetic-devel https://github.com/SteveMacenski/KartoSDK-slam_toolbox.git
+git clone -b kinetic-devel https://github.com/ros-visualization/rviz.git
+cd ../
+
+# move snap and hooks to right place
+mkdir snap
+cp -r src/slam_toolbox/snap/snapcraft.yaml snap
+
+# build the snap
+snapcraft
+
+# go back to root
+cd ../
