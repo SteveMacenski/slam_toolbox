@@ -143,7 +143,7 @@ private:
   int throttle_scans_;
   ros::Duration map_update_interval_, transform_timeout_;
   double resolution_, minimum_time_interval_, minimum_travel_distance_;
-  bool publish_occupancy_map_, first_measurement_;
+  bool publish_occupancy_map_, first_measurement_, sychronous_;
 
   // Karto bookkeeping
   karto::Mapper* mapper_;

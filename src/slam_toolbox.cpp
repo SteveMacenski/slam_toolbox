@@ -100,6 +100,8 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
 {
   map_to_odom_.setIdentity();
 
+  if(!private_nh_.getParam("sychronous", sychronous_))
+    sychronous_ = true;
   double timeout;
   if(!private_nh_.getParam("transform_timeout", timeout))
   {
@@ -272,7 +274,7 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   ssClear_manual_ = node.advertiseService("clear_changes", &SlamToolbox::ClearChangesCallback, this);
   ssSave_map_ = node.advertiseService("save_map", &SlamToolbox::SaveMapCallback, this);
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node, "/scan", 5);
-  scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
+  scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 2);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::LaserCallback, this, _1));
   marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>("karto_graph_visualization",1);
   scan_publisher_ = node.advertise<sensor_msgs::LaserScan>("karto_scan_visualization",10);
@@ -686,10 +688,26 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     return;
   }
 
-  // ok... maybe valid we can try
-  q_.push(posed_scan(scan, pose));
-  last_scan_time = scan->header.stamp.toSec(); 
-  last_pose = pose;
+  if (sychronous_) // todo async
+  {
+    // synchronous
+    q_.push(posed_scan(scan, pose));
+    last_scan_time = scan->header.stamp.toSec(); 
+    last_pose = pose;   
+  }
+  else
+  {
+    // asynchonous
+    karto::LaserRangeFinder* laser = GetLaser(scan);
+
+    if(!laser)
+    {
+      ROS_WARN("Failed to create laser device for %s; discarding scan",
+         scan->header.frame_id.c_str());
+      return;
+    }
+    AddScan(laser, scan, pose);
+  }
 
   return;
 }
@@ -1054,6 +1072,15 @@ bool SlamToolbox::IsPaused(const PausedApplication& app)
 void SlamToolbox::Run()
 /*****************************************************************************/
 {
+  if (!sychronous_) // todo async
+  {
+    // asychronous - don't need to run to dequeue
+    ROS_INFO("Exiting Run thread - asynchronous mode selected.");
+    return;
+  }
+
+  ROS_INFO_ONCE("Run thread enabled - synchronous mode selected.");
+
   ros::Rate r(60);
   while(ros::ok())
   {
