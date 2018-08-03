@@ -37,6 +37,8 @@ SlamToolbox::SlamToolbox() :
                          interactive_mode_(false),
                          laser_count_(0),
                          tf_(ros::Duration(14400.)),
+                         map_to_odom_time_(0.),
+                         transform_timeout_(ros::Duration(0.2)),
                          first_measurement_(true) // 4 hours
 /*****************************************************************************/
 {
@@ -59,8 +61,9 @@ SlamToolbox::SlamToolbox() :
   double transform_publish_period;
   private_nh.param("transform_publish_period", 
                                                transform_publish_period, 0.05);
-  transform_thread_ = new boost::thread(boost::bind(&SlamToolbox::PublishLoop, 
-                                              this, transform_publish_period));
+  transform_thread_ = new boost::thread( \
+                                boost::bind(&SlamToolbox::PublishTransformLoop, 
+                                this, transform_publish_period));
   run_thread_ = new boost::thread(boost::bind(&SlamToolbox::Run, this));
   visualization_thread_ = new boost::thread(\
                        boost::bind(&SlamToolbox::PublishVisualizations, this));
@@ -97,6 +100,15 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
 {
   map_to_odom_.setIdentity();
 
+  double timeout;
+  if(!private_nh_.getParam("transform_timeout", timeout))
+  {
+    transform_timeout_ = ros::Duration(0.2);
+  }
+  else
+  {
+    transform_timeout_ = ros::Duration(timeout);
+  }
   if(!private_nh_.getParam("odom_frame", odom_frame_))
     odom_frame_ = "odom";
   if(!private_nh_.getParam("map_frame", map_frame_))
@@ -306,7 +318,7 @@ SlamToolbox::~SlamToolbox()
 }
 
 /*****************************************************************************/
-void SlamToolbox::PublishLoop(double transform_publish_period)
+void SlamToolbox::PublishTransformLoop(double transform_publish_period)
 /*****************************************************************************/
 {
   if(transform_publish_period == 0)
@@ -319,7 +331,7 @@ void SlamToolbox::PublishLoop(double transform_publish_period)
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       ros::Time tf_expiration = ros::Time::now() + ros::Duration(0.05);
       tfB_->sendTransform(tf::StampedTransform (map_to_odom_, 
-                                   ros::Time::now(), map_frame_, odom_frame_));
+             map_to_odom_time_ + transform_timeout_, map_frame_, odom_frame_)); // TODO time should be time taken but is that up to date when behind?
     }
     r.sleep();
   }
@@ -815,12 +827,15 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       map_to_odom_ = tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
                               tf::Point( odom_to_map.getOrigin() ) ).inverse();
+      map_to_odom_time_ = scan->header.stamp;
     }
     // Add the localized range scan to the dataset (for memory management)
     dataset_->Add(range_scan);
   }
   else
+  {
     delete range_scan;
+  }
 
   return processed;
 }
