@@ -474,7 +474,7 @@ void SlamToolbox::PublishGraph()
     return;
   }
 
-  ROS_INFO_THROTTLE(15.,"Graph size: %i",(int)graph.size());
+  ROS_INFO("Graph size: %i",(int)graph.size());
   bool interactive_mode = false;
   {
     boost::mutex::scoped_lock lock(interactive_mutex_);
@@ -1088,7 +1088,11 @@ void SlamToolbox::Run()
     {
       posed_scan scan_w_pose = q_.front();
       q_.pop();
-      ROS_INFO_THROTTLE(15., "Queue size: %i", (int)q_.size());
+
+      if (q_.size() > 2)
+      {
+        ROS_WARN("Queue size: %i", (int)q_.size());
+      }
 
       // Check whether we know about this laser yet
       karto::LaserRangeFinder* laser = GetLaser(scan_w_pose.scan);
