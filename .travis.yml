@@ -14,5 +14,4 @@ deploy:
            if [ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ "${TRAVIS_BRANCH}" = "master" ] ; then 
              snapcraft push snap_ws/*.snap --release edge;
            fi"
-  on:
-    branch: /.*/
+  all_branches: true
