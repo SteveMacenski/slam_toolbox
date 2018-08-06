@@ -333,7 +333,6 @@ void SlamToolbox::PublishTransformLoop(double transform_publish_period)
   {
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      ros::Time tf_expiration = ros::Time::now() + ros::Duration(0.05);
       tfB_->sendTransform(tf::StampedTransform (map_to_odom_, 
              map_to_odom_time_ + transform_timeout_, map_frame_, odom_frame_));
     }
