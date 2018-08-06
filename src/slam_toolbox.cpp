@@ -100,6 +100,8 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
 {
   map_to_odom_.setIdentity();
 
+  if(!private_nh_.getParam("online", online_))
+    online_ = true;
   if(!private_nh_.getParam("sychronous", sychronous_))
     sychronous_ = true;
   double timeout;
@@ -333,7 +335,7 @@ void SlamToolbox::PublishTransformLoop(double transform_publish_period)
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       ros::Time tf_expiration = ros::Time::now() + ros::Duration(0.05);
       tfB_->sendTransform(tf::StampedTransform (map_to_odom_, 
-             map_to_odom_time_ + transform_timeout_, map_frame_, odom_frame_)); // TODO time should be time taken but is that up to date when behind?
+             map_to_odom_time_ + transform_timeout_, map_frame_, odom_frame_));
     }
     r.sleep();
   }
@@ -688,7 +690,7 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     return;
   }
 
-  if (sychronous_) // todo async
+  if (sychronous_)
   {
     // synchronous
     q_.push(posed_scan(scan, pose));
@@ -1072,7 +1074,7 @@ bool SlamToolbox::IsPaused(const PausedApplication& app)
 void SlamToolbox::Run()
 /*****************************************************************************/
 {
-  if (!sychronous_) // todo async
+  if (!sychronous_)
   {
     // asychronous - don't need to run to dequeue
     ROS_INFO("Exiting Run thread - asynchronous mode selected.");
@@ -1091,7 +1093,15 @@ void SlamToolbox::Run()
 
       if (q_.size() > 2)
       {
-        ROS_WARN("Queue size: %i", (int)q_.size());
+        if (online_ && sychronous_) // always sync. but makes intent clearer
+        {
+          ROS_WARN("Queue size has grown to: %i. "
+                   "Recommend stopping until message is gone.", (int)q_.size());
+        }
+        else
+        {
+          ROS_WARN_THROTTLE(10., "Queue size: %i", (int)q_.size());
+        }
       }
 
       // Check whether we know about this laser yet
