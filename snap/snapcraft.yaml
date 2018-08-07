@@ -45,6 +45,6 @@ parts:
     include-roscore: true
     rosdistro: kinetic
     catkin-ros-master-uri: http://localhost:11311
-    catkin-packages: [open_karto, slam_toolbox] #rviz
+    catkin-packages: [open_karto, slam_toolbox, rviz]
     recursive-rosinstall: false
     after: [desktop-qt5]
