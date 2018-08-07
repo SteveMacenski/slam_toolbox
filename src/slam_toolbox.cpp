@@ -276,7 +276,7 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   ssClear_manual_ = node.advertiseService("clear_changes", &SlamToolbox::ClearChangesCallback, this);
   ssSave_map_ = node.advertiseService("save_map", &SlamToolbox::SaveMapCallback, this);
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node, "/scan", 5);
-  scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 2);
+  scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::LaserCallback, this, _1));
   marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>("karto_graph_visualization",1);
   scan_publisher_ = node.advertise<sensor_msgs::LaserScan>("karto_scan_visualization",10);
@@ -364,7 +364,6 @@ void SlamToolbox::PublishVisualizations()
     }
     r.sleep();
   }
-
 }
 
 /*****************************************************************************/
@@ -635,6 +634,28 @@ void SlamToolbox::ProcessInteractiveFeedback(const \
 void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
 {
+  if (!sychronous_)
+  {
+    // asynchonous
+    karto::LaserRangeFinder* laser = GetLaser(scan);
+
+    if(!laser)
+    {
+      ROS_WARN("Failed to create laser device for %s; discarding scan",
+         scan->header.frame_id.c_str());
+      return;
+    }
+
+    karto::Pose2 pose;
+    if(!GetOdomPose(pose, scan->header.stamp))
+    {
+      return;
+    }
+
+    AddScan(laser, scan, pose);
+    return;
+  }
+
   static karto::Pose2 last_pose;
   static double last_scan_time = 0.;
   static double min_dist2 = minimum_travel_distance_*minimum_travel_distance_;
@@ -689,27 +710,9 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     return;
   }
 
-  if (sychronous_)
-  {
-    // synchronous
-    q_.push(posed_scan(scan, pose));
-    last_scan_time = scan->header.stamp.toSec(); 
-    last_pose = pose;   
-  }
-  else
-  {
-    // asynchonous
-    karto::LaserRangeFinder* laser = GetLaser(scan);
-
-    if(!laser)
-    {
-      ROS_WARN("Failed to create laser device for %s; discarding scan",
-         scan->header.frame_id.c_str());
-      return;
-    }
-    AddScan(laser, scan, pose);
-  }
-
+  q_.push(posed_scan(scan, pose));
+  last_scan_time = scan->header.stamp.toSec(); 
+  last_pose = pose;
   return;
 }
 
@@ -1082,7 +1085,7 @@ void SlamToolbox::Run()
 
   ROS_INFO_ONCE("Run thread enabled - synchronous mode selected.");
 
-  ros::Rate r(60);
+  ros::Rate r(100);
   while(ros::ok())
   {
     if (!q_.empty() && !IsPaused(PROCESSING))
@@ -1113,6 +1116,7 @@ void SlamToolbox::Run()
         break;
       }
       AddScan(laser, scan_w_pose.scan, scan_w_pose.pose);
+      continue; // no need to sleep if working
     }
     r.sleep();
   }
