@@ -3,9 +3,10 @@
   <description>
      This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
   </description>
-  <version>0.7.3</version>
+  <version>0.2.2</version>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <author>Brian Gerkey</author>
+  <author>Steve Macenski</author>
   <license>LGPL</license>
 
   <buildtool_depend>catkin</buildtool_depend>

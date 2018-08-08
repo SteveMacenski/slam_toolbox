@@ -37,6 +37,8 @@ SlamToolbox::SlamToolbox() :
                          interactive_mode_(false),
                          laser_count_(0),
                          tf_(ros::Duration(14400.)),
+                         map_to_odom_time_(0.),
+                         transform_timeout_(ros::Duration(0.2)),
                          first_measurement_(true) // 4 hours
 /*****************************************************************************/
 {
@@ -59,8 +61,9 @@ SlamToolbox::SlamToolbox() :
   double transform_publish_period;
   private_nh.param("transform_publish_period", 
                                                transform_publish_period, 0.05);
-  transform_thread_ = new boost::thread(boost::bind(&SlamToolbox::PublishLoop, 
-                                              this, transform_publish_period));
+  transform_thread_ = new boost::thread( \
+                                boost::bind(&SlamToolbox::PublishTransformLoop, 
+                                this, transform_publish_period));
   run_thread_ = new boost::thread(boost::bind(&SlamToolbox::Run, this));
   visualization_thread_ = new boost::thread(\
                        boost::bind(&SlamToolbox::PublishVisualizations, this));
@@ -97,6 +100,19 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
 {
   map_to_odom_.setIdentity();
 
+  if(!private_nh_.getParam("online", online_))
+    online_ = true;
+  if(!private_nh_.getParam("sychronous", sychronous_))
+    sychronous_ = true;
+  double timeout;
+  if(!private_nh_.getParam("transform_timeout", timeout))
+  {
+    transform_timeout_ = ros::Duration(0.2);
+  }
+  else
+  {
+    transform_timeout_ = ros::Duration(timeout);
+  }
   if(!private_nh_.getParam("odom_frame", odom_frame_))
     odom_frame_ = "odom";
   if(!private_nh_.getParam("map_frame", map_frame_))
@@ -293,12 +309,6 @@ SlamToolbox::~SlamToolbox()
     delete mapper_;
   if (dataset_)
     delete dataset_;
-  std::map<std::string, karto::LaserRangeFinder*>::iterator it = \
-                                                               lasers_.begin();
-  for (it; it!=lasers_.end(); ++it)
-  {
-    delete it->second;
-  }
   if (interactive_server_)
   {
     delete interactive_server_;
@@ -306,7 +316,7 @@ SlamToolbox::~SlamToolbox()
 }
 
 /*****************************************************************************/
-void SlamToolbox::PublishLoop(double transform_publish_period)
+void SlamToolbox::PublishTransformLoop(double transform_publish_period)
 /*****************************************************************************/
 {
   if(transform_publish_period == 0)
@@ -317,9 +327,8 @@ void SlamToolbox::PublishLoop(double transform_publish_period)
   {
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      ros::Time tf_expiration = ros::Time::now() + ros::Duration(0.05);
       tfB_->sendTransform(tf::StampedTransform (map_to_odom_, 
-                                   ros::Time::now(), map_frame_, odom_frame_));
+             map_to_odom_time_ + transform_timeout_, map_frame_, odom_frame_));
     }
     r.sleep();
   }
@@ -349,7 +358,6 @@ void SlamToolbox::PublishVisualizations()
     }
     r.sleep();
   }
-
 }
 
 /*****************************************************************************/
@@ -460,7 +468,7 @@ void SlamToolbox::PublishGraph()
     return;
   }
 
-  ROS_INFO_THROTTLE(15.,"Graph size: %i",(int)graph.size());
+  ROS_INFO("Graph size: %i",(int)graph.size());
   bool interactive_mode = false;
   {
     boost::mutex::scoped_lock lock(interactive_mutex_);
@@ -620,6 +628,28 @@ void SlamToolbox::ProcessInteractiveFeedback(const \
 void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
 {
+  if (!sychronous_)
+  {
+    // asynchonous
+    karto::LaserRangeFinder* laser = GetLaser(scan);
+
+    if(!laser)
+    {
+      ROS_WARN("Failed to create laser device for %s; discarding scan",
+         scan->header.frame_id.c_str());
+      return;
+    }
+
+    karto::Pose2 pose;
+    if(!GetOdomPose(pose, scan->header.stamp))
+    {
+      return;
+    }
+
+    AddScan(laser, scan, pose);
+    return;
+  }
+
   static karto::Pose2 last_pose;
   static double last_scan_time = 0.;
   static double min_dist2 = minimum_travel_distance_*minimum_travel_distance_;
@@ -674,11 +704,9 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     return;
   }
 
-  // ok... maybe valid we can try
   q_.push(posed_scan(scan, pose));
   last_scan_time = scan->header.stamp.toSec(); 
   last_pose = pose;
-
   return;
 }
 
@@ -815,12 +843,15 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       map_to_odom_ = tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
                               tf::Point( odom_to_map.getOrigin() ) ).inverse();
+      map_to_odom_time_ = scan->header.stamp;
     }
     // Add the localized range scan to the dataset (for memory management)
     dataset_->Add(range_scan);
   }
   else
+  {
     delete range_scan;
+  }
 
   return processed;
 }
@@ -1039,14 +1070,35 @@ bool SlamToolbox::IsPaused(const PausedApplication& app)
 void SlamToolbox::Run()
 /*****************************************************************************/
 {
-  ros::Rate r(60);
+  if (!sychronous_)
+  {
+    // asychronous - don't need to run to dequeue
+    ROS_INFO("Exiting Run thread - asynchronous mode selected.");
+    return;
+  }
+
+  ROS_INFO_ONCE("Run thread enabled - synchronous mode selected.");
+
+  ros::Rate r(100);
   while(ros::ok())
   {
     if (!q_.empty() && !IsPaused(PROCESSING))
     {
       posed_scan scan_w_pose = q_.front();
       q_.pop();
-      ROS_INFO_THROTTLE(15., "Queue size: %i", (int)q_.size());
+
+      if (q_.size() > 2)
+      {
+        if (online_ && sychronous_) // always sync. but makes intent clearer
+        {
+          ROS_WARN("Queue size has grown to: %i. "
+                   "Recommend stopping until message is gone.", (int)q_.size());
+        }
+        else
+        {
+          ROS_WARN_THROTTLE(10., "Queue size: %i", (int)q_.size());
+        }
+      }
 
       // Check whether we know about this laser yet
       karto::LaserRangeFinder* laser = GetLaser(scan_w_pose.scan);
@@ -1058,6 +1110,7 @@ void SlamToolbox::Run()
         break;
       }
       AddScan(laser, scan_w_pose.scan, scan_w_pose.pose);
+      continue; // no need to sleep if working
     }
     r.sleep();
   }
