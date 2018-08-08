@@ -309,12 +309,6 @@ SlamToolbox::~SlamToolbox()
     delete mapper_;
   if (dataset_)
     delete dataset_;
-  std::map<std::string, karto::LaserRangeFinder*>::iterator it = \
-                                                               lasers_.begin();
-  for (it; it!=lasers_.end(); ++it)
-  {
-    delete it->second;
-  }
   if (interactive_server_)
   {
     delete interactive_server_;
