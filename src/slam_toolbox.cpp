@@ -986,7 +986,7 @@ bool SlamToolbox::PauseNewMeasurementsCallback( \
 {
   boost::mutex::scoped_lock lock(pause_mutex_); 
   pause_new_measurements_ = !pause_new_measurements_;
-  nh_.setParam("paused_measurements", pause_new_measurements_);
+  nh_.setParam("paused_new_measurements", pause_new_measurements_);
   ROS_INFO("SlamToolbox: Toggled to %s", \
     pause_new_measurements_ ? "pause taking new measurements." : 
     "actively taking new measurements.");
