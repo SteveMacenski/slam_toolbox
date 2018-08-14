@@ -1,5 +1,5 @@
 name: slam-toolbox
-version: '0.2.1'
+version: '0.3.1'
 summary: Slam Toolbox based on Karto's SDK.
 description: |
   A toolbox for building high quality maps of large spaces with a LIDAR.
