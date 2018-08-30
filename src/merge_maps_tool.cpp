@@ -30,6 +30,7 @@ MergeMapTool::MergeMapTool() : interactive_server_(NULL)
   ros::NodeHandle nh_tmp("~");
   nh_ = nh_tmp;
   SetConfigs();
+  dataset_ = new karto::Dataset();
 }
 
 /*****************************************************************************/
@@ -64,6 +65,8 @@ MergeMapTool::~MergeMapTool()
   {
     delete interactive_server_;
   }
+  if (dataset_)
+    delete dataset_;
 }
 
 /*****************************************************************************/
@@ -82,7 +85,13 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   karto::Mapper* mapper = new karto::Mapper();
   serialization::Read(filename, mapper);
   karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans(); // TODO should I be saving a vect or of these mapper objects? / scans, A: YES
-
+    //hack it
+//    std::string name = scan->header.frame_id;
+    karto::LaserRangeFinder* laser =
+            karto::LaserRangeFinder::CreateLaserRangeFinder( \
+                                              karto::LaserRangeFinder_Custom, \
+                                         karto::Name("Custom Described Lidar"));
+   dataset_->Add(laser);
   // num_submaps_++ and name frame appropriately
   num_submaps_++;
   submap_locations_[num_submaps_] = Eigen::Vector3d(0.,0.,0.);
@@ -95,6 +104,10 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   ros::Duration(1.).sleep();
 
   KartoToROSOccupancyGrid(scans);
+  tf::Transform transform;
+  transform.setOrigin(tf::Vector3(0.,0.,0.));
+  transform.setRotation(tf::createQuaternionFromRPY(0,0,0));
+  tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(), "/map", "/map_"+std::to_string(num_submaps_)));
   map_.map.header.stamp = ros::Time::now();
   map_.map.header.frame_id = "map_"+std::to_string(num_submaps_);
   sstS_[num_submaps_].publish(map_.map);
@@ -205,11 +218,15 @@ void MergeMapTool::KartoToROSOccupancyGrid( \
      map_.map.info.height != (unsigned int) height ||
      map_.map.info.origin.position.x != offset.GetX() ||
      map_.map.info.origin.position.y != offset.GetY())
+
   {
     map_.map.info.origin.position.x = offset.GetX();
     map_.map.info.origin.position.y = offset.GetY();
+    map_.map.info.origin.position.z = 0.0;
+    map_.map.info.origin.orientation.w = 1.0;
     map_.map.info.width = width;
     map_.map.info.height = height;
+    map_.map.info.resolution = resolution_;
     map_.map.data.resize(map_.map.info.width * map_.map.info.height);
   }
 
