@@ -91,6 +91,7 @@ private:
   int num_submaps_;
   nav_msgs::GetMap::Response map_;
 
+  karto::Dataset* dataset_;
   // TF
   tf::TransformBroadcaster* tfB_;
 
