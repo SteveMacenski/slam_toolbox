@@ -29,8 +29,8 @@ MergeMapTool::MergeMapTool() : interactive_server_(NULL)
 
   ros::NodeHandle nh_tmp("~");
   nh_ = nh_tmp;
-  SetConfigs();
   dataset_ = new karto::Dataset();
+  SetConfigs();
 }
 
 /*****************************************************************************/
@@ -45,7 +45,11 @@ void MergeMapTool::SetConfigs()
   {
     resolution_ = 0.05;
   }
-
+  karto::LaserRangeFinder* laser =
+          karto::LaserRangeFinder::CreateLaserRangeFinder( \
+                                              karto::LaserRangeFinder_Custom, \
+                                         karto::Name("Custom Described Lidar"));
+  dataset_->Add(laser);
   sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>("/map", 1, true));
   sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>( \
                                                     "/map_metadata", 1, true));
@@ -87,11 +91,7 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans(); // TODO should I be saving a vect or of these mapper objects? / scans, A: YES
     //hack it
 //    std::string name = scan->header.frame_id;
-    karto::LaserRangeFinder* laser =
-            karto::LaserRangeFinder::CreateLaserRangeFinder( \
-                                              karto::LaserRangeFinder_Custom, \
-                                         karto::Name("Custom Described Lidar"));
-   dataset_->Add(laser);
+
   // num_submaps_++ and name frame appropriately
   num_submaps_++;
   submap_locations_[num_submaps_] = Eigen::Vector3d(0.,0.,0.);
@@ -105,7 +105,9 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
 
   KartoToROSOccupancyGrid(scans);
   tf::Transform transform;
-  transform.setOrigin(tf::Vector3(0.,0.,0.));
+  transform.setOrigin(tf::Vector3(map_.map.info.origin.position.x, map_.map.info.origin.position.y, 0.));
+  map_.map.info.origin.position.x = 0;
+  map_.map.info.origin.position.y = 0;
   transform.setRotation(tf::createQuaternionFromRPY(0,0,0));
   tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(), "/map", "/map_"+std::to_string(num_submaps_)));
   map_.map.header.stamp = ros::Time::now();
@@ -120,6 +122,8 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   m.ns = "merge_maps_tool";
   m.type = visualization_msgs::Marker::SPHERE;
   m.pose.position.z = 0.0;
+  m.pose.position.x =  transform.getOrigin().getX();
+  m.pose.position.y =  transform.getOrigin().getY();
   m.pose.orientation.w = 1.;
   m.scale.x = 0.4; m.scale.y = 0.4; m.scale.z = 0.4;
   m.color.r = 1.0; m.color.g = 0; m.color.b = 0.0; m.color.a = 1.;
@@ -127,9 +131,6 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   m.lifetime = ros::Duration(0.);
  
   m.id = num_submaps_;
-  m.pose.position.x = 0.;
-  m.pose.position.y = 0.;
-
   // marker and metadata
   visualization_msgs::InteractiveMarker int_marker;
   int_marker.header.frame_id = "map";
