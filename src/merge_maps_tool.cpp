@@ -20,7 +20,8 @@
 #include "serialization.cpp"
 
 /*****************************************************************************/
-MergeMapTool::MergeMapTool() : interactive_server_(NULL)
+MergeMapTool::MergeMapTool() : interactive_server_(NULL),
+                               tf_(ros::Duration(14400.))// 4 hours
 /*****************************************************************************/
 {
   ROS_INFO("MergeMapTool: Starting up!");
@@ -89,7 +90,6 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   karto::Mapper* mapper = new karto::Mapper();
   serialization::Read(filename, mapper);
   karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans(); // TODO should I be saving a vect or of these mapper objects? / scans, A: YES
-    //hack it
 //    std::string name = scan->header.frame_id;
 
   // num_submaps_++ and name frame appropriately
@@ -103,6 +103,7 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
                  "/map_metadata_" + std::to_string(num_submaps_), 1, true));
   ros::Duration(1.).sleep();
 
+  scans_vec.push_back(scans);
   KartoToROSOccupancyGrid(scans);
   tf::Transform transform;
   transform.setOrigin(tf::Vector3(map_.map.info.origin.position.x, map_.map.info.origin.position.y, 0.));
@@ -193,6 +194,56 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
   // against them to make a new inter-graph contraint list to optimize over
   // then generate new composite map
   // (this same technique can then be applied with manual loop closures)
+    int id = 0;
+//    karto::PointVectorDouble point_readings;
+    karto::Pose2 odometric_pose;
+//    karto::Vector2<kt_double> sensor_position;
+    karto::LocalizedRangeScanVector transformed_scans;
+    for(std::vector<karto::LocalizedRangeScanVector>::iterator it_LRV = scans_vec.begin(); it_LRV!= scans_vec.end(); ++it_LRV)
+    {
+      id++;
+      for ( karto::LocalizedRangeScanVector::const_reverse_iterator iter = (*it_LRV).rbegin(); iter != (*it_LRV).rend(); ++iter )
+      {
+        karto::LocalizedRangeScan* pScan = *iter;
+        odometric_pose = pScan->GetOdometricPose();
+//        sensor_position = pScan->GetSensorPose().GetPosition();
+/*
+        //transform robot poses from submap frame to a gloab map frame
+        tf::Stamped<tf::Pose> robotPose_submap(tf::Transform(tf::createQuaternionFromRPY(0, 0, 0),
+                                                  tf::Vector3(odometric_pose.GetX(), odometric_pose.GetY(), 0)),\
+                                                   time, "/map_" + std::to_string(id));
+        tf::Stamped<tf::Transform> robotPose_map;
+        try {
+          tf_.transformPose("/map", robotPose_submap, robotPose_map);
+        }
+        catch (tf::TransformException e) {
+          ROS_WARN("Failed to compute robot pose tf submap to map, skipping scan (%s)", e.what());
+          return false;
+        }
+        double yaw = tf::getYaw(robotPose_map.getRotation());
+        */
+        tf::Transform transform2;
+        transform2.setOrigin(tf::Vector3(odometric_pose.GetX(), \
+                                    odometric_pose.GetY(), 0.));
+        transform2.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
+
+        tf::Transform robotPose_map;
+        robotPose_map =transform2*tf_vec[id-1];
+
+        auto karto_robotPose = \
+              karto::Pose2(robotPose_map.getOrigin().x(), \
+                           robotPose_map.getOrigin().y(), tf::getYaw(robotPose_map.getRotation()));
+        pScan->SetOdometricPose(karto_robotPose);
+        pScan->SetCorrectedPose(karto_robotPose);
+
+      transformed_scans.push_back(pScan);
+      }
+    }
+    KartoToROSOccupancyGrid(transformed_scans);
+    map_.map.header.stamp = ros::Time::now();
+    map_.map.header.frame_id = "map";
+    sstS_[0].publish(map_.map);
+    sstmS_[0].publish(map_.map.info);
 }
 
 /*****************************************************************************/
@@ -308,6 +359,7 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
     transform.setRotation(quat);
     tfB_->sendTransform(tf::StampedTransform (transform, 
                        ros::Time::now(), "/map", "/map_"+std::to_string(id)));
+    tf_vec.push_back(transform);
   }
 }
 

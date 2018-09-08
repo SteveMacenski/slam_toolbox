@@ -94,8 +94,11 @@ private:
   karto::Dataset* dataset_;
   // TF
   tf::TransformBroadcaster* tfB_;
+  tf::TransformListener tf_;
 
   // visualization
   interactive_markers::InteractiveMarkerServer* interactive_server_;
   std::map<int, Eigen::Vector3d> submap_locations_;
+  std::vector<karto::LocalizedRangeScanVector> scans_vec;
+  std::vector<tf::Transform> tf_vec;
 };
