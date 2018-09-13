@@ -87,7 +87,7 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
     return true;
   }
 
-  karto::Mapper* mapper = new karto::Mapper();
+  mapper = new karto::Mapper();
   serialization::Read(filename, mapper);
   karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans(); // TODO should I be saving a vect or of these mapper objects? / scans, A: YES
 //    std::string name = scan->header.frame_id;
@@ -102,9 +102,9 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>( \
                  "/map_metadata_" + std::to_string(num_submaps_), 1, true));
   ros::Duration(1.).sleep();
-
   scans_vec.push_back(scans);
   KartoToROSOccupancyGrid(scans);
+
   tf::Transform transform;
   transform.setOrigin(tf::Vector3(map_.map.info.origin.position.x, map_.map.info.origin.position.y, 0.));
   map_.map.info.origin.position.x = 0;
@@ -115,6 +115,7 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   map_.map.header.frame_id = "map_"+std::to_string(num_submaps_);
   sstS_[num_submaps_].publish(map_.map);
   sstmS_[num_submaps_].publish(map_.map.info);
+
 
   // create an interactive marker for the base of this frame and attach it
   visualization_msgs::Marker m;
@@ -172,7 +173,6 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   interactive_server_->insert(int_marker, \
            boost::bind(&MergeMapTool::ProcessInteractiveFeedback, this, _1));
   interactive_server_->applyChanges();
-
   return true;
 }
 
@@ -196,47 +196,143 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
   // (this same technique can then be applied with manual loop closures)
     int id = 0;
 //    karto::PointVectorDouble point_readings;
-    karto::Pose2 odometric_pose;
+//    karto::Pose2 odometric_pose;
+    karto::Pose2 corrected_pose;
 //    karto::Vector2<kt_double> sensor_position;
+    karto::LocalizedRangeScan* pScan;
     karto::LocalizedRangeScanVector transformed_scans;
-    for(std::vector<karto::LocalizedRangeScanVector>::iterator it_LRV = scans_vec.begin(); it_LRV!= scans_vec.end(); ++it_LRV)
+    std::vector<karto::LocalizedRangeScanVector> vector_of_scans = scans_vec;
+    karto::LocalizedRangeScan* pScan_copy;
+    int cnt1 = 0;
+    int cnt2;
+    for(std::vector<karto::LocalizedRangeScanVector>::iterator it_LRV = vector_of_scans.begin(); it_LRV!= vector_of_scans.end(); it_LRV++)
     {
       id++;
-      for ( karto::LocalizedRangeScanVector::const_reverse_iterator iter = (*it_LRV).rbegin(); iter != (*it_LRV).rend(); ++iter )
+      for ( karto::LocalizedRangeScanVector::iterator iter = (*it_LRV).begin(); iter != (*it_LRV).end();iter++ )
       {
-        karto::LocalizedRangeScan* pScan = *iter;
-        odometric_pose = pScan->GetOdometricPose();
-//        sensor_position = pScan->GetSensorPose().GetPosition();
+         pScan= *iter;
+         pScan_copy = pScan;
+
+         tf::Transform submap_orig;
+        submap_orig.setOrigin(tf::Vector3(submap_locations_[id](0), \
+                                    submap_locations_[id](1), 0.));
+        submap_orig.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
+
+        tf::Transform submap_correction = submap_orig.inverse()*tf_vec[id-1];
 /*
-        //transform robot poses from submap frame to a gloab map frame
-        tf::Stamped<tf::Pose> robotPose_submap(tf::Transform(tf::createQuaternionFromRPY(0, 0, 0),
-                                                  tf::Vector3(odometric_pose.GetX(), odometric_pose.GetY(), 0)),\
-                                                   time, "/map_" + std::to_string(id));
-        tf::Stamped<tf::Transform> robotPose_map;
-        try {
-          tf_.transformPose("/map", robotPose_submap, robotPose_map);
-        }
-        catch (tf::TransformException e) {
-          ROS_WARN("Failed to compute robot pose tf submap to map, skipping scan (%s)", e.what());
-          return false;
-        }
-        double yaw = tf::getYaw(robotPose_map.getRotation());
-        */
         tf::Transform transform2;
         transform2.setOrigin(tf::Vector3(odometric_pose.GetX(), \
                                     odometric_pose.GetY(), 0.));
-        transform2.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
+        transform2.setRotation(tf::createQuaternionFromRPY(0, 0, odometric_pose.GetHeading()));
 
-        tf::Transform robotPose_map;
-        robotPose_map =transform2*tf_vec[id-1];
+        tf::Transform robotPose_odom;
+        //robotPose_map =tf_vec[id-1]*transform2;
+          robotPose_odom = transform2;
 
-        auto karto_robotPose = \
-              karto::Pose2(robotPose_map.getOrigin().x(), \
-                           robotPose_map.getOrigin().y(), tf::getYaw(robotPose_map.getRotation()));
-        pScan->SetOdometricPose(karto_robotPose);
-        pScan->SetCorrectedPose(karto_robotPose);
+          karto::Pose2 karto_robotPose_odom = \
+              karto::Pose2(robotPose_odom.getOrigin().x(), \
+                           robotPose_odom.getOrigin().y(), tf::getYaw(robotPose_odom.getRotation()));
+                           */
 
-      transformed_scans.push_back(pScan);
+        karto::Pose2 baryCenter_pose = pScan_copy->GetBarycenterPose();
+        tf::Transform baryCenter_pose_tf;
+        baryCenter_pose_tf.setOrigin(tf::Vector3(baryCenter_pose.GetX(), \
+                                    baryCenter_pose.GetY(), 0.));
+        baryCenter_pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, baryCenter_pose.GetHeading()));
+
+        tf::Transform baryCenterPose_corr;
+        //robotPose_map =tf_vec[id-1]*transform2;
+        baryCenterPose_corr = baryCenter_pose_tf*submap_correction;
+
+        karto::Pose2 karto_baryCenterPose_corr = \
+              karto::Pose2(baryCenterPose_corr.getOrigin().x(), \
+                           baryCenterPose_corr.getOrigin().y(), tf::getYaw(baryCenterPose_corr.getRotation()));
+        baryCenter_pose = karto_baryCenterPose_corr;
+
+//        karto::BoundingBox2 bbox = pScan_copy->GetBoundingBox();
+//        tf::Transform bbox_min_tf;
+//        bbox_min_tf.setOrigin(tf::Vector3(bbox.GetMinimum().GetX(),bbox.GetMinimum().GetY(),0.));
+//        bbox_min_tf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
+//        tf::Transform bbox_min_tf_corr;
+//        bbox_min_tf_corr = bbox_min_tf*submap_correction;
+//        auto bbox_min_corr = karto::Vector2<kt_double>(bbox_min_tf_corr.getOrigin().x(),bbox_min_tf_corr.getOrigin().y());
+//        bbox.SetMinimum(bbox_min_corr);
+//
+//        tf::Transform bbox_max_tf;
+//        bbox_max_tf.setOrigin(tf::Vector3(bbox.GetMaximum().GetX(),bbox.GetMaximum().GetY(),0.));
+//        bbox_max_tf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
+//        tf::Transform bbox_max_tf_corr;
+//        bbox_max_tf_corr = bbox_max_tf*submap_correction;
+//        auto bbox_max_corr = karto::Vector2<kt_double >(bbox_max_tf_corr.getOrigin().x(),bbox_max_tf_corr.getOrigin().y());
+//
+//        bbox.SetMaximum(bbox_max_corr);
+
+
+         auto sensor_pose = pScan_copy->GetSensorPose();
+        tf::Transform sp_tf;
+        sp_tf.setOrigin(tf::Vector3(sensor_pose.GetPosition().GetX(),sensor_pose.GetPosition().GetY(),0.));
+        sp_tf.setRotation(tf::createQuaternionFromRPY(0, 0, sensor_pose.GetHeading()));
+        tf::Transform sp_corr;
+        sp_corr = sp_tf*submap_correction;
+
+        karto::Pose2 sensorPose_corr = \
+              karto::Pose2(sp_corr.getOrigin().x(), \
+                           sp_corr.getOrigin().y(), tf::getYaw(sp_corr.getRotation()));
+
+        pScan_copy->SetSensorPose(sensorPose_corr);
+
+         karto::PointVectorDouble PR_vec = pScan_copy->GetPointReadings();
+         for(auto it_pr = PR_vec.begin(); it_pr!=PR_vec.end();it_pr++)
+         {
+           tf::Transform pr_tf;
+           pr_tf.setOrigin(tf::Vector3((*it_pr).GetX(),(*it_pr).GetY(),0.));
+           pr_tf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
+
+           tf::Transform pr_corr;
+           //robotPose_map =tf_vec[id-1]*transform2;
+           pr_corr = pr_tf*submap_correction;
+           (*it_pr).SetX(pr_corr.getOrigin().getX());
+           (*it_pr).SetY(pr_corr.getOrigin().getY());
+         }
+//        SetRangeReadings(const RangeReadingsVector& rRangeReadings);
+
+        corrected_pose = pScan_copy->GetCorrectedPose();
+        tf::Transform corr_pose_tf;
+        corr_pose_tf.setOrigin(tf::Vector3(corrected_pose.GetX(), \
+                                    corrected_pose.GetY(), 0.));
+        corr_pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, corrected_pose.GetHeading()));
+
+          tf::Transform robotPose_corr;
+          //robotPose_map =tf_vec[id-1]*transform2;
+          robotPose_corr = corr_pose_tf*submap_correction;
+
+          karto::Pose2 karto_robotPose_corr = \
+              karto::Pose2(robotPose_corr.getOrigin().x(), \
+                           robotPose_corr.getOrigin().y(), tf::getYaw(robotPose_corr.getRotation()));
+
+        pScan_copy->SetCorrectedPose(karto_robotPose_corr);
+
+        auto odom_pose = pScan_copy->GetOdometricPose();
+        tf::Transform odom_pose_tf;
+        odom_pose_tf.setOrigin(tf::Vector3(odom_pose.GetX(), \
+                                    odom_pose.GetY(), 0.));
+        odom_pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, odom_pose.GetHeading()));
+
+        tf::Transform robotPose_odom;
+        //robotPose_map =tf_vec[id-1]*transform2;
+        robotPose_odom = odom_pose_tf*submap_correction;
+
+        karto::Pose2 karto_robotPose_odom = \
+              karto::Pose2(robotPose_odom.getOrigin().x(), \
+                           robotPose_odom.getOrigin().y(), tf::getYaw(robotPose_odom.getRotation()));
+
+
+        auto pLocalizedRangeScan = new karto::LocalizedRangeScan(karto::Name("Custom Described Lidar"), pScan_copy->GetRangeReadingsVector());
+        pLocalizedRangeScan->SetOdometricPose(karto_robotPose_odom);
+        pLocalizedRangeScan->SetCorrectedPose(karto_robotPose_corr);
+        kt_bool rIsDirty = false;
+        pScan_copy->SetIsDirty(rIsDirty);
+      transformed_scans.push_back(pLocalizedRangeScan);
       }
     }
     KartoToROSOccupancyGrid(transformed_scans);
@@ -338,6 +434,8 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
     transform.setRotation(quat);
     tfB_->sendTransform(tf::StampedTransform (transform, 
                        ros::Time::now(), "/map", "/map_"+std::to_string(id)));
+
+
   }
 
   if (feedback->event_type == \
@@ -359,7 +457,8 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
     transform.setRotation(quat);
     tfB_->sendTransform(tf::StampedTransform (transform, 
                        ros::Time::now(), "/map", "/map_"+std::to_string(id)));
-    tf_vec.push_back(transform);
+      tf_vec.push_back(transform);
+
   }
 }
 
