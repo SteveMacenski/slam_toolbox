@@ -101,5 +101,6 @@ private:
   std::map<int, Eigen::Vector3d> submap_locations_;
   std::vector<karto::LocalizedRangeScanVector> scans_vec;
   std::vector<tf::Transform> tf_vec;
+  std::vector<tf::Transform> submap_init;
   karto::Mapper* mapper;
 };
