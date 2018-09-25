@@ -106,9 +106,10 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   KartoToROSOccupancyGrid(scans);
 
   tf::Transform transform;
-  transform.setOrigin(tf::Vector3(map_.map.info.origin.position.x, map_.map.info.origin.position.y, 0.));
-  map_.map.info.origin.position.x = 0;
-  map_.map.info.origin.position.y = 0;
+//  transform.setOrigin(tf::Vector3(map_.map.info.origin.position.x, map_.map.info.origin.position.y, 0.));
+  transform.setOrigin(tf::Vector3(0.,0.,0.));
+//  map_.map.info.origin.position.x = 0;
+//  map_.map.info.origin.position.y = 0;
   transform.setRotation(tf::createQuaternionFromRPY(0,0,0));
   tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(), "/map", "/map_"+std::to_string(num_submaps_)));
   map_.map.header.stamp = ros::Time::now();
@@ -124,8 +125,10 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   m.ns = "merge_maps_tool";
   m.type = visualization_msgs::Marker::SPHERE;
   m.pose.position.z = 0.0;
-  m.pose.position.x =  transform.getOrigin().getX();
-  m.pose.position.y =  transform.getOrigin().getY();
+//  m.pose.position.x =  transform.getOrigin().getX();
+//  m.pose.position.y =  transform.getOrigin().getY();
+  m.pose.position.x =  0.0;
+  m.pose.position.y =  0.0;
   m.pose.orientation.w = 1.;
   m.scale.x = 0.4; m.scale.y = 0.4; m.scale.z = 0.4;
   m.color.r = 1.0; m.color.g = 0; m.color.b = 0.0; m.color.a = 1.;
@@ -195,10 +198,8 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
   // then generate new composite map
   // (this same technique can then be applied with manual loop closures)
     int id = 0;
-//    karto::PointVectorDouble point_readings;
-//    karto::Pose2 odometric_pose;
+
     karto::Pose2 corrected_pose;
-//    karto::Vector2<kt_double> sensor_position;
     karto::LocalizedRangeScan* pScan;
     karto::LocalizedRangeScanVector transformed_scans;
     std::vector<karto::LocalizedRangeScanVector> vector_of_scans = scans_vec;
@@ -212,7 +213,8 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
          pScan= *iter;
          pScan_copy = pScan;
 
-        tf::Transform submap_correction = submap_init[id-1].inverse()*tf_vec[id-1];
+//        tf::Transform submap_correction = submap_init[id-1].inverse()*tf_vec[id-1];
+        tf::Transform submap_correction = tf_vec[id];
 
         //TRANSFORM BARYCENTERR POSE
         karto::Pose2 baryCenter_pose = pScan_copy->GetBarycenterPose();
@@ -403,7 +405,8 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
     tfB_->sendTransform(tf::StampedTransform (transform, 
                        ros::Time::now(), "/map", "/map_"+std::to_string(id)));
 
-    tf_vec.push_back(transform);
+    //tf_vec.push_back(transform);
+    tf_vec[id]=transform;
   }
 
   if (feedback->event_type == \
@@ -425,7 +428,6 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
     transform.setRotation(quat);
     tfB_->sendTransform(tf::StampedTransform (transform, 
                        ros::Time::now(), "/map", "/map_"+std::to_string(id)));
-    submap_init.push_back(transform);
   }
 }
 

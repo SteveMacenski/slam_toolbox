@@ -773,7 +773,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
     new karto::LocalizedRangeScan(laser->GetName(), readings);
   range_scan->SetOdometricPose(karto_pose);
   range_scan->SetCorrectedPose(karto_pose);
-+
+
   // Add the localized range scan to the mapper
   boost::mutex::scoped_lock lock(mapper_mutex_);
   bool processed;
