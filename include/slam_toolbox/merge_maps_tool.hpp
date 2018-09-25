@@ -100,7 +100,6 @@ private:
   interactive_markers::InteractiveMarkerServer* interactive_server_;
   std::map<int, Eigen::Vector3d> submap_locations_;
   std::vector<karto::LocalizedRangeScanVector> scans_vec;
-//  std::vector<tf::Transform> tf_vec;
-  std::map<int, tf::Transform> tf_vec;
+  std::map<int, tf::Transform> tf_map;
   karto::Mapper* mapper;
 };

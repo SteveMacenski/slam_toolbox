@@ -89,7 +89,7 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
 
   mapper = new karto::Mapper();
   serialization::Read(filename, mapper);
-  karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans(); // TODO should I be saving a vect or of these mapper objects? / scans, A: YES
+  karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
 //    std::string name = scan->header.frame_id;
 
   // num_submaps_++ and name frame appropriately
@@ -111,11 +111,12 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
 //  map_.map.info.origin.position.x = 0;
 //  map_.map.info.origin.position.y = 0;
   transform.setRotation(tf::createQuaternionFromRPY(0,0,0));
-  tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(), "/map", "/map_"+std::to_string(num_submaps_)));
   map_.map.header.stamp = ros::Time::now();
   map_.map.header.frame_id = "map_"+std::to_string(num_submaps_);
   sstS_[num_submaps_].publish(map_.map);
   sstmS_[num_submaps_].publish(map_.map.info);
+  tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(), "/map", "/map_"+std::to_string(num_submaps_)));
+  tf_map[num_submaps_]=transform;
 
 
   // create an interactive marker for the base of this frame and attach it
@@ -213,8 +214,8 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
          pScan= *iter;
          pScan_copy = pScan;
 
-//        tf::Transform submap_correction = submap_init[id-1].inverse()*tf_vec[id-1];
-        tf::Transform submap_correction = tf_vec[id];
+//        tf::Transform submap_correction = submap_init[id-1].inverse()*tf_map[id];
+        tf::Transform submap_correction = tf_map[id];
 
         //TRANSFORM BARYCENTERR POSE
         karto::Pose2 baryCenter_pose = pScan_copy->GetBarycenterPose();
@@ -405,8 +406,7 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
     tfB_->sendTransform(tf::StampedTransform (transform, 
                        ros::Time::now(), "/map", "/map_"+std::to_string(id)));
 
-    //tf_vec.push_back(transform);
-    tf_vec[id]=transform;
+    tf_map[id]=transform;
   }
 
   if (feedback->event_type == \
