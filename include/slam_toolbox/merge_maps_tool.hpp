@@ -74,7 +74,7 @@ private:
   void KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans);
 
 //  template< class T>
-//  T ObjectToTF(T pose, tf::Transform& submap_correction)
+//  T ApplyCorrection(T pose, tf::Transform& submap_correction)
 //  {
 //      tf::Transform pose_tf;
 //      pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
@@ -85,7 +85,7 @@ private:
 //
 //      return T(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(), tf::getYaw(pose_corr.getRotation()));
 //  }
-  karto::Pose2 ObjectToTF(karto::Pose2 pose, tf::Transform& submap_correction)
+  karto::Pose2 ApplyCorrection(karto::Pose2 pose, tf::Transform& submap_correction)
   {
     tf::Transform pose_tf;
     pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
@@ -95,7 +95,7 @@ private:
     return karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(), tf::getYaw(pose_corr.getRotation()));
   }
 
-  karto::Vector2<kt_double>ObjectToTF(karto::Vector2<kt_double > pose, tf::Transform& submap_correction)
+  karto::Vector2<kt_double>ApplyCorrection(karto::Vector2<kt_double > pose, tf::Transform& submap_correction)
   {
     tf::Transform pose_tf;
     pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
@@ -123,7 +123,10 @@ private:
   int num_submaps_;
   nav_msgs::GetMap::Response map_;
 
+  //karto bookkeeping
   karto::Dataset* dataset_;
+  std::map<std::string, karto::LaserRangeFinder*> lasers_; //TODO: load datasets
+
   // TF
   tf::TransformBroadcaster* tfB_;
 

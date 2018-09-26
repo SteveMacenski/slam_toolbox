@@ -212,15 +212,15 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
         tf::Transform submap_correction = tf_map[id];
 
         //TRANSFORM BARYCENTERR POSE
-        karto::Pose2 baryCenter_pose = pScan_copy->GetBarycenterPose();
-        auto karto_baryCenterPose_corr = ObjectToTF(baryCenter_pose, submap_correction);
+        const karto::Pose2 baryCenter_pose = pScan_copy->GetBarycenterPose();
+        auto karto_baryCenterPose_corr = ApplyCorrection(baryCenter_pose, submap_correction);
         pScan_copy->SetBarycenterPose(karto_baryCenterPose_corr);
 
         //TRANSFORM BOUNDING BOX POSITIONS
         karto::BoundingBox2 bbox = pScan_copy->GetBoundingBox();
-        auto bbox_min_corr = ObjectToTF(bbox.GetMinimum(), submap_correction);
+        auto bbox_min_corr = ApplyCorrection(bbox.GetMinimum(), submap_correction);
         bbox.SetMinimum(bbox_min_corr);
-        auto bbox_max_corr = ObjectToTF(bbox.GetMaximum(), submap_correction);
+        auto bbox_max_corr = ApplyCorrection(bbox.GetMaximum(), submap_correction);
         bbox.SetMaximum(bbox_max_corr);
         pScan_copy->SetBoundingBox(bbox);
 
@@ -228,7 +228,7 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
         karto::PointVectorDouble UPR_vec = pScan_copy->GetPointReadings();
         for(karto::PointVectorDouble::iterator it_upr = UPR_vec.begin(); it_upr!=UPR_vec.end(); ++it_upr)
         {
-          auto upr_corr = ObjectToTF(*it_upr, submap_correction);
+          auto upr_corr = ApplyCorrection(*it_upr, submap_correction);
           (*it_upr).SetX(upr_corr.GetX());
           (*it_upr).SetY(upr_corr.GetY());
         }
@@ -236,14 +236,14 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
 
         //TRANSFORM CORRECTED POSE
         corrected_pose = pScan_copy->GetCorrectedPose();
-        karto::Pose2 karto_robotPose_corr = ObjectToTF(corrected_pose, submap_correction);
+        karto::Pose2 karto_robotPose_corr = ApplyCorrection(corrected_pose, submap_correction);
         pScan_copy->SetCorrectedPose(karto_robotPose_corr);
         kt_bool rIsDirty = false;
         pScan_copy->SetIsDirty(rIsDirty);
 
         //TRANSFORM ODOM POSE
         karto::Pose2 odom_pose = pScan_copy->GetOdometricPose();
-        auto karto_robotPose_odom = ObjectToTF(odom_pose, submap_correction);
+        auto karto_robotPose_odom = ApplyCorrection(odom_pose, submap_correction);
         pScan_copy->SetOdometricPose(karto_robotPose_odom);
 
         transformed_scans.push_back(pScan_copy);
