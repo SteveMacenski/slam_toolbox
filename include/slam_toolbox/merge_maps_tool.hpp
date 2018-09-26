@@ -73,6 +73,38 @@ private:
   void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans);
 
+//  template< class T>
+//  T ObjectToTF(T pose, tf::Transform& submap_correction)
+//  {
+//      tf::Transform pose_tf;
+//      pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
+//      pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, pose.GetHeading()));
+//
+//      tf::Transform pose_corr;
+//      pose_corr = submap_correction*pose_tf;
+//
+//      return T(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(), tf::getYaw(pose_corr.getRotation()));
+//  }
+  karto::Pose2 ObjectToTF(karto::Pose2 pose, tf::Transform& submap_correction)
+  {
+    tf::Transform pose_tf;
+    pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
+    pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, pose.GetHeading()));
+    tf::Transform pose_corr;
+    pose_corr = submap_correction*pose_tf;
+    return karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(), tf::getYaw(pose_corr.getRotation()));
+  }
+
+  karto::Vector2<kt_double>ObjectToTF(karto::Vector2<kt_double > pose, tf::Transform& submap_correction)
+  {
+    tf::Transform pose_tf;
+    pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
+    pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
+    tf::Transform pose_corr;
+    pose_corr = submap_correction*pose_tf;
+    return karto::Vector2<kt_double>(pose_corr.getOrigin().x(), pose_corr.getOrigin().y());
+  }
+
   inline bool FileExists(const std::string& name)
   {
     struct stat buffer;
@@ -94,12 +126,11 @@ private:
   karto::Dataset* dataset_;
   // TF
   tf::TransformBroadcaster* tfB_;
-  tf::TransformListener tf_;
 
   // visualization
   interactive_markers::InteractiveMarkerServer* interactive_server_;
   std::map<int, Eigen::Vector3d> submap_locations_;
   std::vector<karto::LocalizedRangeScanVector> scans_vec;
   std::map<int, tf::Transform> tf_map;
-  karto::Mapper* mapper;
+  karto::Mapper* mapper_;
 };
