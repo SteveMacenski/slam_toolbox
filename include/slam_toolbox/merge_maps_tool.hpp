@@ -48,12 +48,6 @@
 #include <unistd.h>
 #include <fstream>
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/list.hpp>
-#include <boost/serialization/string.hpp>
-
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
 class MergeMapTool
@@ -111,6 +105,9 @@ private:
     return (stat (name.c_str(), &buffer) == 0); 
   }
 
+  typedef std::vector<karto::LocalizedRangeScanVector>::iterator LocalizedRangeScansVec_it;
+  typedef karto::LocalizedRangeScanVector::iterator LocalizedRangeScans_it;
+
   // ROS-y-ness
   ros::NodeHandle nh_;
   std::vector<ros::Publisher> sstS_, sstmS_;
@@ -134,6 +131,6 @@ private:
   interactive_markers::InteractiveMarkerServer* interactive_server_;
   std::map<int, Eigen::Vector3d> submap_locations_;
   std::vector<karto::LocalizedRangeScanVector> scans_vec;
-  std::map<int, tf::Transform> tf_map;
+  std::map<int, tf::Transform> submaps_correction_tf;
   karto::Mapper* mapper_;
 };

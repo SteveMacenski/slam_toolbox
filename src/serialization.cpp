@@ -21,11 +21,6 @@
 #include <ros/ros.h>
 #include <open_karto/Karto.h>
 #include <open_karto/Mapper.h>
-
-#include <boost/serialization/map.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
 namespace serialization
 {
 

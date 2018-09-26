@@ -77,7 +77,6 @@ MergeMapTool::~MergeMapTool()
   {
     delete mapper_;
   }
-
 }
 
 /*****************************************************************************/
@@ -92,12 +91,10 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
     ROS_ERROR("MergeMapTool: Failed to open requested submap %s.", filename.c_str());
     return true;
   }
-
   mapper_ = new karto::Mapper();
   serialization::Read(filename, mapper_);
   karto::LocalizedRangeScanVector scans = mapper_->GetAllProcessedScans();
   num_submaps_++;
-
 
   // create and publish map with marker that will move the map around
   sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>( \
@@ -119,9 +116,8 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   sstS_[num_submaps_].publish(map_.map);
   sstmS_[num_submaps_].publish(map_.map.info);
   tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(), "/map", "/map_"+std::to_string(num_submaps_)));
-  tf_map[num_submaps_]=tf::Transform(tf::createQuaternionFromRPY(0,0,0),
-                                     tf::Vector3(0,0,0));
-
+  submaps_correction_tf[num_submaps_]=tf::Transform(tf::createQuaternionFromRPY(0,0,0),
+                                     tf::Vector3(0,0,0));//no initial correction -- identity mat
 
   // create an interactive marker for the base of this frame and attach it
   visualization_msgs::Marker m;
@@ -133,15 +129,13 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   m.pose.position.x =  transform.getOrigin().getX();
   m.pose.position.y =  transform.getOrigin().getY();
   submap_locations_[num_submaps_] = Eigen::Vector3d(transform.getOrigin().getX(),transform.getOrigin().getY(),0.);
-//  m.pose.position.x =  0.0;
-//  m.pose.position.y =  0.0;
   m.pose.orientation.w = 1.;
   m.scale.x = 2; m.scale.y = 2; m.scale.z = 2;
   m.color.r = 1.0; m.color.g = 0; m.color.b = 0.0; m.color.a = 1.;
   m.action = visualization_msgs::Marker::ADD;
   m.lifetime = ros::Duration(0.);
- 
   m.id = num_submaps_;
+
   // marker and metadata
   visualization_msgs::InteractiveMarker int_marker;
   int_marker.header.frame_id = "map";
@@ -202,14 +196,14 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
     std::vector<karto::LocalizedRangeScanVector> vector_of_scans = scans_vec;
     karto::LocalizedRangeScan* pScan_copy;
 
-    for(std::vector<karto::LocalizedRangeScanVector>::iterator it_LRV = vector_of_scans.begin(); it_LRV!= vector_of_scans.end(); it_LRV++)
+    for(LocalizedRangeScansVec_it it_LRV = vector_of_scans.begin(); it_LRV!= vector_of_scans.end(); ++it_LRV)
     {
       id++;
-      for ( karto::LocalizedRangeScanVector::iterator iter = (*it_LRV).begin(); iter != (*it_LRV).end();iter++ )
+      for ( LocalizedRangeScans_it iter = (*it_LRV).begin(); iter != (*it_LRV).end();++iter)
       {
         pScan= *iter;
         pScan_copy = pScan;
-        tf::Transform submap_correction = tf_map[id];
+        tf::Transform submap_correction = submaps_correction_tf[id];
 
         //TRANSFORM BARYCENTERR POSE
         const karto::Pose2 baryCenter_pose = pScan_copy->GetBarycenterPose();
@@ -280,7 +274,6 @@ void MergeMapTool::KartoToROSOccupancyGrid( \
      map_.map.info.height != (unsigned int) height ||
      map_.map.info.origin.position.x != offset.GetX() ||
      map_.map.info.origin.position.y != offset.GetY())
-
   {
     map_.map.info.origin.position.x = offset.GetX();
     map_.map.info.origin.position.y = offset.GetY();
@@ -336,9 +329,9 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
     tf::Matrix3x3 mat(quat);
     mat.getRPY(roll, pitch, yaw);
     tf::Vector3 old_submap_loc(submap_locations_[id](0),submap_locations_[id](1), 0.);
-    tf::Transform old_tf=tf_map[id];
-    old_tf.setOrigin(old_submap_loc);
-    old_tf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
+    tf::Transform previous_submap_correction = submaps_correction_tf[id];
+    previous_submap_correction.setOrigin(old_submap_loc);
+    previous_submap_correction.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
 
     // update internal knowledge of submap locations
     submap_locations_[id] = Eigen::Vector3d(feedback->pose.position.x, \
@@ -346,14 +339,14 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
                                             submap_locations_[id](2) + yaw);
 
     // add the map_N frame there
-    tf::Transform transform;
-    transform.setOrigin(tf::Vector3(submap_locations_[id](0), \
+    tf::Transform new_submap_location;
+    new_submap_location.setOrigin(tf::Vector3(submap_locations_[id](0), \
                                     submap_locations_[id](1), 0.));
-    transform.setRotation(quat);
-    tfB_->sendTransform(tf::StampedTransform (transform, 
+    new_submap_location.setRotation(quat);
+    tfB_->sendTransform(tf::StampedTransform (new_submap_location,
                        ros::Time::now(), "/map", "/map_"+std::to_string(id)));
 
-    tf_map[id]*=old_tf.inverse()*transform;
+    submaps_correction_tf[id]*=previous_submap_correction.inverse()*new_submap_location;
   }
 
   if (feedback->event_type == \
@@ -369,11 +362,11 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
     mat.getRPY(roll, pitch, yaw);
 
     // add the map_N frame there
-    tf::Transform transform;
-    transform.setOrigin(tf::Vector3(feedback->pose.position.x, \
+    tf::Transform new_submap_location;
+    new_submap_location.setOrigin(tf::Vector3(feedback->pose.position.x, \
                                     feedback->pose.position.y, 0.));
-    transform.setRotation(quat);
-    tfB_->sendTransform(tf::StampedTransform (transform, 
+    new_submap_location.setRotation(quat);
+    tfB_->sendTransform(tf::StampedTransform (new_submap_location,
                        ros::Time::now(), "/map", "/map_"+std::to_string(id)));
   }
 }
