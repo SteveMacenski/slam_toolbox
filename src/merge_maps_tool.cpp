@@ -340,7 +340,7 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
     tfB_->sendTransform(tf::StampedTransform (new_submap_location,
                        ros::Time::now(), "/map", "/map_"+std::to_string(id)));
 
-    submap_marker_transform_[id]*=previous_submap_correction.inverse()*new_submap_location;
+    submap_marker_transform_[id] = submap_marker_transform_[id] * previous_submap_correction.inverse() * new_submap_location;
   }
 
   if (feedback->event_type == \
