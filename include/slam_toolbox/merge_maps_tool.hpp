@@ -65,35 +65,27 @@ private:
   bool MergeMapCallback(slam_toolbox::MergeMaps::Request  &req, slam_toolbox::MergeMaps::Response &resp);
   bool AddSubmapCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
   void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  nav_msgs::GetMap::Response KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans);
-//  template< class T>
-//  T ApplyCorrection(T pose, tf::Transform& submap_correction)
-//  {
-//      tf::Transform pose_tf;
-//      pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-//      pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, pose.GetHeading()));
-//
-//      tf::Transform pose_corr;
-//      pose_corr = submap_correction*pose_tf;
-//
-//      return T(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(), tf::getYaw(pose_corr.getRotation()));
-//  }
-  karto::Pose2 ApplyCorrection(karto::Pose2 pose, const tf::Transform& submap_correction)
+  void KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map);
+
+  const karto::Pose2* ApplyCorrection(const karto::Pose2& pose, const tf::Transform& submap_correction)
   {
     tf::Transform pose_tf, pose_corr;
     pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
     pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, pose.GetHeading()));
     pose_corr = submap_correction*pose_tf;
-    return karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(), tf::getYaw(pose_corr.getRotation()));
+    karto::Pose2* transformed_pose = new karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(), tf::getYaw(pose_corr.getRotation()));
+    return transformed_pose;
   }
 
-  karto::Vector2<kt_double> ApplyCorrection(karto::Vector2<kt_double> pose, const tf::Transform& submap_correction)
+  const karto::Vector2<kt_double>* ApplyCorrection(const karto::Vector2<kt_double>&  pose, const tf::Transform& submap_correction)
   {
     tf::Transform pose_tf, pose_corr;
     pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
     pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
     pose_corr = submap_correction*pose_tf;
-    return karto::Vector2<kt_double>(pose_corr.getOrigin().x(), pose_corr.getOrigin().y());
+    karto::Vector2<kt_double>* transformed_pose = new karto::Vector2<kt_double>(pose_corr.getOrigin().x(), pose_corr.getOrigin().y());
+    return transformed_pose;
+
   }
 
   inline bool FileExists(const std::string& name)

@@ -99,7 +99,8 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>( \
                  "/map_metadata_" + std::to_string(num_submaps_), 1, true));
   ros::Duration(1.).sleep();
-  nav_msgs::GetMap::Response map = KartoToROSOccupancyGrid(scans);
+  nav_msgs::GetMap::Response map;
+  KartoToROSOccupancyGrid(scans,map);
 
   tf::Transform transform;
   transform.setOrigin(tf::Vector3(map.map.info.origin.position.x + map.map.info.width * map.map.info.resolution / 2.0,\
@@ -200,43 +201,44 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
 
         //TRANSFORM BARYCENTERR POSE
         const karto::Pose2 baryCenter_pose = pScan_copy->GetBarycenterPose();
-        karto::Pose2 karto_baryCenterPose_corr = ApplyCorrection(baryCenter_pose, submap_correction);
-        pScan_copy->SetBarycenterPose(karto_baryCenterPose_corr);
+        karto::Pose2* karto_baryCenterPose_corr = const_cast<karto::Pose2*>(ApplyCorrection(baryCenter_pose, submap_correction));
+        pScan_copy->SetBarycenterPose(*karto_baryCenterPose_corr);
 
         //TRANSFORM BOUNDING BOX POSITIONS
         karto::BoundingBox2 bbox = pScan_copy->GetBoundingBox();
-        const karto::Vector2<kt_double> bbox_min_corr = ApplyCorrection(bbox.GetMinimum(), submap_correction);
-        bbox.SetMinimum(bbox_min_corr);
-        const karto::Vector2<kt_double> bbox_max_corr = ApplyCorrection(bbox.GetMaximum(), submap_correction);
-        bbox.SetMaximum(bbox_max_corr);
+        const karto::Vector2<kt_double>* bbox_min_corr = ApplyCorrection(bbox.GetMinimum(), submap_correction);
+        bbox.SetMinimum(*bbox_min_corr);
+        const karto::Vector2<kt_double>* bbox_max_corr = ApplyCorrection(bbox.GetMaximum(), submap_correction);
+        bbox.SetMaximum(*bbox_max_corr);
         pScan_copy->SetBoundingBox(bbox);
 
         // TRANSFORM UNFILTERED POINTS USED
         karto::PointVectorDouble UPR_vec = pScan_copy->GetPointReadings();
         for(karto::PointVectorDouble::iterator it_upr = UPR_vec.begin(); it_upr!=UPR_vec.end(); ++it_upr)
         {
-          const karto::Vector2<kt_double>& upr_corr = ApplyCorrection(*it_upr, submap_correction);
-          (*it_upr).SetX(upr_corr.GetX());
-          (*it_upr).SetY(upr_corr.GetY());
+          const karto::Vector2<kt_double>* upr_corr = ApplyCorrection(*it_upr, submap_correction);
+          (*it_upr).SetX(upr_corr->GetX());
+          (*it_upr).SetY(upr_corr->GetY());
         }
         pScan_copy->SetPointReadings(UPR_vec);
 
         //TRANSFORM CORRECTED POSE
         corrected_pose = pScan_copy->GetCorrectedPose();
-        karto::Pose2 karto_robotPose_corr = ApplyCorrection(corrected_pose, submap_correction);
-        pScan_copy->SetCorrectedPose(karto_robotPose_corr);
+        karto::Pose2* karto_robotPose_corr = const_cast<karto::Pose2*>(ApplyCorrection(corrected_pose, submap_correction));
+        pScan_copy->SetCorrectedPose(*karto_robotPose_corr);
         kt_bool rIsDirty = false;
         pScan_copy->SetIsDirty(rIsDirty);
 
         //TRANSFORM ODOM POSE
         karto::Pose2 odom_pose = pScan_copy->GetOdometricPose();
-        karto::Pose2 karto_robotPose_odom = ApplyCorrection(odom_pose, submap_correction);
-        pScan_copy->SetOdometricPose(karto_robotPose_odom);
+        karto::Pose2* karto_robotPose_odom = const_cast<karto::Pose2*>(ApplyCorrection(odom_pose, submap_correction));
+        pScan_copy->SetOdometricPose(*karto_robotPose_odom);
 
         transformed_scans.push_back(pScan_copy);
       }
     }
-    nav_msgs::GetMap::Response map = KartoToROSOccupancyGrid(transformed_scans);
+    nav_msgs::GetMap::Response map;
+    KartoToROSOccupancyGrid(transformed_scans, map);
     map.map.header.stamp = ros::Time::now();
     map.map.header.frame_id = "map";
     sstS_[0].publish(map.map);
@@ -244,18 +246,16 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
 }
 
 /*****************************************************************************/
-nav_msgs::GetMap::Response MergeMapTool::KartoToROSOccupancyGrid( \
-                                  const karto::LocalizedRangeScanVector& scans)
+void MergeMapTool::KartoToROSOccupancyGrid( \
+                                  const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map)
 /*****************************************************************************/
 {
   karto::OccupancyGrid* occ_grid = NULL;
-  nav_msgs::GetMap::Response map;
   occ_grid = karto::OccupancyGrid::CreateFromScans(scans, resolution_);
-
   if (!occ_grid)
   {
     ROS_INFO("MergeMapTool: Could not make Karto occupancy grid.");
-    return map;
+    return;
   }
   // Translate to ROS format
   kt_int32s width = occ_grid->GetWidth();
@@ -300,7 +300,8 @@ nav_msgs::GetMap::Response MergeMapTool::KartoToROSOccupancyGrid( \
       }
     }
   }
-  return map;
+  delete occ_grid;
+  return;
 }
 
 /*****************************************************************************/
