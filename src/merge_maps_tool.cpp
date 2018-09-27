@@ -207,9 +207,9 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
 
         //TRANSFORM BOUNDING BOX POSITIONS
         karto::BoundingBox2 bbox = pScan_copy->GetBoundingBox();
-        const karto::Vector2<kt_double>& bbox_min_corr = ApplyCorrection(bbox.GetMinimum(), submap_correction);
+        const karto::Vector2<kt_double> bbox_min_corr = ApplyCorrection(bbox.GetMinimum(), submap_correction);
         bbox.SetMinimum(bbox_min_corr);
-        const karto::Vector2<kt_double>& bbox_max_corr = ApplyCorrection(bbox.GetMaximum(), submap_correction);
+        const karto::Vector2<kt_double> bbox_max_corr = ApplyCorrection(bbox.GetMaximum(), submap_correction);
         bbox.SetMaximum(bbox_max_corr);
         pScan_copy->SetBoundingBox(bbox);
 
