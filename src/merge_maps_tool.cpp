@@ -172,10 +172,8 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   interactive_server_->insert(int_marker, \
            boost::bind(&MergeMapTool::ProcessInteractiveFeedback, this, _1));
   interactive_server_->applyChanges();
-  if (mapper)
-  {
-    delete mapper;
-  }
+  delete mapper;
+  mapper = NULL;
   return true;
 }
 
