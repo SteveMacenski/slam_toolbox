@@ -73,10 +73,6 @@ MergeMapTool::~MergeMapTool()
   {
     delete dataset_;
   }
-  if (mapper_)
-  {
-    delete mapper_;
-  }
 }
 
 /*****************************************************************************/
@@ -91,9 +87,10 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
     ROS_ERROR("MergeMapTool: Failed to open requested submap %s.", filename.c_str());
     return true;
   }
-  mapper_ = new karto::Mapper();
-  serialization::Read(filename, mapper_);
-  karto::LocalizedRangeScanVector scans = mapper_->GetAllProcessedScans();
+  karto::Mapper* mapper = new karto::Mapper;
+  serialization::Read(filename, mapper);
+  karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
+  scans_vec_.push_back(scans);
   num_submaps_++;
 
   // create and publish map with marker that will move the map around
@@ -102,21 +99,20 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>( \
                  "/map_metadata_" + std::to_string(num_submaps_), 1, true));
   ros::Duration(1.).sleep();
-  scans_vec.push_back(scans);
-  KartoToROSOccupancyGrid(scans);
+  nav_msgs::GetMap::Response map = KartoToROSOccupancyGrid(scans);
 
   tf::Transform transform;
-  transform.setOrigin(tf::Vector3(map_.map.info.origin.position.x+map_.map.info.width*map_.map.info.resolution/2.0,\
-                                  map_.map.info.origin.position.y+map_.map.info.height*map_.map.info.resolution/2.0, 0.));
-  map_.map.info.origin.position.x = -(map_.map.info.width*map_.map.info.resolution/2);
-  map_.map.info.origin.position.y = -(map_.map.info.height*map_.map.info.resolution/2);
+  transform.setOrigin(tf::Vector3(map.map.info.origin.position.x + map.map.info.width * map.map.info.resolution / 2.0,\
+                                  map.map.info.origin.position.y + map.map.info.height * map.map.info.resolution / 2.0, 0.));
+  map.map.info.origin.position.x = - (map.map.info.width * map.map.info.resolution / 2.0);
+  map.map.info.origin.position.y = - (map.map.info.height * map.map.info.resolution / 2.0);
   transform.setRotation(tf::createQuaternionFromRPY(0,0,0));
-  map_.map.header.stamp = ros::Time::now();
-  map_.map.header.frame_id = "map_"+std::to_string(num_submaps_);
-  sstS_[num_submaps_].publish(map_.map);
-  sstmS_[num_submaps_].publish(map_.map.info);
+  map.map.header.stamp = ros::Time::now();
+  map.map.header.frame_id = "map_"+std::to_string(num_submaps_);
+  sstS_[num_submaps_].publish(map.map);
+  sstmS_[num_submaps_].publish(map.map.info);
   tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(), "/map", "/map_"+std::to_string(num_submaps_)));
-  submaps_correction_tf[num_submaps_]=tf::Transform(tf::createQuaternionFromRPY(0,0,0),
+  submap_marker_transform_[num_submaps_]=tf::Transform(tf::createQuaternionFromRPY(0,0,0),
                                      tf::Vector3(0,0,0));//no initial correction -- identity mat
 
   // create an interactive marker for the base of this frame and attach it
@@ -144,7 +140,7 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   int_marker.pose.orientation.w = 1.;
   int_marker.pose.position.x = m.pose.position.x;
   int_marker.pose.position.y = m.pose.position.y;
-  int_marker.scale = 2;
+  int_marker.scale = 2.4;
 
   // translate control
   visualization_msgs::InteractiveMarkerControl control;
@@ -176,6 +172,10 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   interactive_server_->insert(int_marker, \
            boost::bind(&MergeMapTool::ProcessInteractiveFeedback, this, _1));
   interactive_server_->applyChanges();
+  if (mapper)
+  {
+    delete mapper;
+  }
   return true;
 }
 
@@ -184,16 +184,11 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
                                     slam_toolbox::MergeMaps::Response &resp)
 /*****************************************************************************/
 {
-  //TODO
-  // take nodes in graph mutually closest to each other and scan match
-  // against them to make a new inter-graph contraint list to optimize over
-  // then generate new composite map
-  // (this same technique can then be applied with manual loop closures)
     int id = 0;
     karto::Pose2 corrected_pose;
     karto::LocalizedRangeScan* pScan;
     karto::LocalizedRangeScanVector transformed_scans;
-    std::vector<karto::LocalizedRangeScanVector> vector_of_scans = scans_vec;
+    std::vector<karto::LocalizedRangeScanVector> vector_of_scans = scans_vec_;
     karto::LocalizedRangeScan* pScan_copy;
 
     for(LocalizedRangeScansVec_it it_LRV = vector_of_scans.begin(); it_LRV!= vector_of_scans.end(); ++it_LRV)
@@ -203,18 +198,18 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
       {
         pScan= *iter;
         pScan_copy = pScan;
-        tf::Transform submap_correction = submaps_correction_tf[id];
+        tf::Transform submap_correction = submap_marker_transform_[id];
 
         //TRANSFORM BARYCENTERR POSE
         const karto::Pose2 baryCenter_pose = pScan_copy->GetBarycenterPose();
-        auto karto_baryCenterPose_corr = ApplyCorrection(baryCenter_pose, submap_correction);
+        karto::Pose2 karto_baryCenterPose_corr = ApplyCorrection(baryCenter_pose, submap_correction);
         pScan_copy->SetBarycenterPose(karto_baryCenterPose_corr);
 
         //TRANSFORM BOUNDING BOX POSITIONS
         karto::BoundingBox2 bbox = pScan_copy->GetBoundingBox();
-        auto bbox_min_corr = ApplyCorrection(bbox.GetMinimum(), submap_correction);
+        const karto::Vector2<kt_double>& bbox_min_corr = ApplyCorrection(bbox.GetMinimum(), submap_correction);
         bbox.SetMinimum(bbox_min_corr);
-        auto bbox_max_corr = ApplyCorrection(bbox.GetMaximum(), submap_correction);
+        const karto::Vector2<kt_double>& bbox_max_corr = ApplyCorrection(bbox.GetMaximum(), submap_correction);
         bbox.SetMaximum(bbox_max_corr);
         pScan_copy->SetBoundingBox(bbox);
 
@@ -222,7 +217,7 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
         karto::PointVectorDouble UPR_vec = pScan_copy->GetPointReadings();
         for(karto::PointVectorDouble::iterator it_upr = UPR_vec.begin(); it_upr!=UPR_vec.end(); ++it_upr)
         {
-          auto upr_corr = ApplyCorrection(*it_upr, submap_correction);
+          const karto::Vector2<kt_double>& upr_corr = ApplyCorrection(*it_upr, submap_correction);
           (*it_upr).SetX(upr_corr.GetX());
           (*it_upr).SetY(upr_corr.GetY());
         }
@@ -237,52 +232,52 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
 
         //TRANSFORM ODOM POSE
         karto::Pose2 odom_pose = pScan_copy->GetOdometricPose();
-        auto karto_robotPose_odom = ApplyCorrection(odom_pose, submap_correction);
+        karto::Pose2 karto_robotPose_odom = ApplyCorrection(odom_pose, submap_correction);
         pScan_copy->SetOdometricPose(karto_robotPose_odom);
 
         transformed_scans.push_back(pScan_copy);
       }
     }
-    KartoToROSOccupancyGrid(transformed_scans);
-    map_.map.header.stamp = ros::Time::now();
-    map_.map.header.frame_id = "map";
-    sstS_[0].publish(map_.map);
-    sstmS_[0].publish(map_.map.info);
+    nav_msgs::GetMap::Response map = KartoToROSOccupancyGrid(transformed_scans);
+    map.map.header.stamp = ros::Time::now();
+    map.map.header.frame_id = "map";
+    sstS_[0].publish(map.map);
+    sstmS_[0].publish(map.map.info);
 }
 
 /*****************************************************************************/
-void MergeMapTool::KartoToROSOccupancyGrid( \
+nav_msgs::GetMap::Response MergeMapTool::KartoToROSOccupancyGrid( \
                                   const karto::LocalizedRangeScanVector& scans)
 /*****************************************************************************/
 {
   karto::OccupancyGrid* occ_grid = NULL;
+  nav_msgs::GetMap::Response map;
   occ_grid = karto::OccupancyGrid::CreateFromScans(scans, resolution_);
 
   if (!occ_grid)
   {
     ROS_INFO("MergeMapTool: Could not make Karto occupancy grid.");
-    return;
+    return map;
   }
-
   // Translate to ROS format
   kt_int32s width = occ_grid->GetWidth();
   kt_int32s height = occ_grid->GetHeight();
   karto::Vector2<kt_double> offset = \
                             occ_grid->GetCoordinateConverter()->GetOffset();
 
-  if(map_.map.info.width != (unsigned int) width || 
-     map_.map.info.height != (unsigned int) height ||
-     map_.map.info.origin.position.x != offset.GetX() ||
-     map_.map.info.origin.position.y != offset.GetY())
+  if(map.map.info.width != (unsigned int) width ||
+      map.map.info.height != (unsigned int) height ||
+      map.map.info.origin.position.x != offset.GetX() ||
+      map.map.info.origin.position.y != offset.GetY())
   {
-    map_.map.info.origin.position.x = offset.GetX();
-    map_.map.info.origin.position.y = offset.GetY();
-    map_.map.info.origin.position.z = 0.0;
-    map_.map.info.origin.orientation.w = 1.0;
-    map_.map.info.width = width;
-    map_.map.info.height = height;
-    map_.map.info.resolution = resolution_;
-    map_.map.data.resize(map_.map.info.width * map_.map.info.height);
+    map.map.info.origin.position.x = offset.GetX();
+    map.map.info.origin.position.y = offset.GetY();
+    map.map.info.origin.position.z = 0.0;
+    map.map.info.origin.orientation.w = 1.0;
+    map.map.info.width = width;
+    map.map.info.height = height;
+    map.map.info.resolution = resolution_;
+    map.map.data.resize(map.map.info.width * map.map.info.height);
   }
 
   for (kt_int32s y=0; y<height; y++)
@@ -293,13 +288,13 @@ void MergeMapTool::KartoToROSOccupancyGrid( \
       switch (value)
       {
         case karto::GridStates_Unknown:
-          map_.map.data[MAP_IDX(map_.map.info.width, x, y)] = -1;
+          map.map.data[MAP_IDX(map.map.info.width, x, y)] = -1;
           break;
         case karto::GridStates_Occupied:
-          map_.map.data[MAP_IDX(map_.map.info.width, x, y)] = 100;
+          map.map.data[MAP_IDX(map.map.info.width, x, y)] = 100;
           break;
         case karto::GridStates_Free:
-          map_.map.data[MAP_IDX(map_.map.info.width, x, y)] = 0;
+          map.map.data[MAP_IDX(map.map.info.width, x, y)] = 0;
           break;
         default:
           ROS_WARN("Encountered unknown cell value at %d, %d", x, y);
@@ -307,7 +302,7 @@ void MergeMapTool::KartoToROSOccupancyGrid( \
       }
     }
   }
-  return;
+  return map;
 }
 
 /*****************************************************************************/
@@ -328,9 +323,8 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
     tf::quaternionMsgToTF(feedback->pose.orientation, quat); // relative
     tf::Matrix3x3 mat(quat);
     mat.getRPY(roll, pitch, yaw);
-    tf::Vector3 old_submap_loc(submap_locations_[id](0),submap_locations_[id](1), 0.);
-    tf::Transform previous_submap_correction = submaps_correction_tf[id];
-    previous_submap_correction.setOrigin(old_submap_loc);
+    tf::Transform previous_submap_correction ;
+    previous_submap_correction.setOrigin(tf::Vector3(submap_locations_[id](0),submap_locations_[id](1), 0.));
     previous_submap_correction.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
 
     // update internal knowledge of submap locations
@@ -346,11 +340,11 @@ void MergeMapTool::ProcessInteractiveFeedback(const \
     tfB_->sendTransform(tf::StampedTransform (new_submap_location,
                        ros::Time::now(), "/map", "/map_"+std::to_string(id)));
 
-    submaps_correction_tf[id]*=previous_submap_correction.inverse()*new_submap_location;
+    submap_marker_transform_[id]*=previous_submap_correction.inverse()*new_submap_location;
   }
 
   if (feedback->event_type == \
-                   visualization_msgs::InteractiveMarkerFeedback::MOUSE_DOWN)
+                   visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
   {
     const int id = std::stoi(feedback->marker_name,nullptr,10);
 
