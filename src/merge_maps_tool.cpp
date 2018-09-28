@@ -187,7 +187,7 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
     karto::Pose2 corrected_pose;
     karto::LocalizedRangeScan* pScan;
     karto::LocalizedRangeScanVector transformed_scans;
-    std::vector<karto::LocalizedRangeScanVector> vector_of_scans = scans_vec_;
+    std::vector<karto::LocalizedRangeScanVector>& vector_of_scans = scans_vec_;
     karto::LocalizedRangeScan* pScan_copy;
 
     for(LocalizedRangeScansVec_it it_LRV = vector_of_scans.begin(); it_LRV!= vector_of_scans.end(); ++it_LRV)
