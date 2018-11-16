@@ -24,11 +24,11 @@
 namespace serialization
 {
 
-void Write(const std::string& filename, karto::Mapper* mapper)
+void Write(const std::string& filename_mapper, karto::Mapper* mapper)
 {
   try
   {
-    mapper->SaveToFile(filename);
+    mapper->SaveToFile(filename_mapper);
   }
   catch (boost::archive::archive_exception e)
   {

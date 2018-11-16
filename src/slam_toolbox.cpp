@@ -298,6 +298,7 @@ SlamToolbox::~SlamToolbox()
                                                                lasers_.begin();
   for (it; it!=lasers_.end(); ++it)
   {
+
     delete it->second;
   }
   if (interactive_server_)
@@ -1066,11 +1067,19 @@ bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::R
                                              slam_toolbox::SerializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
-  const std::string filename = req.filename + std::string(".st");
-  serialization::Write(filename, mapper_);
+  const std::string filename_mapper = req.filename + std::string(".st");
+  const std::string filename_dataset = req.filename +std::string(".data");
+  serialization::Write(filename_mapper, mapper_);
+//  SaveDataToFile(filename_dataset);
   return true;
 }
-
+void SlamToolbox::SaveDataToFile(const std::string& filename)
+{
+  printf("Save To File\n");
+  std::ofstream ofs(filename.c_str());
+  boost::archive::binary_oarchive oa(ofs, boost::archive::no_codecvt);
+  oa << BOOST_SERIALIZATION_NVP(dataset_);
+}
 /*****************************************************************************/
 int main(int argc, char** argv)
 /*****************************************************************************/

@@ -135,6 +135,8 @@ private:
   // state
   bool IsPaused(const PausedApplication& app);
 
+  void SaveDataToFile(const std::string& filename);
+
   // ROS-y-ness
   ros::NodeHandle nh_;
   tf::TransformListener tf_;

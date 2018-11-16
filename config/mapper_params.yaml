@@ -17,7 +17,7 @@ ceres_loss_function: None
 # ROS Parameters
 odom_frame: odom
 map_frame: map
-base_frame: base_link
+base_frame: base_footprint
 debug_logging: false
 throttle_scans: 1
 publish_occupancy_map: true

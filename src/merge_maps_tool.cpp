@@ -74,7 +74,13 @@ MergeMapTool::~MergeMapTool()
     delete dataset_;
   }
 }
-
+//inline void LoadDataFromFile(const std::string& filename, karto::Dataset* data)
+//{
+//  printf("Load From File\n");
+//  std::ifstream ifs(filename.c_str());
+//  boost::archive::binary_iarchive ia(ifs, boost::archive::no_codecvt);
+//  ia >> BOOST_SERIALIZATION_NVP(data);
+//}
 /*****************************************************************************/
 bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
                                      slam_toolbox::AddSubmap::Response &resp)
@@ -82,13 +88,16 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
 {
   // find if file exists
   const std::string filename = req.filename + std::string(".st");
+  const std::string filename_dataset = req.filename +std::string(".data");
   if (!FileExists(filename))
   {
     ROS_ERROR("MergeMapTool: Failed to open requested submap %s.", filename.c_str());
     return true;
   }
   karto::Mapper* mapper = new karto::Mapper;
+  karto::Dataset* dataset = new karto::Dataset;
   serialization::Read(filename, mapper);
+//  LoadDataFromFile(filename_dataset,dataset);
   karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
   scans_vec_.push_back(scans);
   num_submaps_++;
@@ -243,7 +252,14 @@ bool MergeMapTool::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
     sstS_[0].publish(map.map);
     sstmS_[0].publish(map.map.info);
 }
-
+//void MergeMapTool::CreateNewMapper()
+//{
+//  karto::Mapper* mapper = new karto::Mapper();
+//  boost::shared_ptr<karto::ScanSolver> solver;
+//  mapper->SetScanSolver(solver.get());
+//
+//
+//}
 /*****************************************************************************/
 void MergeMapTool::KartoToROSOccupancyGrid( \
                                   const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map)

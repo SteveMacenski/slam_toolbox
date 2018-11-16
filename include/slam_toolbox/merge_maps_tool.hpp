@@ -68,6 +68,7 @@ private:
   bool AddSubmapCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
   void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map);
+  void CreateNewMapper();
 
   Pose2_ptr ApplyCorrection(const karto::Pose2& pose, const tf::Transform& submap_correction)
   {
