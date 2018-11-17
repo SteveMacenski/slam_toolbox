@@ -1070,7 +1070,7 @@ bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::R
   const std::string filename_mapper = req.filename + std::string(".st");
   const std::string filename_dataset = req.filename +std::string(".data");
   serialization::Write(filename_mapper, mapper_);
-//  SaveDataToFile(filename_dataset);
+  SaveDataToFile(filename_dataset);
   return true;
 }
 void SlamToolbox::SaveDataToFile(const std::string& filename)
@@ -1080,6 +1080,7 @@ void SlamToolbox::SaveDataToFile(const std::string& filename)
   boost::archive::binary_oarchive oa(ofs, boost::archive::no_codecvt);
   oa << BOOST_SERIALIZATION_NVP(dataset_);
 }
+/*****************************************************************************/
 /*****************************************************************************/
 int main(int argc, char** argv)
 /*****************************************************************************/

@@ -69,6 +69,7 @@ private:
   void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map);
   void CreateNewMapper();
+  void LoadDataFromFile(const std::string& filename);
 
   Pose2_ptr ApplyCorrection(const karto::Pose2& pose, const tf::Transform& submap_correction)
   {

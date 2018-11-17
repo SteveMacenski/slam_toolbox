@@ -45,11 +45,6 @@ void MergeMapTool::SetConfigs()
   {
     resolution_ = 0.05;
   }
-  karto::LaserRangeFinder* laser =
-          karto::LaserRangeFinder::CreateLaserRangeFinder( \
-                                              karto::LaserRangeFinder_Custom, \
-                                         karto::Name("Custom Described Lidar"));
-  dataset_->Add(laser);
   sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>("/map", 1, true));
   sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>( \
                                                     "/map_metadata", 1, true));
@@ -74,13 +69,23 @@ MergeMapTool::~MergeMapTool()
     delete dataset_;
   }
 }
-//inline void LoadDataFromFile(const std::string& filename, karto::Dataset* data)
-//{
-//  printf("Load From File\n");
-//  std::ifstream ifs(filename.c_str());
-//  boost::archive::binary_iarchive ia(ifs, boost::archive::no_codecvt);
-//  ia >> BOOST_SERIALIZATION_NVP(data);
-//}
+void MergeMapTool::LoadDataFromFile(const std::string& filename)
+{
+  printf("Load dataset from File\n");
+
+  std::ifstream ifs(filename.c_str());
+  boost::archive::binary_iarchive ia(ifs);
+  karto::Dataset* data = new karto::Dataset;
+  ia >> BOOST_SERIALIZATION_NVP(data);
+  karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(data->GetObjects()[0]);
+  if (lasers_.find(laser->GetName().GetName())==lasers_.end())
+  {
+    lasers_[laser->GetName().GetName()] = laser;
+    dataset_->Add(laser);
+  }
+//  karto::LaserRangeFinder* laser2 = karto::LaserRangeFinder::CreateLaserRangeFinder(karto::LaserRangeFinder_Custom,karto::Name("Ivonas Lidar"));
+//  dataset_->Add(laser2);
+}
 /*****************************************************************************/
 bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
                                      slam_toolbox::AddSubmap::Response &resp)
@@ -94,10 +99,9 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
     ROS_ERROR("MergeMapTool: Failed to open requested submap %s.", filename.c_str());
     return true;
   }
+  LoadDataFromFile(filename_dataset);
   karto::Mapper* mapper = new karto::Mapper;
-  karto::Dataset* dataset = new karto::Dataset;
   serialization::Read(filename, mapper);
-//  LoadDataFromFile(filename_dataset,dataset);
   karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
   scans_vec_.push_back(scans);
   num_submaps_++;
