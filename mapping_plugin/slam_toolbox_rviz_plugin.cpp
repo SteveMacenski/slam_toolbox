@@ -39,10 +39,13 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
 /*****************************************************************************/    
 {
   ros::NodeHandle nh;
-  bool paused_measure = false, paused_process = false, interactive = false;
+  bool paused_measure = false, paused_process = false, interactive = false, isLoadingMapper_slam_toolbox = false;
+  bool merge_map_optimization = false;
   nh.getParam("/slam_toolbox/paused_new_measurements", paused_measure);
   nh.getParam("/slam_toolbox/paused_processing", paused_process);
   nh.getParam("/slam_toolbox/interactive_mode", interactive);
+  nh.getParam("load_previous_mapper", isLoadingMapper_slam_toolbox);
+  nh.getParam("merge_map_optimization", merge_map_optimization);
 
   _clearChanges = nh.serviceClient<slam_toolbox::Clear>("/slam_toolbox/clear_changes");
   _saveChanges = nh.serviceClient<slam_toolbox::LoopClosure>("/slam_toolbox/manual_loop_closure");
@@ -51,9 +54,9 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _interactive = nh.serviceClient<slam_toolbox::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
   _pause_processing = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_processing");
   _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
-  _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/merge_maps_tool/add_submap");
-  _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/merge_maps_tool/merge_maps");
-  _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/slam_toolbox/serialize_map");
+  _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/add_submap");
+  _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/merge_maps");
+  _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/serialize_map");
 
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();

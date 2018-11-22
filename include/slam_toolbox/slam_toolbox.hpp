@@ -50,6 +50,7 @@
 #include "slam_toolbox/SaveMap.h"
 #include "slam_toolbox/LoopClosure.h"
 #include "slam_toolbox/SerializePoseGraph.h"
+#include "slam_toolbox/AddSubmap.h"
 
 #include <string>
 #include <map>
@@ -136,6 +137,7 @@ private:
   bool IsPaused(const PausedApplication& app);
 
   void SaveDataToFile(const std::string& filename);
+  bool ReloadMapperCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
 
   // ROS-y-ness
   ros::NodeHandle nh_;
@@ -144,7 +146,7 @@ private:
   message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
   tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
   ros::Publisher sst_, sstm_, marker_publisher_, scan_publisher_;
-  ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_processing_, ssPause_measurements_, ssClear_manual_, ssSave_map_, ssSerialize_;
+  ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_processing_, ssPause_measurements_, ssClear_manual_, ssSave_map_, ssSerialize_, ssLoadMap_;
   nav_msgs::GetMap::Response map_;
 
   // Storage for ROS parameters

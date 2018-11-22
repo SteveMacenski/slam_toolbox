@@ -20,7 +20,6 @@
 
 #include <slam_toolbox/slam_toolbox.hpp>
 #include "serialization.cpp"
-
 /*****************************************************************************/
 SlamToolbox::SlamToolbox() : 
                          transform_thread_(NULL),
@@ -49,12 +48,14 @@ SlamToolbox::SlamToolbox() :
   ros::NodeHandle private_nh("~");
   nh_ = private_nh;
   SetParams(private_nh);
+
   SetSolver(private_nh);
   SetROSInterfaces(private_nh);
 
   nh_.setParam("paused_processing", pause_processing_);
   nh_.setParam("paused_new_measurements", pause_new_measurements_);
   nh_.setParam("interactive_mode", interactive_mode_);
+
 
   double transform_publish_period;
   private_nh.param("transform_publish_period", 
@@ -259,12 +260,15 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::InteractiveCallback,this);
   ssClear_manual_ = node.advertiseService("clear_changes", &SlamToolbox::ClearChangesCallback, this);
   ssSave_map_ = node.advertiseService("save_map", &SlamToolbox::SaveMapCallback, this);
-  ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::SerializePoseGraphCallback, this);
+
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node, "/scan", 5);
   scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::LaserCallback, this, _1));
   marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>("karto_graph_visualization",1);
   scan_publisher_ = node.advertise<sensor_msgs::LaserScan>("karto_scan_visualization",10);
+  ros::NodeHandle nh;
+  ssSerialize_ = nh.advertiseService("serialize_map", &SlamToolbox::SerializePoseGraphCallback, this);
+  ssLoadMap_ = nh.advertiseService("add_submap", &SlamToolbox::ReloadMapperCallback, this);
 }
 
 /*****************************************************************************/
@@ -1061,24 +1065,48 @@ void SlamToolbox::MoveNode(const int& id, const Eigen::Vector3d& pose, \
     mapper_->CorrectPoses();
   }
 }
-
 /*****************************************************************************/
 bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
                                              slam_toolbox::SerializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
-  const std::string filename_mapper = req.filename + std::string(".st");
-  const std::string filename_dataset = req.filename +std::string(".data");
-  serialization::Write(filename_mapper, mapper_);
-  SaveDataToFile(filename_dataset);
+  const std::string filename = req.filename;
+  serialization::Write(filename, mapper_, dataset_);
   return true;
 }
-void SlamToolbox::SaveDataToFile(const std::string& filename)
+
+bool SlamToolbox::ReloadMapperCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp)
 {
-  printf("Save To File\n");
-  std::ofstream ofs(filename.c_str());
-  boost::archive::binary_oarchive oa(ofs, boost::archive::no_codecvt);
-  oa << BOOST_SERIALIZATION_NVP(dataset_);
+  // TODO STEVE: this doesnt account for pose changes - need offset value for odometry so frames are colinear
+  // TODO STEVE2: how to remove extraneous nodes (?)
+//  mutex lock
+//  delete mapper_
+//  mapper_ = NULL
+//  mapper_returnZ_ = Deserisliae(filrname)
+//  mapper_ = mapper_returnZ
+
+    const std::string filename = req.filename;
+    boost::mutex::scoped_lock lock(mapper_mutex_);
+    karto::Dataset* data = new karto::Dataset;
+    serialization::Read(filename, mapper_, dataset_);
+    std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> mapper_vertices = mapper_->GetGraph()->GetVertices();
+    std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>>::iterator vertices_it;
+    for(vertices_it = mapper_vertices.begin(); vertices_it!=mapper_vertices.end(); ++vertices_it)
+    {
+      for(std::vector<karto::Vertex<karto::LocalizedRangeScan>*>::iterator vertex_it=  vertices_it->second.begin();
+          vertex_it!= vertices_it->second.end();++vertex_it )
+      {
+        solver_->AddNode(*vertex_it);
+      }
+    }
+    std::vector<karto::Edge<karto::LocalizedRangeScan>*> mapper_edges = mapper_->GetGraph()->GetEdges();
+    std::vector<karto::Edge<karto::LocalizedRangeScan>*>::iterator edges_it;
+    for( edges_it = mapper_edges.begin(); edges_it != mapper_edges.end(); ++edges_it)
+    {
+      solver_->AddConstraint(*edges_it);
+    }
+  mapper_->SetScanSolver(solver_.get());
+
 }
 /*****************************************************************************/
 /*****************************************************************************/
@@ -1086,6 +1114,8 @@ int main(int argc, char** argv)
 /*****************************************************************************/
 {
   ros::init(argc, argv, "slam_toolbox");
+  int i;
+  std::cin>>i;
   SlamToolbox kt;
   ros::spin();
   return 0;
