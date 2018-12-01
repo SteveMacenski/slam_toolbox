@@ -16,7 +16,7 @@
 
 /* Author: Steven Macenski */
 
-#include <slam_toolbox/merge_maps_tool.hpp>
+#include <slam_toolbox/merge_maps_kinetic.hpp>
 #include "serialization.cpp"
 
 /*****************************************************************************/
@@ -29,7 +29,6 @@ MergeMapTool::MergeMapTool() : interactive_server_(NULL)
 
   ros::NodeHandle nh_tmp("~");
   nh_ = nh_tmp;
-  dataset_ = new karto::Dataset();
   SetConfigs();
 }
 
@@ -65,41 +64,29 @@ MergeMapTool::~MergeMapTool()
   {
     delete interactive_server_;
   }
-  if (dataset_)
-  {
-    delete dataset_;
-  }
 }
-void MergeMapTool::LoadDatasetFromFile(const std::string& filename)
-{
-  printf("Load dataset from File\n");
-  std::ifstream ifs(filename.c_str());
-  boost::archive::binary_iarchive ia(ifs);
-  karto::Dataset* data = new karto::Dataset;
-  ia >> BOOST_SERIALIZATION_NVP(data);
-  karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(data->GetObjects()[0]);
-  if (lasers_.find(laser->GetName().GetName())==lasers_.end())
-  {
-    lasers_[laser->GetName().GetName()] = laser;
-    dataset_->Add(laser);
-  }
-}
+
 /*****************************************************************************/
 bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
                                      slam_toolbox::AddSubmap::Response &resp)
 /*****************************************************************************/
 {
   // find if file exists
-  const std::string filename = req.filename + std::string(".st");
-  const std::string filename_dataset = req.filename +std::string(".data");
-  if (!FileExists(filename))
-  {
-    ROS_ERROR("MergeMapTool: Failed to open requested submap %s.", filename.c_str());
-    return true;
-  }
-  LoadDatasetFromFile(filename_dataset);
+  const std::string filename = req.filename;
   karto::Mapper* mapper = new karto::Mapper;
-  serialization::Read(filename, mapper, dataset_);
+  karto::Dataset* dataset = new karto::Dataset;
+  serialization::Read(filename, mapper, dataset);
+  karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(dataset->GetObjects()[0]);
+  if (lasers_.find(laser->GetName().GetName())==lasers_.end())
+  {
+    lasers_[laser->GetName().GetName()] = laser;
+    auto pSensor = dynamic_cast<karto::Sensor *>(laser);
+    if (pSensor != NULL)
+    {
+      karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
+    }
+  }
+
   karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
   scans_vec_.push_back(scans);
   num_submaps_++;
@@ -184,6 +171,8 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   interactive_server_->insert(int_marker, \
            boost::bind(&MergeMapTool::ProcessInteractiveFeedback, this, _1));
   interactive_server_->applyChanges();
+  delete dataset;
+  dataset = NULL;
   delete mapper;
   mapper = NULL;
   return true;

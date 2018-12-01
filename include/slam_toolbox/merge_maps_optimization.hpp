@@ -106,7 +106,12 @@ private:
 
   //karto bookkeeping
   karto::Dataset* dataset_;
-  std::map<std::string, karto::LaserRangeFinder*> lasers_; //TODO: load datasets
+  std::map<std::string, karto::LaserRangeFinder*> lasers_;
+
+
+  pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;
+  boost::shared_ptr<karto::ScanSolver> master_solver_;
+  std::vector<karto::Mapper*> master_mapper;
 
   // TF
   tf::TransformBroadcaster* tfB_;
@@ -118,5 +123,6 @@ private:
   std::map<int, tf::Transform> submap_marker_transform_;
 
   std::vector<karto::Mapper*> mapper_vec_;
+  std::vector<karto::Dataset*> dataset_vec_;
 
 };

@@ -78,6 +78,7 @@ protected Q_SLOTS:
   void LoadPoseGraph();
   void GenerateMap();
   void SerializeMap();
+  void LoadMap();
 
   void updateCheckStateIfExternalChange();
 
@@ -90,6 +91,7 @@ protected:
   QHBoxLayout* _hbox5;
   QHBoxLayout* _hbox6;
   QHBoxLayout* _hbox7;
+  QHBoxLayout* _hbox8;
 
   QPushButton* _button1;
   QPushButton* _button2;
@@ -98,10 +100,12 @@ protected:
   QPushButton* _button5;
   QPushButton* _button6;
   QPushButton* _button7;
+  QPushButton* _button8;
 
   QLineEdit* _line1;
   QLineEdit* _line2;
   QLineEdit* _line3;
+  QLineEdit* _line4;
 
   QCheckBox* _check1;
   QCheckBox* _check2;
@@ -115,7 +119,7 @@ protected:
 
   QFrame* _line;
 
-  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_processing, _pause_measurements, _load_submap, _merge, _serialize;
+  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_processing, _pause_measurements, _load_submap, _merge, _serialize, _load_map;
 
   std::thread* _thread;
 };

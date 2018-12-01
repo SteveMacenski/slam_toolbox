@@ -20,7 +20,8 @@
 #include "serialization.cpp"
 
 /*****************************************************************************/
-MergeMapsOptimization::MergeMapsOptimization() : interactive_server_(NULL)
+MergeMapsOptimization::MergeMapsOptimization() : interactive_server_(NULL),
+                                                 solver_loader_("slam_toolbox", "karto::ScanSolver")
 /*****************************************************************************/
 {
   ROS_INFO("MergeMapsOptimization: Starting up!");
@@ -54,6 +55,23 @@ void MergeMapsOptimization::SetConfigs()
                                    &MergeMapsOptimization::AddSubmapCallback, this);
   num_submaps_ = 0;
   tfB_ = new tf::TransformBroadcaster();
+  std::string solver_plugin;
+  if(!nh_.getParam("solver_plugin", solver_plugin))
+  {
+    ROS_WARN("unable to find requested solver plugin, defaulting to SPA");
+    solver_plugin = "solver_plugins::SpaSolver";
+  }
+  try
+  {
+    master_solver_ = solver_loader_.createInstance(solver_plugin);
+    ROS_INFO("Using plugin %s", solver_plugin.c_str());
+  }
+  catch (const pluginlib::PluginlibException& ex)
+  {
+    ROS_FATAL("Failed to create %s, is it registered and built? Exception: %s.",
+              solver_plugin.c_str(), ex.what());
+    exit(1);
+  }
   ROS_INFO("MergeMapsOptimization: Starting up!");
 }
 
@@ -74,17 +92,7 @@ MergeMapsOptimization::~MergeMapsOptimization()
     delete *mapper_it;
   }
 }
-void MergeMapsOptimization::LoadDatasetFromFile(const std::string& filename)
-{
-  printf("Load dataset from File\n");
-  karto::Dataset* data = new karto::Dataset;
-  karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(data->GetObjects()[0]);
-  if (lasers_.find(laser->GetName().GetName())==lasers_.end())
-  {
-    lasers_[laser->GetName().GetName()] = laser;
-    dataset_->Add(laser);
-  }
-}
+
 /*****************************************************************************/
 bool MergeMapsOptimization::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
                                      slam_toolbox::AddSubmap::Response &resp)
@@ -95,15 +103,19 @@ bool MergeMapsOptimization::AddSubmapCallback(slam_toolbox::AddSubmap::Request &
   karto::Mapper* mapper = new karto::Mapper;
   karto::Dataset* dataset = new karto::Dataset;
   serialization::Read(filename, mapper, dataset);
-  RecalculateSolver(mapper);
   karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(dataset->GetObjects()[0]);
   if (lasers_.find(laser->GetName().GetName())==lasers_.end())
   {
     lasers_[laser->GetName().GetName()] = laser;
-    dataset_->Add(laser);
+    auto pSensor = dynamic_cast<karto::Sensor *>(laser);
+    if (pSensor != NULL)
+    {
+      karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
+    }
   }
-
+  RecalculateSolver(mapper);
   mapper_vec_.push_back(mapper);
+  dataset_vec_.push_back(dataset);
   karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
   scans_vec_.push_back(scans);
   num_submaps_++;
@@ -376,27 +388,11 @@ void MergeMapsOptimization::ProcessInteractiveFeedback(const \
                                               ros::Time::now(), "/map", "/map_"+std::to_string(id)));
   }
 }
+
+/*****************************************************************************/
 void MergeMapsOptimization::RecalculateSolver(karto::Mapper* mapper)
+/*****************************************************************************/
 {
-  pluginlib::ClassLoader<karto::ScanSolver> solver_loader("slam_toolbox", "karto::ScanSolver");
-  boost::shared_ptr<karto::ScanSolver> scan_solver;
-  std::string solver_plugin;
-  if(!nh_.getParam("solver_plugin", solver_plugin))
-  {
-    ROS_WARN("unable to find requested solver plugin, defaulting to SPA");
-    solver_plugin = "solver_plugins::SpaSolver";
-  }
-  try
-  {
-    scan_solver = solver_loader.createInstance(solver_plugin);
-    ROS_INFO("Using plugin %s", solver_plugin.c_str());
-  }
-  catch (const pluginlib::PluginlibException& ex)
-  {
-    ROS_FATAL("Failed to create %s, is it registered and built? Exception: %s.",
-              solver_plugin.c_str(), ex.what());
-    exit(1);
-  }
   std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> mapper_vertices = mapper->GetGraph()->GetVertices();
   std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>>::iterator vertices_it;
   for(vertices_it = mapper_vertices.begin(); vertices_it!=mapper_vertices.end(); ++vertices_it)
@@ -404,16 +400,16 @@ void MergeMapsOptimization::RecalculateSolver(karto::Mapper* mapper)
     for(std::vector<karto::Vertex<karto::LocalizedRangeScan>*>::iterator vertex_it=  vertices_it->second.begin();
         vertex_it!= vertices_it->second.end();++vertex_it )
     {
-     scan_solver->AddNode(*vertex_it);
+     master_solver_->AddNode(*vertex_it);
     }
   }
   std::vector<karto::Edge<karto::LocalizedRangeScan>*> mapper_edges = mapper->GetGraph()->GetEdges();
   std::vector<karto::Edge<karto::LocalizedRangeScan>*>::iterator edges_it;
   for( edges_it = mapper_edges.begin(); edges_it != mapper_edges.end(); ++edges_it)
   {
-    scan_solver->AddConstraint(*edges_it);
+    master_solver_->AddConstraint(*edges_it);
   }
-  mapper->SetScanSolver(scan_solver.get());
+//  mapper->SetScanSolver(master_solver_.get());
 }
 /*****************************************************************************/
 int main(int argc, char** argv)

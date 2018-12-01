@@ -39,12 +39,11 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
 /*****************************************************************************/    
 {
   ros::NodeHandle nh;
-  bool paused_measure = false, paused_process = false, interactive = false, isLoadingMapper_slam_toolbox = false;
+  bool paused_measure = false, paused_process = false, interactive = false;
   bool merge_map_optimization = false;
   nh.getParam("/slam_toolbox/paused_new_measurements", paused_measure);
   nh.getParam("/slam_toolbox/paused_processing", paused_process);
   nh.getParam("/slam_toolbox/interactive_mode", interactive);
-  nh.getParam("load_previous_mapper", isLoadingMapper_slam_toolbox);
   nh.getParam("merge_map_optimization", merge_map_optimization);
 
   _clearChanges = nh.serviceClient<slam_toolbox::Clear>("/slam_toolbox/clear_changes");
@@ -56,7 +55,8 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
   _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/add_submap");
   _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/merge_maps");
-  _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/serialize_map");
+  _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/slam_toolbox/serialize_map");
+  _load_map = nh.serviceClient<slam_toolbox::AddSubmap>("/slam_toolbox/load_map");
 
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();
@@ -66,6 +66,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _hbox5 = new QHBoxLayout();
   _hbox6 = new QHBoxLayout();
   _hbox7 = new QHBoxLayout();
+  _hbox8 = new QHBoxLayout();
 
   QFrame* _line = new QFrame();
   _line->setFrameShape(QFrame::HLine);
@@ -84,7 +85,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _button4->setText("Clear Measurement Queue");
   connect(_button4, SIGNAL(clicked()), this, SLOT(ClearQueue()));
   _button5 = new QPushButton(this);
-  _button5->setText("Load Pose Graph");
+  _button5->setText("Load Map");
   connect(_button5, SIGNAL(clicked()), this, SLOT(LoadPoseGraph()));
   _button6 = new QPushButton(this);
   _button6->setText("Generate Map");
@@ -92,6 +93,9 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _button7 = new QPushButton(this);
   _button7->setText("Serialize Map");
   connect(_button7, SIGNAL(clicked()), this, SLOT(SerializeMap()));
+  _button8 = new QPushButton(this);
+  _button8->setText("Load Submap");
+  connect(_button8, SIGNAL(clicked()), this, SLOT(LoadMap()));
 
   _label1 = new QLabel(this);
   _label1->setText("Interactive");
@@ -119,6 +123,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _line1 = new QLineEdit();
   _line2 = new QLineEdit();
   _line3 = new QLineEdit();
+  _line4 = new QLineEdit();
 
   _button1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _button2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -136,6 +141,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _hbox1->addWidget(_check3);
   _hbox1->addWidget(_label3);
 
+
   _hbox2->addWidget(_button1);
   _hbox2->addWidget(_button2);
 
@@ -152,11 +158,15 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _hbox7->addWidget(_button7);
   _hbox7->addWidget(_line3);
 
+  _hbox8->addWidget(_button8);
+  _hbox8->addWidget(_line4);
+
   _vbox->addWidget(_label5);
   _vbox->addLayout(_hbox1);
   _vbox->addLayout(_hbox2);
   _vbox->addLayout(_hbox3);
   _vbox->addLayout(_hbox7);
+  _vbox->addLayout(_hbox8);
   _vbox->addLayout(_hbox4);
   _vbox->addWidget(_line);
   _vbox->addWidget(_label4);
@@ -201,6 +211,18 @@ void SlamToolboxPlugin::LoadPoseGraph()
     ROS_WARN("Failed to load pose graph from file, is service running?");
   }
 }
+
+/*****************************************************************************/
+  void SlamToolboxPlugin::LoadMap()
+/*****************************************************************************/
+  {
+    slam_toolbox::AddSubmap msg;
+    msg.request.filename = _line4->text().toStdString();
+    if (!_load_map.call(msg))
+    {
+      ROS_WARN("Failed to mapper object from file, is service running?");
+    }
+  }
 
 /*****************************************************************************/
 void SlamToolboxPlugin::GenerateMap()

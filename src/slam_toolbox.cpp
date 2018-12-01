@@ -266,9 +266,8 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::LaserCallback, this, _1));
   marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>("karto_graph_visualization",1);
   scan_publisher_ = node.advertise<sensor_msgs::LaserScan>("karto_scan_visualization",10);
-  ros::NodeHandle nh;
-  ssSerialize_ = nh.advertiseService("serialize_map", &SlamToolbox::SerializePoseGraphCallback, this);
-  ssLoadMap_ = nh.advertiseService("add_submap", &SlamToolbox::ReloadMapperCallback, this);
+  ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::SerializePoseGraphCallback, this);
+  ssLoadMap_ = node.advertiseService("load_map", &SlamToolbox::ReloadMapperCallback, this);
 }
 
 /*****************************************************************************/
@@ -422,10 +421,13 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const \
     laser->SetRangeThreshold(max_laser_range_);
 
     // Store this laser device for later
-    lasers_[scan->header.frame_id] = laser;
-    dataset_->Add(laser);
-  }
+    if(lasers_.find(scan->header.frame_id) == lasers_.end())
+    {
+      lasers_[scan->header.frame_id] = laser;
+      dataset_->Add(laser);
+    }
 
+  }
   return lasers_[scan->header.frame_id];
 }
 
@@ -1078,35 +1080,49 @@ bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::R
 bool SlamToolbox::ReloadMapperCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp)
 {
   // TODO STEVE: this doesnt account for pose changes - need offset value for odometry so frames are colinear
+    // ie add field for initial pose of new entries in the frame of the original and a bool whether to continue using the existing odom in TF (when continueing the same session serialized so the odom frame ihasnt changed)
   // TODO STEVE2: how to remove extraneous nodes (?)
-//  mutex lock
-//  delete mapper_
-//  mapper_ = NULL
-//  mapper_returnZ_ = Deserisliae(filrname)
-//  mapper_ = mapper_returnZ
 
-    const std::string filename = req.filename;
+  const std::string filename = req.filename;
+
+  karto::Dataset* dataset = new karto::Dataset;
+  karto::Mapper* mapper = new karto::Mapper;
+  serialization::Read(filename, mapper, dataset);
+  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> mapper_vertices = mapper->GetGraph()->GetVertices();
+  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>>::iterator vertices_it;
+  for(vertices_it = mapper_vertices.begin(); vertices_it!=mapper_vertices.end(); ++vertices_it)
+  {
+    for(std::vector<karto::Vertex<karto::LocalizedRangeScan>*>::iterator vertex_it=  vertices_it->second.begin();
+        vertex_it!= vertices_it->second.end();++vertex_it )
+    {
+      solver_->AddNode(*vertex_it);
+    }
+  }
+  std::vector<karto::Edge<karto::LocalizedRangeScan>*> mapper_edges = mapper->GetGraph()->GetEdges();
+  std::vector<karto::Edge<karto::LocalizedRangeScan>*>::iterator edges_it;
+  for( edges_it = mapper_edges.begin(); edges_it != mapper_edges.end(); ++edges_it)
+  {
+    solver_->AddConstraint(*edges_it);
+  }
+  mapper->SetScanSolver(solver_.get());
+  {
     boost::mutex::scoped_lock lock(mapper_mutex_);
-    karto::Dataset* data = new karto::Dataset;
-    serialization::Read(filename, mapper_, dataset_);
-    std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> mapper_vertices = mapper_->GetGraph()->GetVertices();
-    std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>>::iterator vertices_it;
-    for(vertices_it = mapper_vertices.begin(); vertices_it!=mapper_vertices.end(); ++vertices_it)
+    if (mapper_)
     {
-      for(std::vector<karto::Vertex<karto::LocalizedRangeScan>*>::iterator vertex_it=  vertices_it->second.begin();
-          vertex_it!= vertices_it->second.end();++vertex_it )
-      {
-        solver_->AddNode(*vertex_it);
-      }
+      delete mapper_;
+      mapper_ = NULL;
     }
-    std::vector<karto::Edge<karto::LocalizedRangeScan>*> mapper_edges = mapper_->GetGraph()->GetEdges();
-    std::vector<karto::Edge<karto::LocalizedRangeScan>*>::iterator edges_it;
-    for( edges_it = mapper_edges.begin(); edges_it != mapper_edges.end(); ++edges_it)
+    if (dataset_)
     {
-      solver_->AddConstraint(*edges_it);
+      delete dataset_;
+      dataset_ = NULL;
     }
-  mapper_->SetScanSolver(solver_.get());
-
+    karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(dataset->GetObjects()[0]);
+    mapper_ = mapper;
+    dataset_ = dataset;
+    dataset_->Add(laser);
+  }
+  UpdateMap();
 }
 /*****************************************************************************/
 /*****************************************************************************/
@@ -1114,8 +1130,6 @@ int main(int argc, char** argv)
 /*****************************************************************************/
 {
   ros::init(argc, argv, "slam_toolbox");
-  int i;
-  std::cin>>i;
   SlamToolbox kt;
   ros::spin();
   return 0;
