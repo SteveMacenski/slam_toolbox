@@ -150,7 +150,7 @@ private:
   nav_msgs::GetMap::Response map_;
 
   // Storage for ROS parameters
-  std::string odom_frame_, map_frame_, base_frame_;
+  std::string odom_frame_, map_frame_, base_frame_, laser_frame_;
   int throttle_scans_;
   ros::Duration map_update_interval_;
   double resolution_, minimum_time_interval_, minimum_travel_distance_;

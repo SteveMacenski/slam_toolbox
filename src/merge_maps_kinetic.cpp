@@ -80,7 +80,7 @@ bool MergeMapTool::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req,
   if (lasers_.find(laser->GetName().GetName())==lasers_.end())
   {
     lasers_[laser->GetName().GetName()] = laser;
-    auto pSensor = dynamic_cast<karto::Sensor *>(laser);
+    karto::Sensor* pSensor = dynamic_cast<karto::Sensor *>(laser);
     if (pSensor != NULL)
     {
       karto::SensorManager::GetInstance()->RegisterSensor(pSensor);

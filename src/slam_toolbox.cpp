@@ -104,6 +104,8 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
     map_frame_ = "map";
   if(!private_nh_.getParam("base_frame", base_frame_))
     base_frame_ = "base_link";
+  if(!private_nh_.getParam("laser_frame", laser_frame_))
+    laser_frame_ = "base_laser_link";
   if(!private_nh_.getParam("throttle_scans", throttle_scans_))
     throttle_scans_ = 1;
   if(!private_nh_.getParam("publish_occupancy_map", publish_occupancy_map_))
@@ -1120,9 +1122,16 @@ bool SlamToolbox::ReloadMapperCallback(slam_toolbox::AddSubmap::Request  &req, s
     karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(dataset->GetObjects()[0]);
     mapper_ = mapper;
     dataset_ = dataset;
-    dataset_->Add(laser);
+    karto::Sensor*  pSensor = dynamic_cast<karto::Sensor *>(laser);
+    if (pSensor != NULL)
+    {
+      karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
+      lasers_["base_laser_link"] = laser;
+    }
+
   }
   UpdateMap();
+
 }
 /*****************************************************************************/
 /*****************************************************************************/
