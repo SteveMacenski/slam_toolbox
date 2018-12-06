@@ -23,7 +23,7 @@
 MergeMapsKinematic::MergeMapsKinematic() : interactive_server_(NULL)
 /*****************************************************************************/
 {
-  ROS_INFO("MergeMapsTool: Starting up!");
+  ROS_INFO("MergeMapsKinematic: Starting up!");
   interactive_server_ = \
    new interactive_markers::InteractiveMarkerServer("merge_maps_tool","",true);
 
@@ -251,7 +251,7 @@ void MergeMapsKinematic::KartoToROSOccupancyGrid( \
   occ_grid = karto::OccupancyGrid::CreateFromScans(scans, resolution_);
   if (!occ_grid)
   {
-    ROS_INFO("MergeMapsTool: Could not make Karto occupancy grid.");
+    ROS_INFO("MergeMapsKinematic: Could not make Karto occupancy grid.");
     delete occ_grid;
     return;
   }
