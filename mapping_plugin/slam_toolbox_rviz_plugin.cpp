@@ -53,10 +53,10 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _interactive = nh.serviceClient<slam_toolbox::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
   _pause_processing = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_processing");
   _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
-  _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/add_map");
+  _load_map = nh.serviceClient<slam_toolbox::AddSubmap>("/add_map");
   _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/merge_maps");
   _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/slam_toolbox/serialize_map");
-  _load_map = nh.serviceClient<slam_toolbox::AddSubmap>("/slam_toolbox/load_map");
+  _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/slam_toolbox/load_submap");
 
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();
@@ -86,7 +86,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   connect(_button4, SIGNAL(clicked()), this, SLOT(ClearQueue()));
   _button5 = new QPushButton(this);
   _button5->setText("Load Map");
-  connect(_button5, SIGNAL(clicked()), this, SLOT(LoadPoseGraph()));
+  connect(_button5, SIGNAL(clicked()), this, SLOT(LoadMap()));
   _button6 = new QPushButton(this);
   _button6->setText("Generate Map");
   connect(_button6, SIGNAL(clicked()), this, SLOT(GenerateMap()));
@@ -95,7 +95,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   connect(_button7, SIGNAL(clicked()), this, SLOT(SerializeMap()));
   _button8 = new QPushButton(this);
   _button8->setText("Load Submap");
-  connect(_button8, SIGNAL(clicked()), this, SLOT(LoadMap()));
+  connect(_button8, SIGNAL(clicked()), this, SLOT(LoadSubmap()));
 
   _label1 = new QLabel(this);
   _label1->setText("Interactive");
@@ -193,37 +193,36 @@ void SlamToolboxPlugin::SerializeMap()
 /*****************************************************************************/
 {
   slam_toolbox::SerializePoseGraph msg;
-  msg.request.filename = _line3->text().toStdString();
+  msg.request.filename = _line2->text().toStdString();
   if (!_serialize.call(msg))
   {
-    ROS_WARN("Failed to serialize pose graph to file, is service running?");
+    ROS_WARN("SlamToolbox: Failed to serialize pose graph to file, is service running?");
   }
 }
 
 /*****************************************************************************/
-void SlamToolboxPlugin::LoadPoseGraph()
+  void SlamToolboxPlugin::LoadSubmap()
 /*****************************************************************************/
-{
-  slam_toolbox::AddSubmap msg;
-  msg.request.filename = _line2->text().toStdString();
-  if (!_load_submap.call(msg))
   {
-    ROS_WARN("Failed to load pose graph from file, is service running?");
+    slam_toolbox::AddSubmap msg;
+    msg.request.filename = _line4->text().toStdString();
+    if (!_load_submap.call(msg))
+    {
+      ROS_WARN("SlamToolbox: Failed to mapper object from file, is service running?");
+    }
   }
-}
 
 /*****************************************************************************/
   void SlamToolboxPlugin::LoadMap()
 /*****************************************************************************/
   {
     slam_toolbox::AddSubmap msg;
-    msg.request.filename = _line4->text().toStdString();
+    msg.request.filename = _line3->text().toStdString();
     if (!_load_map.call(msg))
     {
-      ROS_WARN("Failed to mapper object from file, is service running?");
+      ROS_WARN("MergeMaps: Failed to load pose graph from file, is service running?");
     }
   }
-
 /*****************************************************************************/
 void SlamToolboxPlugin::GenerateMap()
 /*****************************************************************************/
@@ -231,7 +230,7 @@ void SlamToolboxPlugin::GenerateMap()
   slam_toolbox::MergeMaps msg;
   if (!_merge.call(msg))
   {
-    ROS_WARN("Failed to merge maps, is service running?");
+    ROS_WARN("MergeMaps: Failed to merge maps, is service running?");
   }
 }
 
@@ -242,7 +241,7 @@ void SlamToolboxPlugin::ClearChanges()
   slam_toolbox::Clear msg;
   if (!_clearChanges.call(msg))
   {
-    ROS_WARN("Failed to clear changes, is service running?");
+    ROS_WARN("SlamToolbox: Failed to clear changes, is service running?");
   }
 }
 
@@ -254,7 +253,7 @@ void SlamToolboxPlugin::SaveChanges()
 
   if (!_saveChanges.call(msg))
   {
-    ROS_WARN("Failed to save changes, is service running?");
+    ROS_WARN("SlamToolbox: Failed to save changes, is service running?");
   }
 }
 
@@ -266,7 +265,7 @@ void SlamToolboxPlugin::SaveMap()
   msg.request.name.data = _line1->text().toStdString();
   if (!_saveMap.call(msg))
   {
-    ROS_WARN("Failed to save map as %s, is service running?", 
+    ROS_WARN("SlamToolbox: Failed to save map as %s, is service running?",
               msg.request.name.data.c_str());
   }
 }
@@ -289,7 +288,7 @@ void SlamToolboxPlugin::InteractiveCb(int state)
   slam_toolbox::ToggleInteractive msg;
   if (!_interactive.call(msg))
   {
-    ROS_WARN("Failed to toggle interactive mode, is service running?");
+    ROS_WARN("SlamToolbox: Failed to toggle interactive mode, is service running?");
   }
 }
 
@@ -300,7 +299,7 @@ void SlamToolboxPlugin::PauseProcessingCb(int state)
   slam_toolbox::Pause msg;
   if (!_pause_processing.call(msg))
   {
-    ROS_WARN("Failed to toggle pause processing, is service running?");
+    ROS_WARN("SlamToolbox: Failed to toggle pause processing, is service running?");
   }
 }
 
@@ -311,7 +310,7 @@ void SlamToolboxPlugin::PauseMeasurementsCb(int state)
   slam_toolbox::Pause msg;
   if (!_pause_measurements.call(msg))
   {
-    ROS_WARN("Failed to toggle pause measurements, is service running?");
+    ROS_WARN("SlamToolbox: Failed to toggle pause measurements, is service running?");
   }
 }
 

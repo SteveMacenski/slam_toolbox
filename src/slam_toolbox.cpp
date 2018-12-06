@@ -269,7 +269,7 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>("karto_graph_visualization",1);
   scan_publisher_ = node.advertise<sensor_msgs::LaserScan>("karto_scan_visualization",10);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::SerializePoseGraphCallback, this);
-  ssLoadMap_ = node.advertiseService("load_map", &SlamToolbox::ReloadMapperCallback, this);
+  ssLoadMap_ = node.advertiseService("load_submap", &SlamToolbox::LoadMapperCallback, this);
 }
 
 /*****************************************************************************/
@@ -303,7 +303,6 @@ SlamToolbox::~SlamToolbox()
                                                                lasers_.begin();
   for (it; it!=lasers_.end(); ++it)
   {
-
     delete it->second;
   }
   if (interactive_server_)
@@ -428,7 +427,6 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const \
       lasers_[scan->header.frame_id] = laser;
       dataset_->Add(laser, true);
     }
-
   }
   return lasers_[scan->header.frame_id];
 }
@@ -760,7 +758,6 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
 {  
   // Create a vector of doubles for karto
   std::vector<kt_double> readings;
-
   if (lasers_inverted_[scan->header.frame_id]) {
     for(std::vector<float>::const_reverse_iterator it = scan->ranges.rbegin();
       it != scan->ranges.rend();
@@ -1079,7 +1076,10 @@ bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::R
   return true;
 }
 
-bool SlamToolbox::ReloadMapperCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp)
+/*****************************************************************************/
+bool SlamToolbox::LoadMapperCallback(slam_toolbox::AddSubmap::Request  &req,
+                                     slam_toolbox::AddSubmap::Response &resp)
+/*****************************************************************************/
 {
   // TODO STEVE: this doesnt account for pose changes - need offset value for odometry so frames are colinear
     // ie add field for initial pose of new entries in the frame of the original and a bool whether to continue using the existing odom in TF (when continueing the same session serialized so the odom frame ihasnt changed)
@@ -1138,7 +1138,7 @@ bool SlamToolbox::ReloadMapperCallback(slam_toolbox::AddSubmap::Request  &req, s
   }
   UpdateMap();
 }
-/*****************************************************************************/
+
 /*****************************************************************************/
 int main(int argc, char** argv)
 /*****************************************************************************/

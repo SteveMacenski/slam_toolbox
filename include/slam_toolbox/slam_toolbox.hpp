@@ -136,7 +136,7 @@ private:
   // state
   bool IsPaused(const PausedApplication& app);
 
-  bool ReloadMapperCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
+  bool LoadMapperCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
 
   // ROS-y-ness
   ros::NodeHandle nh_;

@@ -75,7 +75,7 @@ protected Q_SLOTS:
   void InteractiveCb(int state);
   void PauseProcessingCb(int state);
   void PauseMeasurementsCb(int state);
-  void LoadPoseGraph();
+  void LoadSubmap();
   void GenerateMap();
   void SerializeMap();
   void LoadMap();

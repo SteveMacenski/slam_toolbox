@@ -50,51 +50,44 @@
 
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
-class MergeMapTool
+class MergeMapsKinematic
 {
 
 public:
-  MergeMapTool();
-  ~MergeMapTool();
+  MergeMapsKinematic();
+  ~MergeMapsKinematic();
 
 private:
-  typedef std::unique_ptr<karto::Pose2> Pose2_ptr;
-  typedef std::unique_ptr<karto::Vector2<kt_double>> Vector2_double_ptr;
+
   // setup
   void SetConfigs();
 
-  // callbacks
+  // callback
   bool MergeMapCallback(slam_toolbox::MergeMaps::Request  &req, slam_toolbox::MergeMaps::Response &resp);
   bool AddSubmapCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
   void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map);
 
-  Pose2_ptr ApplyCorrection(const karto::Pose2& pose, const tf::Transform& submap_correction)
+  karto::Pose2 ApplyCorrection(const karto::Pose2& pose, const tf::Transform& submap_correction)
   {
     tf::Transform pose_tf, pose_corr;
     pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
     pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, pose.GetHeading()));
     pose_corr = submap_correction*pose_tf;
-    return Pose2_ptr(new karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(), tf::getYaw(pose_corr.getRotation())));
+    return karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(), tf::getYaw(pose_corr.getRotation()));
   }
 
-  Vector2_double_ptr ApplyCorrection(const karto::Vector2<kt_double>&  pose, const tf::Transform& submap_correction)
+  karto::Vector2<kt_double> ApplyCorrection(const karto::Vector2<kt_double>&  pose, const tf::Transform& submap_correction)
   {
     tf::Transform pose_tf, pose_corr;
     pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
     pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
     pose_corr = submap_correction*pose_tf;
-    return Vector2_double_ptr(new karto::Vector2<kt_double>(pose_corr.getOrigin().x(), pose_corr.getOrigin().y()));
+    return karto::Vector2<kt_double>(pose_corr.getOrigin().x(), pose_corr.getOrigin().y());
   }
 
-  inline bool FileExists(const std::string& name)
-  {
-    struct stat buffer;
-    return (stat (name.c_str(), &buffer) == 0); 
-  }
-
-  typedef std::vector<karto::LocalizedRangeScanVector>::iterator LocalizedRangeScansVec_it;
-  typedef karto::LocalizedRangeScanVector::iterator LocalizedRangeScans_it;
+  typedef std::vector<karto::LocalizedRangeScanVector>::iterator localized_range_scans_vec_it;
+  typedef karto::LocalizedRangeScanVector::iterator localized_range_scans_it;
 
   // ROS-y-ness
   ros::NodeHandle nh_;
@@ -109,6 +102,7 @@ private:
 
   //karto bookkeeping
   std::map<std::string, karto::LaserRangeFinder*> lasers_;
+  std::vector<karto::Dataset*> dataset_vec_;
 
   // TF
   tf::TransformBroadcaster* tfB_;

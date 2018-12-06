@@ -24,21 +24,19 @@
 #include <sys/stat.h>
 
 
-
+namespace serialization
+{
 inline bool FileExists(const std::string& name)
 {
   struct stat buffer;
   return (stat (name.c_str(), &buffer) == 0);
 }
 
-namespace serialization
-{
-
 void Write(const std::string& filename, karto::Mapper* mapper, karto::Dataset* dataset)
 {
   try
   {
-    mapper->SaveToFile(filename + std::string(".st"));
+    mapper->SaveToFile(filename + std::string(".posegraph"));
   }
   catch (boost::archive::archive_exception e)
   {
@@ -51,13 +49,13 @@ void Write(const std::string& filename, karto::Mapper* mapper, karto::Dataset* d
 
 void Read(const std::string& filename, karto::Mapper* mapper, karto::Dataset*& dataset)
 {
-  if (!FileExists(filename + std::string(".st")))
+  if (!FileExists(filename + std::string(".posegraph")))
   {
     ROS_ERROR("serialization::Read : Failed to open requested submap %s.", filename.c_str());
   }
   try
   {
-    mapper->LoadFromFile(filename + std::string(".st"));
+    mapper->LoadFromFile(filename + std::string(".posegraph"));
   }
   catch (boost::archive::archive_exception e)
   {
