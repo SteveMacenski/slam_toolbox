@@ -136,7 +136,6 @@ private:
   // state
   bool IsPaused(const PausedApplication& app);
 
-  void SaveDataToFile(const std::string& filename);
   bool ReloadMapperCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
 
   // ROS-y-ness

@@ -103,7 +103,7 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
   if(!private_nh_.getParam("map_frame", map_frame_))
     map_frame_ = "map";
   if(!private_nh_.getParam("base_frame", base_frame_))
-    base_frame_ = "base_link";
+    base_frame_ = "base_footprint";
   if(!private_nh_.getParam("laser_frame", laser_frame_))
     laser_frame_ = "base_laser_link";
   if(!private_nh_.getParam("throttle_scans", throttle_scans_))
@@ -426,7 +426,7 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const \
     if(lasers_.find(scan->header.frame_id) == lasers_.end())
     {
       lasers_[scan->header.frame_id] = laser;
-      dataset_->Add(laser);
+      dataset_->Add(laser, true);
     }
 
   }
@@ -812,7 +812,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
                               tf::Point( odom_to_map.getOrigin() ) ).inverse();
     }
     // Add the localized range scan to the dataset (for memory management)
-    dataset_->Add(range_scan);
+    dataset_->Add(range_scan,true);
   }
   else
     delete range_scan;
@@ -1119,19 +1119,24 @@ bool SlamToolbox::ReloadMapperCallback(slam_toolbox::AddSubmap::Request  &req, s
       delete dataset_;
       dataset_ = NULL;
     }
+
     karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(dataset->GetObjects()[0]);
     mapper_ = mapper;
     dataset_ = dataset;
     karto::Sensor*  pSensor = dynamic_cast<karto::Sensor *>(laser);
-    if (pSensor != NULL)
+    if (pSensor)
     {
       karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
-      lasers_["base_laser_link"] = laser;
+      lasers_[laser_frame_] = laser;
+      bool is_inverted;
+      if(!nh_.getParam("inverted_laser", is_inverted))
+      {
+        is_inverted = false;
+      }
+      lasers_inverted_[laser_frame_] = is_inverted;
     }
-
   }
   UpdateMap();
-
 }
 /*****************************************************************************/
 /*****************************************************************************/

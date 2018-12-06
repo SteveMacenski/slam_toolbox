@@ -53,7 +53,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _interactive = nh.serviceClient<slam_toolbox::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
   _pause_processing = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_processing");
   _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
-  _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/add_submap");
+  _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/add_map");
   _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/merge_maps");
   _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/slam_toolbox/serialize_map");
   _load_map = nh.serviceClient<slam_toolbox::AddSubmap>("/slam_toolbox/load_map");

@@ -19,7 +19,7 @@
 #include "ros/ros.h"
 #include "visualization_msgs/MarkerArray.h"
 #include <visualization_msgs/InteractiveMarker.h>
-#include <visualization_msgs/InteractiveMarkerControl.h>
+#include <visualization_msgs/InteractiveMarkerControl.h> 
 #include <visualization_msgs/InteractiveMarkerFeedback.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
@@ -44,18 +44,18 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <fstream>
-#include <pluginlib/class_loader.h>
 
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
-class MergeMapsOptimization
+class MergeMapTool
 {
 
 public:
-  MergeMapsOptimization();
-  ~MergeMapsOptimization();
+  MergeMapTool();
+  ~MergeMapTool();
 
 private:
   typedef std::unique_ptr<karto::Pose2> Pose2_ptr;
@@ -68,9 +68,6 @@ private:
   bool AddSubmapCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
   void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map);
-  void CreateNewMapper();
-  void LoadDatasetFromFile(const std::string& filename);
-  void RecalculateSolver(karto::Mapper*);
 
   Pose2_ptr ApplyCorrection(const karto::Pose2& pose, const tf::Transform& submap_correction)
   {
@@ -90,6 +87,12 @@ private:
     return Vector2_double_ptr(new karto::Vector2<kt_double>(pose_corr.getOrigin().x(), pose_corr.getOrigin().y()));
   }
 
+  inline bool FileExists(const std::string& name)
+  {
+    struct stat buffer;
+    return (stat (name.c_str(), &buffer) == 0); 
+  }
+
   typedef std::vector<karto::LocalizedRangeScanVector>::iterator LocalizedRangeScansVec_it;
   typedef karto::LocalizedRangeScanVector::iterator LocalizedRangeScans_it;
 
@@ -105,13 +108,7 @@ private:
   int num_submaps_;
 
   //karto bookkeeping
-  karto::Dataset* dataset_;
   std::map<std::string, karto::LaserRangeFinder*> lasers_;
-
-
-  pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;
-  boost::shared_ptr<karto::ScanSolver> master_solver_;
-  std::vector<karto::Mapper*> master_mapper;
 
   // TF
   tf::TransformBroadcaster* tfB_;
@@ -121,8 +118,4 @@ private:
   std::map<int, Eigen::Vector3d> submap_locations_;
   std::vector<karto::LocalizedRangeScanVector> scans_vec_;
   std::map<int, tf::Transform> submap_marker_transform_;
-
-  std::vector<karto::Mapper*> mapper_vec_;
-  std::vector<karto::Dataset*> dataset_vec_;
-
 };

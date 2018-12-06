@@ -65,5 +65,5 @@ minimum_angle_penalty: 0.9
 minimum_distance_penalty: 0.5
 use_response_expansion: true
 
-#serialization params
-load_previous_mapper: true
+# Load Map Parameters
+inverted_laser: true

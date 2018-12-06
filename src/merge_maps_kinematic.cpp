@@ -16,7 +16,7 @@
 
 /* Author: Steven Macenski */
 
-#include <slam_toolbox/merge_maps_kinetic.hpp>
+#include <slam_toolbox/merge_maps_kinematic.hpp>
 #include "serialization.cpp"
 
 /*****************************************************************************/
@@ -50,7 +50,7 @@ void MergeMapTool::SetConfigs()
   ros::NodeHandle nh;
   ssMap_ = nh.advertiseService("merge_maps",
                                         &MergeMapTool::MergeMapCallback, this);
-  ssSubmap_ = nh.advertiseService("add_submap",
+  ssSubmap_ = nh.advertiseService("add_map",
                                        &MergeMapTool::AddSubmapCallback, this);
   num_submaps_ = 0;
   tfB_ = new tf::TransformBroadcaster();
