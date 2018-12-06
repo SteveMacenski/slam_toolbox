@@ -1,7 +1,0 @@
-<launch>
-
-  <node pkg="slam_toolbox" type="merge_maps_optimization" name="merge_maps_optimization" output="screen">
-    <rosparam command="load" file="$(find slam_toolbox)/config/mapper_params.yaml" />
-  </node>
-
-</launch>
