@@ -809,7 +809,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
                               tf::Point( odom_to_map.getOrigin() ) ).inverse();
     }
     // Add the localized range scan to the dataset (for memory management)
-    dataset_->Add(range_scan,true);
+    dataset_->Add(range_scan);
   }
   else
     delete range_scan;
