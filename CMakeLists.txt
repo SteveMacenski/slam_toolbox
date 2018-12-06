@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(slam_toolbox)
 
 add_compile_options(-std=c++11)
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
 
 find_package(Boost REQUIRED system serialization filesystem)
