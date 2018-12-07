@@ -73,7 +73,7 @@ private:
     tf::Transform pose_tf, pose_corr;
     pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
     pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, pose.GetHeading()));
-    pose_corr = submap_correction*pose_tf;
+    pose_corr = submap_correction * pose_tf;
     return karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(), tf::getYaw(pose_corr.getRotation()));
   }
 
@@ -82,7 +82,7 @@ private:
     tf::Transform pose_tf, pose_corr;
     pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
     pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
-    pose_corr = submap_correction*pose_tf;
+    pose_corr = submap_correction * pose_tf;
     return karto::Vector2<kt_double>(pose_corr.getOrigin().x(), pose_corr.getOrigin().y());
   }
 

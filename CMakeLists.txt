@@ -80,6 +80,7 @@ add_service_files(DIRECTORY srvs
   LoopClosure.srv
   MergeMaps.srv
   AddSubmap.srv
+  AddMap.srv
   SerializePoseGraph.srv
 )
 generate_messages(

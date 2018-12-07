@@ -56,7 +56,6 @@ SlamToolbox::SlamToolbox() :
   nh_.setParam("paused_new_measurements", pause_new_measurements_);
   nh_.setParam("interactive_mode", interactive_mode_);
 
-
   double transform_publish_period;
   private_nh.param("transform_publish_period", 
                                                transform_publish_period, 0.05);
@@ -1076,8 +1075,8 @@ bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::R
 }
 
 /*****************************************************************************/
-bool SlamToolbox::LoadMapperCallback(slam_toolbox::AddSubmap::Request  &req,
-                                     slam_toolbox::AddSubmap::Response &resp)
+bool SlamToolbox::LoadMapperCallback(slam_toolbox::AddMap::Request  &req,
+                                     slam_toolbox::AddMap::Response &resp)
 /*****************************************************************************/
 {
   // TODO STEVE: this doesnt account for pose changes - need offset value for odometry so frames are colinear

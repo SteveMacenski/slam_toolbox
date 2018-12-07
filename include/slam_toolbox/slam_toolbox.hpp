@@ -50,7 +50,7 @@
 #include "slam_toolbox/SaveMap.h"
 #include "slam_toolbox/LoopClosure.h"
 #include "slam_toolbox/SerializePoseGraph.h"
-#include "slam_toolbox/AddSubmap.h"
+#include "slam_toolbox/AddMap.h"
 
 #include <string>
 #include <map>
@@ -136,7 +136,7 @@ private:
   // state
   bool IsPaused(const PausedApplication& app);
 
-  bool LoadMapperCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
+  bool LoadMapperCallback(slam_toolbox::AddMap::Request  &req, slam_toolbox::AddMap::Response &resp);
 
   // ROS-y-ness
   ros::NodeHandle nh_;

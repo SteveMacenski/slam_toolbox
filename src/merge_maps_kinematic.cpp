@@ -64,7 +64,8 @@ MergeMapsKinematic::~MergeMapsKinematic()
   {
     delete interactive_server_;
   }
-  for(std::vector<karto::Dataset*>::iterator dataset_it = dataset_vec_.begin(); dataset_it != dataset_vec_.end(); ++dataset_it )
+  for(std::vector<karto::Dataset*>::iterator dataset_it = dataset_vec_.begin();
+          dataset_it != dataset_vec_.end(); ++dataset_it )
   {
     delete *dataset_it;
   }
@@ -75,12 +76,11 @@ bool MergeMapsKinematic::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req
                                      slam_toolbox::AddSubmap::Response &resp)
 /*****************************************************************************/
 {
-  // find if file exists
-  const std::string filename = req.filename;
   karto::Mapper* mapper = new karto::Mapper;
   karto::Dataset* dataset = new karto::Dataset;
-  serialization::Read(filename, mapper, dataset);
-  karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(dataset->GetObjects()[0]);
+  serialization::Read(req.filename, mapper, dataset);
+  karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>\
+          (dataset->GetObjects()[0]);
   if (lasers_.find(laser->GetName().GetName())==lasers_.end())
   {
     lasers_[laser->GetName().GetName()] = laser;
@@ -103,7 +103,8 @@ bool MergeMapsKinematic::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req
 
   tf::Transform transform;
   transform.setOrigin(tf::Vector3(map.map.info.origin.position.x + map.map.info.width * map.map.info.resolution / 2.0,\
-                                  map.map.info.origin.position.y + map.map.info.height * map.map.info.resolution / 2.0, 0.));
+                                  map.map.info.origin.position.y + map.map.info.height * map.map.info.resolution / 2.0,\
+                                  0.));
   map.map.info.origin.position.x = - (map.map.info.width * map.map.info.resolution / 2.0);
   map.map.info.origin.position.y = - (map.map.info.height * map.map.info.resolution / 2.0);
   transform.setRotation(tf::createQuaternionFromRPY(0,0,0));

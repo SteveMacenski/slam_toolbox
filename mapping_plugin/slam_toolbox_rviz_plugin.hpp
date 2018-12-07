@@ -47,6 +47,7 @@
 #include "slam_toolbox/LoopClosure.h"
 #include "slam_toolbox/MergeMaps.h"
 #include "slam_toolbox/AddSubmap.h"
+#include "slam_toolbox/AddMap.h"
 #include "slam_toolbox/SerializePoseGraph.h"
 
 class QLineEdit;
@@ -119,7 +120,7 @@ protected:
 
   QFrame* _line;
 
-  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_processing, _pause_measurements, _load_submap, _merge, _serialize, _load_map;
+  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_processing, _pause_measurements, _load_submap_for_merging, _merge, _serialize, _load_map;
 
   std::thread* _thread;
 };
