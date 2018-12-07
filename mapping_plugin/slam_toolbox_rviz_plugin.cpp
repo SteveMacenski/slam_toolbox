@@ -190,7 +190,7 @@ void SlamToolboxPlugin::SerializeMap()
 /*****************************************************************************/
 {
   slam_toolbox::SerializePoseGraph msg;
-  msg.request.filename = _line2->text().toStdString();
+  msg.request.filename = _line3->text().toStdString();
   if (!_serialize.call(msg))
   {
     ROS_WARN("SlamToolbox: Failed to serialize pose graph to file, is service running?");
@@ -214,7 +214,7 @@ void SlamToolboxPlugin::SerializeMap()
 /*****************************************************************************/
   {
     slam_toolbox::AddSubmap msg;
-    msg.request.filename = _line3->text().toStdString();
+    msg.request.filename = _line2->text().toStdString();
     if (!_load_map.call(msg))
     {
       ROS_WARN("MergeMaps: Failed to load pose graph from file, is service running?");
