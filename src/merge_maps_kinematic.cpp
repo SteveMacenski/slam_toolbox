@@ -48,9 +48,9 @@ void MergeMapsKinematic::SetConfigs()
   sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>( \
                                                     "/map_metadata", 1, true));
   ros::NodeHandle nh;
-  ssMap_ = nh.advertiseService("merge_maps",
+  ssMap_ = nh.advertiseService("merge_submaps",
                                         &MergeMapsKinematic::MergeMapCallback, this);
-  ssSubmap_ = nh.advertiseService("add_map",
+  ssSubmap_ = nh.advertiseService("add_submap",
                                        &MergeMapsKinematic::AddSubmapCallback, this);
   num_submaps_ = 0;
   tfB_ = new tf::TransformBroadcaster();

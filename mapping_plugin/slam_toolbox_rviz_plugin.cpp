@@ -44,7 +44,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   nh.getParam("/slam_toolbox/paused_processing", paused_process);
   nh.getParam("/slam_toolbox/interactive_mode", interactive);
   _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/slam_toolbox/serialize_map");
-  _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/slam_toolbox/load_submap");
+  _load_map = nh.serviceClient<slam_toolbox::AddSubmap>("/slam_toolbox/load_map");
   _clearChanges = nh.serviceClient<slam_toolbox::Clear>("/slam_toolbox/clear_changes");
   _saveChanges = nh.serviceClient<slam_toolbox::LoopClosure>("/slam_toolbox/manual_loop_closure");
   _saveMap = nh.serviceClient<slam_toolbox::SaveMap>("/slam_toolbox/save_map");
@@ -52,8 +52,8 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _interactive = nh.serviceClient<slam_toolbox::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
   _pause_processing = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_processing");
   _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
-  _load_map = nh.serviceClient<slam_toolbox::AddSubmap>("/add_map");
-  _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/merge_maps");
+  _load_submap = nh.serviceClient<slam_toolbox::AddSubmap>("/add_submap");
+  _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/merge_submaps");
 
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();
@@ -82,8 +82,8 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _button4->setText("Clear Measurement Queue");
   connect(_button4, SIGNAL(clicked()), this, SLOT(ClearQueue()));
   _button5 = new QPushButton(this);
-  _button5->setText("Load Map");
-  connect(_button5, SIGNAL(clicked()), this, SLOT(LoadMap()));
+  _button5->setText("Add Submap");
+  connect(_button5, SIGNAL(clicked()), this, SLOT(LoadSubmap()));
   _button6 = new QPushButton(this);
   _button6->setText("Generate Map");
   connect(_button6, SIGNAL(clicked()), this, SLOT(GenerateMap()));
@@ -91,8 +91,8 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _button7->setText("Serialize Map");
   connect(_button7, SIGNAL(clicked()), this, SLOT(SerializeMap()));
   _button8 = new QPushButton(this);
-  _button8->setText("Load Submap");
-  connect(_button8, SIGNAL(clicked()), this, SLOT(LoadSubmap()));
+  _button8->setText("Load Map");
+  connect(_button8, SIGNAL(clicked()), this, SLOT(LoadMap()));
 
   _label1 = new QLabel(this);
   _label1->setText("Interactive");
@@ -198,24 +198,24 @@ void SlamToolboxPlugin::SerializeMap()
 }
 
 /*****************************************************************************/
-  void SlamToolboxPlugin::LoadSubmap()
+  void SlamToolboxPlugin::LoadMap()
 /*****************************************************************************/
   {
     slam_toolbox::AddSubmap msg;
     msg.request.filename = _line4->text().toStdString();
-    if (!_load_submap.call(msg))
+    if (!_load_map.call(msg))
     {
       ROS_WARN("SlamToolbox: Failed to mapper object from file, is service running?");
     }
   }
 
 /*****************************************************************************/
-  void SlamToolboxPlugin::LoadMap()
+  void SlamToolboxPlugin::LoadSubmap()
 /*****************************************************************************/
   {
     slam_toolbox::AddSubmap msg;
     msg.request.filename = _line2->text().toStdString();
-    if (!_load_map.call(msg))
+    if (!_load_submap.call(msg))
     {
       ROS_WARN("MergeMaps: Failed to load pose graph from file, is service running?");
     }
