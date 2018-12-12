@@ -1083,11 +1083,9 @@ bool SlamToolbox::LoadMapperCallback(slam_toolbox::AddMap::Request  &req,
     // ie add field for initial pose of new entries in the frame of the original and a bool whether to continue using the existing odom in TF (when continueing the same session serialized so the odom frame ihasnt changed)
   // TODO STEVE2: how to remove extraneous nodes (?)
 
-  const std::string filename = req.filename;
-
   karto::Dataset* dataset = new karto::Dataset;
   karto::Mapper* mapper = new karto::Mapper;
-  serialization::Read(filename, mapper, dataset);
+  serialization::Read(req.filename, mapper, dataset);
   std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> mapper_vertices = mapper->GetGraph()->GetVertices();
   std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>>::iterator sensor_vertex_it;
   for(sensor_vertex_it = mapper_vertices.begin(); sensor_vertex_it!=mapper_vertices.end(); ++sensor_vertex_it)
