@@ -20,7 +20,6 @@
 
 #include <slam_toolbox/slam_toolbox.hpp>
 #include "serialization.cpp"
-
 /*****************************************************************************/
 SlamToolbox::SlamToolbox() : 
                          transform_thread_(NULL),
@@ -102,7 +101,9 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
   if(!private_nh_.getParam("map_frame", map_frame_))
     map_frame_ = "map";
   if(!private_nh_.getParam("base_frame", base_frame_))
-    base_frame_ = "base_link";
+    base_frame_ = "base_footprint";
+  if(!private_nh_.getParam("laser_frame", laser_frame_))
+    laser_frame_ = "base_laser_link";
   if(!private_nh_.getParam("throttle_scans", throttle_scans_))
     throttle_scans_ = 1;
   if(!private_nh_.getParam("publish_occupancy_map", publish_occupancy_map_))
@@ -260,6 +261,7 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   ssClear_manual_ = node.advertiseService("clear_changes", &SlamToolbox::ClearChangesCallback, this);
   ssSave_map_ = node.advertiseService("save_map", &SlamToolbox::SaveMapCallback, this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::SerializePoseGraphCallback, this);
+  ssLoadMap_ = node.advertiseService("load_map", &SlamToolbox::LoadMapperCallback, this);
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node, "/scan", 5);
   scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::LaserCallback, this, _1));
@@ -417,10 +419,12 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const \
     laser->SetRangeThreshold(max_laser_range_);
 
     // Store this laser device for later
-    lasers_[scan->header.frame_id] = laser;
-    dataset_->Add(laser);
+    if(lasers_.find(scan->header.frame_id) == lasers_.end())
+    {
+      lasers_[scan->header.frame_id] = laser;
+      dataset_->Add(laser, true);
+    }
   }
-
   return lasers_[scan->header.frame_id];
 }
 
@@ -751,7 +755,6 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
 {  
   // Create a vector of doubles for karto
   std::vector<kt_double> readings;
-
   if (lasers_inverted_[scan->header.frame_id]) {
     for(std::vector<float>::const_reverse_iterator it = scan->ranges.rbegin();
       it != scan->ranges.rend();
@@ -1066,9 +1069,72 @@ bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::R
                                              slam_toolbox::SerializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
-  const std::string filename = req.filename + std::string(".st");
-  serialization::Write(filename, mapper_);
+  const std::string filename = req.filename;
+  serialization::Write(filename, mapper_, dataset_);
   return true;
+}
+
+/*****************************************************************************/
+bool SlamToolbox::LoadMapperCallback(slam_toolbox::AddMap::Request  &req,
+                                     slam_toolbox::AddMap::Response &resp)
+/*****************************************************************************/
+{
+  // TODO STEVE: this doesnt account for pose changes - need offset value for odometry so frames are colinear
+  // ie add field for initial pose of new entries in the frame of the original and a bool whether
+  // to continue using the existing odom in TF (when continuing the same session serialized so the odom frame hasnt changed)
+  // TODO STEVE2: how to remove extraneous nodes (?)
+
+  karto::Dataset* dataset = new karto::Dataset;
+  karto::Mapper* mapper = new karto::Mapper;
+  serialization::Read(req.filename, mapper, dataset);
+  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> mapper_vertices =
+          mapper->GetGraph()->GetVertices();
+  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>>::iterator vertex_map_it;
+  for(vertex_map_it = mapper_vertices.begin(); vertex_map_it!=mapper_vertices.end(); ++vertex_map_it)
+  {
+    for(std::vector<karto::Vertex<karto::LocalizedRangeScan>*>::iterator vertex_it=  vertex_map_it->second.begin();
+        vertex_it!= vertex_map_it->second.end();++vertex_it )
+    {
+      solver_->AddNode(*vertex_it);
+    }
+  }
+  std::vector<karto::Edge<karto::LocalizedRangeScan>*> mapper_edges = mapper->GetGraph()->GetEdges();
+  std::vector<karto::Edge<karto::LocalizedRangeScan>*>::iterator edges_it;
+  for( edges_it = mapper_edges.begin(); edges_it != mapper_edges.end(); ++edges_it)
+  {
+    solver_->AddConstraint(*edges_it);
+  }
+  mapper->SetScanSolver(solver_.get());
+  {
+    boost::mutex::scoped_lock lock(mapper_mutex_);
+    if (mapper_)
+    {
+      delete mapper_;
+      mapper_ = NULL;
+    }
+    if (dataset_)
+    {
+      delete dataset_;
+      dataset_ = NULL;
+    }
+
+    karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(dataset->GetObjects()[0]);
+    mapper_ = mapper;
+    dataset_ = dataset;
+    karto::Sensor*  pSensor = dynamic_cast<karto::Sensor *>(laser);
+    if (pSensor)
+    {
+      karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
+      lasers_[laser_frame_] = laser;
+      bool is_inverted;
+      if(!nh_.getParam("inverted_laser", is_inverted))
+      {
+        is_inverted = false;
+      }
+      lasers_inverted_[laser_frame_] = is_inverted;
+    }
+  }
+  UpdateMap();
 }
 
 /*****************************************************************************/

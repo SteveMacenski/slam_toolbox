@@ -3,7 +3,7 @@ project(slam_toolbox)
 
 add_compile_options(-std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
-set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")                                                                            
+set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
 
 find_package(Boost REQUIRED system serialization filesystem)
 
@@ -80,6 +80,7 @@ add_service_files(DIRECTORY srvs
   LoopClosure.srv
   MergeMaps.srv
   AddSubmap.srv
+  AddMap.srv
   SerializePoseGraph.srv
 )
 generate_messages(
@@ -145,11 +146,11 @@ add_dependencies(slam_toolbox ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(slam_toolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 #### Merging maps tool
-add_executable(merge_maps_tool src/merge_maps_tool.cpp)
-add_dependencies(merge_maps_tool ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(merge_maps_tool ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
+add_dependencies(merge_maps_kinematic ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(merge_maps_kinematic ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-install(TARGETS slam_toolbox merge_maps_tool spa_solver_plugin g2O_solver_plugin ceres_solver_plugin SlamToolboxPlugin
+install(TARGETS slam_toolbox merge_maps_kinematic spa_solver_plugin g2O_solver_plugin ceres_solver_plugin SlamToolboxPlugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

@@ -50,6 +50,7 @@
 #include "slam_toolbox/SaveMap.h"
 #include "slam_toolbox/LoopClosure.h"
 #include "slam_toolbox/SerializePoseGraph.h"
+#include "slam_toolbox/AddMap.h"
 
 #include <string>
 #include <map>
@@ -135,6 +136,8 @@ private:
   // state
   bool IsPaused(const PausedApplication& app);
 
+  bool LoadMapperCallback(slam_toolbox::AddMap::Request  &req, slam_toolbox::AddMap::Response &resp);
+
   // ROS-y-ness
   ros::NodeHandle nh_;
   tf::TransformListener tf_;
@@ -142,11 +145,11 @@ private:
   message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
   tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
   ros::Publisher sst_, sstm_, marker_publisher_, scan_publisher_;
-  ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_processing_, ssPause_measurements_, ssClear_manual_, ssSave_map_, ssSerialize_;
+  ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_processing_, ssPause_measurements_, ssClear_manual_, ssSave_map_, ssSerialize_, ssLoadMap_;
   nav_msgs::GetMap::Response map_;
 
   // Storage for ROS parameters
-  std::string odom_frame_, map_frame_, base_frame_;
+  std::string odom_frame_, map_frame_, base_frame_, laser_frame_;
   int throttle_scans_;
   ros::Duration map_update_interval_;
   double resolution_, minimum_time_interval_, minimum_travel_distance_;

@@ -48,36 +48,27 @@
 #include <unistd.h>
 #include <fstream>
 
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/serialization/list.hpp>
-#include <boost/serialization/string.hpp>
-
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
-class MergeMapTool
+class MergeMapsKinematic
 {
 
 public:
-  MergeMapTool();
-  ~MergeMapTool();
+  MergeMapsKinematic();
+  ~MergeMapsKinematic();
 
 private:
+
   // setup
   void SetConfigs();
 
-  // callbacks
+  // callback
   bool MergeMapCallback(slam_toolbox::MergeMaps::Request  &req, slam_toolbox::MergeMaps::Response &resp);
   bool AddSubmapCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
   void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  void KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans);
-
-  inline bool FileExists(const std::string& name)
-  {
-    struct stat buffer;
-    return (stat (name.c_str(), &buffer) == 0); 
-  }
+  void KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map);
+  typedef std::vector<karto::LocalizedRangeScanVector>::iterator localized_range_scans_vec_it;
+  typedef karto::LocalizedRangeScanVector::iterator localized_range_scans_it;
 
   // ROS-y-ness
   ros::NodeHandle nh_;
@@ -89,7 +80,10 @@ private:
   double resolution_;
   double max_laser_range_;
   int num_submaps_;
-  nav_msgs::GetMap::Response map_;
+
+  //karto bookkeeping
+  std::map<std::string, karto::LaserRangeFinder*> lasers_;
+  std::vector<karto::Dataset*> dataset_vec_;
 
   // TF
   tf::TransformBroadcaster* tfB_;
@@ -97,4 +91,10 @@ private:
   // visualization
   interactive_markers::InteractiveMarkerServer* interactive_server_;
   std::map<int, Eigen::Vector3d> submap_locations_;
+  std::vector<karto::LocalizedRangeScanVector> scans_vec_;
+  std::map<int, tf::Transform> submap_marker_transform_;
+
+  //apply transformation to correct pose
+  karto::Pose2 ApplyCorrection(const karto::Pose2& pose, const tf::Transform& submap_correction);
+  karto::Vector2<kt_double> ApplyCorrection(const karto::Vector2<kt_double>&  pose, const tf::Transform& submap_correction);
 };
