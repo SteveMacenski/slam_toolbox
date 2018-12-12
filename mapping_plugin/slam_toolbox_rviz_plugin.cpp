@@ -52,8 +52,8 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _interactive = nh.serviceClient<slam_toolbox::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
   _pause_processing = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_processing");
   _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
-  _load_submap_for_merging = nh.serviceClient<slam_toolbox::AddSubmap>("/add_submap");
-  _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/merge_submaps");
+  _load_submap_for_merging = nh.serviceClient<slam_toolbox::AddSubmap>("/map_merging/add_submap");
+  _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/map_merging/merge_submaps");
 
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();
@@ -205,7 +205,7 @@ void SlamToolboxPlugin::SerializeMap()
     msg.request.filename = _line4->text().toStdString();
     if (!_load_map.call(msg))
     {
-      ROS_WARN("SlamToolbox: Failed to mapper object from file, is service running?");
+      ROS_WARN("SlamToolbox: Failed to load mapper object from file, is service running?");
     }
   }
 

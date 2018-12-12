@@ -1089,11 +1089,11 @@ bool SlamToolbox::LoadMapperCallback(slam_toolbox::AddMap::Request  &req,
   karto::Mapper* mapper = new karto::Mapper;
   serialization::Read(filename, mapper, dataset);
   std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> mapper_vertices = mapper->GetGraph()->GetVertices();
-  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>>::iterator vertices_it;
-  for(vertices_it = mapper_vertices.begin(); vertices_it!=mapper_vertices.end(); ++vertices_it)
+  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>>::iterator sensor_vertex_it;
+  for(sensor_vertex_it = mapper_vertices.begin(); sensor_vertex_it!=mapper_vertices.end(); ++sensor_vertex_it)
   {
-    for(std::vector<karto::Vertex<karto::LocalizedRangeScan>*>::iterator vertex_it=  vertices_it->second.begin();
-        vertex_it!= vertices_it->second.end();++vertex_it )
+    for(std::vector<karto::Vertex<karto::LocalizedRangeScan>*>::iterator vertex_it=  sensor_vertex_it->second.begin();
+        vertex_it!= sensor_vertex_it->second.end();++vertex_it )
     {
       solver_->AddNode(*vertex_it);
     }

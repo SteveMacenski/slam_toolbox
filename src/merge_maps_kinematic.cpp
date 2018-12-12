@@ -47,7 +47,7 @@ void MergeMapsKinematic::SetConfigs()
   sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>("/map", 1, true));
   sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>( \
                                                     "/map_metadata", 1, true));
-  ros::NodeHandle nh;
+  ros::NodeHandle nh("map_merging");
   ssMap_ = nh.advertiseService("merge_submaps",
                                         &MergeMapsKinematic::MergeMapCallback, this);
   ssSubmap_ = nh.advertiseService("add_submap",
@@ -102,17 +102,20 @@ bool MergeMapsKinematic::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req
   KartoToROSOccupancyGrid(scans,map);
 
   tf::Transform transform;
-  transform.setOrigin(tf::Vector3(map.map.info.origin.position.x + map.map.info.width * map.map.info.resolution / 2.0,\
-                                  map.map.info.origin.position.y + map.map.info.height * map.map.info.resolution / 2.0,\
+  transform.setIdentity();
+  transform.setOrigin(tf::Vector3(map.map.info.origin.position.x +
+                                  map.map.info.width * map.map.info.resolution / 2.0,\
+                                  map.map.info.origin.position.y +
+                                  map.map.info.height * map.map.info.resolution / 2.0,\
                                   0.));
   map.map.info.origin.position.x = - (map.map.info.width * map.map.info.resolution / 2.0);
   map.map.info.origin.position.y = - (map.map.info.height * map.map.info.resolution / 2.0);
-  transform.setRotation(tf::createQuaternionFromRPY(0,0,0));
   map.map.header.stamp = ros::Time::now();
   map.map.header.frame_id = "map_"+std::to_string(num_submaps_);
   sstS_[num_submaps_].publish(map.map);
   sstmS_[num_submaps_].publish(map.map.info);
-  tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(), "/map", "/map_"+std::to_string(num_submaps_)));
+  tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(),
+                                            "/map", "/map_"+std::to_string(num_submaps_)));
   submap_marker_transform_[num_submaps_]=tf::Transform(tf::createQuaternionFromRPY(0,0,0),
                                      tf::Vector3(0,0,0));//no initial correction -- identity mat
 
@@ -322,8 +325,8 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const \
     tf::Matrix3x3 mat(quat);
     mat.getRPY(roll, pitch, yaw);
     tf::Transform previous_submap_correction ;
+    previous_submap_correction.setIdentity();
     previous_submap_correction.setOrigin(tf::Vector3(submap_locations_[id](0),submap_locations_[id](1), 0.));
-    previous_submap_correction.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
 
     // update internal knowledge of submap locations
     submap_locations_[id] = Eigen::Vector3d(feedback->pose.position.x, \
