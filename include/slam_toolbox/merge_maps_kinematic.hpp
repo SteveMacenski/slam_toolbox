@@ -67,25 +67,6 @@ private:
   bool AddSubmapCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
   void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map);
-
-  karto::Pose2 ApplyCorrection(const karto::Pose2& pose, const tf::Transform& submap_correction)
-  {
-    tf::Transform pose_tf, pose_corr;
-    pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-    pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, pose.GetHeading()));
-    pose_corr = submap_correction * pose_tf;
-    return karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(), tf::getYaw(pose_corr.getRotation()));
-  }
-
-  karto::Vector2<kt_double> ApplyCorrection(const karto::Vector2<kt_double>&  pose, const tf::Transform& submap_correction)
-  {
-    tf::Transform pose_tf, pose_corr;
-    pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-    pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
-    pose_corr = submap_correction * pose_tf;
-    return karto::Vector2<kt_double>(pose_corr.getOrigin().x(), pose_corr.getOrigin().y());
-  }
-
   typedef std::vector<karto::LocalizedRangeScanVector>::iterator localized_range_scans_vec_it;
   typedef karto::LocalizedRangeScanVector::iterator localized_range_scans_it;
 
@@ -112,4 +93,8 @@ private:
   std::map<int, Eigen::Vector3d> submap_locations_;
   std::vector<karto::LocalizedRangeScanVector> scans_vec_;
   std::map<int, tf::Transform> submap_marker_transform_;
+
+  //apply transformation to correct pose
+  karto::Pose2 ApplyCorrection(const karto::Pose2& pose, const tf::Transform& submap_correction);
+  karto::Vector2<kt_double> ApplyCorrection(const karto::Vector2<kt_double>&  pose, const tf::Transform& submap_correction);
 };

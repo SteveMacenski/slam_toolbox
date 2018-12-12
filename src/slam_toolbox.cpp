@@ -48,7 +48,6 @@ SlamToolbox::SlamToolbox() :
   ros::NodeHandle private_nh("~");
   nh_ = private_nh;
   SetParams(private_nh);
-
   SetSolver(private_nh);
   SetROSInterfaces(private_nh);
 
@@ -1064,6 +1063,7 @@ void SlamToolbox::MoveNode(const int& id, const Eigen::Vector3d& pose, \
     mapper_->CorrectPoses();
   }
 }
+
 /*****************************************************************************/
 bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
                                              slam_toolbox::SerializePoseGraph::Response &resp)
@@ -1080,18 +1080,20 @@ bool SlamToolbox::LoadMapperCallback(slam_toolbox::AddMap::Request  &req,
 /*****************************************************************************/
 {
   // TODO STEVE: this doesnt account for pose changes - need offset value for odometry so frames are colinear
-    // ie add field for initial pose of new entries in the frame of the original and a bool whether to continue using the existing odom in TF (when continueing the same session serialized so the odom frame ihasnt changed)
+  // ie add field for initial pose of new entries in the frame of the original and a bool whether
+  // to continue using the existing odom in TF (when continuing the same session serialized so the odom frame hasnt changed)
   // TODO STEVE2: how to remove extraneous nodes (?)
 
   karto::Dataset* dataset = new karto::Dataset;
   karto::Mapper* mapper = new karto::Mapper;
   serialization::Read(req.filename, mapper, dataset);
-  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> mapper_vertices = mapper->GetGraph()->GetVertices();
-  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>>::iterator sensor_vertex_it;
-  for(sensor_vertex_it = mapper_vertices.begin(); sensor_vertex_it!=mapper_vertices.end(); ++sensor_vertex_it)
+  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> mapper_vertices =
+          mapper->GetGraph()->GetVertices();
+  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>>::iterator vertex_map_it;
+  for(vertex_map_it = mapper_vertices.begin(); vertex_map_it!=mapper_vertices.end(); ++vertex_map_it)
   {
-    for(std::vector<karto::Vertex<karto::LocalizedRangeScan>*>::iterator vertex_it=  sensor_vertex_it->second.begin();
-        vertex_it!= sensor_vertex_it->second.end();++vertex_it )
+    for(std::vector<karto::Vertex<karto::LocalizedRangeScan>*>::iterator vertex_it=  vertex_map_it->second.begin();
+        vertex_it!= vertex_map_it->second.end();++vertex_it )
     {
       solver_->AddNode(*vertex_it);
     }

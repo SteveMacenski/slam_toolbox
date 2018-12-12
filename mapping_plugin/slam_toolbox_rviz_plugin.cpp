@@ -198,28 +198,28 @@ void SlamToolboxPlugin::SerializeMap()
 }
 
 /*****************************************************************************/
-  void SlamToolboxPlugin::LoadMap()
+void SlamToolboxPlugin::LoadMap()
 /*****************************************************************************/
+{
+  slam_toolbox::AddSubmap msg;
+  msg.request.filename = _line4->text().toStdString();
+  if (!_load_map.call(msg))
   {
-    slam_toolbox::AddSubmap msg;
-    msg.request.filename = _line4->text().toStdString();
-    if (!_load_map.call(msg))
-    {
-      ROS_WARN("SlamToolbox: Failed to load mapper object from file, is service running?");
-    }
+     ROS_WARN("SlamToolbox: Failed to load mapper object from file, is service running?");
   }
+}
 
 /*****************************************************************************/
-  void SlamToolboxPlugin::LoadSubmap()
+void SlamToolboxPlugin::LoadSubmap()
 /*****************************************************************************/
+{
+  slam_toolbox::AddSubmap msg;
+  msg.request.filename = _line2->text().toStdString();
+  if (!_load_submap_for_merging.call(msg))
   {
-    slam_toolbox::AddSubmap msg;
-    msg.request.filename = _line2->text().toStdString();
-    if (!_load_submap_for_merging.call(msg))
-    {
-      ROS_WARN("MergeMaps: Failed to load pose graph from file, is service running?");
-    }
+    ROS_WARN("MergeMaps: Failed to load pose graph from file, is service running?");
   }
+}
 /*****************************************************************************/
 void SlamToolboxPlugin::GenerateMap()
 /*****************************************************************************/

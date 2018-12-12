@@ -128,7 +128,8 @@ bool MergeMapsKinematic::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req
   m.pose.position.z = 0.0;
   m.pose.position.x =  transform.getOrigin().getX();
   m.pose.position.y =  transform.getOrigin().getY();
-  submap_locations_[num_submaps_] = Eigen::Vector3d(transform.getOrigin().getX(),transform.getOrigin().getY(),0.);
+  submap_locations_[num_submaps_] = Eigen::Vector3d(transform.getOrigin().getX(),
+          transform.getOrigin().getY(),0.);
   m.pose.orientation.w = 1.;
   m.scale.x = 2; m.scale.y = 2; m.scale.z = 2;
   m.color.r = 1.0; m.color.g = 0; m.color.b = 0.0; m.color.a = 1.;
@@ -182,8 +183,35 @@ bool MergeMapsKinematic::AddSubmapCallback(slam_toolbox::AddSubmap::Request &req
 }
 
 /*****************************************************************************/
+karto::Pose2 MergeMapsKinematic::ApplyCorrection(const \
+                                      karto::Pose2& pose,
+                                      const tf::Transform& submap_correction)
+/*****************************************************************************/
+{
+  tf::Transform pose_tf, pose_corr;
+  pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
+  pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, pose.GetHeading()));
+  pose_corr = submap_correction * pose_tf;
+  return karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(),\
+                      tf::getYaw(pose_corr.getRotation()));
+}
+
+/*****************************************************************************/
+karto::Vector2<kt_double> MergeMapsKinematic::ApplyCorrection(const \
+                                      karto::Vector2<kt_double>&  pose,
+                                      const tf::Transform& submap_correction)
+/*****************************************************************************/
+{
+  tf::Transform pose_tf, pose_corr;
+  pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
+  pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
+  pose_corr = submap_correction * pose_tf;
+  return karto::Vector2<kt_double>(pose_corr.getOrigin().x(), pose_corr.getOrigin().y());
+}
+
+/*****************************************************************************/
 bool MergeMapsKinematic::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
-                                    slam_toolbox::MergeMaps::Response &resp)
+                                        slam_toolbox::MergeMaps::Response &resp)
 /*****************************************************************************/
 {
     int id = 0;
@@ -193,10 +221,12 @@ bool MergeMapsKinematic::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
     std::vector<karto::LocalizedRangeScanVector>& vector_of_scans = scans_vec_;
     karto::LocalizedRangeScan* pScan_copy;
 
-    for(localized_range_scans_vec_it it_LRV = vector_of_scans.begin(); it_LRV!= vector_of_scans.end(); ++it_LRV)
+    for(localized_range_scans_vec_it it_LRV = vector_of_scans.begin();
+            it_LRV!= vector_of_scans.end(); ++it_LRV)
     {
       id++;
-      for ( localized_range_scans_it iter = (*it_LRV).begin(); iter != (*it_LRV).end();++iter)
+      for ( localized_range_scans_it iter = (*it_LRV).begin();
+              iter != (*it_LRV).end();++iter)
       {
         pScan= *iter;
         pScan_copy = pScan;
@@ -209,15 +239,18 @@ bool MergeMapsKinematic::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
 
         //TRANSFORM BOUNDING BOX POSITIONS
         karto::BoundingBox2 bbox = pScan_copy->GetBoundingBox();
-        const karto::Vector2<kt_double> bbox_min_corr = ApplyCorrection(bbox.GetMinimum(), submap_correction);
+        const karto::Vector2<kt_double> bbox_min_corr = ApplyCorrection(bbox.GetMinimum(),\
+                submap_correction);
         bbox.SetMinimum(bbox_min_corr);
-        const karto::Vector2<kt_double> bbox_max_corr = ApplyCorrection(bbox.GetMaximum(), submap_correction);
+        const karto::Vector2<kt_double> bbox_max_corr = ApplyCorrection(bbox.GetMaximum(),\
+                submap_correction);
         bbox.SetMaximum(bbox_max_corr);
         pScan_copy->SetBoundingBox(bbox);
 
         // TRANSFORM UNFILTERED POINTS USED
         karto::PointVectorDouble UPR_vec = pScan_copy->GetPointReadings();
-        for(karto::PointVectorDouble::iterator it_upr = UPR_vec.begin(); it_upr!=UPR_vec.end(); ++it_upr)
+        for(karto::PointVectorDouble::iterator it_upr = UPR_vec.begin();
+                it_upr!=UPR_vec.end(); ++it_upr)
         {
           const karto::Vector2<kt_double> upr_corr = ApplyCorrection(*it_upr, submap_correction);
           (*it_upr).SetX(upr_corr.GetX());
@@ -248,7 +281,8 @@ bool MergeMapsKinematic::MergeMapCallback(slam_toolbox::MergeMaps::Request &req,
 }
 /*****************************************************************************/
 void MergeMapsKinematic::KartoToROSOccupancyGrid( \
-                                  const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map)
+                                  const karto::LocalizedRangeScanVector& scans,
+                                  nav_msgs::GetMap::Response& map)
 /*****************************************************************************/
 {
   karto::OccupancyGrid* occ_grid = NULL;
@@ -326,7 +360,8 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const \
     mat.getRPY(roll, pitch, yaw);
     tf::Transform previous_submap_correction ;
     previous_submap_correction.setIdentity();
-    previous_submap_correction.setOrigin(tf::Vector3(submap_locations_[id](0),submap_locations_[id](1), 0.));
+    previous_submap_correction.setOrigin(tf::Vector3(submap_locations_[id](0),
+                                                     submap_locations_[id](1), 0.));
 
     // update internal knowledge of submap locations
     submap_locations_[id] = Eigen::Vector3d(feedback->pose.position.x, \
@@ -341,7 +376,8 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const \
     tfB_->sendTransform(tf::StampedTransform (new_submap_location,
                        ros::Time::now(), "/map", "/map_"+std::to_string(id)));
 
-    submap_marker_transform_[id] = submap_marker_transform_[id] * previous_submap_correction.inverse() * new_submap_location;
+    submap_marker_transform_[id] = submap_marker_transform_[id] *\
+     previous_submap_correction.inverse() * new_submap_location;
   }
 
   if (feedback->event_type == \
