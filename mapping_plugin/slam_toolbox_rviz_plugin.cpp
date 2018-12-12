@@ -314,7 +314,6 @@ void SlamToolboxPlugin::PauseMeasurementsCb(int state)
 /*****************************************************************************/
 void SlamToolboxPlugin::updateCheckStateIfExternalChange()
 /*****************************************************************************/
-
 {
   ros::Rate r(1); //1 hz
   ros::NodeHandle nh;

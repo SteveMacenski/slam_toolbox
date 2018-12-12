@@ -93,7 +93,7 @@ private:
   // threads
   void Run();
   void PublishVisualizations();
-  void PublishLoop(double transform_publish_period);
+  void PublishTransformLoop(double transform_publish_period);
 
   // setup
   void SetParams(ros::NodeHandle& nh);
@@ -151,9 +151,9 @@ private:
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, laser_frame_;
   int throttle_scans_;
-  ros::Duration map_update_interval_;
+  ros::Duration map_update_interval_, transform_timeout_;
   double resolution_, minimum_time_interval_, minimum_travel_distance_;
-  bool publish_occupancy_map_;
+  bool publish_occupancy_map_, first_measurement_, sychronous_, online_;
 
   // Karto bookkeeping
   karto::Mapper* mapper_;
@@ -165,6 +165,7 @@ private:
   int laser_count_;
   boost::thread *transform_thread_, *run_thread_, *visualization_thread_;
   tf::Transform map_to_odom_;
+  ros::Time map_to_odom_time_;
   bool inverted_laser_, pause_graph_, pause_processing_, pause_new_measurements_, interactive_mode_;
   double max_laser_range_;
   karto::Pose2 current_pose_;

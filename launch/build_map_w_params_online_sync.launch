@@ -1,0 +1,7 @@
+<launch>
+
+  <node pkg="slam_toolbox" type="slam_toolbox" name="slam_toolbox" output="screen">
+    <rosparam command="load" file="$(find slam_toolbox)/config/mapper_params_online_sync.yaml" />
+  </node>
+
+</launch>

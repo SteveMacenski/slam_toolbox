@@ -6,6 +6,7 @@
   <version>0.7.3</version>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <author>Brian Gerkey</author>
+  <author>Steve Macenski</author>
   <license>LGPL</license>
 
   <buildtool_depend>catkin</buildtool_depend>
@@ -29,6 +30,8 @@
   <build_depend>suitesparse</build_depend>
   <build_depend>rviz</build_depend>
   <build_depend>liblapack-dev</build_depend>
+  <build_depend>libceres-dev</build_depend>
+  <build_depend>libg2o</build_depend>
   <run_depend>eigen</run_depend>
   <run_depend>pluginlib</run_depend>
   <run_depend>message_filters</run_depend>
@@ -47,6 +50,8 @@
   <run_depend>suitesparse</run_depend>
   <run_depend>rviz</run_depend>
   <run_depend>liblapack-dev</run_depend>
+  <run_depend>libceres-dev</run_depend>
+  <run_depend>libg2o</run_depend>
 
   <export>
     <slam_toolbox plugin="${prefix}/solver_plugins.xml" />

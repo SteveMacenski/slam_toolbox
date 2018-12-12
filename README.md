@@ -2,6 +2,10 @@
 
 Fork on slam_karto. I've renamed since really there's about 5% of the code that's the same, everything else has been restructured or removed entirely. 
 
+For live running on robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
+
+I've seen this way maps building at 5x+ realtime up to about 20,000 sqft and 3x realtime up to about 60,000 sqft.
+
 ## Introduction 
 
 ### Solver Plugins
@@ -11,6 +15,8 @@ I have generated pluginlib plugins for a few different solvers that people might
 GTSAM is currently "unsupported" although all the code is there. I was having problems linking against the library. If someone wants to PR a fix, I can add support but I'm done trying. It definitely won't out perform the others.
 
 I have spent a extremely long time working with Ceres to optimize it for creation of massive maps, so unless you feel your application is very unique, I'd use my recommended settings. 
+
+I have commented out G2O to speed up build time as I really don't recommend using it. SPA + Ceres are the way to go here I believe. 
 
 ### Tools
 
@@ -71,7 +77,7 @@ ROSDep will take care of Ceres, G2O, and SBA if you are familiar.
 
 I also have a Snap built for this that's super easy to install if you know snaps, named `slam-toolbox`. Otherwise,
 
-You'll need to install Ceres [from source instructions here](http://ceres-solver.org/installation.html) or `sudo ap-get install libceres-dev`
+If manual, You'll need to install Ceres [from source instructions here](http://ceres-solver.org/installation.html) or `sudo ap-get install libceres-dev`
 
 G2O: `sudo apt-get install ros-kinetic-libg2o`
 

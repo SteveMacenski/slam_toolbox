@@ -4,7 +4,6 @@ project(slam_toolbox)
 add_compile_options(-std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
-
 find_package(Boost REQUIRED system serialization filesystem)
 
 find_package(catkin REQUIRED
@@ -122,22 +121,23 @@ target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES}
 )
 
 #### G2O
-add_library(g2O_solver_plugin solvers/g2o_solver.cpp)
-target_link_libraries(g2O_solver_plugin ${catkin_LIBRARIES}
-                                        ${G2O_CORE_LIBRARY}
-                                        ${G2O_STUFF_LIBRARY}
-                                        ${G2O_TYPES_SLAM2D}
-                                        ${G2O_SOLVER_CHOLMOD}
-                                        ${G2O_SOLVER_CSPARSE}
-                                        ${G2O_SOLVER_CSPARSE_EXTENSION}
-                                        ${CHOLMOD_LIBRARIES}
-                                        ${CSPARSE_LIBRARY}
-)
+#add_library(g2O_solver_plugin solvers/g2o_solver.cpp)
+#target_link_libraries(g2O_solver_plugin ${catkin_LIBRARIES}
+#                                        ${G2O_CORE_LIBRARY}
+#                                        ${G2O_STUFF_LIBRARY}
+#                                        ${G2O_TYPES_SLAM2D}
+#                                        ${G2O_SOLVER_CHOLMOD}
+#                                        ${G2O_SOLVER_CSPARSE}
+#                                        ${G2O_SOLVER_CSPARSE_EXTENSION}
+#                                        ${CHOLMOD_LIBRARIES}
+#                                        ${CSPARSE_LIBRARY}
+#)
 
 #### rviz Plugin
 qt_wrap_cpp(MOC_FILES mapping_plugin/slam_toolbox_rviz_plugin.hpp)
 set(SOURCE_FILES mapping_plugin/slam_toolbox_rviz_plugin.cpp )
 add_library(SlamToolboxPlugin ${SOURCE_FILES})
+add_dependencies(SlamToolboxPlugin ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES}  ${catkin_LIBRARIES} )
 
 #### Main tool for mapping
@@ -150,11 +150,11 @@ add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 add_dependencies(merge_maps_kinematic ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(merge_maps_kinematic ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-install(TARGETS slam_toolbox merge_maps_kinematic spa_solver_plugin g2O_solver_plugin ceres_solver_plugin SlamToolboxPlugin
+install(TARGETS slam_toolbox merge_maps_kinematic spa_solver_plugin ceres_solver_plugin SlamToolboxPlugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-)
+) #g2O_solver_plugin
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
