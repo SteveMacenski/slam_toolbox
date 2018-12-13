@@ -3,8 +3,13 @@ project(slam_toolbox)
 
 add_compile_options(-std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/KartoSDK-slam_toolbox/cmake)
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
 find_package(Boost REQUIRED system serialization filesystem)
+
+#open_karto lib
+set(BUILD_SHARED_LIBS ON)
+add_subdirectory(lib/KartoSDK-slam_toolbox)
 
 find_package(catkin REQUIRED
   COMPONENTS
@@ -139,7 +144,6 @@ set(SOURCE_FILES mapping_plugin/slam_toolbox_rviz_plugin.cpp )
 add_library(SlamToolboxPlugin ${SOURCE_FILES})
 add_dependencies(SlamToolboxPlugin ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES}  ${catkin_LIBRARIES} )
-
 #### Main tool for mapping
 add_executable(slam_toolbox src/slam_toolbox.cpp)
 add_dependencies(slam_toolbox ${PROJECT_NAME}_generate_messages_cpp)

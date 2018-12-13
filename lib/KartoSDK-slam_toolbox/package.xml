@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package>
+  <name>open_karto</name>
+  <version>1.1.4</version>
+  <description>Catkinized ROS packaging of the OpenKarto library</description>
+
+  <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>
+  <maintainer email="lbettaieb@fetchrobotics.com">Luc Bettaieb</maintainer>
+  <license>LGPLv3</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>boost</build_depend>
+  <build_depend>tbb</build_depend>
+
+  <run_depend>boost</run_depend>
+  <run_depend>tbb</run_depend>
+
+</package>
