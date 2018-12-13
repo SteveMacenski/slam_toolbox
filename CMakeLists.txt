@@ -3,7 +3,8 @@ project(slam_toolbox)
 
 add_compile_options(-std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
-set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")                                                                            
+set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
+find_package(Boost REQUIRED system serialization filesystem)
 
 find_package(catkin REQUIRED
   COMPONENTS
@@ -56,12 +57,14 @@ endif()
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 add_definitions(-DQT_NO_KEYWORDS)
+find_package(Boost REQUIRED COMPONENTS thread serialization) 
 
 include_directories(include ${catkin_INCLUDE_DIRS} 
                             ${EIGEN3_INCLUDE_DIRS} 
                             ${CHOLMOD_INCLUDE_DIR}
                             #${MKL_INCLUDE_DIR}
                             #${GTSAM_INCLUDE_DIRS}
+                            ${Boost_INCLUDE_DIR}
 )
 
 add_definitions(${EIGEN3_DEFINITIONS})
@@ -74,6 +77,10 @@ add_service_files(DIRECTORY srvs
   Clear.srv
   SaveMap.srv
   LoopClosure.srv
+  MergeMaps.srv
+  AddSubmap.srv
+  AddMap.srv
+  SerializePoseGraph.srv
 )
 generate_messages(
   DEPENDENCIES
@@ -133,15 +140,21 @@ add_library(SlamToolboxPlugin ${SOURCE_FILES})
 add_dependencies(SlamToolboxPlugin ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES}  ${catkin_LIBRARIES} )
 
+#### Main tool for mapping
 add_executable(slam_toolbox src/slam_toolbox.cpp)
-add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(slam_toolbox ${catkin_LIBRARIES})
+add_dependencies(slam_toolbox ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(slam_toolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-install(TARGETS slam_toolbox spa_solver_plugin ceres_solver_plugin SlamToolboxPlugin #g2O_solver_plugin
+#### Merging maps tool
+add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
+add_dependencies(merge_maps_kinematic ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(merge_maps_kinematic ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+
+install(TARGETS slam_toolbox merge_maps_kinematic spa_solver_plugin ceres_solver_plugin SlamToolboxPlugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-)
+) #g2O_solver_plugin
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
@@ -155,6 +168,6 @@ install(DIRECTORY config
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
-install(FILES solver_plugins.xml rviz_plugin.xml
+install(FILES solver_plugins.xml rviz_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

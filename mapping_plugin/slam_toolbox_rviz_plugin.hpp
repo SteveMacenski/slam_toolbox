@@ -34,6 +34,7 @@
 #include <QHBoxLayout>
 #include <QtGui>
 #include <QLabel>
+#include <QFrame>
 
 #include <thread>
 
@@ -44,6 +45,10 @@
 #include "slam_toolbox/Clear.h"
 #include "slam_toolbox/SaveMap.h"
 #include "slam_toolbox/LoopClosure.h"
+#include "slam_toolbox/MergeMaps.h"
+#include "slam_toolbox/AddSubmap.h"
+#include "slam_toolbox/AddMap.h"
+#include "slam_toolbox/SerializePoseGraph.h"
 
 class QLineEdit;
 class QSpinBox;
@@ -54,7 +59,7 @@ class QComboBox;
 namespace slam_toolbox
 {
 
-class SlamToolboxPlugin: public rviz::Panel
+class SlamToolboxPlugin : public rviz::Panel
 {
   Q_OBJECT
 
@@ -71,6 +76,10 @@ protected Q_SLOTS:
   void InteractiveCb(int state);
   void PauseProcessingCb(int state);
   void PauseMeasurementsCb(int state);
+  void LoadSubmap();
+  void GenerateMap();
+  void SerializeMap();
+  void LoadMap();
 
   void updateCheckStateIfExternalChange();
 
@@ -80,13 +89,24 @@ protected:
   QHBoxLayout* _hbox2;
   QHBoxLayout* _hbox3;
   QHBoxLayout* _hbox4;
+  QHBoxLayout* _hbox5;
+  QHBoxLayout* _hbox6;
+  QHBoxLayout* _hbox7;
+  QHBoxLayout* _hbox8;
 
   QPushButton* _button1;
   QPushButton* _button2;
   QPushButton* _button3;
   QPushButton* _button4;
+  QPushButton* _button5;
+  QPushButton* _button6;
+  QPushButton* _button7;
+  QPushButton* _button8;
 
   QLineEdit* _line1;
+  QLineEdit* _line2;
+  QLineEdit* _line3;
+  QLineEdit* _line4;
 
   QCheckBox* _check1;
   QCheckBox* _check2;
@@ -95,8 +115,12 @@ protected:
   QLabel* _label1;
   QLabel* _label2;
   QLabel* _label3;
+  QLabel* _label4;
+  QLabel* _label5;
 
-  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_processing, _pause_measurements;
+  QFrame* _line;
+
+  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_processing, _pause_measurements, _load_submap_for_merging, _merge, _serialize, _load_map;
 
   std::thread* _thread;
 };
