@@ -20,6 +20,11 @@
 
 #include <slam_toolbox/slam_toolbox.hpp>
 #include "serialization.cpp"
+
+#define MAX_STACK_SIZE 20000000 // if a system has the stack soft limit set to a smaller value
+// than needed for serialization of a large map
+// parameter defines enlarged stack limit for process to use
+
 /*****************************************************************************/
 SlamToolbox::SlamToolbox() : 
                          transform_thread_(NULL),
@@ -1216,7 +1221,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "slam_toolbox");
   ros::NodeHandle nh;
-  const rlim_t max_stack_size = 16777216;
+  const rlim_t max_stack_size = MAX_STACK_SIZE;
   struct rlimit stack_limit;
   getrlimit(RLIMIT_STACK, &stack_limit);
   stack_limit.rlim_cur = max_stack_size;
