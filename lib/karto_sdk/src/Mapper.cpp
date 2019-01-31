@@ -22,12 +22,12 @@
 #include <set>
 #include <list>
 #include <iterator>
-#include <open_karto/Types.h>
+#include <karto_sdk/Types.h>
 #include <math.h>
 #include <assert.h>
 #include <boost/serialization/vector.hpp>
 
-#include "open_karto/Mapper.h"
+#include "karto_sdk/Mapper.h"
 
 BOOST_CLASS_EXPORT(karto::MapperGraph);
 BOOST_CLASS_EXPORT(karto::Graph<karto::LocalizedRangeScan>);

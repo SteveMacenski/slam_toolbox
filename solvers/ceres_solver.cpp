@@ -4,7 +4,7 @@
  */
 
 #include "ceres_solver.hpp"
-#include <open_karto/Karto.h>
+#include <karto_sdk/Karto.h>
 
 #include "ros/console.h"
 #include <pluginlib/class_list_macros.h>

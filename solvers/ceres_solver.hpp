@@ -13,7 +13,7 @@
 #include <unordered_map>
 #include <utility>
 
-#include <open_karto/Mapper.h>
+#include <karto_sdk/Mapper.h>
 #include <ceres/ceres.h>
 #include <ceres/local_parameterization.h>
 #include <cmath>

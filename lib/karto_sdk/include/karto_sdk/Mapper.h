@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OPEN_KARTO_MAPPER_H
-#define OPEN_KARTO_MAPPER_H
+#ifndef karto_sdk_MAPPER_H
+#define karto_sdk_MAPPER_H
 
 #include <map>
 #include <vector>
@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <chrono>
 
-#include <open_karto/Karto.h>
+#include <karto_sdk/Karto.h>
 
 namespace karto
 {
@@ -2245,4 +2245,4 @@ namespace karto
   BOOST_SERIALIZATION_ASSUME_ABSTRACT(Mapper)
 }  // namespace karto
 
-#endif  // OPEN_KARTO_MAPPER_H
+#endif  // karto_sdk_MAPPER_H

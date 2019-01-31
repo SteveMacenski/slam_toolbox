@@ -19,8 +19,8 @@
 #include <vector>
 #include <string>
 #include <ros/ros.h>
-#include <open_karto/Karto.h>
-#include <open_karto/Mapper.h>
+#include <karto_sdk/Karto.h>
+#include <karto_sdk/Mapper.h>
 #include <sys/stat.h>
 
 

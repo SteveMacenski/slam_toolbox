@@ -11,7 +11,7 @@
 #ifndef KARTO_GTSAMSolver_H
 #define KARTO_GTSAMSolver_H
 
-#include <open_karto/Mapper.h>
+#include <karto_sdk/Mapper.h>
 #include <gtsam/slam/PriorFactor.h>
 #include <gtsam/slam/BetweenFactor.h>
 #include <gtsam/geometry/Pose2.h>

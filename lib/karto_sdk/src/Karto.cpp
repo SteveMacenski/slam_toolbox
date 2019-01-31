@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "open_karto/Karto.h"
+#include "karto_sdk/Karto.h"
 #include <boost/serialization/export.hpp>
 BOOST_CLASS_EXPORT_IMPLEMENT(karto::NonCopyable);
 BOOST_CLASS_EXPORT_IMPLEMENT(karto::Object);

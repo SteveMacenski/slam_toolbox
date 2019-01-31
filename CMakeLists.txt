@@ -3,20 +3,20 @@ project(slam_toolbox)
 
 add_compile_options(-std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/KartoSDK-slam_toolbox/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
 find_package(Boost REQUIRED system serialization filesystem)
 
-#open_karto lib
+#karto_sdk lib
 set(BUILD_SHARED_LIBS ON)
-add_subdirectory(lib/KartoSDK-slam_toolbox)
+add_subdirectory(lib/karto_sdk)
 
 find_package(catkin REQUIRED
   COMPONENTS
     cmake_modules
     message_filters
     nav_msgs
-    open_karto
+    karto_sdk
     rosconsole
     roscpp
     sensor_msgs
@@ -99,7 +99,7 @@ catkin_package(
     CATKIN_DEPENDS
       message_filters
       nav_msgs
-      open_karto
+      karto_sdk
       rosconsole
       roscpp
       sparse_bundle_adjustment

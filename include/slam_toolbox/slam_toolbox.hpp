@@ -39,7 +39,7 @@
 #include "sensor_msgs/LaserScan.h"
 #include "nav_msgs/GetMap.h"
 
-#include "open_karto/Mapper.h"
+#include "karto_sdk/Mapper.h"
 
 #include <boost/thread.hpp>
 

@@ -9,7 +9,7 @@
 #ifndef KARTO_G2OSolver_H
 #define KARTO_G2OSolver_H
 
-#include <open_karto/Mapper.h>
+#include <karto_sdk/Mapper.h>
 #include "g2o/core/sparse_optimizer.h"
 
 namespace solver_plugins
