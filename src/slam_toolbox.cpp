@@ -45,7 +45,8 @@ SlamToolbox::SlamToolbox() :
                          tf_(ros::Duration(14400.)),
                          map_to_odom_time_(0.),
                          transform_timeout_(ros::Duration(0.2)),
-                         first_measurement_(true) // 4 hours
+                         first_measurement_(true), // 4 hours
+                         match_against_first_node_(false)
 /*****************************************************************************/
 {
   interactive_server_ = \
@@ -832,7 +833,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   // Add the localized range scan to the mapper
   boost::mutex::scoped_lock lock(mapper_mutex_);
   bool processed;
-  if((processed = mapper_->Process(range_scan)))
+  if((processed = mapper_->Process(range_scan, match_against_first_node_)))
   {
     current_scans_.push_back(*scan);
     karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
@@ -1162,7 +1163,7 @@ bool SlamToolbox::DeserializePoseGraphCallback(slam_toolbox::AddMap::Request  &r
   // TODO STEVE: this doesnt account for pose changes - need offset value for odometry so frames are colinear
   // ie add field for initial pose of new entries in the frame of the original and a bool whether
   // to continue using the existing odom in TF (when continuing the same session serialized so the odom frame hasnt changed)
-  // TODO STEVE2: how to remove extraneous nodes (?)
+  // and general way to add in random patches for just single area updates (merge maps tool instead?)
 
   karto::Dataset* dataset = new karto::Dataset;
   karto::Mapper* mapper = new karto::Mapper;
@@ -1209,12 +1210,14 @@ bool SlamToolbox::DeserializePoseGraphCallback(slam_toolbox::AddMap::Request  &r
       karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
       lasers_[laser_frame_] = laser;
       bool is_inverted = false;
-      nh_.getParam("continue_mapping_with_inverted_laser", is_inverted);
+      nh_.getParam("continue_mapping_with_inverted_laser", is_inverted); //TODO this is deeply unnecessary, we can grab a scan frame and breach out the getlaser function
       lasers_inverted_[laser_frame_] = is_inverted;
     }
   }
+
   UpdateMap();
   first_measurement_ = true; // let the next measurement get the ball rolling
+  match_against_first_node_ = true; // restart near dock/fixed asset
 }
 
 /*****************************************************************************/

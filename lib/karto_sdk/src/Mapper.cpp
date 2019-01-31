@@ -2301,12 +2301,12 @@ namespace karto
 	  m_Initialized = false;
   }
 
-  kt_bool Mapper::Process(Object*  /*pObject*/)
+  kt_bool Mapper::Process(Object*  /*pObject*/, const bool& /*match_against_first_node*/)
   {
 	  return true;
   }
 
-  kt_bool Mapper::Process(LocalizedRangeScan* pScan)
+  kt_bool Mapper::Process(LocalizedRangeScan* pScan, const bool& match_against_first_node)
   {
 	  if (pScan != NULL)
 	  {
@@ -2326,6 +2326,10 @@ namespace karto
 
 		  // get last scan
 		  LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetLastScan(pScan->GetSensorName());
+      if (match_against_first_node)
+      {
+        pLastScan = m_pMapperSensorManager->GetScan(0);
+      }
 
 		  // update scans corrected pose based on last correction
 		  if (pLastScan != NULL)
@@ -2335,7 +2339,7 @@ namespace karto
 		  }
 
 		  // test if scan is outside minimum boundary or if heading is larger then minimum heading
-		  if (!HasMovedEnough(pScan, pLastScan))
+		  if (!match_against_first_node && !HasMovedEnough(pScan, pLastScan))
 		  {
 			  return false;
 		  }

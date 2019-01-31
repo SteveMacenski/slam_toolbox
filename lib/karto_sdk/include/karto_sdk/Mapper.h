@@ -1777,12 +1777,12 @@ namespace karto
      *
      * @return true if the scan was added successfully, false otherwise
      */
-    virtual kt_bool Process(LocalizedRangeScan* pScan);
+    virtual kt_bool Process(LocalizedRangeScan* pScan, const bool& match_against_first_node);
 
     /**
      * Process an Object
      */
-    virtual kt_bool Process(Object* pObject);
+    virtual kt_bool Process(Object* pObject, , const bool& match_against_first_node);
 
     /**
      * Returns all processed scans added to the mapper.
