@@ -84,6 +84,10 @@ enum PausedApplication
   NEW_MEASUREMENTS = 2
 };
 
+typedef std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> VerticeMap;
+typedef std::vector<karto::Edge<karto::LocalizedRangeScan>*> EdgeVector;
+typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> ScanVector;
+
 class SlamToolbox
 {
 public:
@@ -121,6 +125,9 @@ private:
                                  slam_toolbox::LoopClosure::Response &resp);
   bool SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
                                   slam_toolbox::SerializePoseGraph::Response &resp);
+  bool DeserializePoseGraphCallback(slam_toolbox::AddMap::Request &req,
+                                    slam_toolbox::AddMap::Response &resp);
+
   // functional bits
   bool GetOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
   karto::LaserRangeFinder* GetLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
@@ -137,7 +144,6 @@ private:
   // state
   bool IsPaused(const PausedApplication& app);
 
-  bool LoadMapperCallback(slam_toolbox::AddMap::Request  &req, slam_toolbox::AddMap::Response &resp);
 
   // ROS-y-ness
   ros::NodeHandle nh_;
