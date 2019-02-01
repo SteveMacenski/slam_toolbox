@@ -621,9 +621,9 @@ namespace karto
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-      std::cout<<"Graph <- m_Edges; ";
+      std::cout << "Graph <- m_Edges; ";
       ar & BOOST_SERIALIZATION_NVP(m_Edges);
-      std::cout<<"Graph <- m_Vertices\n";
+      std::cout << "Graph <- m_Vertices\n";
       ar & BOOST_SERIALIZATION_NVP(m_Vertices);
     }
   };  // Graph<T>
@@ -809,13 +809,13 @@ namespace karto
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-      std::cout<<"MapperGraph <- Graph; ";
+      std::cout << "MapperGraph <- Graph; ";
       ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Graph<LocalizedRangeScan>);
-      std::cout<<"MapperGraph <- m_pMapper; ";
+      std::cout << "MapperGraph <- m_pMapper; ";
       ar & BOOST_SERIALIZATION_NVP(m_pMapper);
-      std::cout<<"MapperGraph <- m_pLoopScanMatcher; ";
+      std::cout << "MapperGraph <- m_pLoopScanMatcher; ";
       ar & BOOST_SERIALIZATION_NVP(m_pLoopScanMatcher);
-      std::cout<<"MapperGraph <- m_pTraversal\n";
+      std::cout << "MapperGraph <- m_pTraversal\n";
       ar & BOOST_SERIALIZATION_NVP(m_pTraversal);
     }
 
@@ -1335,6 +1335,7 @@ namespace karto
       , m_pCorrelationGrid(NULL)
       , m_pSearchSpaceProbs(NULL)
       , m_pGridLookup(NULL)
+      , m_doPenalize(false)
     {
     }
 
@@ -1498,6 +1499,11 @@ namespace karto
     LocalizedRangeScanVector& GetRunningScans(const Name& rSensorName);
 
     /**
+     * Clears running scans of device
+     */
+    void ClearRunningScans(const Name& rSensorName);
+
+    /**
      * Gets all scans of all devices
      * @return all scans of all devices
      */
@@ -1537,12 +1543,12 @@ namespace karto
 	template<class Archive>
 	void serialize(Archive &ar, const unsigned int version)
 	{
-    std::cout<<"MapperSensorManager <- m_ScanManagers; ";
+    std::cout << "MapperSensorManager <- m_ScanManagers; ";
     ar & BOOST_SERIALIZATION_NVP(m_ScanManagers);
     ar & BOOST_SERIALIZATION_NVP(m_RunningBufferMaximumSize);
     ar & BOOST_SERIALIZATION_NVP(m_RunningBufferMaximumDistance);
     ar & BOOST_SERIALIZATION_NVP(m_NextScanId);
-    std::cout<<"MapperSensorManager <- m_Scans\n";
+    std::cout << "MapperSensorManager <- m_Scans\n";
     ar & BOOST_SERIALIZATION_NVP(m_Scans);
 	}
 
@@ -1782,7 +1788,7 @@ namespace karto
     /**
      * Process an Object
      */
-    virtual kt_bool Process(Object* pObject, , const bool& match_against_first_node);
+    virtual kt_bool Process(Object* pObject, const bool& match_against_first_node);
 
     /**
      * Returns all processed scans added to the mapper.
@@ -2120,17 +2126,17 @@ namespace karto
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-      std::cout<<"**Serializing Mapper**\n";
-      std::cout<<"Mapper <- Module\n";
+      std::cout << "**Serializing Mapper**\n";
+      std::cout << "Mapper <- Module\n";
       ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Module);
       ar & BOOST_SERIALIZATION_NVP(m_Initialized);
-      std::cout<<"Mapper <- m_pSequentialScanMatcher\n";
+      std::cout << "Mapper <- m_pSequentialScanMatcher\n";
       ar & BOOST_SERIALIZATION_NVP(m_pSequentialScanMatcher);
-      std::cout<<"Mapper <- m_pGraph\n";
+      std::cout << "Mapper <- m_pGraph\n";
       ar & BOOST_SERIALIZATION_NVP(m_pGraph);
-      std::cout<<"Mapper <- m_pMapperSensorManager\n";
+      std::cout << "Mapper <- m_pMapperSensorManager\n";
       ar & BOOST_SERIALIZATION_NVP(m_pMapperSensorManager);
-      std::cout<<"Mapper <- m_Listeners\n";
+      std::cout << "Mapper <- m_Listeners\n";
       ar & BOOST_SERIALIZATION_NVP(m_Listeners);
       ar & BOOST_SERIALIZATION_NVP(m_pUseScanMatching);
       ar & BOOST_SERIALIZATION_NVP(m_pUseScanBarycenter);
@@ -2161,7 +2167,7 @@ namespace karto
       ar & BOOST_SERIALIZATION_NVP(m_pMinimumAnglePenalty);
       ar & BOOST_SERIALIZATION_NVP(m_pMinimumDistancePenalty);
       ar & BOOST_SERIALIZATION_NVP(m_pUseResponseExpansion);
-      std::cout<<"**Finished serializing Mapper**\n";
+      std::cout << "**Finished serializing Mapper**\n";
     }
   public:
     /* Abstract methods for parameter setters and getters */

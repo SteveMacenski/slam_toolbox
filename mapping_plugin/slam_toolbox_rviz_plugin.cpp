@@ -44,7 +44,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   nh.getParam("/slam_toolbox/paused_processing", paused_process);
   nh.getParam("/slam_toolbox/interactive_mode", interactive);
   _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/slam_toolbox/serialize_map");
-  _load_map = nh.serviceClient<slam_toolbox::AddMap>("/slam_toolbox/load_map");
+  _load_map = nh.serviceClient<slam_toolbox::DeserializePoseGraph>("/slam_toolbox/load_map");
   _clearChanges = nh.serviceClient<slam_toolbox::Clear>("/slam_toolbox/clear_changes");
   _saveChanges = nh.serviceClient<slam_toolbox::LoopClosure>("/slam_toolbox/manual_loop_closure");
   _saveMap = nh.serviceClient<slam_toolbox::SaveMap>("/slam_toolbox/save_map");

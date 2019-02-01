@@ -50,7 +50,7 @@
 #include "slam_toolbox/SaveMap.h"
 #include "slam_toolbox/LoopClosure.h"
 #include "slam_toolbox/SerializePoseGraph.h"
-#include "slam_toolbox/AddMap.h"
+#include "slam_toolbox/DeserializePoseGraph.h"
 
 #include <string>
 #include <map>
@@ -125,8 +125,8 @@ private:
                                  slam_toolbox::LoopClosure::Response &resp);
   bool SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
                                   slam_toolbox::SerializePoseGraph::Response &resp);
-  bool DeserializePoseGraphCallback(slam_toolbox::AddMap::Request &req,
-                                    slam_toolbox::AddMap::Response &resp);
+  bool DeserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request &req,
+                                    slam_toolbox::DeserializePoseGraph::Response &resp);
 
   // functional bits
   bool GetOdomPose(karto::Pose2& karto_pose, const ros::Time& t);

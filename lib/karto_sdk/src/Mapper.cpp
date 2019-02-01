@@ -158,6 +158,14 @@ namespace karto
     }
 
     /**
+     * Clears the vector of running scans
+     */
+    void ClearRunningScans()
+    {
+      m_RunningScans.clear();
+    }
+
+    /**
      * Deletes data of this buffered device
      */
     void Clear()
@@ -277,6 +285,12 @@ namespace karto
   inline LocalizedRangeScanVector& MapperSensorManager::GetRunningScans(const Name& rSensorName)
   {
     return GetScanManager(rSensorName)->GetRunningScans();
+  }
+
+  inline void MapperSensorManager::ClearRunningScans(const Name& rSensorName)
+  {
+    GetScanManager(rSensorName)->ClearRunningScans();
+    return;
   }
 
   /**
@@ -2328,7 +2342,13 @@ namespace karto
 		  LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetLastScan(pScan->GetSensorName());
       if (match_against_first_node)
       {
-        pLastScan = m_pMapperSensorManager->GetScan(0);
+        // If we're matching against the first node from an older mapping session
+        // lets get the first scan as the last scan and populate running scans
+        // with the first few from that run as well.
+        pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), 0);
+        m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
+        m_pMapperSensorManager->AddRunningScan(pLastScan); // first N, latest scan is last in vector, order doesnt appear to matter for Process call --
+        // check anyone else usign running scans for order or content requirements STEVE TODO
       }
 
 		  // update scans corrected pose based on last correction

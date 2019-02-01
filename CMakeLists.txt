@@ -5,7 +5,6 @@ add_compile_options(-std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
-find_package(Boost REQUIRED system serialization filesystem)
 
 #karto_sdk lib
 set(BUILD_SHARED_LIBS ON)
@@ -62,7 +61,7 @@ endif()
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 add_definitions(-DQT_NO_KEYWORDS)
-find_package(Boost REQUIRED COMPONENTS thread serialization) 
+find_package(Boost REQUIRED system serialization filesystem thread)
 
 include_directories(include ${catkin_INCLUDE_DIRS} 
                             ${EIGEN3_INCLUDE_DIRS} 
@@ -84,7 +83,7 @@ add_service_files(DIRECTORY srvs
   LoopClosure.srv
   MergeMaps.srv
   AddSubmap.srv
-  AddMap.srv
+  DeserializePoseGraph.srv
   SerializePoseGraph.srv
 )
 generate_messages(

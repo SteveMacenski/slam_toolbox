@@ -47,7 +47,7 @@
 #include "slam_toolbox/LoopClosure.h"
 #include "slam_toolbox/MergeMaps.h"
 #include "slam_toolbox/AddSubmap.h"
-#include "slam_toolbox/AddMap.h"
+#include "slam_toolbox/DeserializePoseGraph.h"
 #include "slam_toolbox/SerializePoseGraph.h"
 
 class QLineEdit;
