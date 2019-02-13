@@ -90,11 +90,12 @@ generate_messages(
   DEPENDENCIES
   std_srvs
   std_msgs
+  geometry_msgs
 )
 
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES spa_solver_plugin g2O_solver_plugin ceres_solver_plugin
+    LIBRARIES ceres_solver_plugin
     CATKIN_DEPENDS
       message_filters
       nav_msgs
@@ -113,29 +114,12 @@ catkin_package(
       interactive_markers
 )
 
-#### SPA
-add_library(spa_solver_plugin solvers/spa_solver.cpp)
-target_link_libraries(spa_solver_plugin ${catkin_LIBRARIES})
-
 #### Ceres
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
 target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES} 
                                           ${CERES_INCLUDE_DIRS}
                                           ${CERES_LIBRARIES}
 )
-
-#### G2O
-#add_library(g2O_solver_plugin solvers/g2o_solver.cpp)
-#target_link_libraries(g2O_solver_plugin ${catkin_LIBRARIES}
-#                                        ${G2O_CORE_LIBRARY}
-#                                        ${G2O_STUFF_LIBRARY}
-#                                        ${G2O_TYPES_SLAM2D}
-#                                        ${G2O_SOLVER_CHOLMOD}
-#                                        ${G2O_SOLVER_CSPARSE}
-#                                        ${G2O_SOLVER_CSPARSE_EXTENSION}
-#                                        ${CHOLMOD_LIBRARIES}
-#                                        ${CSPARSE_LIBRARY}
-#)
 
 #### rviz Plugin
 qt_wrap_cpp(MOC_FILES mapping_plugin/slam_toolbox_rviz_plugin.hpp)
@@ -153,11 +137,11 @@ add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 add_dependencies(merge_maps_kinematic ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(merge_maps_kinematic ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-install(TARGETS slam_toolbox merge_maps_kinematic spa_solver_plugin ceres_solver_plugin SlamToolboxPlugin
+install(TARGETS slam_toolbox merge_maps_kinematic ceres_solver_plugin SlamToolboxPlugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-) #g2O_solver_plugin
+)
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

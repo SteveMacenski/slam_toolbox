@@ -1200,6 +1200,7 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
   }
 
   mapper->SetScanSolver(solver_.get());
+
   {
     boost::mutex::scoped_lock lock(mapper_mutex_);
     if (mapper_)
@@ -1234,6 +1235,12 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
                slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE)
   {
     match_against_first_node_ = true;
+  }
+  else if (req.match_location == \
+               slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE)
+  {
+    ROS_WARN("DeserializePoseGraph: Starting mapping from last position, "
+             "starting at a given pose is not yet implemented.");
   }
   else
   {
