@@ -1231,7 +1231,11 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
 
   UpdateMap();
   first_measurement_ = true; // let the next measurement get the ball rolling
-  match_against_first_node_ = true; // restart near dock/fixed asset TODO service c all param in case its just continue in place
+  if (req.match_location == \
+               slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE)
+  {
+    match_against_first_node_ = true; // restart near dock/fixed asset
+  }
 }
 
 /*****************************************************************************/
