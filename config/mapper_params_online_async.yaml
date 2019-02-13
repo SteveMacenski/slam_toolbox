@@ -69,4 +69,4 @@ minimum_distance_penalty: 0.5
 use_response_expansion: true
 
 # Load Map Parameters
-continue_mapping_with_inverted_laser: true
+inverted_laser: true

@@ -1223,8 +1223,7 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
       karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
       lasers_[laser_frame_] = laser;
       bool is_inverted = false;
-      //TODO this is deeply unnecessary, we can grab a scan frame and breach out the getlaser function
-      nh_.getParam("continue_mapping_with_inverted_laser", is_inverted);
+      nh_.getParam("inverted_laser", is_inverted);
       lasers_inverted_[laser_frame_] = is_inverted;
     }
   }
