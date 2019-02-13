@@ -1783,12 +1783,55 @@ namespace karto
      *
      * @return true if the scan was added successfully, false otherwise
      */
-    virtual kt_bool Process(LocalizedRangeScan* pScan, const bool& match_against_first_node);
+    virtual kt_bool Process(LocalizedRangeScan* pScan);
 
     /**
      * Process an Object
      */
-    virtual kt_bool Process(Object* pObject, const bool& match_against_first_node);
+    virtual kt_bool Process(Object* pObject);
+
+
+    /**
+     * Process a localized range scan for incorporation into the map.  The scan must
+     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
+     * localized scan will be updated to the correct pose as determined by the mapper.
+     *
+     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
+     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
+     * information in the scan object of nearby and not necessarily contiguous
+     *
+     * @return true if the scan was added successfully, false otherwise
+     */
+    // virtual kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
+
+
+    /**
+     * Process a localized range scan for incorporation into the map.  The scan must
+     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
+     * localized scan will be updated to the correct pose as determined by the mapper.
+     *
+     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
+     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
+     * information in the scan object based on matching against nodeId
+
+     * @param nodeId A unique node ID to match against
+     *
+     * @return true if the scan was added successfully, false otherwise
+     */
+    virtual kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
+
+    /**
+     * Process a localized range scan for incorporation into the map.  The scan must
+     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
+     * localized scan will be updated to the correct pose as determined by the mapper.
+     *
+     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
+     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
+     * information in the scan object based on matching against starting point (nodeId = 0)
+     *
+     * @return true if the scan was added successfully, false otherwise
+     */
+    virtual kt_bool ProcessAgainstStartingPoint(LocalizedRangeScan* pScan);
 
     /**
      * Returns all processed scans added to the mapper.

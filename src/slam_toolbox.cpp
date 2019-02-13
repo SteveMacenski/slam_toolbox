@@ -832,7 +832,17 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   // Add the localized range scan to the mapper
   boost::mutex::scoped_lock lock(mapper_mutex_);
   bool processed;
-  if((processed = mapper_->Process(range_scan, match_against_first_node_)))
+  if (!match_against_first_node_)
+  {
+    processed = mapper_->Process(range_scan);
+  }
+  else
+  {
+    processed = mapper_->ProcessAgainstStartingPoint(range_scan);
+    match_against_first_node_ = false;
+  }
+
+  if(processed)
   {
     current_scans_.push_back(*scan);
     karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
@@ -864,11 +874,6 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   else
   {
     delete range_scan;
-  }
-
-  if (match_against_first_node_)
-  {
-    match_against_first_node_ = false;
   }
 
   return processed;
