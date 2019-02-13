@@ -1229,11 +1229,16 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
   }
 
   UpdateMap();
-  first_measurement_ = true; // let the next measurement get the ball rolling
+  first_measurement_ = true;
   if (req.match_location == \
                slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE)
   {
-    match_against_first_node_ = true; // restart near dock/fixed asset
+    match_against_first_node_ = true;
+  }
+  else
+  {
+    ROS_WARN("DeserializePoseGraph: Starting mapping away from first node, "
+             "I hope you know what you're doing...");
   }
 }
 
