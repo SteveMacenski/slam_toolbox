@@ -122,8 +122,8 @@ target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES}
 )
 
 #### rviz Plugin
-qt_wrap_cpp(MOC_FILES mapping_plugin/slam_toolbox_rviz_plugin.hpp)
-set(SOURCE_FILES mapping_plugin/slam_toolbox_rviz_plugin.cpp )
+qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
+set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
 add_library(SlamToolboxPlugin ${SOURCE_FILES})
 add_dependencies(SlamToolboxPlugin ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES}  ${catkin_LIBRARIES} )

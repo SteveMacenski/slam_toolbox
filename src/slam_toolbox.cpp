@@ -1181,28 +1181,31 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
   karto::Mapper* mapper = new karto::Mapper;
   serialization::Read(req.filename, mapper, dataset);
 
-  VerticeMap mapper_vertices = mapper->GetGraph()->GetVertices();
-  VerticeMap::iterator vertex_map_it = mapper_vertices.begin();
-  for(vertex_map_it; vertex_map_it != mapper_vertices.end(); ++vertex_map_it)
-  {
-    ScanVector::iterator vertex_it = vertex_map_it->second.begin();
-    for(vertex_map_it; vertex_it != vertex_map_it->second.end(); ++vertex_it )
-    {
-      solver_->AddNode(*vertex_it);
-    }
-  }
-
-  EdgeVector mapper_edges = mapper->GetGraph()->GetEdges();
-  EdgeVector::iterator edges_it = mapper_edges.begin();
-  for( edges_it; edges_it != mapper_edges.end(); ++edges_it)
-  {
-    solver_->AddConstraint(*edges_it);
-  }
-
-  mapper->SetScanSolver(solver_.get());
-
   {
     boost::mutex::scoped_lock lock(mapper_mutex_);
+
+    solver_->Reset();
+
+    VerticeMap mapper_vertices = mapper->GetGraph()->GetVertices();
+    VerticeMap::iterator vertex_map_it = mapper_vertices.begin();
+    for(vertex_map_it; vertex_map_it != mapper_vertices.end(); ++vertex_map_it)
+    {
+      ScanVector::iterator vertex_it = vertex_map_it->second.begin();
+      for(vertex_map_it; vertex_it != vertex_map_it->second.end(); ++vertex_it )
+      {
+        solver_->AddNode(*vertex_it);
+      }
+    }
+
+    EdgeVector mapper_edges = mapper->GetGraph()->GetEdges();
+    EdgeVector::iterator edges_it = mapper_edges.begin();
+    for( edges_it; edges_it != mapper_edges.end(); ++edges_it)
+    {
+      solver_->AddConstraint(*edges_it);
+    }
+
+    mapper->SetScanSolver(solver_.get());
+
     if (mapper_)
     {
       delete mapper_;

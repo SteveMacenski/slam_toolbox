@@ -93,7 +93,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   connect(_button7, SIGNAL(clicked()), this, SLOT(SerializeMap()));
   _button8 = new QPushButton(this);
   _button8->setText("Load Map");
-  connect(_button8, SIGNAL(clicked()), this, SLOT(LoadMap()));
+  connect(_button8, SIGNAL(clicked()), this, SLOT(DeserializeMap()));
 
   _label1 = new QLabel(this);
   _label1->setText("Interactive Mode");

@@ -896,6 +896,11 @@ namespace karto
     virtual void Clear(){};
 
     /**
+     * Resets the solver for reinitialization
+     */
+    virtual void Reset(){};
+
+    /**
      * Get graph stored
      */
     virtual void getGraph(std::vector<Eigen::Vector2d>& ag) {};
