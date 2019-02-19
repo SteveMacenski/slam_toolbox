@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OPEN_KARTO_KARTO_H
-#define OPEN_KARTO_KARTO_H
+#ifndef karto_sdk_KARTO_H
+#define karto_sdk_KARTO_H
 
 #include <string>
 #include <fstream>
@@ -53,8 +53,8 @@
 #include <Poco/Mutex.h>
 #endif
 
-#include <open_karto/Math.h>
-#include <open_karto/Macros.h>
+#include <karto_sdk/Math.h>
+#include <karto_sdk/Macros.h>
 
 #define KARTO_Object(name) \
   virtual const char* GetClassName() const { return #name; } \
@@ -7058,4 +7058,4 @@ BOOST_CLASS_EXPORT_KEY(karto::Parameter<kt_int32u>);
 BOOST_CLASS_EXPORT_KEY(karto::Parameter<kt_int32s>);
 BOOST_CLASS_EXPORT_KEY(karto::Parameter<std::string>);
 
-#endif  // OPEN_KARTO_KARTO_H
+#endif  // karto_sdk_KARTO_H

@@ -22,12 +22,12 @@
 #include <set>
 #include <list>
 #include <iterator>
-#include <open_karto/Types.h>
+#include <karto_sdk/Types.h>
 #include <math.h>
 #include <assert.h>
 #include <boost/serialization/vector.hpp>
 
-#include "open_karto/Mapper.h"
+#include "karto_sdk/Mapper.h"
 
 BOOST_CLASS_EXPORT(karto::MapperGraph);
 BOOST_CLASS_EXPORT(karto::Graph<karto::LocalizedRangeScan>);
@@ -158,6 +158,14 @@ namespace karto
     }
 
     /**
+     * Clears the vector of running scans
+     */
+    void ClearRunningScans()
+    {
+      m_RunningScans.clear();
+    }
+
+    /**
      * Deletes data of this buffered device
      */
     void Clear()
@@ -277,6 +285,12 @@ namespace karto
   inline LocalizedRangeScanVector& MapperSensorManager::GetRunningScans(const Name& rSensorName)
   {
     return GetScanManager(rSensorName)->GetRunningScans();
+  }
+
+  inline void MapperSensorManager::ClearRunningScans(const Name& rSensorName)
+  {
+    GetScanManager(rSensorName)->ClearRunningScans();
+    return;
   }
 
   /**
@@ -2303,8 +2317,164 @@ namespace karto
 
   kt_bool Mapper::Process(Object*  /*pObject*/)
   {
-	  return true;
+    return true;
   }
+
+  kt_bool Mapper::ProcessAgainstStartingPoint(LocalizedRangeScan* pScan)
+  {
+    // Special case of processing against node where node is the starting point
+    return ProcessAgainstNode(pScan, 0);
+  }
+
+  kt_bool Mapper::ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId)
+  {
+    if (pScan != NULL)
+    {
+      karto::LaserRangeFinder* pLaserRangeFinder = pScan->GetLaserRangeFinder();
+
+      // validate scan
+      if (pLaserRangeFinder == NULL || pScan == NULL || pLaserRangeFinder->Validate(pScan) == false)
+      {
+        return false;
+      }
+
+      if (m_Initialized == false)
+      {
+        // initialize mapper with range threshold from device
+        Initialize(pLaserRangeFinder->GetRangeThreshold());
+      }
+
+      // If we're matching against a node from an older mapping session
+      // lets get the first scan as the last scan and populate running scans
+      // with the first few from that run as well.
+      LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), nodeId);
+      m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
+      m_pMapperSensorManager->AddRunningScan(pLastScan);
+
+      // update scans corrected pose based on last correction
+      if (pLastScan != NULL)
+      {
+        Transform lastTransform(pLastScan->GetOdometricPose(), pLastScan->GetCorrectedPose());
+        pScan->SetCorrectedPose(lastTransform.TransformPose(pScan->GetOdometricPose()));
+      }
+
+      Matrix3 covariance;
+      covariance.SetToIdentity();
+
+      // correct scan (if not first scan)
+      if (m_pUseScanMatching->GetValue() && pLastScan != NULL)
+      {
+        Pose2 bestPose;
+        m_pSequentialScanMatcher->MatchScan(pScan,
+            m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
+            bestPose,
+            covariance);
+        pScan->SetSensorPose(bestPose);
+      }
+
+      // add scan to buffer and assign id
+      m_pMapperSensorManager->AddScan(pScan);
+
+      if (m_pUseScanMatching->GetValue())
+      {
+        // add to graph
+        m_pGraph->AddVertex(pScan);
+        m_pGraph->AddEdges(pScan, covariance);
+
+        m_pMapperSensorManager->AddRunningScan(pScan);
+
+        if (m_pDoLoopClosing->GetValue())
+        {
+          std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+          const_forEach(std::vector<Name>, &deviceNames)
+          {
+            m_pGraph->TryCloseLoop(pScan, *iter);
+          }
+        }
+      }
+
+      m_pMapperSensorManager->SetLastScan(pScan);
+
+      return true;
+    }
+
+    return false;
+  }
+
+  // kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan)
+  // {
+  //   if (pScan != NULL)
+  //   {
+  //     karto::LaserRangeFinder* pLaserRangeFinder = pScan->GetLaserRangeFinder();
+
+  //     // validate scan
+  //     if (pLaserRangeFinder == NULL || pScan == NULL || pLaserRangeFinder->Validate(pScan) == false)
+  //     {
+  //       return false;
+  //     }
+
+  //     if (m_Initialized == false)
+  //     {
+  //       // initialize mapper with range threshold from device
+  //       Initialize(pLaserRangeFinder->GetRangeThreshold());
+  //     }
+
+  //     // If we're matching against an area from an older mapping session
+  //     // lets get the scans nearby and add them to running scans to compute odometry from
+  //     // TODO STEVE
+  //     LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), 0);
+  //     m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
+  //     m_pMapperSensorManager->AddRunningScan(pLastScan);
+
+  //     // update scans corrected pose based on last correction
+  //     if (pLastScan != NULL)
+  //     {
+  //       Transform lastTransform(pLastScan->GetOdometricPose(), pLastScan->GetCorrectedPose());
+  //       pScan->SetCorrectedPose(lastTransform.TransformPose(pScan->GetOdometricPose()));
+  //     }
+
+  //     Matrix3 covariance;
+  //     covariance.SetToIdentity();
+
+  //     // correct scan (if not first scan)
+  //     if (m_pUseScanMatching->GetValue() && pLastScan != NULL)
+  //     {
+  //       Pose2 bestPose;
+  //       m_pSequentialScanMatcher->MatchScan(pScan,
+  //           m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
+  //           bestPose,
+  //           covariance);
+  //       pScan->SetSensorPose(bestPose);
+  //     }
+
+  //     // add scan to buffer and assign id
+  //     m_pMapperSensorManager->AddScan(pScan);
+
+  //     if (m_pUseScanMatching->GetValue())
+  //     {
+  //       // add to graph
+  //       m_pGraph->AddVertex(pScan);
+  //       m_pGraph->AddEdges(pScan, covariance);
+
+  //       m_pMapperSensorManager->AddRunningScan(pScan);
+
+  //       if (m_pDoLoopClosing->GetValue())
+  //       {
+  //         std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+  //         const_forEach(std::vector<Name>, &deviceNames)
+  //         {
+  //           m_pGraph->TryCloseLoop(pScan, *iter);
+  //         }
+  //       }
+  //     }
+
+  //     m_pMapperSensorManager->SetLastScan(pScan);
+
+  //     return true;
+  //   }
+
+  //   return false;
+  // }
 
   kt_bool Mapper::Process(LocalizedRangeScan* pScan)
   {

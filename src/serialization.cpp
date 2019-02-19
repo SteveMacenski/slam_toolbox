@@ -19,8 +19,8 @@
 #include <vector>
 #include <string>
 #include <ros/ros.h>
-#include <open_karto/Karto.h>
-#include <open_karto/Mapper.h>
+#include <karto_sdk/Karto.h>
+#include <karto_sdk/Mapper.h>
 #include <sys/stat.h>
 
 
@@ -37,33 +37,33 @@ void Write(const std::string& filename, karto::Mapper* mapper, karto::Dataset* d
   try
   {
     mapper->SaveToFile(filename + std::string(".posegraph"));
+    std::ofstream ofs((filename + std::string(".data")).c_str());
+    boost::archive::binary_oarchive oa(ofs, boost::archive::no_codecvt);
+    oa << BOOST_SERIALIZATION_NVP(dataset);
   }
   catch (boost::archive::archive_exception e)
   {
     ROS_ERROR("Failed to write file: Exception %s", e.what());
   }
-  std::ofstream ofs((filename + std::string(".data")).c_str());
-  boost::archive::binary_oarchive oa(ofs, boost::archive::no_codecvt);
-  oa << BOOST_SERIALIZATION_NVP(dataset);
 }
 
 void Read(const std::string& filename, karto::Mapper* mapper, karto::Dataset*& dataset)
 {
   if (!FileExists(filename + std::string(".posegraph")))
   {
-    ROS_ERROR("serialization::Read : Failed to open requested submap %s.", filename.c_str());
+    ROS_ERROR("serialization::Read : Failed to open requested file %s.", filename.c_str());
   }
   try
   {
     mapper->LoadFromFile(filename + std::string(".posegraph"));
+    std::ifstream ifs((filename + std::string(".data")).c_str());
+    boost::archive::binary_iarchive ia(ifs);
+    ia >> BOOST_SERIALIZATION_NVP(dataset);
   }
   catch (boost::archive::archive_exception e)
   {
     ROS_ERROR("Failed to read file: Exception %s", e.what());
   }
-  std::ifstream ifs((filename + std::string(".data")).c_str());
-  boost::archive::binary_iarchive ia(ifs);
-  ia >> BOOST_SERIALIZATION_NVP(dataset);
 }
 
 } // end namespace

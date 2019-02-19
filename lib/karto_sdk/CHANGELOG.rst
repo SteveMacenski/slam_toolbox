@@ -1,5 +1,5 @@
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Changelog for package open_karto
+Changelog for package karto_sdk
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1.1.4 (2016-03-02)

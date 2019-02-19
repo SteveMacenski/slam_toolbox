@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OPEN_KARTO_MACROS_H
-#define OPEN_KARTO_MACROS_H
+#ifndef karto_sdk_MACROS_H
+#define karto_sdk_MACROS_H
 
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -124,4 +124,4 @@
 
 #endif  // __INTEL_COMPILER
 
-#endif  // OPEN_KARTO_MACROS_H
+#endif  // karto_sdk_MACROS_H

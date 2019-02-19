@@ -15,14 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OPEN_KARTO_MATH_H
-#define OPEN_KARTO_MATH_H
+#ifndef karto_sdk_MATH_H
+#define karto_sdk_MATH_H
 
 #include <assert.h>
 #include <math.h>
 #include <limits>
 
-#include <open_karto/Types.h>
+#include <karto_sdk/Types.h>
 
 namespace karto
 {
@@ -249,4 +249,4 @@ namespace karto
 
 }  // namespace karto
 
-#endif  // OPEN_KARTO_MATH_H
+#endif  // karto_sdk_MATH_H

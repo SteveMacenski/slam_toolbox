@@ -21,9 +21,8 @@
 #include <slam_toolbox/slam_toolbox.hpp>
 #include "serialization.cpp"
 
-#define MAX_STACK_SIZE 20000000 // if a system has the stack soft limit set to a smaller value
-// than needed for serialization of a large map
-// parameter defines enlarged stack limit for process to use
+// program needs a larger stack size to serialize large maps
+#define MAX_STACK_SIZE 40000000
 
 /*****************************************************************************/
 SlamToolbox::SlamToolbox() : 
@@ -44,7 +43,8 @@ SlamToolbox::SlamToolbox() :
                          tf_(ros::Duration(14400.)),
                          map_to_odom_time_(0.),
                          transform_timeout_(ros::Duration(0.2)),
-                         first_measurement_(true) // 4 hours
+                         first_measurement_(true), // 4 hours
+                         match_against_first_node_(false)
 /*****************************************************************************/
 {
   interactive_server_ = \
@@ -64,11 +64,10 @@ SlamToolbox::SlamToolbox() :
   nh_.setParam("interactive_mode", interactive_mode_);
 
   double transform_publish_period;
-  private_nh.param("transform_publish_period", 
-                                               transform_publish_period, 0.05);
+  private_nh.param("transform_publish_period", transform_publish_period, 0.05);
   transform_thread_ = new boost::thread( \
-                                boost::bind(&SlamToolbox::PublishTransformLoop, 
-                                this, transform_publish_period));
+                              boost::bind(&SlamToolbox::PublishTransformLoop, \
+                              this, transform_publish_period));
   run_thread_ = new boost::thread(boost::bind(&SlamToolbox::Run, this));
   visualization_thread_ = new boost::thread(\
                        boost::bind(&SlamToolbox::PublishVisualizations, this));
@@ -283,7 +282,7 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   ssClear_manual_ = node.advertiseService("clear_changes", &SlamToolbox::ClearChangesCallback, this);
   ssSave_map_ = node.advertiseService("save_map", &SlamToolbox::SaveMapCallback, this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::SerializePoseGraphCallback, this);
-  ssLoadMap_ = node.advertiseService("load_map", &SlamToolbox::LoadMapperCallback, this);
+  ssLoadMap_ = node.advertiseService("load_map", &SlamToolbox::DeserializePoseGraphCallback, this);
   scan_filter_sub_ = new message_filters::Subscriber<sensor_msgs::LaserScan>(node, "/scan", 5);
   scan_filter_ = new tf::MessageFilter<sensor_msgs::LaserScan>(*scan_filter_sub_, tf_, odom_frame_, 5);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::LaserCallback, this, _1));
@@ -336,8 +335,10 @@ void SlamToolbox::PublishTransformLoop(double transform_publish_period)
   {
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
+      // time now from map_to_odom_time_ due to live issues but 
+      // should be better rectified if running behind
       tfB_->sendTransform(tf::StampedTransform (map_to_odom_, 
-             ros::Time::now() + transform_timeout_, map_frame_, odom_frame_)); // time now from map_to_odom_time_ due to live issues but should be better rectified if running behind
+             ros::Time::now() + transform_timeout_, map_frame_, odom_frame_));
     }
     r.sleep();
   }
@@ -500,7 +501,7 @@ void SlamToolbox::PublishGraph()
   m.action = visualization_msgs::Marker::ADD;
   m.lifetime = ros::Duration(0.);
 
-  uint i=0;
+  uint i = 0;
   for (i; i < graph.size(); i++) 
   {
     m.id = i+1;
@@ -521,31 +522,33 @@ void SlamToolbox::PublishGraph()
 
       // translate control
       visualization_msgs::InteractiveMarkerControl control;
-      control.orientation_mode =  visualization_msgs::InteractiveMarkerControl::FIXED;
+      control.orientation_mode = \
+                           visualization_msgs::InteractiveMarkerControl::FIXED;
       control.always_visible = true;
       control.orientation.w = 0;
       control.orientation.x = 0.7071;
       control.orientation.y = 0;
       control.orientation.z = 0.7071;
       control.interaction_mode = \
-                       visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
+                      visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
       control.markers.push_back( m );
       int_marker.controls.push_back( control );
 
       // rotate control
       visualization_msgs::InteractiveMarkerControl control_rot;
-      control_rot.orientation_mode =  visualization_msgs::InteractiveMarkerControl::FIXED;
+      control_rot.orientation_mode = \
+                           visualization_msgs::InteractiveMarkerControl::FIXED;
       control_rot.always_visible = true;
       control_rot.orientation.w = 0;
       control_rot.orientation.x = 0.7071;
       control_rot.orientation.y = 0;
       control_rot.orientation.z = 0.7071;
       control_rot.interaction_mode = \
-                       visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
+                     visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
       int_marker.controls.push_back( control_rot );
 
       interactive_server_->insert(int_marker, \
-               boost::bind(&SlamToolbox::ProcessInteractiveFeedback, this, _1));
+              boost::bind(&SlamToolbox::ProcessInteractiveFeedback, this, _1));
     }
     else
     {
@@ -606,7 +609,7 @@ void SlamToolbox::ProcessInteractiveFeedback(const \
     solver_->GetNodeOrientation(id, node_yaw);
     solver_->GetNodeOrientation(0, first_node_yaw);
 
-    quat *= tf::Quaternion(0., 0., node_yaw- 3.14159);
+    quat *= tf::Quaternion(0., 0., node_yaw - 3.14159);
     quat *= tf::Quaternion(0., 0., 3.14159); 
 
 
@@ -695,7 +698,7 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
   }
 
   // not enough time
-  if ( (scan->header.stamp.toSec() - last_scan_time ) < minimum_time_interval_)
+  if ((scan->header.stamp.toSec()-last_scan_time ) < minimum_time_interval_)
   {
     return;
   }
@@ -711,7 +714,7 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
   const double dist2 = fabs((last_pose.GetX() - pose.GetX())*(last_pose.GetX() - 
                        pose.GetX()) + (last_pose.GetY() - 
                        pose.GetY())*(last_pose.GetX() - pose.GetY()));
-  if(dist2 < 0.8*min_dist2 || laser_count_ < 5)
+  if(dist2 < 0.8 * min_dist2 || laser_count_ < 5)
   {
     return;
   }
@@ -764,9 +767,9 @@ bool SlamToolbox::UpdateMap()
     map_.map.data.resize(map_.map.info.width * map_.map.info.height);
   }
 
-  for (kt_int32s y=0; y<height; y++)
+  for (kt_int32s y = 0; y < height; y++)
   {
-    for (kt_int32s x=0; x<width; x++) 
+    for (kt_int32s x = 0; x < width; x++) 
     {
       kt_int8u value = occ_grid->GetValue(karto::Vector2<kt_int32s>(x, y));
       switch (value)
@@ -805,22 +808,21 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
 {  
   // Create a vector of doubles for karto
   std::vector<kt_double> readings;
-  if (lasers_inverted_[scan->header.frame_id]) {
+  if (lasers_inverted_[scan->header.frame_id])
+  {
     for(std::vector<float>::const_reverse_iterator it = scan->ranges.rbegin();
-      it != scan->ranges.rend();
-      ++it)
+        it != scan->ranges.rend(); ++it)
     {
       readings.push_back(*it);
     }
   } else {
     for(std::vector<float>::const_iterator it = scan->ranges.begin();
-      it != scan->ranges.end();
-      ++it)
+        it != scan->ranges.end(); ++it)
     {
       readings.push_back(*it);
     }
   }
-  
+
   // create localized range scan
   karto::LocalizedRangeScan* range_scan = 
     new karto::LocalizedRangeScan(laser->GetName(), readings);
@@ -830,7 +832,17 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   // Add the localized range scan to the mapper
   boost::mutex::scoped_lock lock(mapper_mutex_);
   bool processed;
-  if((processed = mapper_->Process(range_scan)))
+  if (!match_against_first_node_)
+  {
+    processed = mapper_->Process(range_scan);
+  }
+  else
+  {
+    processed = mapper_->ProcessAgainstStartingPoint(range_scan);
+    match_against_first_node_ = false;
+  }
+
+  if(processed)
   {
     current_scans_.push_back(*scan);
     karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
@@ -919,7 +931,7 @@ bool SlamToolbox::ManualLoopClosureCallback( \
                                                      (int)moved_nodes_.size());
     // for each in node map
     std::map<int, Eigen::Vector3d>::const_iterator it = moved_nodes_.begin();
-    for (it;it!=moved_nodes_.end();++it)
+    for (it; it != moved_nodes_.end(); ++it)
     {
       MoveNode(it->first, \
             Eigen::Vector3d(it->second(0),it->second(1), it->second(2)), false);
@@ -958,14 +970,14 @@ bool SlamToolbox::InteractiveCallback( \
   boost::mutex::scoped_lock lock_p(pause_mutex_); 
   if (interactive_mode)
   {
-    // stop publishing and processing new measurements so we can move things in peace
+    // stop publishing / processing new measurements so we can move things
     pause_graph_  = true;
     pause_processing_ = true;
     nh_.setParam("paused_processing", pause_processing_);
   }
   else
   {
-    // exiting interactive mode, continue publishing and processing new measurements
+    // exiting interactive mode, continue publishing / processing measurements
     pause_graph_ = false;
     pause_processing_ = false;
     nh_.setParam("paused_processing", pause_processing_);
@@ -1089,7 +1101,7 @@ void SlamToolbox::Run()
     return;
   }
 
-  ROS_INFO_ONCE("Run thread enabled - synchronous mode selected.");
+  ROS_INFO("Run thread enabled - synchronous mode selected.");
 
   ros::Rate r(100);
   while(ros::ok())
@@ -1104,7 +1116,7 @@ void SlamToolbox::Run()
         if (online_ && sychronous_) // always sync. but makes intent clearer
         {
           ROS_WARN("Queue size has grown to: %i. "
-                   "Recommend stopping until message is gone.", (int)q_.size());
+                 "Recommend stopping until message is gone.", (int)q_.size());
         }
         else
         {
@@ -1117,8 +1129,9 @@ void SlamToolbox::Run()
 
       if(!laser)
       {
-        ROS_WARN("SlamToolbox: Failed to create laser device for %s; discarding scan",
-           scan_w_pose.scan->header.frame_id.c_str());
+        ROS_WARN("SlamToolbox: Failed to create laser"
+                 " device for %s; discarding scan",
+                 scan_w_pose.scan->header.frame_id.c_str());
         break;
       }
 
@@ -1142,8 +1155,9 @@ void SlamToolbox::MoveNode(const int& id, const Eigen::Vector3d& pose, \
 }
 
 /*****************************************************************************/
-bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
-                                             slam_toolbox::SerializePoseGraph::Response &resp)
+bool SlamToolbox::SerializePoseGraphCallback( \
+                              slam_toolbox::SerializePoseGraph::Request  &req,
+                              slam_toolbox::SerializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
   const std::string filename = req.filename;
@@ -1153,38 +1167,45 @@ bool SlamToolbox::SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::R
 }
 
 /*****************************************************************************/
-bool SlamToolbox::LoadMapperCallback(slam_toolbox::AddMap::Request  &req,
-                                     slam_toolbox::AddMap::Response &resp)
+bool SlamToolbox::DeserializePoseGraphCallback( \
+                             slam_toolbox::DeserializePoseGraph::Request  &req,
+                             slam_toolbox::DeserializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
   // TODO STEVE: this doesnt account for pose changes - need offset value for odometry so frames are colinear
   // ie add field for initial pose of new entries in the frame of the original and a bool whether
   // to continue using the existing odom in TF (when continuing the same session serialized so the odom frame hasnt changed)
-  // TODO STEVE2: how to remove extraneous nodes (?)
+  // and general way to add in random patches for just single area updates (merge maps tool instead?)
 
   karto::Dataset* dataset = new karto::Dataset;
   karto::Mapper* mapper = new karto::Mapper;
   serialization::Read(req.filename, mapper, dataset);
-  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> mapper_vertices =
-          mapper->GetGraph()->GetVertices();
-  std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>>::iterator vertex_map_it;
-  for(vertex_map_it = mapper_vertices.begin(); vertex_map_it!=mapper_vertices.end(); ++vertex_map_it)
-  {
-    for(std::vector<karto::Vertex<karto::LocalizedRangeScan>*>::iterator vertex_it=  vertex_map_it->second.begin();
-        vertex_it!= vertex_map_it->second.end();++vertex_it )
-    {
-      solver_->AddNode(*vertex_it);
-    }
-  }
-  std::vector<karto::Edge<karto::LocalizedRangeScan>*> mapper_edges = mapper->GetGraph()->GetEdges();
-  std::vector<karto::Edge<karto::LocalizedRangeScan>*>::iterator edges_it;
-  for( edges_it = mapper_edges.begin(); edges_it != mapper_edges.end(); ++edges_it)
-  {
-    solver_->AddConstraint(*edges_it);
-  }
-  mapper->SetScanSolver(solver_.get());
+
   {
     boost::mutex::scoped_lock lock(mapper_mutex_);
+
+    solver_->Reset();
+
+    VerticeMap mapper_vertices = mapper->GetGraph()->GetVertices();
+    VerticeMap::iterator vertex_map_it = mapper_vertices.begin();
+    for(vertex_map_it; vertex_map_it != mapper_vertices.end(); ++vertex_map_it)
+    {
+      ScanVector::iterator vertex_it = vertex_map_it->second.begin();
+      for(vertex_map_it; vertex_it != vertex_map_it->second.end(); ++vertex_it )
+      {
+        solver_->AddNode(*vertex_it);
+      }
+    }
+
+    EdgeVector mapper_edges = mapper->GetGraph()->GetEdges();
+    EdgeVector::iterator edges_it = mapper_edges.begin();
+    for( edges_it; edges_it != mapper_edges.end(); ++edges_it)
+    {
+      solver_->AddConstraint(*edges_it);
+    }
+
+    mapper->SetScanSolver(solver_.get());
+
     if (mapper_)
     {
       delete mapper_;
@@ -1196,36 +1217,55 @@ bool SlamToolbox::LoadMapperCallback(slam_toolbox::AddMap::Request  &req,
       dataset_ = NULL;
     }
 
-    karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(dataset->GetObjects()[0]);
+    karto::LaserRangeFinder* laser = \
+          dynamic_cast<karto::LaserRangeFinder*>(dataset->GetObjects()[0]);
     mapper_ = mapper;
     dataset_ = dataset;
-    karto::Sensor*  pSensor = dynamic_cast<karto::Sensor *>(laser);
+    karto::Sensor* pSensor = dynamic_cast<karto::Sensor *>(laser);
     if (pSensor)
     {
       karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
       lasers_[laser_frame_] = laser;
-      bool is_inverted;
-      if(!nh_.getParam("inverted_laser", is_inverted))
-      {
-        is_inverted = false;
-      }
+      bool is_inverted = false;
+      nh_.getParam("inverted_laser", is_inverted);
       lasers_inverted_[laser_frame_] = is_inverted;
     }
   }
+
   UpdateMap();
+  first_measurement_ = true;
+  if (req.match_location == \
+               slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE)
+  {
+    match_against_first_node_ = true;
+  }
+  else if (req.match_location == \
+               slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE)
+  {
+    ROS_WARN("DeserializePoseGraph: Starting mapping from last position, "
+             "starting at a given pose is not yet implemented.");
+  }
+  else
+  {
+    ROS_WARN("DeserializePoseGraph: Starting mapping away from first node, "
+             "I hope you know what you're doing...");
+  }
 }
 
 /*****************************************************************************/
 int main(int argc, char** argv)
 /*****************************************************************************/
 {
-  ros::init(argc, argv, "slam_toolbox");
-  ros::NodeHandle nh;
   const rlim_t max_stack_size = MAX_STACK_SIZE;
   struct rlimit stack_limit;
   getrlimit(RLIMIT_STACK, &stack_limit);
-  stack_limit.rlim_cur = max_stack_size;
+  if (stack_limit.rlim_cur < max_stack_size)
+  {
+    stack_limit.rlim_cur = max_stack_size;
+  }
   setrlimit(RLIMIT_STACK, &stack_limit);
+
+  ros::init(argc, argv, "slam_toolbox");
   SlamToolbox kt;
   ros::spin();
   return 0;

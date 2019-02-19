@@ -9,7 +9,7 @@
 /* Modified: Steve Macenski */
 
 #include <limits>
-#include <open_karto/Karto.h>
+#include <karto_sdk/Karto.h>
 #include <ros/console.h>
 #include "GTSAM_solver.hpp"
 #include <pluginlib/class_list_macros.h>

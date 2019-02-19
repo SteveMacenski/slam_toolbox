@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>open_karto</name>
+  <name>karto_sdk</name>
   <version>1.1.4</version>
   <description>Catkinized ROS packaging of the OpenKarto library</description>
 

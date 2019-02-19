@@ -15,7 +15,7 @@
 #include "g2o/types/slam2d/types_slam2d.h"
 #include "g2o/solvers/cholmod/linear_solver_cholmod.h"
 #include "g2o/solvers/csparse/linear_solver_csparse.h"
-#include <open_karto/Karto.h>
+#include <karto_sdk/Karto.h>
 #include <ros/console.h>
 #include <pluginlib/class_list_macros.h>
 

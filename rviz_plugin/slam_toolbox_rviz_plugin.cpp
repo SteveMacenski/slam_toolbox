@@ -35,7 +35,8 @@ namespace slam_toolbox
 /*****************************************************************************/
 SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
     rviz::Panel(parent),
-    _thread(NULL)
+    _thread(NULL),
+    _first_match_node(true)
 /*****************************************************************************/    
 {
   ros::NodeHandle nh;
@@ -44,7 +45,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   nh.getParam("/slam_toolbox/paused_processing", paused_process);
   nh.getParam("/slam_toolbox/interactive_mode", interactive);
   _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/slam_toolbox/serialize_map");
-  _load_map = nh.serviceClient<slam_toolbox::AddMap>("/slam_toolbox/load_map");
+  _load_map = nh.serviceClient<slam_toolbox::DeserializePoseGraph>("/slam_toolbox/load_map");
   _clearChanges = nh.serviceClient<slam_toolbox::Clear>("/slam_toolbox/clear_changes");
   _saveChanges = nh.serviceClient<slam_toolbox::LoopClosure>("/slam_toolbox/manual_loop_closure");
   _saveMap = nh.serviceClient<slam_toolbox::SaveMap>("/slam_toolbox/save_map");
@@ -92,12 +93,12 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   connect(_button7, SIGNAL(clicked()), this, SLOT(SerializeMap()));
   _button8 = new QPushButton(this);
   _button8->setText("Load Map");
-  connect(_button8, SIGNAL(clicked()), this, SLOT(LoadMap()));
+  connect(_button8, SIGNAL(clicked()), this, SLOT(DeserializeMap()));
 
   _label1 = new QLabel(this);
-  _label1->setText("Interactive");
+  _label1->setText("Interactive Mode");
   _label2 = new QLabel(this);
-  _label2->setText("Allow New Scans");
+  _label2->setText("Accept New Scans");
   _label3 = new QLabel(this);
   _label3->setText("Process Scans");
   _label4 = new QLabel(this);
@@ -106,6 +107,9 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _label5 = new QLabel(this);
   _label5->setText("Create Map Tool");
   _label5->setAlignment(Qt::AlignCenter);
+  _label6 = new QLabel(this);
+  _label6->setText("Starting Near Dock");
+  _label6->setAlignment(Qt::AlignCenter);
 
   _check1 = new QCheckBox();
   _check1->setChecked(interactive);
@@ -116,6 +120,9 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _check3 = new QCheckBox();
   _check3->setChecked(!paused_process);
   connect(_check3, SIGNAL(stateChanged(int)), this, SLOT(PauseProcessingCb(int)));
+  _check4 = new QCheckBox();
+  _check4->setChecked(_first_match_node);
+  connect(_check4, SIGNAL(stateChanged(int)), this, SLOT(FirstNodeMatchCb(int)));
 
   _line1 = new QLineEdit();
   _line2 = new QLineEdit();
@@ -129,6 +136,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _check1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _check2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _check3->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _check4->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _line1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
   _hbox1->addWidget(_check1);
@@ -157,6 +165,8 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
 
   _hbox8->addWidget(_button8);
   _hbox8->addWidget(_line4);
+  _hbox8->addWidget(_check4);
+  _hbox8->addWidget(_label6);
 
   _vbox->addWidget(_label5);
   _vbox->addLayout(_hbox1);
@@ -198,11 +208,19 @@ void SlamToolboxPlugin::SerializeMap()
 }
 
 /*****************************************************************************/
-void SlamToolboxPlugin::LoadMap()
+void SlamToolboxPlugin::DeserializeMap()
 /*****************************************************************************/
 {
-  slam_toolbox::AddSubmap msg;
+  slam_toolbox::DeserializePoseGraph msg;
   msg.request.filename = _line4->text().toStdString();
+  if (_first_match_node)
+  {
+    msg.request.match_location = slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
+  }
+  else
+  {
+    msg.request.match_location = slam_toolbox::DeserializePoseGraph::Request::START_WHERE_ODOMETRY_LEFT_OFF;
+  }
   if (!_load_map.call(msg))
   {
      ROS_WARN("SlamToolbox: Failed to load mapper object from file, is service running?");
@@ -308,6 +326,20 @@ void SlamToolboxPlugin::PauseMeasurementsCb(int state)
   if (!_pause_measurements.call(msg))
   {
     ROS_WARN("SlamToolbox: Failed to toggle pause measurements, is service running?");
+  }
+}
+
+/*****************************************************************************/
+void SlamToolboxPlugin::FirstNodeMatchCb(int state)
+/*****************************************************************************/
+{
+  if (state == Qt::Unchecked)
+  {
+    _first_match_node = false;
+  }
+  else
+  {
+    _first_match_node = true;
   }
 }
 

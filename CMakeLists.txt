@@ -3,20 +3,19 @@ project(slam_toolbox)
 
 add_compile_options(-std=c++11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/KartoSDK-slam_toolbox/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
-find_package(Boost REQUIRED system serialization filesystem)
 
-#open_karto lib
+#karto_sdk lib
 set(BUILD_SHARED_LIBS ON)
-add_subdirectory(lib/KartoSDK-slam_toolbox)
+add_subdirectory(lib/karto_sdk)
 
 find_package(catkin REQUIRED
   COMPONENTS
     cmake_modules
     message_filters
     nav_msgs
-    open_karto
+    karto_sdk
     rosconsole
     roscpp
     sensor_msgs
@@ -62,7 +61,7 @@ endif()
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 add_definitions(-DQT_NO_KEYWORDS)
-find_package(Boost REQUIRED COMPONENTS thread serialization) 
+find_package(Boost REQUIRED system serialization filesystem thread)
 
 include_directories(include ${catkin_INCLUDE_DIRS} 
                             ${EIGEN3_INCLUDE_DIRS} 
@@ -84,22 +83,23 @@ add_service_files(DIRECTORY srvs
   LoopClosure.srv
   MergeMaps.srv
   AddSubmap.srv
-  AddMap.srv
+  DeserializePoseGraph.srv
   SerializePoseGraph.srv
 )
 generate_messages(
   DEPENDENCIES
   std_srvs
   std_msgs
+  geometry_msgs
 )
 
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES spa_solver_plugin g2O_solver_plugin ceres_solver_plugin
+    LIBRARIES ceres_solver_plugin
     CATKIN_DEPENDS
       message_filters
       nav_msgs
-      open_karto
+      karto_sdk
       rosconsole
       roscpp
       sparse_bundle_adjustment
@@ -114,10 +114,6 @@ catkin_package(
       interactive_markers
 )
 
-#### SPA
-add_library(spa_solver_plugin solvers/spa_solver.cpp)
-target_link_libraries(spa_solver_plugin ${catkin_LIBRARIES})
-
 #### Ceres
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
 target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES} 
@@ -125,22 +121,9 @@ target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES}
                                           ${CERES_LIBRARIES}
 )
 
-#### G2O
-#add_library(g2O_solver_plugin solvers/g2o_solver.cpp)
-#target_link_libraries(g2O_solver_plugin ${catkin_LIBRARIES}
-#                                        ${G2O_CORE_LIBRARY}
-#                                        ${G2O_STUFF_LIBRARY}
-#                                        ${G2O_TYPES_SLAM2D}
-#                                        ${G2O_SOLVER_CHOLMOD}
-#                                        ${G2O_SOLVER_CSPARSE}
-#                                        ${G2O_SOLVER_CSPARSE_EXTENSION}
-#                                        ${CHOLMOD_LIBRARIES}
-#                                        ${CSPARSE_LIBRARY}
-#)
-
 #### rviz Plugin
-qt_wrap_cpp(MOC_FILES mapping_plugin/slam_toolbox_rviz_plugin.hpp)
-set(SOURCE_FILES mapping_plugin/slam_toolbox_rviz_plugin.cpp )
+qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
+set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
 add_library(SlamToolboxPlugin ${SOURCE_FILES})
 add_dependencies(SlamToolboxPlugin ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES}  ${catkin_LIBRARIES} )
@@ -154,11 +137,11 @@ add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 add_dependencies(merge_maps_kinematic ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(merge_maps_kinematic ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-install(TARGETS slam_toolbox merge_maps_kinematic spa_solver_plugin ceres_solver_plugin SlamToolboxPlugin
+install(TARGETS slam_toolbox merge_maps_kinematic ceres_solver_plugin SlamToolboxPlugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-) #g2O_solver_plugin
+)
 
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

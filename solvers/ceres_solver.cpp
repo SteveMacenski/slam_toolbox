@@ -4,7 +4,7 @@
  */
 
 #include "ceres_solver.hpp"
-#include <open_karto/Karto.h>
+#include <karto_sdk/Karto.h>
 
 #include "ros/console.h"
 #include <pluginlib/class_list_macros.h>
@@ -229,6 +229,32 @@ void CeresSolver::Clear()
 }
 
 /*****************************************************************************/
+void CeresSolver::Reset()
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+
+  corrections_.clear();
+  was_constant_set_ = false;
+
+  if (problem_)
+  {
+    delete problem_;
+  }
+
+  if (nodes_)
+  {
+    delete nodes_;
+  }
+
+  nodes_ = new std::unordered_map<int, Eigen::Vector3d>();
+  problem_ = new ceres::Problem();
+  first_node_ = nodes_->end();
+
+  angle_local_parameterization_ = AngleLocalParameterization::Create();
+}
+
+/*****************************************************************************/
 void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
 /*****************************************************************************/
 {
@@ -253,6 +279,7 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 {
   // get IDs in graph for this edge
   boost::mutex::scoped_lock lock(nodes_mutex_);
+
   const int node1 = pEdge->GetSource()->GetObject()->GetUniqueId();
   graph_iterator node1it = nodes_->find(node1);
   const int node2 = pEdge->GetTarget()->GetObject()->GetUniqueId();

@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OPEN_KARTO_MAPPER_H
-#define OPEN_KARTO_MAPPER_H
+#ifndef karto_sdk_MAPPER_H
+#define karto_sdk_MAPPER_H
 
 #include <map>
 #include <vector>
@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <chrono>
 
-#include <open_karto/Karto.h>
+#include <karto_sdk/Karto.h>
 
 namespace karto
 {
@@ -621,9 +621,9 @@ namespace karto
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-      std::cout<<"Graph <- m_Edges; ";
+      std::cout << "Graph <- m_Edges; ";
       ar & BOOST_SERIALIZATION_NVP(m_Edges);
-      std::cout<<"Graph <- m_Vertices\n";
+      std::cout << "Graph <- m_Vertices\n";
       ar & BOOST_SERIALIZATION_NVP(m_Vertices);
     }
   };  // Graph<T>
@@ -809,13 +809,13 @@ namespace karto
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-      std::cout<<"MapperGraph <- Graph; ";
+      std::cout << "MapperGraph <- Graph; ";
       ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Graph<LocalizedRangeScan>);
-      std::cout<<"MapperGraph <- m_pMapper; ";
+      std::cout << "MapperGraph <- m_pMapper; ";
       ar & BOOST_SERIALIZATION_NVP(m_pMapper);
-      std::cout<<"MapperGraph <- m_pLoopScanMatcher; ";
+      std::cout << "MapperGraph <- m_pLoopScanMatcher; ";
       ar & BOOST_SERIALIZATION_NVP(m_pLoopScanMatcher);
-      std::cout<<"MapperGraph <- m_pTraversal\n";
+      std::cout << "MapperGraph <- m_pTraversal\n";
       ar & BOOST_SERIALIZATION_NVP(m_pTraversal);
     }
 
@@ -894,6 +894,11 @@ namespace karto
      * Resets the solver
      */
     virtual void Clear(){};
+
+    /**
+     * Resets the solver for reinitialization
+     */
+    virtual void Reset(){};
 
     /**
      * Get graph stored
@@ -1335,6 +1340,7 @@ namespace karto
       , m_pCorrelationGrid(NULL)
       , m_pSearchSpaceProbs(NULL)
       , m_pGridLookup(NULL)
+      , m_doPenalize(false)
     {
     }
 
@@ -1498,6 +1504,11 @@ namespace karto
     LocalizedRangeScanVector& GetRunningScans(const Name& rSensorName);
 
     /**
+     * Clears running scans of device
+     */
+    void ClearRunningScans(const Name& rSensorName);
+
+    /**
      * Gets all scans of all devices
      * @return all scans of all devices
      */
@@ -1537,12 +1548,12 @@ namespace karto
 	template<class Archive>
 	void serialize(Archive &ar, const unsigned int version)
 	{
-    std::cout<<"MapperSensorManager <- m_ScanManagers; ";
+    std::cout << "MapperSensorManager <- m_ScanManagers; ";
     ar & BOOST_SERIALIZATION_NVP(m_ScanManagers);
     ar & BOOST_SERIALIZATION_NVP(m_RunningBufferMaximumSize);
     ar & BOOST_SERIALIZATION_NVP(m_RunningBufferMaximumDistance);
     ar & BOOST_SERIALIZATION_NVP(m_NextScanId);
-    std::cout<<"MapperSensorManager <- m_Scans\n";
+    std::cout << "MapperSensorManager <- m_Scans\n";
     ar & BOOST_SERIALIZATION_NVP(m_Scans);
 	}
 
@@ -1783,6 +1794,49 @@ namespace karto
      * Process an Object
      */
     virtual kt_bool Process(Object* pObject);
+
+
+    /**
+     * Process a localized range scan for incorporation into the map.  The scan must
+     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
+     * localized scan will be updated to the correct pose as determined by the mapper.
+     *
+     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
+     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
+     * information in the scan object of nearby and not necessarily contiguous
+     *
+     * @return true if the scan was added successfully, false otherwise
+     */
+    // virtual kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
+
+
+    /**
+     * Process a localized range scan for incorporation into the map.  The scan must
+     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
+     * localized scan will be updated to the correct pose as determined by the mapper.
+     *
+     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
+     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
+     * information in the scan object based on matching against nodeId
+
+     * @param nodeId A unique node ID to match against
+     *
+     * @return true if the scan was added successfully, false otherwise
+     */
+    virtual kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
+
+    /**
+     * Process a localized range scan for incorporation into the map.  The scan must
+     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
+     * localized scan will be updated to the correct pose as determined by the mapper.
+     *
+     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
+     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
+     * information in the scan object based on matching against starting point (nodeId = 0)
+     *
+     * @return true if the scan was added successfully, false otherwise
+     */
+    virtual kt_bool ProcessAgainstStartingPoint(LocalizedRangeScan* pScan);
 
     /**
      * Returns all processed scans added to the mapper.
@@ -2120,17 +2174,17 @@ namespace karto
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-      std::cout<<"**Serializing Mapper**\n";
-      std::cout<<"Mapper <- Module\n";
+      std::cout << "**Serializing Mapper**\n";
+      std::cout << "Mapper <- Module\n";
       ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Module);
       ar & BOOST_SERIALIZATION_NVP(m_Initialized);
-      std::cout<<"Mapper <- m_pSequentialScanMatcher\n";
+      std::cout << "Mapper <- m_pSequentialScanMatcher\n";
       ar & BOOST_SERIALIZATION_NVP(m_pSequentialScanMatcher);
-      std::cout<<"Mapper <- m_pGraph\n";
+      std::cout << "Mapper <- m_pGraph\n";
       ar & BOOST_SERIALIZATION_NVP(m_pGraph);
-      std::cout<<"Mapper <- m_pMapperSensorManager\n";
+      std::cout << "Mapper <- m_pMapperSensorManager\n";
       ar & BOOST_SERIALIZATION_NVP(m_pMapperSensorManager);
-      std::cout<<"Mapper <- m_Listeners\n";
+      std::cout << "Mapper <- m_Listeners\n";
       ar & BOOST_SERIALIZATION_NVP(m_Listeners);
       ar & BOOST_SERIALIZATION_NVP(m_pUseScanMatching);
       ar & BOOST_SERIALIZATION_NVP(m_pUseScanBarycenter);
@@ -2161,7 +2215,7 @@ namespace karto
       ar & BOOST_SERIALIZATION_NVP(m_pMinimumAnglePenalty);
       ar & BOOST_SERIALIZATION_NVP(m_pMinimumDistancePenalty);
       ar & BOOST_SERIALIZATION_NVP(m_pUseResponseExpansion);
-      std::cout<<"**Finished serializing Mapper**\n";
+      std::cout << "**Finished serializing Mapper**\n";
     }
   public:
     /* Abstract methods for parameter setters and getters */
@@ -2245,4 +2299,4 @@ namespace karto
   BOOST_SERIALIZATION_ASSUME_ABSTRACT(Mapper)
 }  // namespace karto
 
-#endif  // OPEN_KARTO_MAPPER_H
+#endif  // karto_sdk_MAPPER_H
