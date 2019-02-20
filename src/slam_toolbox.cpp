@@ -43,8 +43,7 @@ SlamToolbox::SlamToolbox() :
                          tf_(ros::Duration(14400.)),
                          map_to_odom_time_(0.),
                          transform_timeout_(ros::Duration(0.2)),
-                         first_measurement_(true), // 4 hours
-                         match_against_first_node_(false)
+                         first_measurement_(true) // 4 hours
 /*****************************************************************************/
 {
   interactive_server_ = \
@@ -831,15 +830,29 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
 
   // Add the localized range scan to the mapper
   boost::mutex::scoped_lock lock(mapper_mutex_);
-  bool processed;
-  if (!match_against_first_node_)
+  bool processed = false;
+  if (matcher_to_use_ == PROCESS)
   {
     processed = mapper_->Process(range_scan);
   }
+  else if (matcher_to_use_ == PROCESS_FIRST_NODE)
+  {
+    processed = mapper_->ProcessAtDock(range_scan);
+    matcher_to_use_ = PROCESS;
+  }
+  else if (matcher_to_use_ == PROCESS_NEAR_REGION)
+  {
+    karto::Pose2 estimated_starting_pose;
+    estimated_starting_pose.SetX(process_near_region_pose_.x);
+    estimated_starting_pose.SetY(process_near_region_pose_.y);
+    estimated_starting_pose.SetHeading(process_near_region_pose_.theta);
+    ROS_FATAL("STEVE given: %f %f %f", estimated_starting_pose.GetX(), estimated_starting_pose.GetY(), estimated_starting_pose.GetHeading());
+    processed = mapper_->ProcessAgainstNodesNearBy(range_scan, estimated_starting_pose);
+    matcher_to_use_ = PROCESS;
+  }
   else
   {
-    processed = mapper_->ProcessAgainstStartingPoint(range_scan);
-    match_against_first_node_ = false;
+    ROS_ERROR("AddScan: Unable to add scan, no valid processing method selected.");
   }
 
   if(processed)
@@ -1113,7 +1126,7 @@ void SlamToolbox::Run()
 
       if (q_.size() > 2)
       {
-        if (online_ && sychronous_) // always sync. but makes intent clearer
+        if (online_ && sychronous_)
         {
           ROS_WARN("Queue size has grown to: %i. "
                  "Recommend stopping until message is gone.", (int)q_.size());
@@ -1172,11 +1185,6 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
                              slam_toolbox::DeserializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
-  // TODO STEVE: this doesnt account for pose changes - need offset value for odometry so frames are colinear
-  // ie add field for initial pose of new entries in the frame of the original and a bool whether
-  // to continue using the existing odom in TF (when continuing the same session serialized so the odom frame hasnt changed)
-  // and general way to add in random patches for just single area updates (merge maps tool instead?)
-
   karto::Dataset* dataset = new karto::Dataset;
   karto::Mapper* mapper = new karto::Mapper;
   serialization::Read(req.filename, mapper, dataset);
@@ -1234,21 +1242,20 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
 
   UpdateMap();
   first_measurement_ = true;
-  if (req.match_location == \
+  if (req.match_type == \
                slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE)
   {
-    match_against_first_node_ = true;
+    matcher_to_use_ = PROCESS_FIRST_NODE;
   }
-  else if (req.match_location == \
+  else if (req.match_type == \
                slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE)
   {
-    ROS_WARN("DeserializePoseGraph: Starting mapping from last position, "
-             "starting at a given pose is not yet implemented.");
+    matcher_to_use_ = PROCESS_NEAR_REGION;
+    process_near_region_pose_ = req.initial_pose;
   }
   else
   {
-    ROS_WARN("DeserializePoseGraph: Starting mapping away from first node, "
-             "I hope you know what you're doing...");
+    matcher_to_use_ = PROCESS;
   }
 }
 

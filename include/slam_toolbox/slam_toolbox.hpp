@@ -84,6 +84,13 @@ enum PausedApplication
   NEW_MEASUREMENTS = 2
 };
 
+enum ProcessType
+{
+  PROCESS = 0,
+  PROCESS_FIRST_NODE = 1,
+  PROCESS_NEAR_REGION = 2
+};
+
 typedef std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> VerticeMap;
 typedef std::vector<karto::Edge<karto::LocalizedRangeScan>*> EdgeVector;
 typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> ScanVector;
@@ -160,7 +167,9 @@ private:
   int throttle_scans_;
   ros::Duration map_update_interval_, transform_timeout_;
   double resolution_, minimum_time_interval_, minimum_travel_distance_;
-  bool publish_occupancy_map_, first_measurement_, sychronous_, online_, match_against_first_node_;
+  bool publish_occupancy_map_, first_measurement_, sychronous_, online_;
+  ProcessType matcher_to_use_;
+  geometry_msgs::Pose2D process_near_region_pose_;
 
   // Karto bookkeeping
   karto::Mapper* mapper_;

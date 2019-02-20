@@ -495,7 +495,9 @@ namespace karto
      * @param pStartVertex
      * @param pVisitor
      */
-    virtual std::vector<T*> Traverse(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
+    virtual std::vector<T*> TraverseForScans(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
+    virtual std::vector<int> TraverseForID(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
+    virtual std::vector<Vertex<T>*> Traverse(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
 
   protected:
     /**
@@ -699,6 +701,13 @@ namespace karto
      * @param maxDistance
      */
     LocalizedRangeScanVector FindNearLinkedScans(LocalizedRangeScan* pScan, kt_double maxDistance);
+
+    /**
+     * Find "nearby" (no further than given distance away) scans through graph links
+     * @param pScan
+     * @param maxDistance
+     */
+    std::vector<int> FindNearByScans(Name name, const Pose2 refPose, kt_double maxDistance);
 
     /**
      * Gets the graph's scan matcher
@@ -1509,6 +1518,11 @@ namespace karto
     void ClearRunningScans(const Name& rSensorName);
 
     /**
+     * Gets the running scan buffer of device
+     */
+    kt_int32u GetRunningScanBufferSize(const Name& rSensorName);
+
+    /**
      * Gets all scans of all devices
      * @return all scans of all devices
      */
@@ -1807,7 +1821,7 @@ namespace karto
      *
      * @return true if the scan was added successfully, false otherwise
      */
-    // virtual kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
+    virtual kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan, const karto::Pose2& estimated_pose);
 
 
     /**
@@ -1836,7 +1850,7 @@ namespace karto
      *
      * @return true if the scan was added successfully, false otherwise
      */
-    virtual kt_bool ProcessAgainstStartingPoint(LocalizedRangeScan* pScan);
+    virtual kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
 
     /**
      * Returns all processed scans added to the mapper.

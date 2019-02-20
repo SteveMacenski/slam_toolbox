@@ -215,11 +215,11 @@ void SlamToolboxPlugin::DeserializeMap()
   msg.request.filename = _line4->text().toStdString();
   if (_first_match_node)
   {
-    msg.request.match_location = slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
+    msg.request.match_type = slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
   }
   else
   {
-    msg.request.match_location = slam_toolbox::DeserializePoseGraph::Request::START_WHERE_ODOMETRY_LEFT_OFF;
+    msg.request.match_type = slam_toolbox::DeserializePoseGraph::Request::START_WHERE_ODOMETRY_LEFT_OFF;
   }
   if (!_load_map.call(msg))
   {
