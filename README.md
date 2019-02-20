@@ -1,10 +1,10 @@
 ## Slam Toolbox
 
-Fork on slam_karto. I've renamed since really there's about 5% of the code that's the same, everything else has been restructured or removed entirely. 
-
 For live running on robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
 
 I've seen this way maps building at 5x+ realtime up to about 20,000 sqft and 3x realtime up to about 60,000 sqft.
+
+The core scan matcher is taken out of open_karto but alot of other heavy changes have been made in the processing of the scans in the lib sdk version in this repository. If you're familiar with Karto however it should still be approachable. 
 
 ## Introduction 
 
@@ -124,3 +124,12 @@ You can run via `roslaunch slam_toolbox build_map_w_params.launch`
 ### Motivating Example / Tutorial
 
 ... Coming Soon to theatres near you ...
+
+
+### Notes for documentation for myself to fill in later
+- Dock starting, mapping, continuing example
+- Cloud mapping example
+- Mapping from an estimated starting pose example (via amcl)
+- rviz plugin similification (setting dock,continue,estimated deserialization, pausing)
+- explanation of the transform for the continue against node (map->base_link)
+- explanation why the special case of node 0 relating to that (or does anyone care if it works?)
