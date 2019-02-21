@@ -753,6 +753,7 @@ bool SlamToolbox::UpdateMap()
   kt_int32s height = occ_grid->GetHeight();
   karto::Vector2<kt_double> offset = \
                             occ_grid->GetCoordinateConverter()->GetOffset();
+  ROS_FATAL_ONCE("UpdateMap offset: %f %f", offset.GetX(), offset.GetY());//STEVE
 
   if(map_.map.info.width != (unsigned int) width || 
      map_.map.info.height != (unsigned int) height ||
@@ -833,7 +834,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   bool processed = false;
   if (matcher_to_use_ == PROCESS)
   {
-    processed = mapper_->Process(range_scan);
+    //processed = mapper_->Process(range_scan);
   }
   else if (matcher_to_use_ == PROCESS_FIRST_NODE)
   {
@@ -846,9 +847,11 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
     estimated_starting_pose.SetX(process_near_region_pose_.x);
     estimated_starting_pose.SetY(process_near_region_pose_.y);
     estimated_starting_pose.SetHeading(process_near_region_pose_.theta);
-    ROS_FATAL("STEVE given: %f %f %f", estimated_starting_pose.GetX(), estimated_starting_pose.GetY(), estimated_starting_pose.GetHeading());
+    range_scan->SetOdometricPose(estimated_starting_pose);
+    range_scan->SetCorrectedPose(estimated_starting_pose);
     processed = mapper_->ProcessAgainstNodesNearBy(range_scan, estimated_starting_pose);
     matcher_to_use_ = PROCESS;
+    process_near_region_pose_ = geometry_msgs::Pose2D();
   }
   else
   {

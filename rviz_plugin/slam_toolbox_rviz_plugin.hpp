@@ -35,6 +35,7 @@
 #include <QtGui>
 #include <QLabel>
 #include <QFrame>
+#include <QRadioButton>
 
 #include <thread>
 
@@ -59,6 +60,13 @@ class QComboBox;
 namespace slam_toolbox
 {
 
+enum ContinueMappingType
+{
+  PROCESS_CMT = 0,
+  PROCESS_FIRST_NODE_CMT = 1,
+  PROCESS_NEAR_REGION_CMT = 2
+};
+
 class SlamToolboxPlugin : public rviz::Panel
 {
   Q_OBJECT
@@ -76,7 +84,9 @@ protected Q_SLOTS:
   void InteractiveCb(int state);
   void PauseProcessingCb(int state);
   void PauseMeasurementsCb(int state);
-  void FirstNodeMatchCb(int state);
+  void FirstNodeMatchCb();
+  void PoseEstMatchCb();
+  void CurEstMatchCb();
   void LoadSubmap();
   void GenerateMap();
   void SerializeMap();
@@ -94,6 +104,7 @@ protected:
   QHBoxLayout* _hbox6;
   QHBoxLayout* _hbox7;
   QHBoxLayout* _hbox8;
+  QHBoxLayout* _hbox9;
 
   QPushButton* _button1;
   QPushButton* _button2;
@@ -112,14 +123,16 @@ protected:
   QCheckBox* _check1;
   QCheckBox* _check2;
   QCheckBox* _check3;
-  QCheckBox* _check4;
+
+  QRadioButton* _radio1;
+  QRadioButton* _radio2;
+  QRadioButton* _radio3;
 
   QLabel* _label1;
   QLabel* _label2;
   QLabel* _label3;
   QLabel* _label4;
   QLabel* _label5;
-  QLabel* _label6;
 
   QFrame* _line;
 
@@ -127,7 +140,7 @@ protected:
 
   std::thread* _thread;
 
-  bool _first_match_node;
+  ContinueMappingType _match_type;
 };
 
 } // end namespace

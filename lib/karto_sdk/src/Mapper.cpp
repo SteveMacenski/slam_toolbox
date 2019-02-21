@@ -1122,9 +1122,9 @@ namespace karto
      * Traverse the graph starting with the given vertex; applies the visitor to visited nodes
      * @param pStartVertex
      * @param pVisitor
-     * @return visited vertices
+     * @return visited vertice scans
      */
-    virtual std::vector<Vertex<T>*> Traverse(Vertex<T>* pStartVertex, Visitor<T>* pVisitor)
+    virtual std::vector<T*> Traverse(Vertex<T>* pStartVertex, Visitor<T>* pVisitor)
     {
       std::queue<Vertex<T>*> toVisit;
       std::set<Vertex<T>*> seenVertices;
@@ -1157,41 +1157,11 @@ namespace karto
           }
         }
       } while (toVisit.empty() == false);
-      return validVertices;
-    }
 
-    /**
-     * Traverse the graph starting with the given vertex; applies the visitor to visited nodes
-     * @param pStartVertex
-     * @param pVisitor
-     * @return visited vertice scans
-     */
-    virtual std::vector<T*> TraverseForScans(Vertex<T>* pStartVertex, Visitor<T>* pVisitor)
-    {
-
-      std::vector<Vertex<T>*> validVertices = Traverse(pStartVertex, pVisitor);
       std::vector<T*> objects;
       forEach(typename std::vector<Vertex<T>*>, &validVertices)
       {
         objects.push_back((*iter)->GetObject());
-      }
-
-      return objects;
-    }
-
-    /**
-     * Traverse the graph starting with the given vertex; applies the visitor to visited nodes
-     * @param pStartVertex
-     * @param pVisitor
-     * @return visited vertice IDs
-     */
-    virtual std::vector<int> TraverseForID(Vertex<T>* pStartVertex, Visitor<T>* pVisitor)
-    {
-      std::vector<Vertex<T>*> validVertices = Traverse(pStartVertex, pVisitor);
-      std::vector<int> objects;
-      forEach(typename std::vector<Vertex<T>*>, &validVertices)
-      {
-        objects.push_back((*iter)->GetObject()->GetUniqueId());
       }
 
       return objects;
@@ -1663,19 +1633,31 @@ namespace karto
   LocalizedRangeScanVector MapperGraph::FindNearLinkedScans(LocalizedRangeScan* pScan, kt_double maxDistance)
   {
     NearScanVisitor* pVisitor = new NearScanVisitor(pScan, maxDistance, m_pMapper->m_pUseScanBarycenter->GetValue());
-    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->TraverseForScans(GetVertex(pScan), pVisitor);
+    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->Traverse(GetVertex(pScan), pVisitor);
     delete pVisitor;
 
     return nearLinkedScans;
   }
 
-  std::vector<int> MapperGraph::FindNearByScans(Name name, const Pose2 refPose, kt_double maxDistance)
+  LocalizedRangeScanVector MapperGraph::FindNearByScans(Name name, const Pose2 refPose, kt_double maxDistance)
   {
     NearPoseVisitor* pVisitor = new NearPoseVisitor(refPose, maxDistance, m_pMapper->m_pUseScanBarycenter->GetValue());
 
+    Vertex<LocalizedRangeScan>* closestVertex = FindNearByScan(name, refPose);
+
+    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->Traverse(closestVertex, pVisitor);
+    delete pVisitor;
+
+    return nearLinkedScans;  
+  }
+
+  Vertex<LocalizedRangeScan>* MapperGraph::FindNearByScan(Name name, const Pose2 refPose)
+  {
     // As this only happens once on bringup on trying to merge a scan patch
     // lets take the method of least resistance and look at all the vertices
-    // an improvement here would be to find the closest node in graph search TODO STEVE TEST
+    // an improvement here would be to find the closest node in graph search
+    // using a K-d tree, but populating that has overhead. I think this is probably lighter
+    // since the graph never really exceeds 10,000 entries
     double minDist2 = 999999.;
     double dist2;
     Vertex<LocalizedRangeScan>* closestVertex;
@@ -1693,11 +1675,7 @@ namespace karto
         minDist2 = dist2;
       }
     } 
-
-    std::vector<int> nearLinkedScans = m_pTraversal->TraverseForID(closestVertex, pVisitor);
-    delete pVisitor;
-
-    return nearLinkedScans;  
+    return closestVertex;
   }
 
   Pose2 MapperGraph::ComputeWeightedMean(const Pose2Vector& rMeans, const std::vector<Matrix3>& rCovariances) const
@@ -2461,6 +2439,7 @@ namespace karto
       LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), nodeId);
       m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
       m_pMapperSensorManager->AddRunningScan(pLastScan);
+      m_pMapperSensorManager->SetLastScan(pLastScan);
 
       // update scans corrected pose based on last correction
       if (pLastScan != NULL)
@@ -2530,40 +2509,16 @@ namespace karto
         Initialize(pLaserRangeFinder->GetRangeThreshold());
       }
 
-      kt_int32u maxNumScans = m_pMapperSensorManager->GetRunningScanBufferSize(pScan->GetSensorName());
-      std::vector<int> scansIds = m_pGraph->FindNearByScans(pScan->GetSensorName(), estimated_pose, m_pLoopSearchMaximumDistance->GetValue());
+      // STEVE: get a bunch in the area to match against not just the closest
+      //    Or the the lease check against the orientation as well
+      // LocalizedRangeScanVector scansVec = m_pGraph->FindNearByScans(pScan->GetSensorName(), estimated_pose, m_pLoopSearchMaximumDistance->GetValue());
+      //kt_int32u maxNumScans = m_pMapperSensorManager->GetRunningScanBufferSize(pScan->GetSensorName());
+      
+      Vertex<LocalizedRangeScan>* closetVertex = m_pGraph->FindNearByScan(pScan->GetSensorName(), estimated_pose);
+      LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), closetVertex->GetObject()->GetUniqueId());
       m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
-      kt_int8u index = 0;
-      kt_int8u size = 0;
-      LocalizedRangeScan* pLastScan;
-      assert(maxNumScans > 1);
-      printf("Max distance to check nearby: %f\n", m_pLoopSearchMaximumDistance->GetValue());//STEVE
-
-
-      // How is this different? the node one at dock works fine
-      //  essentially here all I'm doing is using that pose to find the nodes nearby to match against
-      //  it should be the sam as long as the correct nodes are found
-      //
-      //  maybe I'm over complicating this by using > 1 latest scan and thsi is a result of a failed scan match
-      //
-      //
-
-
-      //STEVE
-      for (int i = 0; i!=scansIds.size(); i++)
-      {
-        printf("node ID: %i\n", (int)scansIds[i]);//STEVE
-      }
-
-      while (size < maxNumScans - 1 && index < scansIds.size())
-      {
-        pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), scansIds[index]);
-        m_pMapperSensorManager->AddRunningScan(pLastScan);
-        index++;
-        size = m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()).size();
-      }
-
-      printf("ProcessAgainstNodesNearBy: Found %i nodes near area requested, using %i of them.\n", (int)scansIds.size(), (int)size);//STEVE
+      m_pMapperSensorManager->AddRunningScan(pLastScan);
+      m_pMapperSensorManager->SetLastScan(pLastScan);
 
       // update scans corrected pose based on last correction
       if (pLastScan != NULL)
@@ -2584,7 +2539,6 @@ namespace karto
             bestPose,
             covariance);
         pScan->SetSensorPose(bestPose);
-        printf("ProcessAgainstNodesNearBy: Matched pose: %f %f %f \n", bestPose.GetX(), bestPose.GetY(), bestPose.GetHeading());//STEVE
       }
 
       // add scan to buffer and assign id

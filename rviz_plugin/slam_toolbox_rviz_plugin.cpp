@@ -36,7 +36,7 @@ namespace slam_toolbox
 SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
     rviz::Panel(parent),
     _thread(NULL),
-    _first_match_node(true)
+    _match_type(PROCESS_FIRST_NODE_CMT)
 /*****************************************************************************/    
 {
   ros::NodeHandle nh;
@@ -65,6 +65,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _hbox6 = new QHBoxLayout();
   _hbox7 = new QHBoxLayout();
   _hbox8 = new QHBoxLayout();
+  _hbox9 = new QHBoxLayout();
 
   QFrame* _line = new QFrame();
   _line->setFrameShape(QFrame::HLine);
@@ -107,9 +108,6 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _label5 = new QLabel(this);
   _label5->setText("Create Map Tool");
   _label5->setAlignment(Qt::AlignCenter);
-  _label6 = new QLabel(this);
-  _label6->setText("Starting Near Dock");
-  _label6->setAlignment(Qt::AlignCenter);
 
   _check1 = new QCheckBox();
   _check1->setChecked(interactive);
@@ -120,9 +118,15 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _check3 = new QCheckBox();
   _check3->setChecked(!paused_process);
   connect(_check3, SIGNAL(stateChanged(int)), this, SLOT(PauseProcessingCb(int)));
-  _check4 = new QCheckBox();
-  _check4->setChecked(_first_match_node);
-  connect(_check4, SIGNAL(stateChanged(int)), this, SLOT(FirstNodeMatchCb(int)));
+  _radio1 = new QRadioButton(tr("Start By Dock"));
+  _radio1->setChecked(true);
+  _radio2 = new QRadioButton(tr("Start By Pose Est."));
+  _radio3 = new QRadioButton(tr("Start At Curr. Odom"));
+  connect(_radio1, SIGNAL(clicked()), this, SLOT(FirstNodeMatchCb()));
+  connect(_radio2, SIGNAL(clicked()), this, SLOT(PoseEstMatchCb()));
+  connect(_radio3, SIGNAL(clicked()), this, SLOT(CurEstMatchCb()));
+
+
 
   _line1 = new QLineEdit();
   _line2 = new QLineEdit();
@@ -136,7 +140,6 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _check1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _check2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _check3->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  _check4->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _line1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
   _hbox1->addWidget(_check1);
@@ -165,8 +168,11 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
 
   _hbox8->addWidget(_button8);
   _hbox8->addWidget(_line4);
-  _hbox8->addWidget(_check4);
-  _hbox8->addWidget(_label6);
+
+  _hbox9->addWidget(_radio1);
+  _hbox9->addWidget(_radio2);
+  _hbox9->addWidget(_radio3);
+  _hbox9->addStretch(1);
 
   _vbox->addWidget(_label5);
   _vbox->addLayout(_hbox1);
@@ -174,6 +180,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _vbox->addLayout(_hbox3);
   _vbox->addLayout(_hbox7);
   _vbox->addLayout(_hbox8);
+  _vbox->addLayout(_hbox9);
   _vbox->addLayout(_hbox4);
   _vbox->addWidget(_line);
   _vbox->addWidget(_label4);
@@ -213,9 +220,14 @@ void SlamToolboxPlugin::DeserializeMap()
 {
   slam_toolbox::DeserializePoseGraph msg;
   msg.request.filename = _line4->text().toStdString();
-  if (_first_match_node)
+  if (_match_type == PROCESS_FIRST_NODE_CMT)
   {
     msg.request.match_type = slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
+  }
+  else if (_match_type == PROCESS_NEAR_REGION_CMT)
+  {
+    msg.request.match_type = slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;
+    //STEVE set pose here with tf or in a text box
   }
   else
   {
@@ -330,16 +342,47 @@ void SlamToolboxPlugin::PauseMeasurementsCb(int state)
 }
 
 /*****************************************************************************/
-void SlamToolboxPlugin::FirstNodeMatchCb(int state)
+void SlamToolboxPlugin::FirstNodeMatchCb()
 /*****************************************************************************/
 {
-  if (state == Qt::Unchecked)
+  if (_radio1->isChecked() == Qt::Unchecked)
   {
-    _first_match_node = false;
+    return;
   }
   else
   {
-    _first_match_node = true;
+    _match_type = PROCESS_FIRST_NODE_CMT;
+    ROS_INFO("Processing at first node selected.");
+  }
+}
+
+/*****************************************************************************/
+void SlamToolboxPlugin::PoseEstMatchCb()
+/*****************************************************************************/
+{
+  if (_radio2->isChecked() == Qt::Unchecked)
+  {
+    return;
+  }
+  else
+  {
+    _match_type = PROCESS_NEAR_REGION_CMT;
+    ROS_INFO("Processing at current pose estimate selected.");
+  }
+}
+
+/*****************************************************************************/
+void SlamToolboxPlugin::CurEstMatchCb()
+/*****************************************************************************/
+{
+  if (_radio3->isChecked() == Qt::Unchecked)
+  {
+    return;
+  }
+  else
+  {
+    _match_type = PROCESS_CMT;
+    ROS_INFO("Processing at current odometry selected.");
   }
 }
 

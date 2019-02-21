@@ -495,9 +495,7 @@ namespace karto
      * @param pStartVertex
      * @param pVisitor
      */
-    virtual std::vector<T*> TraverseForScans(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
-    virtual std::vector<int> TraverseForID(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
-    virtual std::vector<Vertex<T>*> Traverse(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
+    virtual std::vector<T*> Traverse(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
 
   protected:
     /**
@@ -707,7 +705,13 @@ namespace karto
      * @param pScan
      * @param maxDistance
      */
-    std::vector<int> FindNearByScans(Name name, const Pose2 refPose, kt_double maxDistance);
+    LocalizedRangeScanVector FindNearByScans(Name name, const Pose2 refPose, kt_double maxDistance);
+
+    /**
+     * Find closest scan to pose
+     * @param pScan
+     */
+    Vertex<LocalizedRangeScan>* FindNearByScan(Name name, const Pose2 refPose);
 
     /**
      * Gets the graph's scan matcher
