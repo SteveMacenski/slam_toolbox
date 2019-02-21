@@ -607,9 +607,12 @@ void SlamToolbox::ProcessInteractiveFeedback(const \
     double node_yaw, first_node_yaw;
     solver_->GetNodeOrientation(id, node_yaw);
     solver_->GetNodeOrientation(0, first_node_yaw);
-
-    quat *= tf::Quaternion(0., 0., node_yaw - 3.14159);
-    quat *= tf::Quaternion(0., 0., 3.14159); 
+    tf::Quaternion q1;
+    q1.setEuler(0., 0., node_yaw - 3.14159);
+    tf::Quaternion q2;
+    q2.setEuler(0., 0., 3.14159); 
+    quat *= q1;
+    quat *= q2;
 
 
     if (lasers_inverted_[scan.header.frame_id])
