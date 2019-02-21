@@ -834,7 +834,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   bool processed = false;
   if (matcher_to_use_ == PROCESS)
   {
-    //processed = mapper_->Process(range_scan);
+    processed = mapper_->Process(range_scan);
   }
   else if (matcher_to_use_ == PROCESS_FIRST_NODE)
   {
