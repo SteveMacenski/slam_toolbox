@@ -165,7 +165,7 @@ private:
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, laser_frame_;
   int throttle_scans_;
-  ros::Duration map_update_interval_, transform_timeout_;
+  ros::Duration transform_timeout_;
   double resolution_, minimum_time_interval_, minimum_travel_distance_;
   bool publish_occupancy_map_, first_measurement_, sychronous_, online_;
   ProcessType matcher_to_use_;
@@ -178,15 +178,11 @@ private:
   std::map<std::string, bool> lasers_inverted_;
 
   // Internal state
-  int laser_count_;
   boost::thread *transform_thread_, *run_thread_, *visualization_thread_;
   tf::Transform map_to_odom_;
-  ros::Time map_to_odom_time_;
   bool inverted_laser_, pause_graph_, pause_processing_, pause_new_measurements_, interactive_mode_;
-  double max_laser_range_;
-  karto::Pose2 current_pose_;
   std::queue<posed_scan> q_;
-  boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_, interactive_mutex_, moved_nodes_mutex;
+  boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_, interactive_mutex_, moved_nodes_mutex_;
 
   // visualization
   interactive_markers::InteractiveMarkerServer* interactive_server_;
