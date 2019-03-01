@@ -57,6 +57,8 @@ SlamToolbox::SlamToolbox() :
   SetSolver(private_nh);
   SetROSInterfaces(private_nh);
 
+  reprocessing_transform_.setIdentity();
+
   nh_.setParam("paused_processing", pause_processing_);
   nh_.setParam("paused_new_measurements", pause_new_measurements_);
   nh_.setParam("interactive_mode", interactive_mode_);
@@ -825,11 +827,21 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
     }
   }
 
+  tf::Pose pose_original = KartoPose2TfPose(karto_pose, 0.);
+  tf::Pose tf_pose_transformed = reprocessing_transform_ * pose_original;
+  tf::Matrix3x3 m(tf_pose_transformed.getRotation());
+  double r,p,yaw;
+  m.getRPY(r,p,yaw);
+  karto::Pose2 transformed_pose;
+  transformed_pose.SetX(tf_pose_transformed.getOrigin().x());
+  transformed_pose.SetY(tf_pose_transformed.getOrigin().y());
+  transformed_pose.SetHeading(yaw);
+
   // create localized range scan
   karto::LocalizedRangeScan* range_scan = 
     new karto::LocalizedRangeScan(laser->GetName(), readings);
-  range_scan->SetOdometricPose(karto_pose);
-  range_scan->SetCorrectedPose(karto_pose);
+  range_scan->SetOdometricPose(transformed_pose);
+  range_scan->SetCorrectedPose(transformed_pose);
 
   // Add the localized range scan to the mapper
   boost::mutex::scoped_lock lock(mapper_mutex_);
@@ -880,15 +892,25 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
     try
     {
       tf_.transformPose(odom_frame_, map_to_base, odom_to_map);
-      tf::Pose odom_to_base = (odom_to_map * map_to_base).inverse();//TODO in if statement
-      ROS_INFO("Steve base to odom Trans: %f %f", odom_to_base.getOrigin().x(),odom_to_base.getOrigin().y()); //STEVE odometry from continuing
-      ROS_INFO("Steve base to odom karto: %f %f", karto_pose.GetX(), karto_pose.GetY()); //STEVE odometry from live
+      
+
+      
+
+      tf::Pose odom_to_base_old = (odom_to_map * map_to_base); //STEVE in if statement
+      ROS_INFO("Steve base to odom old: %f %f %f", odom_to_base_old.getOrigin().x(),odom_to_base_old.getOrigin().y(), odom_to_base_old.getOrigin().z()); //STEVE odometry from continuing
+      ROS_INFO("Steve base to odom new: %f %f", karto_pose.GetX(), karto_pose.GetY()); //STEVE odometry from live
+      tf::Pose odom_to_base_new = KartoPose2TfPose(karto_pose, odom_to_base_old.getOrigin().z());
       if (update_offset)
       {
-        // invert the karto_pose to be: base to odom (the position of the current odometry frame relative to the current base frame)
         // estimate that frame in relation to the old odometry frame
         // transform all subsiquent karto_pose's by this transformation
+        reprocessing_transform_ = (odom_to_base_old * odom_to_base_new.inverse()).inverse();
+        ROS_INFO("Steve Transform: %f %f", reprocessing_transform_.getOrigin().x(), reprocessing_transform_.getOrigin().y());
       }
+
+
+
+
     }
     catch(tf::TransformException e)
     {

@@ -91,6 +91,16 @@ enum ProcessType
   PROCESS_NEAR_REGION = 2
 };
 
+tf::Pose KartoPose2TfPose(const karto::Pose2& pose, const double& height)
+{
+  tf::Pose new_pose;
+  new_pose.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), height));
+  tf::Quaternion q;
+  q.setEuler(pose.GetHeading(), 0., 0.);
+  new_pose.setRotation(q);
+  return new_pose;
+};
+
 typedef std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> VerticeMap;
 typedef std::vector<karto::Edge<karto::LocalizedRangeScan>*> EdgeVector;
 typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> ScanVector;
@@ -170,6 +180,7 @@ private:
   bool publish_occupancy_map_, first_measurement_, sychronous_, online_;
   ProcessType matcher_to_use_;
   geometry_msgs::Pose2D process_near_region_pose_;
+  tf::Transform reprocessing_transform_;
 
   // Karto bookkeeping
   karto::Mapper* mapper_;
