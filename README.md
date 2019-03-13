@@ -2,7 +2,7 @@
 
 For live running on robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
 
-I've seen this way maps building at 5x+ realtime up to about 20,000 sqft and 3x realtime up to about 60,000 sqft.
+I've seen this way maps building at 5x+ realtime up to about 20,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 145,000 sq.ft. building at this point. 
 
 The core scan matcher is taken out of open_karto but alot of other heavy changes have been made in the processing of the scans in the lib sdk version in this repository. If you're familiar with Karto however it should still be approachable. 
 
