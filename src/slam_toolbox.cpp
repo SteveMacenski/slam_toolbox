@@ -1229,6 +1229,12 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
 {
   karto::Dataset* dataset = new karto::Dataset;
   karto::Mapper* mapper = new karto::Mapper;
+  if (req.filename == "")
+  {
+    ROS_WARN("No map file given!");
+    return true;
+  }
+
   serialization::Read(req.filename, mapper, dataset);
 
   {
