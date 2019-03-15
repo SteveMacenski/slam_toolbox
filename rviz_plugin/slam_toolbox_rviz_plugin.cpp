@@ -93,7 +93,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _button7->setText("Serialize Map");
   connect(_button7, SIGNAL(clicked()), this, SLOT(SerializeMap()));
   _button8 = new QPushButton(this);
-  _button8->setText("Load Map");
+  _button8->setText("Deserialize Map");
   connect(_button8, SIGNAL(clicked()), this, SLOT(DeserializeMap()));
 
   _label1 = new QLabel(this);
@@ -235,7 +235,7 @@ void SlamToolboxPlugin::DeserializeMap()
   }
   if (!_load_map.call(msg))
   {
-     ROS_WARN("SlamToolbox: Failed to load mapper object from file, is service running?");
+     ROS_WARN("SlamToolbox: Failed to deserialize mapper object from file, is service running?");
   }
 }
 
