@@ -2491,7 +2491,7 @@ namespace karto
     return false;
   }
 
-  kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan, const karto::Pose2& estimated_pose)
+  kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan)
   {
     if (pScan != NULL)
     {
@@ -2511,21 +2511,29 @@ namespace karto
 
       // STEVE: get a bunch in the area to match against not just the closest
       //    Or the the lease check against the orientation as well
-      // LocalizedRangeScanVector scansVec = m_pGraph->FindNearByScans(pScan->GetSensorName(), estimated_pose, m_pLoopSearchMaximumDistance->GetValue());
+      // LocalizedRangeScanVector scansVec = m_pGraph->FindNearByScans(pScan->GetSensorName(), pScan->GetOdometricPose(), m_pLoopSearchMaximumDistance->GetValue());
       //kt_int32u maxNumScans = m_pMapperSensorManager->GetRunningScanBufferSize(pScan->GetSensorName());
       
-      Vertex<LocalizedRangeScan>* closetVertex = m_pGraph->FindNearByScan(pScan->GetSensorName(), estimated_pose);
+      Vertex<LocalizedRangeScan>* closetVertex = m_pGraph->FindNearByScan(pScan->GetSensorName(), pScan->GetOdometricPose());
       LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), closetVertex->GetObject()->GetUniqueId());
       m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
       m_pMapperSensorManager->AddRunningScan(pLastScan);
       m_pMapperSensorManager->SetLastScan(pLastScan);
 
-      // update scans corrected pose based on last correction
-      if (pLastScan != NULL)
-      {
-        Transform lastTransform(pLastScan->GetOdometricPose(), pLastScan->GetCorrectedPose());
-        pScan->SetCorrectedPose(lastTransform.TransformPose(pScan->GetOdometricPose()));
-      }
+      // // update scans corrected pose based on last correction
+      // if (pLastScan != NULL)
+      // {
+      //   //TODO STEVE maybe dont even correct at all?
+      //   //TODO STEVE what's this even do, exactly?
+      //   //TODO STEVE I dont think this actually hurts anything, but lets get it working first then revisit
+      //   Transform lastTransform(pLastScan->GetOdometricPose(), pLastScan->GetCorrectedPose());
+      //   pScan->SetCorrectedPose(lastTransform.TransformPose(pScan->GetOdometricPose()));
+      //   std::cout << "Region LAST: " << pLastScan->GetCorrectedPose().GetX() << " " << pLastScan->GetCorrectedPose().GetY() << std::endl;
+      //   std::cout << "Region CURRENT corr: "<< pScan->GetCorrectedPose().GetX() << " " << pScan->GetCorrectedPose().GetY() << std::endl;
+      //   std::cout << "Region CURRENT odom: "<< pScan->GetOdometricPose().GetX() << " " << pScan->GetOdometricPose().GetY() << std::endl;
+      // }
+
+      // commenting this out didnt help, but the normal process's output of this is redic (but could be inputs to it?)
 
       Matrix3 covariance;
       covariance.SetToIdentity();
@@ -2562,6 +2570,7 @@ namespace karto
         }
       }
 
+      pScan->SetOdometricPose(pScan->GetCorrectedPose()); //STEVE added
       m_pMapperSensorManager->SetLastScan(pScan);
 
       return true;
@@ -2594,8 +2603,13 @@ namespace karto
 		  // update scans corrected pose based on last correction
 		  if (pLastScan != NULL)
 		  {
+        // these TODO STEVE these lines make _slightly_ worse, probably orientation related.
 			  Transform lastTransform(pLastScan->GetOdometricPose(), pLastScan->GetCorrectedPose());
 			  pScan->SetCorrectedPose(lastTransform.TransformPose(pScan->GetOdometricPose()));
+        std::cout << "Proc LAST corr: " << pLastScan->GetCorrectedPose().GetX() << " " << pLastScan->GetCorrectedPose().GetY() << std::endl;
+        std::cout << "Proc LAST odom: " << pLastScan->GetOdometricPose().GetX() << " " << pLastScan->GetOdometricPose().GetY() << std::endl;
+        std::cout << "Proc CURRENT corr: "<< pScan->GetCorrectedPose().GetX() << " " << pScan->GetCorrectedPose().GetY() << std::endl;
+        std::cout << "Proc CURRENT odom: "<< pScan->GetOdometricPose().GetX() << " " << pScan->GetOdometricPose().GetY() << std::endl;
 		  }
 
 		  // test if scan is outside minimum boundary or if heading is larger then minimum heading

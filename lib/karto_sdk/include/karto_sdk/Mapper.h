@@ -1825,7 +1825,7 @@ namespace karto
      *
      * @return true if the scan was added successfully, false otherwise
      */
-    virtual kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan, const karto::Pose2& estimated_pose);
+    virtual kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
 
 
     /**

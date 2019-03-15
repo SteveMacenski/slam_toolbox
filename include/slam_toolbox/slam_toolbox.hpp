@@ -96,7 +96,7 @@ tf::Pose KartoPose2TfPose(const karto::Pose2& pose, const double& height)
   tf::Pose new_pose;
   new_pose.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), height));
   tf::Quaternion q;
-  q.setEuler(pose.GetHeading(), 0., 0.);
+  q.setRPY(0., 0., pose.GetHeading()); //setEuler(yaw,pich,roll) TODO STEVE
   new_pose.setRotation(q);
   return new_pose;
 };
