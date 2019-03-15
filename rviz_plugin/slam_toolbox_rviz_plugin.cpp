@@ -66,6 +66,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _hbox7 = new QHBoxLayout();
   _hbox8 = new QHBoxLayout();
   _hbox9 = new QHBoxLayout();
+  _hbox10 = new QHBoxLayout();
 
   QFrame* _line = new QFrame();
   _line->setFrameShape(QFrame::HLine);
@@ -108,6 +109,15 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _label5 = new QLabel(this);
   _label5->setText("Create Map Tool");
   _label5->setAlignment(Qt::AlignCenter);
+  _label6 = new QLabel(this);
+  _label6->setText("X");
+  _label6->setAlignment(Qt::AlignCenter);
+  _label7 = new QLabel(this);
+  _label7->setText("Y");
+  _label7->setAlignment(Qt::AlignCenter);
+  _label8 = new QLabel(this);
+  _label8->setText("θ");
+  _label8->setAlignment(Qt::AlignCenter);
 
   _check1 = new QCheckBox();
   _check1->setChecked(interactive);
@@ -126,21 +136,32 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   connect(_radio2, SIGNAL(clicked()), this, SLOT(PoseEstMatchCb()));
   connect(_radio3, SIGNAL(clicked()), this, SLOT(CurEstMatchCb()));
 
-
-
   _line1 = new QLineEdit();
   _line2 = new QLineEdit();
   _line3 = new QLineEdit();
   _line4 = new QLineEdit();
+  _line5 = new QLineEdit();
+  _line6 = new QLineEdit();
+  _line7 = new QLineEdit();
 
   _button1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _button2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _button3->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _button4->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _button5->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _button6->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _button7->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _button8->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _check1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _check2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _check3->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _line1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _line2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _line3->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _line4->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _line5->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _line6->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _line7->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
   _hbox1->addWidget(_check1);
   _hbox1->addWidget(_label1);
@@ -148,7 +169,6 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _hbox1->addWidget(_label2);
   _hbox1->addWidget(_check3);
   _hbox1->addWidget(_label3);
-
 
   _hbox2->addWidget(_button1);
   _hbox2->addWidget(_button2);
@@ -174,6 +194,13 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _hbox9->addWidget(_radio3);
   _hbox9->addStretch(1);
 
+  _hbox10->addWidget(_label6);
+  _hbox10->addWidget(_line5);
+  _hbox10->addWidget(_label7);
+  _hbox10->addWidget(_line6);
+  _hbox10->addWidget(_label8);
+  _hbox10->addWidget(_line7);
+
   _vbox->addWidget(_label5);
   _vbox->addLayout(_hbox1);
   _vbox->addLayout(_hbox2);
@@ -181,6 +208,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _vbox->addLayout(_hbox7);
   _vbox->addLayout(_hbox8);
   _vbox->addLayout(_hbox9);
+  _vbox->addLayout(_hbox10);
   _vbox->addLayout(_hbox4);
   _vbox->addWidget(_line);
   _vbox->addWidget(_label4);
@@ -227,7 +255,9 @@ void SlamToolboxPlugin::DeserializeMap()
   else if (_match_type == PROCESS_NEAR_REGION_CMT)
   {
     msg.request.match_type = slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;
-    //STEVE set pose here with tf or in a text box
+    msg.request.initial_pose.x = std::stod(_line5->text().toStdString());
+    msg.request.initial_pose.y = std::stod(_line6->text().toStdString());
+    msg.request.initial_pose.theta = std::stod(_line7->text().toStdString());
   }
   else
   {

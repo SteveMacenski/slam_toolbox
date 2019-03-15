@@ -105,6 +105,7 @@ protected:
   QHBoxLayout* _hbox7;
   QHBoxLayout* _hbox8;
   QHBoxLayout* _hbox9;
+  QHBoxLayout* _hbox10;
 
   QPushButton* _button1;
   QPushButton* _button2;
@@ -119,6 +120,9 @@ protected:
   QLineEdit* _line2;
   QLineEdit* _line3;
   QLineEdit* _line4;
+  QLineEdit* _line5;
+  QLineEdit* _line6;
+  QLineEdit* _line7;
 
   QCheckBox* _check1;
   QCheckBox* _check2;
@@ -133,6 +137,9 @@ protected:
   QLabel* _label3;
   QLabel* _label4;
   QLabel* _label5;
+  QLabel* _label6;
+  QLabel* _label7;
+  QLabel* _label8;
 
   QFrame* _line;
 
