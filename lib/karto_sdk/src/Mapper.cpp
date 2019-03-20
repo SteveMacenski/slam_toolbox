@@ -2570,7 +2570,6 @@ namespace karto
         }
       }
 
-      pScan->SetOdometricPose(pScan->GetCorrectedPose()); //STEVE added
       m_pMapperSensorManager->SetLastScan(pScan);
 
       return true;
@@ -2652,6 +2651,7 @@ namespace karto
 				  }
 			  }
 		  }
+
 
 		  m_pMapperSensorManager->SetLastScan(pScan);
 

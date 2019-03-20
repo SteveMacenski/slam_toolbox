@@ -581,14 +581,11 @@ void SlamToolbox::ProcessInteractiveFeedback(const \
     const int id = std::stoi(feedback->marker_name,nullptr,10) - 1;
 
     // get yaw
-    tfScalar yaw, pitch, roll;
     tf::Quaternion quat(0.,0.,0.,1.0);
     tf::quaternionMsgToTF(feedback->pose.orientation, quat); // relative
-    tf::Matrix3x3 mat(quat);
-    mat.getRPY(roll, pitch, yaw);
 
     AddMovedNodes(id, Eigen::Vector3d(feedback->mouse_point.x, \
-                  feedback->mouse_point.y, yaw));
+                  feedback->mouse_point.y, tf::getYaw(quat)));
   }
   if (feedback->event_type == \
       visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)

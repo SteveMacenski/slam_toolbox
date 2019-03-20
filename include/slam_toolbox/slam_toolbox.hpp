@@ -91,13 +91,11 @@ enum ProcessType
   PROCESS_NEAR_REGION = 2
 };
 
-tf::Pose KartoPose2TfPose(const karto::Pose2& pose, const double& height)
+tf::Pose KartoPose2TfPose(const karto::Pose2& pose)
 {
   tf::Pose new_pose;
-  new_pose.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), height));
-  tf::Quaternion q;
-  q.setRPY(0., 0., pose.GetHeading()); //setEuler(yaw,pich,roll) TODO STEVE
-  new_pose.setRotation(q);
+  new_pose.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
+  new_pose.setRotation(tf::createQuaternionFromRPY(0., 0., pose.GetHeading()));
   return new_pose;
 };
 
