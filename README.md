@@ -38,6 +38,8 @@ In the very immediate future, there will be support for:
 
 References above suggest starting to map from your dock or charging areas, since those are unlikely to frequently change and its a globally known position in the map. Starting at the dock/charging/storage position or area provides a great deal of benefits. Rather than asking someone to start near an arbitrary set of coordinates -- or more correctly the first node in the pose graph, who's going to remember that? -- starting at the dock is an intuitive and simple way to make sure the robots are starting around where they should to continue updating an existing serialized map object. References to the above planned additions weaken the need for this since a user can start from where ever they like, but this is a good way to get started and easy to build an automated map updating pipeline around. None of this matters if you intend to do offline, or multi-robot mapping, which is discussed below. This application probably wants to merge existing maps and submaps into one larger map to share rather than live update maps. 
 
+In order to do some operations quickly, I use NanoFlann to speed up some K-d tree searchs of the graph (shout out!).
+
 ### Map Merging 
 
 ## Kinematic

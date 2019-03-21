@@ -1648,34 +1648,38 @@ namespace karto
     LocalizedRangeScanVector nearLinkedScans = m_pTraversal->Traverse(closestVertex, pVisitor);
     delete pVisitor;
 
-    return nearLinkedScans;  
+    return nearLinkedScans;
   }
 
   Vertex<LocalizedRangeScan>* MapperGraph::FindNearByScan(Name name, const Pose2 refPose)
   {
-    // As this only happens once on bringup on trying to merge a scan patch
-    // lets take the method of least resistance and look at all the vertices
-    // an improvement here would be to find the closest node in graph search
-    // using a K-d tree, but populating that has overhead. I think this is probably lighter
-    // since the graph never really exceeds 10,000 entries
-    double minDist2 = 999999.;
-    double dist2;
-    Vertex<LocalizedRangeScan>* closestVertex;
-    Pose2 corrected_pose;
     VertexMap vertexMap = GetVertices();
-    std::vector<Vertex<LocalizedRangeScan>*> vertices = vertexMap[name];
-    for (std::vector<Vertex<LocalizedRangeScan>*>::const_iterator it = vertices.begin(); it != vertices.end(); ++it)
+    std::vector<Vertex<LocalizedRangeScan>*>& vertices = vertexMap[name];
+
+    size_t num_results = 1;
+    const size_t dim = 2;
+
+    typedef VertexVectorNanoFlannAdaptor<std::vector<Vertex<LocalizedRangeScan>* > > P2KD;
+    const P2KD p2kd(vertices);
+
+    typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, P2KD > , P2KD, dim> my_kd_tree_t;
+
+    my_kd_tree_t index(dim, p2kd, nanoflann::KDTreeSingleIndexAdaptorParams(10) );
+    index.buildIndex();
+
+    std::vector<size_t>   ret_index(num_results);
+    std::vector<double> out_dist_sqr(num_results);
+    const double query_pt[2] = {refPose.GetX(), refPose.GetY()};
+    num_results = index.knnSearch(&query_pt[0], num_results, &ret_index[0], &out_dist_sqr[0]);
+
+    if (num_results > 0)
     {
-      corrected_pose = (*it)->GetObject()->GetCorrectedPose();
-      dist2 = fabs((refPose.GetX() - corrected_pose.GetX())*(refPose.GetX() - corrected_pose.GetX()) + \
-                   (refPose.GetY() - corrected_pose.GetY())*(refPose.GetY() - corrected_pose.GetY()));
-      if (dist2 < minDist2)
-      {
-        closestVertex = *it;
-        minDist2 = dist2;
-      }
-    } 
-    return closestVertex;
+      return vertices[ret_index[0]];
+    }
+    else
+    {
+      return NULL;
+    }
   }
 
   Pose2 MapperGraph::ComputeWeightedMean(const Pose2Vector& rMeans, const std::vector<Matrix3>& rCovariances) const
@@ -2504,16 +2508,15 @@ namespace karto
         Initialize(pLaserRangeFinder->GetRangeThreshold());
       }
 
-      // STEVE: get a bunch in the area to match against not just the closest
-      //    Or the the lease check against the orientation as well
-      // LocalizedRangeScanVector scansVec = m_pGraph->FindNearByScans(pScan->GetSensorName(), pScan->GetOdometricPose(), m_pLoopSearchMaximumDistance->GetValue());
-      //kt_int32u maxNumScans = m_pMapperSensorManager->GetRunningScanBufferSize(pScan->GetSensorName());
-      
       Vertex<LocalizedRangeScan>* closetVertex = m_pGraph->FindNearByScan(pScan->GetSensorName(), pScan->GetOdometricPose());
-      LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), closetVertex->GetObject()->GetUniqueId());
-      m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
-      m_pMapperSensorManager->AddRunningScan(pLastScan);
-      m_pMapperSensorManager->SetLastScan(pLastScan);
+      LocalizedRangeScan* pLastScan = NULL;
+      if (closetVertex)
+      {
+        pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), closetVertex->GetObject()->GetUniqueId());
+        m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
+        m_pMapperSensorManager->AddRunningScan(pLastScan);
+        m_pMapperSensorManager->SetLastScan(pLastScan);
+      }
 
       Matrix3 covariance;
       covariance.SetToIdentity();
