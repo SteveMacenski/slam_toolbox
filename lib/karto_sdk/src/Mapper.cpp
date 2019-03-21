@@ -131,6 +131,15 @@ namespace karto
     }
 
     /**
+     * Gets running scan buffer size
+     * @return running scan buffer size
+     */
+    inline kt_int32u& GetRunningScanBufferSize()
+    {
+      return m_RunningBufferMaximumSize;
+    }
+
+    /**
      * Adds scan to vector of running scans
      * @param pScan
      */
@@ -291,6 +300,11 @@ namespace karto
   {
     GetScanManager(rSensorName)->ClearRunningScans();
     return;
+  }
+
+  inline kt_int32u MapperSensorManager::GetRunningScanBufferSize(const Name& rSensorName)
+  {
+    return GetScanManager(rSensorName)->GetRunningScanBufferSize();
   }
 
   /**
@@ -1108,7 +1122,7 @@ namespace karto
      * Traverse the graph starting with the given vertex; applies the visitor to visited nodes
      * @param pStartVertex
      * @param pVisitor
-     * @return visited vertices
+     * @return visited vertice scans
      */
     virtual std::vector<T*> Traverse(Vertex<T>* pStartVertex, Visitor<T>* pVisitor)
     {
@@ -1152,6 +1166,7 @@ namespace karto
 
       return objects;
     }
+
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
@@ -1198,6 +1213,41 @@ namespace karto
       ar & BOOST_SERIALIZATION_NVP(m_UseScanBarycenter);
     }
   };  // NearScanVisitor
+
+  class NearPoseVisitor : public Visitor<LocalizedRangeScan>
+  {
+  public:
+    NearPoseVisitor(Pose2 refPose, kt_double maxDistance, kt_bool useScanBarycenter)
+      : m_MaxDistanceSquared(math::Square(maxDistance))
+      , m_UseScanBarycenter(useScanBarycenter)
+    {
+      m_CenterPose = refPose;
+    }
+
+    virtual kt_bool Visit(Vertex<LocalizedRangeScan>* pVertex)
+    {
+      LocalizedRangeScan* pScan = pVertex->GetObject();
+
+      Pose2 pose = pScan->GetReferencePose(m_UseScanBarycenter);
+
+      kt_double squaredDistance = pose.GetPosition().SquaredDistance(m_CenterPose.GetPosition());
+      return (squaredDistance <= m_MaxDistanceSquared - KT_TOLERANCE);
+    }
+
+  protected:
+    Pose2 m_CenterPose;
+    kt_double m_MaxDistanceSquared;
+    kt_bool m_UseScanBarycenter;
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive &ar, const unsigned int version)
+    {
+      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Visitor<LocalizedRangeScan>);
+      ar & BOOST_SERIALIZATION_NVP(m_CenterPose);
+      ar & BOOST_SERIALIZATION_NVP(m_MaxDistanceSquared);
+      ar & BOOST_SERIALIZATION_NVP(m_UseScanBarycenter);
+    }
+  };  // NearPoseVisitor
 
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -1587,6 +1637,45 @@ namespace karto
     delete pVisitor;
 
     return nearLinkedScans;
+  }
+
+  LocalizedRangeScanVector MapperGraph::FindNearByScans(Name name, const Pose2 refPose, kt_double maxDistance)
+  {
+    NearPoseVisitor* pVisitor = new NearPoseVisitor(refPose, maxDistance, m_pMapper->m_pUseScanBarycenter->GetValue());
+
+    Vertex<LocalizedRangeScan>* closestVertex = FindNearByScan(name, refPose);
+
+    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->Traverse(closestVertex, pVisitor);
+    delete pVisitor;
+
+    return nearLinkedScans;  
+  }
+
+  Vertex<LocalizedRangeScan>* MapperGraph::FindNearByScan(Name name, const Pose2 refPose)
+  {
+    // As this only happens once on bringup on trying to merge a scan patch
+    // lets take the method of least resistance and look at all the vertices
+    // an improvement here would be to find the closest node in graph search
+    // using a K-d tree, but populating that has overhead. I think this is probably lighter
+    // since the graph never really exceeds 10,000 entries
+    double minDist2 = 999999.;
+    double dist2;
+    Vertex<LocalizedRangeScan>* closestVertex;
+    Pose2 corrected_pose;
+    VertexMap vertexMap = GetVertices();
+    std::vector<Vertex<LocalizedRangeScan>*> vertices = vertexMap[name];
+    for (std::vector<Vertex<LocalizedRangeScan>*>::const_iterator it = vertices.begin(); it != vertices.end(); ++it)
+    {
+      corrected_pose = (*it)->GetObject()->GetCorrectedPose();
+      dist2 = fabs((refPose.GetX() - corrected_pose.GetX())*(refPose.GetX() - corrected_pose.GetX()) + \
+                   (refPose.GetY() - corrected_pose.GetY())*(refPose.GetY() - corrected_pose.GetY()));
+      if (dist2 < minDist2)
+      {
+        closestVertex = *it;
+        minDist2 = dist2;
+      }
+    } 
+    return closestVertex;
   }
 
   Pose2 MapperGraph::ComputeWeightedMean(const Pose2Vector& rMeans, const std::vector<Matrix3>& rCovariances) const
@@ -2320,7 +2409,7 @@ namespace karto
     return true;
   }
 
-  kt_bool Mapper::ProcessAgainstStartingPoint(LocalizedRangeScan* pScan)
+  kt_bool Mapper::ProcessAtDock(LocalizedRangeScan* pScan)
   {
     // Special case of processing against node where node is the starting point
     return ProcessAgainstNode(pScan, 0);
@@ -2350,13 +2439,7 @@ namespace karto
       LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), nodeId);
       m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
       m_pMapperSensorManager->AddRunningScan(pLastScan);
-
-      // update scans corrected pose based on last correction
-      if (pLastScan != NULL)
-      {
-        Transform lastTransform(pLastScan->GetOdometricPose(), pLastScan->GetCorrectedPose());
-        pScan->SetCorrectedPose(lastTransform.TransformPose(pScan->GetOdometricPose()));
-      }
+      m_pMapperSensorManager->SetLastScan(pLastScan);
 
       Matrix3 covariance;
       covariance.SetToIdentity();
@@ -2371,6 +2454,8 @@ namespace karto
             covariance);
         pScan->SetSensorPose(bestPose);
       }
+
+      pScan->SetOdometricPose(pScan->GetCorrectedPose());
 
       // add scan to buffer and assign id
       m_pMapperSensorManager->AddScan(pScan);
@@ -2401,80 +2486,79 @@ namespace karto
     return false;
   }
 
-  // kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan)
-  // {
-  //   if (pScan != NULL)
-  //   {
-  //     karto::LaserRangeFinder* pLaserRangeFinder = pScan->GetLaserRangeFinder();
+  kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan)
+  {
+    if (pScan != NULL)
+    {
+      karto::LaserRangeFinder* pLaserRangeFinder = pScan->GetLaserRangeFinder();
 
-  //     // validate scan
-  //     if (pLaserRangeFinder == NULL || pScan == NULL || pLaserRangeFinder->Validate(pScan) == false)
-  //     {
-  //       return false;
-  //     }
+      // validate scan
+      if (pLaserRangeFinder == NULL || pScan == NULL || pLaserRangeFinder->Validate(pScan) == false)
+      {
+        return false;
+      }
 
-  //     if (m_Initialized == false)
-  //     {
-  //       // initialize mapper with range threshold from device
-  //       Initialize(pLaserRangeFinder->GetRangeThreshold());
-  //     }
+      if (m_Initialized == false)
+      {
+        // initialize mapper with range threshold from device
+        Initialize(pLaserRangeFinder->GetRangeThreshold());
+      }
 
-  //     // If we're matching against an area from an older mapping session
-  //     // lets get the scans nearby and add them to running scans to compute odometry from
-  //     // TODO STEVE
-  //     LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), 0);
-  //     m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
-  //     m_pMapperSensorManager->AddRunningScan(pLastScan);
+      // STEVE: get a bunch in the area to match against not just the closest
+      //    Or the the lease check against the orientation as well
+      // LocalizedRangeScanVector scansVec = m_pGraph->FindNearByScans(pScan->GetSensorName(), pScan->GetOdometricPose(), m_pLoopSearchMaximumDistance->GetValue());
+      //kt_int32u maxNumScans = m_pMapperSensorManager->GetRunningScanBufferSize(pScan->GetSensorName());
+      
+      Vertex<LocalizedRangeScan>* closetVertex = m_pGraph->FindNearByScan(pScan->GetSensorName(), pScan->GetOdometricPose());
+      LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), closetVertex->GetObject()->GetUniqueId());
+      m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
+      m_pMapperSensorManager->AddRunningScan(pLastScan);
+      m_pMapperSensorManager->SetLastScan(pLastScan);
 
-  //     // update scans corrected pose based on last correction
-  //     if (pLastScan != NULL)
-  //     {
-  //       Transform lastTransform(pLastScan->GetOdometricPose(), pLastScan->GetCorrectedPose());
-  //       pScan->SetCorrectedPose(lastTransform.TransformPose(pScan->GetOdometricPose()));
-  //     }
+      Matrix3 covariance;
+      covariance.SetToIdentity();
 
-  //     Matrix3 covariance;
-  //     covariance.SetToIdentity();
+      // correct scan (if not first scan)
+      if (m_pUseScanMatching->GetValue() && pLastScan != NULL)
+      {
+        Pose2 bestPose;
+        m_pSequentialScanMatcher->MatchScan(pScan,
+            m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
+            bestPose,
+            covariance);
+        pScan->SetSensorPose(bestPose);
+      }
 
-  //     // correct scan (if not first scan)
-  //     if (m_pUseScanMatching->GetValue() && pLastScan != NULL)
-  //     {
-  //       Pose2 bestPose;
-  //       m_pSequentialScanMatcher->MatchScan(pScan,
-  //           m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
-  //           bestPose,
-  //           covariance);
-  //       pScan->SetSensorPose(bestPose);
-  //     }
+      pScan->SetOdometricPose(pScan->GetCorrectedPose());
 
-  //     // add scan to buffer and assign id
-  //     m_pMapperSensorManager->AddScan(pScan);
+      // add scan to buffer and assign id
+      m_pMapperSensorManager->AddScan(pScan);
 
-  //     if (m_pUseScanMatching->GetValue())
-  //     {
-  //       // add to graph
-  //       m_pGraph->AddVertex(pScan);
-  //       m_pGraph->AddEdges(pScan, covariance);
+      if (m_pUseScanMatching->GetValue())
+      {
+        // add to graph
+        m_pGraph->AddVertex(pScan);
+        m_pGraph->AddEdges(pScan, covariance);
 
-  //       m_pMapperSensorManager->AddRunningScan(pScan);
+        m_pMapperSensorManager->AddRunningScan(pScan);
 
-  //       if (m_pDoLoopClosing->GetValue())
-  //       {
-  //         std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
-  //         const_forEach(std::vector<Name>, &deviceNames)
-  //         {
-  //           m_pGraph->TryCloseLoop(pScan, *iter);
-  //         }
-  //       }
-  //     }
+        if (m_pDoLoopClosing->GetValue())
+        {
+          std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+          const_forEach(std::vector<Name>, &deviceNames)
+          {
+            m_pGraph->TryCloseLoop(pScan, *iter);
+          }
+        }
+      }
 
-  //     m_pMapperSensorManager->SetLastScan(pScan);
+      m_pMapperSensorManager->SetLastScan(pScan);
 
-  //     return true;
-  //   }
+      return true;
+    }
 
-  //   return false;
-  // }
+    return false;
+  }
 
   kt_bool Mapper::Process(LocalizedRangeScan* pScan)
   {
@@ -2544,6 +2628,7 @@ namespace karto
 				  }
 			  }
 		  }
+
 
 		  m_pMapperSensorManager->SetLastScan(pScan);
 

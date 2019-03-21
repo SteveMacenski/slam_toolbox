@@ -1,10 +1,10 @@
 ## Slam Toolbox
 
-Fork on slam_karto. I've renamed since really there's about 5% of the code that's the same, everything else has been restructured or removed entirely. 
-
 For live running on robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
 
-I've seen this way maps building at 5x+ realtime up to about 20,000 sqft and 3x realtime up to about 60,000 sqft.
+I've seen this way maps building at 5x+ realtime up to about 20,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 145,000 sq.ft. building at this point. 
+
+The core scan matcher is taken out of open_karto but alot of other heavy changes have been made in the processing of the scans in the lib sdk version in this repository. If you're familiar with Karto however it should still be approachable. 
 
 ## Introduction 
 
@@ -66,7 +66,7 @@ An rviz plugin is furnished to help with manual loop closures and online / offli
 
 There's also a tool to help you control online and offline data. You can at any time stop processing new scans or accepting new scans into the queue. this is desirable when you want to allow the package to catch up while the robot sits still or you want to stop processing new scans while you do a manual loop closure / manual "help". If there's more in the queue than you want, you may also clear it.
 
-Additionally there's exposed buttons for the serialization and deserialization services to load an old pose-graph to update and refine, or continue mapping, then save back to file. The "Start Near Dock" checkbox will try to scan match against the first node (at dock) to give you an odometry estimate to start with. If un-checked, it will assume you're starting at the last position and may take a few nodes to converge together. It's recommended to always continue mapping near the dock, if that's not possible, look into the map merging techniques. 
+Additionally there's exposed buttons for the serialization and deserialization services to load an old pose-graph to update and refine, or continue mapping, then save back to file. The "Start By Dock" checkbox will try to scan match against the first node (at dock) to give you an odometry estimate to start with. Other option is to start using the last map->base_link transform available (probably from AMCL). In practice, you probaly dont have both of these running at once, so for an application you should get that value and feed it in to the service request for that mode, this application is primarily for demonstration. If using the current estimate checkbox, it will assume you're starting at the last position and may take a few nodes to converge together. It's recommended to always continue mapping near the dock, if that's not possible, look into the starting from pose or map merging techniques. Starting from current odom is not recommended unless you had to stop mapping and you're continuing to map a few minutes later with the *robot in the same spot*. It's mostly here as a debug utility, but if you often find yourself mapping areas in sprints and pausing between, this is valuable. 
 
 The interface is shown below.
 
@@ -124,3 +124,12 @@ You can run via `roslaunch slam_toolbox build_map_w_params.launch`
 ### Motivating Example / Tutorial
 
 ... Coming Soon to theatres near you ...
+
+
+### Notes for documentation for myself to fill in later
+- Dock starting, mapping, continuing example
+- Cloud mapping example
+- Mapping from an estimated starting pose example (via amcl)
+- rviz plugin similification (setting dock,continue,estimated deserialization, pausing)
+- explanation of the transform for the continue against node (map->base_link)
+- explanation why the special case of node 0 relating to that (or does anyone care if it works?)

@@ -701,6 +701,19 @@ namespace karto
     LocalizedRangeScanVector FindNearLinkedScans(LocalizedRangeScan* pScan, kt_double maxDistance);
 
     /**
+     * Find "nearby" (no further than given distance away) scans through graph links
+     * @param pScan
+     * @param maxDistance
+     */
+    LocalizedRangeScanVector FindNearByScans(Name name, const Pose2 refPose, kt_double maxDistance);
+
+    /**
+     * Find closest scan to pose
+     * @param pScan
+     */
+    Vertex<LocalizedRangeScan>* FindNearByScan(Name name, const Pose2 refPose);
+
+    /**
      * Gets the graph's scan matcher
      * @return scan matcher
      */
@@ -1509,6 +1522,11 @@ namespace karto
     void ClearRunningScans(const Name& rSensorName);
 
     /**
+     * Gets the running scan buffer of device
+     */
+    kt_int32u GetRunningScanBufferSize(const Name& rSensorName);
+
+    /**
      * Gets all scans of all devices
      * @return all scans of all devices
      */
@@ -1807,7 +1825,7 @@ namespace karto
      *
      * @return true if the scan was added successfully, false otherwise
      */
-    // virtual kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
+    virtual kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
 
 
     /**
@@ -1836,7 +1854,7 @@ namespace karto
      *
      * @return true if the scan was added successfully, false otherwise
      */
-    virtual kt_bool ProcessAgainstStartingPoint(LocalizedRangeScan* pScan);
+    virtual kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
 
     /**
      * Returns all processed scans added to the mapper.
