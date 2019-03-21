@@ -824,17 +824,13 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
     }
   }
 
-  tf::Pose pose_original = KartoPose2TfPose(karto_pose, 0.);
-  tf::Pose tf_pose_transformed = reprocessing_transform_ * pose_original ; //TODO STEVE try pose * T
-  tf::Matrix3x3 m(tf_pose_transformed.getRotation());
-  double r,p,yaw;
-  m.getRPY(r,p,yaw);
-  ROS_INFO("%f %f %f %f", r,p,yaw, karto_pose.GetHeading()); //tf::getYaw TODO STEVE why is not JUST yaw non-zero? 0.015813 0.022776 -1.507518 2.010514 (~1.5 deg)
+  tf::Pose pose_original = KartoPose2TfPose(karto_pose);
+  tf::Pose tf_pose_transformed = (reprocessing_transform_ * pose_original); //TODO STEVE inverting then SetX/Y to -1* was pretty close ~within 3m?
 
   karto::Pose2 transformed_pose;
   transformed_pose.SetX(tf_pose_transformed.getOrigin().x());
   transformed_pose.SetY(tf_pose_transformed.getOrigin().y());
-  transformed_pose.SetHeading(yaw);
+  transformed_pose.SetHeading(tf::getYaw(tf_pose_transformed.getRotation()));
 
   // create localized range scan
   karto::LocalizedRangeScan* range_scan = 
@@ -890,79 +886,41 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
     try
     {
       tf_.transformPose(odom_frame_, map_to_base, odom_to_map);
+
+
+
+
+
+
+      //ROS_INFO("Steve base to odom current odo: %f %f %f", karto_pose.GetX(), karto_pose.GetY(), karto_pose.GetHeading());
+      ROS_WARN("Steve odom to case corrected??: %f %f", corrected_pose.GetX(), corrected_pose.GetY());
       
-
-      // NOW IT APPEARS TO WORK FIND WITH ODOMETRY, AND THE TRANSFORM TO CORRECT
-      // BUT THE KARTO OUTPUT IS CONCATTED/BULLSHIT (corrected)
-      // OR THE TRANSFORMS WITH THE ORIENTATION ISSUE
-
-      // weird, its the first Process() after the match gets something many meters off as outout
-      // but the transformed input seems reasonable. 
-      // something is happening there, it looks like its even right after matching
-      // but why does input -3,8.1 result in odom pose 6,5 that seems to transform right?
-      // maybe at the endof the region Process() we just need to update with matched values?
-
-      // but issue is either in mapper processing OR in the -3.1, 8.1 mapping to other things but matching correctly
-      // at least we KNOW all the transforms are correct now.
-
-      // need to fix TF non-yaw adding as shown below, but patched as below for now. All are clean as of that. with only yaw elements
-
-
-
-
-      //STEVE odom_to_map is one that introduces non-yaw
-      tf::Pose odom_to_base_old = (odom_to_map * map_to_base).inverse(); //STEVE in if statement 
-
-      tf::Matrix3x3 m7(odom_to_base_old.getRotation());
-      double r7,p7,yaw7;
-      m7.getRPY(r7,p7,yaw7);
-      ROS_INFO("7: %f %f %f", r7,p7,yaw7); //tf::getYaw
-      tf::Quaternion q1;
-      //STEVE try to remove anything non-yaw from TF
-      tf::quaternionMsgToTF(tf::createQuaternionMsgFromYaw(yaw7),q1);
-      odom_to_base_old.setRotation(q1);
-      tf::Matrix3x3 m72(odom_to_base_old.getRotation());
-      double r72,p72,yaw72;
-      m72.getRPY(r72,p72,yaw72);
-      ROS_INFO("72: %f %f %f", r72,p72,yaw72); //tf::getYaw
-
-      ROS_INFO("Steve base to odom corrected  : %f %f %f", odom_to_base_old.getOrigin().x(),odom_to_base_old.getOrigin().y(), yaw72);
-      ROS_INFO("Steve base to odom current odo: %f %f %f", karto_pose.GetX(), karto_pose.GetY(), karto_pose.GetHeading());
       if (update_offset)
       {
-        // estimate that frame in relation to the old odometry frame
-        // transform all subsiquent karto_pose's by this transformation
-        tf::Pose odom_to_base_new = KartoPose2TfPose(karto_pose, 0.);
+        tf::Pose odom_to_base_old = map_to_base.inverse();
+        tf::Quaternion q1;
+        tf::quaternionMsgToTF(tf::createQuaternionMsgFromYaw(tf::getYaw(odom_to_base_old.getRotation())), q1);
+        odom_to_base_old.setRotation(q1);
+
+        
+        //STEVE debug prints
+        ROS_INFO("Steve base to odom corrected  : %f %f %f", odom_to_base_old.getOrigin().x(),odom_to_base_old.getOrigin().y(), tf::getYaw(odom_to_base_old.getRotation()));
+
+        // estimate that frame in relation to the old odometry frame to transform all new poses by this T
+        tf::Pose odom_to_base_new = KartoPose2TfPose(karto_pose);
         reprocessing_transform_ = (odom_to_base_old * odom_to_base_new.inverse());
+        //ROS_INFO("Steve Transform: %f %f %f", reprocessing_transform_.getOrigin().x(), reprocessing_transform_.getOrigin().y(), tf::getYaw(reprocessing_transform_.getRotation()));
 
-        tf::Matrix3x3 m2(reprocessing_transform_.getRotation());
-        double r2,p2,yaw2;
-        m2.getRPY(r2,p2,yaw2);
-        ROS_INFO("Steve Transform: %f %f %f", reprocessing_transform_.getOrigin().x(), reprocessing_transform_.getOrigin().y(), yaw2);
-
-        // TEST working, should be close to odom serialized - which it is not
-        tf::Pose pose_original_test = KartoPose2TfPose(karto_pose, 0.);
-        tf::Pose tf_pose_transformed_test = reprocessing_transform_ * pose_original_test;
-        tf::Matrix3x3 m3(tf_pose_transformed_test.getRotation());
-        double r3,p3,yaw3;
-        m3.getRPY(r3,p3,yaw3);
-        ROS_INFO("3: %f %f %f", r3,p3,yaw3); //tf::getYaw(tf_pose_transformed_test.getRotation())
-        ROS_INFO("Steve base to odom transformed TEST using new transform: %f %f %f", tf_pose_transformed_test.getOrigin().x(), tf_pose_transformed_test.getOrigin().y() ,yaw3); //STEVE odometry from live
+        // THiS SHOULD BE close to -3 8 NOT odom! 
+        // reprocessing transform is wrong(ish). its right for what it is, but it isnt what it should be
+        tf::Pose tf_pose_transformed_test = reprocessing_transform_ * KartoPose2TfPose(karto_pose);
+        ROS_INFO("Steve base to odom transformed TEST: %f %f %f", tf_pose_transformed_test.getOrigin().x(), tf_pose_transformed_test.getOrigin().y() ,tf::getYaw(tf_pose_transformed_test.getRotation())); //STEVE odometry from live
       }
       else
       {
-        // not a test anymore, what did we use going into karto? should be closeish to currected
-        tf::Matrix3x3 m4(tf_pose_transformed.getRotation());
-        double r4,p4,yaw4;
-        m4.getRPY(r4,p4,yaw4);
-        ROS_INFO("4: %f %f %f", r4,p4,yaw4); //tf::getYaw
-        ROS_INFO("Steve base to odom transformed : %f %f %f", tf_pose_transformed.getOrigin().x(), tf_pose_transformed.getOrigin().y(), yaw4);
+        // THiS SHOULD BE close to -3 8 NOT odom! -- real thing given to karto
+        ROS_INFO("Steve base to odom transformed REAL: %f %f %f", tf_pose_transformed.getOrigin().x(), tf_pose_transformed.getOrigin().y(), tf::getYaw(tf_pose_transformed.getRotation()));
       }
-
-
-
-
-
     }
     catch(tf::TransformException e)
     {

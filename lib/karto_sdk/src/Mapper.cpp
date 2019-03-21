@@ -2521,17 +2521,16 @@ namespace karto
       m_pMapperSensorManager->SetLastScan(pLastScan);
 
       // // update scans corrected pose based on last correction
-      // if (pLastScan != NULL)
-      // {
-      //   //TODO STEVE maybe dont even correct at all?
-      //   //TODO STEVE what's this even do, exactly?
-      //   //TODO STEVE I dont think this actually hurts anything, but lets get it working first then revisit
-      //   Transform lastTransform(pLastScan->GetOdometricPose(), pLastScan->GetCorrectedPose());
-      //   pScan->SetCorrectedPose(lastTransform.TransformPose(pScan->GetOdometricPose()));
-      //   std::cout << "Region LAST: " << pLastScan->GetCorrectedPose().GetX() << " " << pLastScan->GetCorrectedPose().GetY() << std::endl;
-      //   std::cout << "Region CURRENT corr: "<< pScan->GetCorrectedPose().GetX() << " " << pScan->GetCorrectedPose().GetY() << std::endl;
-      //   std::cout << "Region CURRENT odom: "<< pScan->GetOdometricPose().GetX() << " " << pScan->GetOdometricPose().GetY() << std::endl;
-      // }
+      if (pLastScan != NULL)
+      {
+        //TODO STEVE currention here doesnt help as its non-contuinous -- probably turn off is good, but lets get it working first then revisit
+        //Transform lastTransform(pLastScan->GetOdometricPose(), pLastScan->GetCorrectedPose());
+        //pScan->SetCorrectedPose(lastTransform.TransformPose(pScan->GetOdometricPose()));
+        std::cout << "Region LAST corr: " << pLastScan->GetCorrectedPose().GetX() << " " << pLastScan->GetCorrectedPose().GetY() << std::endl;
+        std::cout << "Region LAST odom: " << pLastScan->GetOdometricPose().GetX() << " " << pLastScan->GetOdometricPose().GetY() << std::endl;
+        std::cout << "Region CURRENT corr: "<< pScan->GetCorrectedPose().GetX() << " " << pScan->GetCorrectedPose().GetY() << std::endl;
+        std::cout << "Region CURRENT odom: "<< pScan->GetOdometricPose().GetX() << " " << pScan->GetOdometricPose().GetY() << std::endl;
+      }
 
       // commenting this out didnt help, but the normal process's output of this is redic (but could be inputs to it?)
 
@@ -2548,6 +2547,8 @@ namespace karto
             covariance);
         pScan->SetSensorPose(bestPose);
       }
+
+      pScan->SetOdometricPose(pScan->GetCorrectedPose()); // STEVE added so that they're equal and transform is zero so matcher doesnt F with real odometry moving forward
 
       // add scan to buffer and assign id
       m_pMapperSensorManager->AddScan(pScan);
