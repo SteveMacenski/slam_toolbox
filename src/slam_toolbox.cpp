@@ -1250,13 +1250,10 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
     filename = snap_common_str + std::string("/") + filename;
   }
 
-  try
-  {
-    serialization::Read(filename, mapper, dataset);    
-  }
-  catch (...)
+  if (!serialization::Read(filename, mapper, dataset))
   {
     ROS_ERROR("DeserializePoseGraph: Failed to read file: %s.", filename.c_str());
+    return true;
   }
 
   {
