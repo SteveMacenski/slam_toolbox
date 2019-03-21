@@ -1,5 +1,5 @@
 name: slam-toolbox
-version: '0.3.1'
+version: '0.5.1'
 summary: Slam Toolbox based on Karto's SDK.
 description: |
   A toolbox for building high quality maps of large spaces with a LIDAR.
@@ -11,19 +11,19 @@ type: app
 
 apps:
   slam-toolbox-online-sync:
-    command: roslaunch --wait slam_toolbox build_map_w_params_online_sync.launch
+    command: roslaunch --wait slam_toolbox online_sync.launch
     environment: 
       LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/lapack:$SNAP/usr/lib/libblas  # pluginlib (lapack, blas)
     plugs: [network, network-bind]
 
   slam-toolbox-online-async:
-    command: roslaunch --wait slam_toolbox build_map_w_params_online_async.launch
+    command: roslaunch --wait slam_toolbox online_async.launch
     environment: 
       LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/lapack:$SNAP/usr/lib/libblas
     plugs: [network, network-bind]
 
   slam-toolbox-offline:
-    command: roslaunch --wait slam_toolbox build_map_w_params_offline.launch
+    command: roslaunch --wait slam_toolbox offline.launch
     environment: 
       LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/lapack:$SNAP/usr/lib/libblas
     plugs: [network, network-bind]

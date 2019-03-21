@@ -16,7 +16,6 @@
   <build_depend>eigen</build_depend>
   <build_depend>message_filters</build_depend>
   <build_depend>nav_msgs</build_depend>
-  <build_depend>karto_sdk</build_depend>
   <build_depend>rosconsole</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>sparse_bundle_adjustment</build_depend>
@@ -36,7 +35,6 @@
   <run_depend>pluginlib</run_depend>
   <run_depend>message_filters</run_depend>
   <run_depend>nav_msgs</run_depend>
-  <run_depend>karto_sdk</run_depend>
   <run_depend>rosconsole</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>sparse_bundle_adjustment</run_depend>
