@@ -825,7 +825,8 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   }
 
   tf::Pose pose_original = KartoPose2TfPose(karto_pose);
-  tf::Pose tf_pose_transformed = (reprocessing_transform_ * pose_original); //TODO STEVE inverting then SetX/Y to -1* was pretty close ~within 3m?
+  tf::Pose tf_pose_transformed = (reprocessing_transform_ * pose_original);
+
 
   karto::Pose2 transformed_pose;
   transformed_pose.SetX(tf_pose_transformed.getOrigin().x());
@@ -867,7 +868,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   }
   else
   {
-    ROS_ERROR("AddScan: Unable to add scan, no valid processing method selected.");
+    ROS_ERROR("AddScan: Unable to add scan, no valid processing method given.");
   }
 
   if(processed)
@@ -879,48 +880,32 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
     tf::Stamped<tf::Pose> odom_to_map;
     tf::Stamped<tf::Pose> map_to_base(
                             tf::Transform(
-                              tf::createQuaternionFromRPY(0,0,corrected_pose.GetHeading()),
-                              tf::Vector3(corrected_pose.GetX(), corrected_pose.GetY(), 0.0)
+                              tf::createQuaternionFromRPY(0., 0., 
+                                corrected_pose.GetHeading()),
+                              tf::Vector3(corrected_pose.GetX(), 
+                                          corrected_pose.GetY(), 
+                                          0.0)
                             ).inverse(), 
                             scan->header.stamp, base_frame_);
     try
     {
       tf_.transformPose(odom_frame_, map_to_base, odom_to_map);
 
-
-
-
-
-
-      //ROS_INFO("Steve base to odom current odo: %f %f %f", karto_pose.GetX(), karto_pose.GetY(), karto_pose.GetHeading());
-      ROS_WARN("Steve odom to case corrected??: %f %f", corrected_pose.GetX(), corrected_pose.GetY());
-      
+      // if we're continuing a previous session, we need to
+      // estimate the homogenous transformation between the old and new
+      // odometry frames and transform the new session 
+      // into the older session's frame
       if (update_offset)
       {
         tf::Pose odom_to_base_old = map_to_base.inverse();
         tf::Quaternion q1;
-        tf::quaternionMsgToTF(tf::createQuaternionMsgFromYaw(tf::getYaw(odom_to_base_old.getRotation())), q1);
+        tf::quaternionMsgToTF(tf::createQuaternionMsgFromYaw( \
+                               tf::getYaw(odom_to_base_old.getRotation())), q1);
         odom_to_base_old.setRotation(q1);
-
-        
-        //STEVE debug prints
-        ROS_INFO("Steve base to odom corrected  : %f %f %f", odom_to_base_old.getOrigin().x(),odom_to_base_old.getOrigin().y(), tf::getYaw(odom_to_base_old.getRotation()));
-
-        // estimate that frame in relation to the old odometry frame to transform all new poses by this T
         tf::Pose odom_to_base_new = KartoPose2TfPose(karto_pose);
-        reprocessing_transform_ = (odom_to_base_old * odom_to_base_new.inverse());
-        //ROS_INFO("Steve Transform: %f %f %f", reprocessing_transform_.getOrigin().x(), reprocessing_transform_.getOrigin().y(), tf::getYaw(reprocessing_transform_.getRotation()));
+        reprocessing_transform_ = odom_to_base_old * odom_to_base_new.inverse();
+      }
 
-        // THiS SHOULD BE close to -3 8 NOT odom! 
-        // reprocessing transform is wrong(ish). its right for what it is, but it isnt what it should be
-        tf::Pose tf_pose_transformed_test = reprocessing_transform_ * KartoPose2TfPose(karto_pose);
-        ROS_INFO("Steve base to odom transformed TEST: %f %f %f", tf_pose_transformed_test.getOrigin().x(), tf_pose_transformed_test.getOrigin().y() ,tf::getYaw(tf_pose_transformed_test.getRotation())); //STEVE odometry from live
-      }
-      else
-      {
-        // THiS SHOULD BE close to -3 8 NOT odom! -- real thing given to karto
-        ROS_INFO("Steve base to odom transformed REAL: %f %f %f", tf_pose_transformed.getOrigin().x(), tf_pose_transformed.getOrigin().y(), tf::getYaw(tf_pose_transformed.getRotation()));
-      }
     }
     catch(tf::TransformException e)
     {
@@ -933,6 +918,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
       map_to_odom_ = tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
                               tf::Point( odom_to_map.getOrigin() ) ).inverse();
     }
+
     // Add the localized range scan to the dataset (for memory management)
     dataset_->Add(range_scan);
   }
