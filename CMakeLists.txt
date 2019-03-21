@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(slam_toolbox)
 
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++17)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
-set(CMAKE_CXX_FLAGS "-fpermissive -std=c++11")
+set(CMAKE_CXX_FLAGS "-fpermissive -std=c++17")
 
 #karto_sdk lib
 set(BUILD_SHARED_LIBS ON)
@@ -99,7 +99,6 @@ catkin_package(
     CATKIN_DEPENDS
       message_filters
       nav_msgs
-      karto_sdk
       rosconsole
       roscpp
       sparse_bundle_adjustment

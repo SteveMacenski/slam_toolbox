@@ -135,3 +135,22 @@ You can run via `roslaunch slam_toolbox build_map_w_params.launch`
 - rviz plugin similification (setting dock,continue,estimated deserialization, pausing)
 - explanation of the transform for the continue against node (map->base_link)
 - explanation why the special case of node 0 relating to that (or does anyone care if it works?)
+
+
+## Brief incursion into snaps
+
+Snap are completely isolated containerized packages that one can run through the Canonical organization on a large number of Linux distributions. They're similar to Docker containers but it doesn't share the kernel or any of the libraries, and rather has everything internal as essentially a seperate partitioned operating system based on Ubuntu Core. 
+
+We package up slam toolbox in this way for a nice multiple-on speed up in execution from a couple of pretty nuanced reasons in this particular project, but generally speaking you shouldn't expect a speedup from a snap. 
+
+Since Snaps are totally isolated and there's no override flags like in Docker, there's only a couple of fixed directories that both the snap and the host system can write and read from, including SNAP_COMMON (usually in `/var/snap/[snap name]/common`). Therefore, this is the place that if you're serializing and deserializing maps, you need to have them accessible to that directory. 
+
+You can optionally store all your serialized maps there, move maps there as needed, take maps from there after serialization, or do my favorite option and `link` the directories with `ln` to where ever you normally store your maps and you're wanting to dump your serialized map files. 
+
+Example of `ln`:
+```
+#           Source                           Linked
+sudo ln -s /home/steve/maps/serialized_map/ /var/snap/slam-toolbox/common
+```
+
+and then all you have to do when you specify a map to use is set the filename to `slam-toolbox/map_name` and it should work no matter if you're running in a snap, docker, or on bare metal. The `-s` makes a symbol link so rather than `/var/snap/slam-toolbox/common/*` containing the maps, `/var/snap/slam-toolbox/common/serialized_map/*` will. By default on bare metal, the maps will be saved in `.ros`

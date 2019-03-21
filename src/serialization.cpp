@@ -23,7 +23,6 @@
 #include <karto_sdk/Mapper.h>
 #include <sys/stat.h>
 
-
 namespace serialization
 {
 inline bool FileExists(const std::string& name)
@@ -47,23 +46,28 @@ void Write(const std::string& filename, karto::Mapper* mapper, karto::Dataset* d
   }
 }
 
-void Read(const std::string& filename, karto::Mapper* mapper, karto::Dataset*& dataset)
+bool Read(const std::string& filename, karto::Mapper* mapper, karto::Dataset*& dataset)
 {
   if (!FileExists(filename + std::string(".posegraph")))
   {
     ROS_ERROR("serialization::Read : Failed to open requested file %s.", filename.c_str());
+    return false;
   }
+
   try
   {
     mapper->LoadFromFile(filename + std::string(".posegraph"));
     std::ifstream ifs((filename + std::string(".data")).c_str());
     boost::archive::binary_iarchive ia(ifs);
     ia >> BOOST_SERIALIZATION_NVP(dataset);
+    return true;
   }
   catch (boost::archive::archive_exception e)
   {
     ROS_ERROR("Failed to read file: Exception %s", e.what());
   }
+
+  return false;
 }
 
 } // end namespace
