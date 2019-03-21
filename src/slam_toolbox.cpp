@@ -1211,7 +1211,7 @@ bool SlamToolbox::SerializePoseGraphCallback( \
                               slam_toolbox::SerializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
-  const std::string filename = req.filename;
+  std::string filename = req.filename;
 
   // if we're inside the snap, we need to write to commonly accessible space
   char* snap_common = getenv("SNAP_COMMON");
@@ -1232,7 +1232,7 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
                              slam_toolbox::DeserializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
-  const std::string filename = req.filename;
+  std::string filename = req.filename;
 
   karto::Dataset* dataset = new karto::Dataset;
   karto::Mapper* mapper = new karto::Mapper;
@@ -1250,7 +1250,14 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
     filename = snap_common_str + std::string("/") + filename;
   }
 
-  serialization::Read(filename, mapper, dataset);
+  try
+  {
+    serialization::Read(filename, mapper, dataset);    
+  }
+  catch (...)
+  {
+    ROS_ERROR("DeserializePoseGraph: Failed to read file: %s.", filename.c_str());
+  }
 
   {
     boost::mutex::scoped_lock lock(mapper_mutex_);
