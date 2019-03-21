@@ -99,7 +99,6 @@ catkin_package(
     CATKIN_DEPENDS
       message_filters
       nav_msgs
-      karto_sdk
       rosconsole
       roscpp
       sparse_bundle_adjustment
