@@ -42,6 +42,7 @@ SlamToolbox::SlamToolbox() :
                          tf_(ros::Duration(14400.)),
                          transform_timeout_(ros::Duration(0.2)),
                          matcher_to_use_(PROCESS),
+                         localization_pose_set_(false),
                          first_measurement_(true) // 4 hours
 /*****************************************************************************/
 {
@@ -842,6 +843,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   // Add the localized range scan to the mapper
   boost::mutex::scoped_lock lock(mapper_mutex_);
   bool processed = false, update_offset = false;
+  bool localize_first_match = PROCESS_LOCALIZATION && !localization_pose_set_;
   if (matcher_to_use_ == PROCESS)
   {
     processed = mapper_->Process(range_scan);
@@ -852,9 +854,13 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
     matcher_to_use_ = PROCESS;
     update_offset = true;
   }
-  else if (matcher_to_use_ == PROCESS_NEAR_REGION)
+  else if (matcher_to_use_ == PROCESS_NEAR_REGION || localize_first_match)
   {
-
+    if (matcher_to_use_ == PROCESS_LOCALIZATION)
+    {
+      localization_pose_set_ = true;
+    }
+  
     karto::Pose2 estimated_starting_pose;
     estimated_starting_pose.SetX(process_near_region_pose_.x);
     estimated_starting_pose.SetY(process_near_region_pose_.y);
@@ -865,6 +871,10 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
     matcher_to_use_ = PROCESS;
     process_near_region_pose_ = geometry_msgs::Pose2D();
     update_offset = true;
+  }
+  else if (matcher_to_use_ == PROCESS_LOCALIZATION)
+  {
+    processed = mapper_->ProcessForLocalization(range_scan);
   }
   else
   {
@@ -1322,6 +1332,13 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
   {
     matcher_to_use_ = PROCESS_NEAR_REGION;
     process_near_region_pose_ = req.initial_pose;
+  }
+  else if (req.match_type == \
+                  slam_toolbox::DeserializePoseGraph::Request::LOCALIZE_AT_POSE)
+  {
+    matcher_to_use_ = PROCESS_LOCALIZATION;
+    process_near_region_pose_ = req.initial_pose;
+    localization_pose_set_ = false;
   }
   else
   {

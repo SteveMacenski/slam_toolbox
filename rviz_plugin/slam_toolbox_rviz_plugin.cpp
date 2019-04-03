@@ -128,13 +128,16 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _check3 = new QCheckBox();
   _check3->setChecked(!paused_process);
   connect(_check3, SIGNAL(stateChanged(int)), this, SLOT(PauseProcessingCb(int)));
-  _radio1 = new QRadioButton(tr("Start By Dock"));
+  _radio1 = new QRadioButton(tr("Start At Dock"));
   _radio1->setChecked(true);
-  _radio2 = new QRadioButton(tr("Start By Pose Est."));
+  _radio2 = new QRadioButton(tr("Start At Pose Est."));
   _radio3 = new QRadioButton(tr("Start At Curr. Odom"));
+  _radio4 = new QRadioButton(tr("Localize"));
+
   connect(_radio1, SIGNAL(clicked()), this, SLOT(FirstNodeMatchCb()));
   connect(_radio2, SIGNAL(clicked()), this, SLOT(PoseEstMatchCb()));
   connect(_radio3, SIGNAL(clicked()), this, SLOT(CurEstMatchCb()));
+  connect(_radio4, SIGNAL(clicked()), this, SLOT(LocalizeCb()));
 
   _line1 = new QLineEdit();
   _line2 = new QLineEdit();
@@ -192,6 +195,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _hbox9->addWidget(_radio1);
   _hbox9->addWidget(_radio2);
   _hbox9->addWidget(_radio3);
+  _hbox9->addWidget(_radio4);
   _hbox9->addStretch(1);
 
   _hbox10->addWidget(_label6);
@@ -255,6 +259,13 @@ void SlamToolboxPlugin::DeserializeMap()
   else if (_match_type == PROCESS_NEAR_REGION_CMT)
   {
     msg.request.match_type = slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;
+    msg.request.initial_pose.x = std::stod(_line5->text().toStdString());
+    msg.request.initial_pose.y = std::stod(_line6->text().toStdString());
+    msg.request.initial_pose.theta = std::stod(_line7->text().toStdString());
+  }
+  else if (_match_type == LOCALIZE_CMT)
+  {
+    msg.request.match_type = slam_toolbox::DeserializePoseGraph::Request::LOCALIZE_AT_POSE;
     msg.request.initial_pose.x = std::stod(_line5->text().toStdString());
     msg.request.initial_pose.y = std::stod(_line6->text().toStdString());
     msg.request.initial_pose.theta = std::stod(_line7->text().toStdString());
@@ -415,6 +426,23 @@ void SlamToolboxPlugin::CurEstMatchCb()
     ROS_INFO("Processing at current odometry selected.");
   }
 }
+
+
+/*****************************************************************************/
+void SlamToolboxPlugin::LocalizeCb()
+/*****************************************************************************/
+{
+  if (_radio4->isChecked() == Qt::Unchecked)
+  {
+    return;
+  }
+  else
+  {
+    _match_type = LOCALIZE_CMT;
+    ROS_INFO("Processing localization selected.");
+  }
+}
+
 
 /*****************************************************************************/
 void SlamToolboxPlugin::updateCheckStateIfExternalChange()

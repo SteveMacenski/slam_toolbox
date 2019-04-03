@@ -1,6 +1,7 @@
 int8 START_AT_FIRST_NODE = 0
 int8 START_WHERE_ODOMETRY_LEFT_OFF = 1
 int8 START_AT_GIVEN_POSE = 2
+int8 LOCALIZE_AT_POSE = 3
 
 # inital_pose should be Map -> base_frame (parameter, generally base_link)
 #

@@ -332,7 +332,8 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   problem_->SetParameterization(&node1it->second(2), angle_local_parameterization_);
   problem_->SetParameterization(&node2it->second(2), angle_local_parameterization_);
 
-  blocks_->insert(std::pair<std::size_t, ceres::ResidualBlockId>(GetHash(node1, node2), block));
+  blocks_->insert(std::pair<std::size_t, ceres::ResidualBlockId>( \
+                                                GetHash(node1, node2), block));
   return;
 }
 

@@ -2746,12 +2746,14 @@ namespace karto
           {
             adj_verts[i]->RemoveEdge(j); //remove from other vertices
             m_pScanOptimizer->RemoveConstraint(adj_edges[j]->GetSource()->GetObject()->GetUniqueId(), adj_edges[j]->GetTarget()->GetObject()->GetUniqueId()); // remove from optimization
-            std::vector<Edge<LocalizedRangeScan>*>::const_iterator edge_graph_it = std::find(m_pGraph->GetEdges().begin(), m_pGraph->GetEdges().end(), adj_edges[j]);
+            std::vector<Edge<LocalizedRangeScan>*> edges = m_pGraph->GetEdges();
+            std::vector<Edge<LocalizedRangeScan>*>::iterator edge_graph_it = std::find(edges.begin(), edges.end(), adj_edges[j]);
             if (edge_graph_it == m_pGraph->GetEdges().end())
             {
               std::cout << "Edge not found in graph to remove!" << std::endl;
             }
             delete *edge_graph_it; // free hat!
+            *edge_graph_it = NULL;
             m_pGraph->RemoveEdge(edge_graph_it); // remove from graph
             found = true;
           }
@@ -2775,11 +2777,12 @@ namespace karto
       }
       m_pGraph->RemoveVertex(pScan->GetSensorName(), vertex_graph_it); //remove from graph
 
-      // 4) delete nodes
+      // 4) delete node and scans
       delete old_lsv.vertex; // free hat!
-      delete old_lsv.scan; 
-
-      // what about m_scans? TODO
+      old_lsv.vertex = NULL;
+      // No need to delete from m_scans in the sensor manager or mapper sensor manager as those pointers will be freed too
+      delete old_lsv.scan;
+      old_lsv.scan = NULL; 
 
       m_LocalizationScanVertices.pop();
     }

@@ -88,7 +88,8 @@ enum ProcessType
 {
   PROCESS = 0,
   PROCESS_FIRST_NODE = 1,
-  PROCESS_NEAR_REGION = 2
+  PROCESS_NEAR_REGION = 2,
+  PROCESS_LOCALIZATION = 3
 };
 
 tf::Pose KartoPose2TfPose(const karto::Pose2& pose)
@@ -189,7 +190,7 @@ private:
   // Internal state
   boost::thread *transform_thread_, *run_thread_, *visualization_thread_;
   tf::Transform map_to_odom_;
-  bool inverted_laser_, pause_graph_, pause_processing_, pause_new_measurements_, interactive_mode_;
+  bool inverted_laser_, pause_graph_, pause_processing_, pause_new_measurements_, interactive_mode_, localization_pose_set_;
   std::queue<posed_scan> q_;
   boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_, interactive_mutex_, moved_nodes_mutex_;
 

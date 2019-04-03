@@ -627,7 +627,7 @@ namespace karto
      * Removes an edge to the graph
      * @param pEdge
      */
-    inline void RemoveEdge(std::vector<Edge<LocalizedRangeScan>*>::const_iterator& iEdge)
+    inline void RemoveEdge(std::vector<Edge<LocalizedRangeScan>*>::iterator& iEdge)
     {
       m_Edges.erase(iEdge);
     }
@@ -1477,7 +1477,7 @@ namespace karto
   /**
    * Manages the devices for the mapper
    */
-  class KARTO_EXPORT MapperSensorManager //: public SensorManager
+  class KARTO_EXPORT MapperSensorManager //: public SensorManager // was commented out, works with it in, but I'll leave out for now...
   {
     typedef std::map<Name, ScanManager*> ScanManagerMap;
 
