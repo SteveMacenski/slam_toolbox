@@ -2744,8 +2744,8 @@ namespace karto
         {
           if (adj_edges[j]->GetTarget() == old_lsv.vertex || adj_edges[j]->GetSource() == old_lsv.vertex)
           {
-            adj_verts[i]->RemoveEdge(j); //remove from other edges
-            m_pScanOptimizer->RemoveConstraint(0,0); // remove from optimization TODO
+            adj_verts[i]->RemoveEdge(j); //remove from other vertices
+            m_pScanOptimizer->RemoveConstraint(adj_edges[j]->GetSource()->GetObject()->GetUniqueId(), adj_edges[j]->GetTarget()->GetObject()->GetUniqueId()); // remove from optimization
             std::vector<Edge<LocalizedRangeScan>*>::const_iterator edge_graph_it = std::find(m_pGraph->GetEdges().begin(), m_pGraph->GetEdges().end(), adj_edges[j]);
             if (edge_graph_it == m_pGraph->GetEdges().end())
             {

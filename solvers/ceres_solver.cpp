@@ -257,7 +257,13 @@ void CeresSolver::Reset()
     delete nodes_;
   }
 
+  if (blocks_)
+  {
+    delete blocks_;
+  }
+
   nodes_ = new std::unordered_map<int, Eigen::Vector3d>();
+  blocks_ = new std::unordered_map<std::size_t, ceres::ResidualBlockId>();
   problem_ = new ceres::Problem();
   first_node_ = nodes_->end();
 
@@ -318,11 +324,14 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   // populate residual and parameterization for heading normalization
   ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create(pose2d(0), 
                                        pose2d(1), pose2d(2), sqrt_information);
-  problem_->AddResidualBlock( cost_function, loss_function_, 
+  ceres::ResidualBlockId block = problem_->AddResidualBlock( \
+                     cost_function, loss_function_, 
                      &node1it->second(0), &node1it->second(1), &node1it->second(2),
                      &node2it->second(0), &node2it->second(1), &node2it->second(2));
-  problem_->SetParameterization(&node1it->second(2), angle_local_parameterization_);//TODO is required?
-  problem_->SetParameterization(&node2it->second(2), angle_local_parameterization_);//TODO is required?
+  problem_->SetParameterization(&node1it->second(2), angle_local_parameterization_);
+  problem_->SetParameterization(&node2it->second(2), angle_local_parameterization_);
+
+  blocks_->insert(std::pair<std::size_t, ceres::ResidualBlockId>(GetHash(node1, node2), block));
   return;
 }
 
@@ -331,6 +340,8 @@ void CeresSolver::RemoveNode(kt_int32s id)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(nodes_mutex_);
+  graph_iterator nodeit = nodes_->find(id);
+  problem_->RemoveParameterBlock(&nodeit->second(2));
   nodes_->erase(id);
 }
 
@@ -338,12 +349,24 @@ void CeresSolver::RemoveNode(kt_int32s id)
 void CeresSolver::RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
 /*****************************************************************************/
 {
-  //TODO
-  //http://ceres-solver.org/nnls_modeling.html
-  //RemoveResidualBlock(residualBlockId)
-  //RemoveParameterBlock(*dobule)
-
-  // store lookup table of these?
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+  std::unordered_map<std::size_t, ceres::ResidualBlockId>::iterator it_a = \
+                                    blocks_->find(GetHash(sourceId, targetId));
+  std::unordered_map<std::size_t, ceres::ResidualBlockId>::iterator it_b = \
+                                    blocks_->find(GetHash(targetId, sourceId));
+  if (it_a != blocks_->end())
+  {
+    problem_->RemoveResidualBlock(it_a->second);  
+  }
+  else if (it_b != blocks_->end())
+  {
+    problem_->RemoveResidualBlock(it_b->second);
+  }
+  else
+  {
+    ROS_WARN("RemoveConstraint: Failed to find residual block for %i %i", 
+                                                 (int)sourceId, (int)targetId);
+  }
 }
 
 /*****************************************************************************/
