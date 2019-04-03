@@ -20,6 +20,7 @@
 
 #include <map>
 #include <vector>
+#include <queue>
 
 #include <Eigen/Core>
 
@@ -699,7 +700,7 @@ namespace karto
      * Adds a vertex representing the given scan to the graph
      * @param pScan
      */
-    void AddVertex(LocalizedRangeScan* pScan);
+    Vertex<LocalizedRangeScan>* AddVertex(LocalizedRangeScan* pScan);
 
     /**
      * Creates an edge between the source scan vertex and the target scan vertex if it
@@ -1787,6 +1788,17 @@ namespace karto
    *     If response is larger then this then initiate loop closure search at the fine resolution.
    *     Default value is 0.5.
    */
+
+  struct LocalizationScanVertex
+  {
+    LocalizationScanVertex(){return;};
+    LocalizationScanVertex(const LocalizationScanVertex& obj){scan = obj.scan; vertex = obj.vertex;};
+    LocalizedRangeScan scan;
+    Vertex<LocalizedRangeScan>* vertex;
+  };
+
+  typedef std::queue<LocalizationScanVertex> LocalizationScanVertices;
+
   class KARTO_EXPORT Mapper : public Module
   {
     friend class MapperGraph;
@@ -1894,6 +1906,19 @@ namespace karto
      * @return true if the scan was added successfully, false otherwise
      */
     virtual kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
+
+    /**
+     * Process a localized range scan for localization inside a map.  The scan must
+     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
+     * localized scan will be updated to the correct pose as determined by the mapper.
+     *
+     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
+     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
+     * information in the scan object based on matching against starting point (nodeId = 0)
+     *
+     * @return true if the scan was processed successfully, false otherwise
+     */
+    virtual kt_bool ProcessForLocalization(LocalizedRangeScan& Scan);
 
     /**
      * Returns all processed scans added to the mapper.
@@ -2041,6 +2066,7 @@ namespace karto
 
     std::vector<MapperListener*> m_Listeners;
 
+    LocalizationScanVertices m_LocalizationScanVertices;
 
     /**
      * When set to true, the mapper will use a scan matching algorithm. In most real-world situations

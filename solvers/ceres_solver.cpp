@@ -20,12 +20,13 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
 /*****************************************************************************/
 {
   ros::NodeHandle nh("~");
-  std::string solver_type, preconditioner_type, dogleg_type, trust_strategy, loss_fn;
+  std::string solver_type, preconditioner_type, dogleg_type, trust_strategy, loss_fn, mode;
   nh.getParam("ceres_linear_solver", solver_type);
   nh.getParam("ceres_preconditioner", preconditioner_type);
   nh.getParam("ceres_dogleg_type", dogleg_type);
   nh.getParam("ceres_trust_strategy", trust_strategy);
   nh.getParam("ceres_loss_function", loss_fn);
+  nh.getParam("mode", mode);
 
   corrections_.clear();
   first_node_ = nodes_->end();
@@ -129,6 +130,13 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   {
     options_.dynamic_sparsity = true;
   }
+
+  if (mode == std::string("localization"))
+  {
+    // doubles the memory footprint, but lets us remove contraints faster
+    options_.enable_fast_removal = true;
+  }
+
   return;
 }
 
@@ -314,6 +322,26 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   problem_->SetParameterization(&node1it->second(2), angle_local_parameterization_);
   problem_->SetParameterization(&node2it->second(2), angle_local_parameterization_);
   return;
+}
+
+/*****************************************************************************/
+void RemoveNode(kt_int32s id)
+/*****************************************************************************/
+{
+  //TODO
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+  nodes_->erase(id);
+  // RM residual blocks with it?
+  //http://ceres-solver.org/nnls_modeling.html
+}
+
+/*****************************************************************************/
+void RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
+/*****************************************************************************/
+{
+  //TODO
+  //http://ceres-solver.org/nnls_modeling.html
+  // RM residual blocks
 }
 
 /*****************************************************************************/

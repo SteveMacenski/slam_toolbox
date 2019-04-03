@@ -918,13 +918,16 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
       map_to_odom_ = tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
                               tf::Point( odom_to_map.getOrigin() ) ).inverse();
     }
-
-    // Add the localized range scan to the dataset (for memory management)
-    dataset_->Add(range_scan);
   }
   else
   {
     delete range_scan;
+  }
+
+  // Add the localized range scan to the dataset (for memory management)
+  if (true)//TODO not in localization mode
+  {
+    dataset_->Add(range_scan);
   }
 
   return processed;

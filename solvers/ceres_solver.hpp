@@ -43,10 +43,12 @@ public:
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex); //Adds a node to the solver
   virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge); //Adds a constraint to the solver
   virtual void getGraph(std::vector<Eigen::Vector2d> &g); //Get graph stored
+  virtual void RemoveNode(kt_int32s id);
+  virtual void RemoveConstraint(kt_int32s sourceId, kt_int32s targetId);
 
   virtual void ModifyNode(const int& unique_id, Eigen::Vector3d pose); // change a node's pose
   virtual void GetNodeOrientation(const int& unique_id, double& pose); // get a node's current pose yaw
-
+  
 private:
   // karto
   karto::ScanSolver::IdPoseVector corrections_;
