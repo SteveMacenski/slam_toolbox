@@ -283,6 +283,15 @@ namespace karto
     }
 
     /**
+     * Deletes an edge at a position
+     */
+    inline void RemoveEdge(const int& idx)
+    {
+      m_Edges.erase(m_Edges.begin() + idx);
+      return;
+    }
+
+    /**
      * Gets the object associated with this vertex
      * @return the object
      */
@@ -596,6 +605,16 @@ namespace karto
     }
 
     /**
+     * Removes a given vertex into the map using the given name
+     * @param rName
+     * @param pVertex
+     */
+    inline void RemoveVertex(const Name& rName, std::vector<Vertex<LocalizedRangeScan>*>::const_iterator iVertex)
+    {
+      m_Vertices[rName].erase(iVertex);
+    }
+
+    /**
      * Adds an edge to the graph
      * @param pEdge
      */
@@ -603,6 +622,16 @@ namespace karto
     {
       m_Edges.push_back(pEdge);
     }
+
+    /**
+     * Removes an edge to the graph
+     * @param pEdge
+     */
+    inline void RemoveEdge(std::vector<Edge<LocalizedRangeScan>*>::const_iterator& iEdge)
+    {
+      m_Edges.erase(iEdge);
+    }
+
 
     /**
      * Deletes the graph data
@@ -1793,7 +1822,7 @@ namespace karto
   {
     LocalizationScanVertex(){return;};
     LocalizationScanVertex(const LocalizationScanVertex& obj){scan = obj.scan; vertex = obj.vertex;};
-    LocalizedRangeScan scan;
+    LocalizedRangeScan* scan;
     Vertex<LocalizedRangeScan>* vertex;
   };
 
@@ -1918,7 +1947,7 @@ namespace karto
      *
      * @return true if the scan was processed successfully, false otherwise
      */
-    virtual kt_bool ProcessForLocalization(LocalizedRangeScan& Scan);
+    virtual kt_bool ProcessForLocalization(LocalizedRangeScan* pScan);
 
     /**
      * Returns all processed scans added to the mapper.

@@ -2659,9 +2659,8 @@ namespace karto
   }
 
 
-  kt_bool Mapper::ProcessForLocalization(LocalizedRangeScan& Scan)
+  kt_bool Mapper::ProcessForLocalization(LocalizedRangeScan* pScan)
   {
-    LocalizedRangeScan* pScan = &Scan;
     karto::LaserRangeFinder* pLaserRangeFinder = pScan->GetLaserRangeFinder();
 
     // validate scan
@@ -2735,44 +2734,58 @@ namespace karto
     {
       LocalizationScanVertex& old_lsv = m_LocalizationScanVertices.front();
 
-      // 1) delete edges
-      std::vector<Edge<LocalizedRangeScan>*> adj_edges(old_lsv.vertex->GetEdges());
-      for (int i = 0; i != adj_edges.size(); i++)
+      // 1) delete edges in adjacent vertices and in general
+      std::vector<Vertex<LocalizedRangeScan>*> adj_verts = old_lsv.vertex->GetAdjacentVertices();
+      for (int i = 0; i != adj_verts.size(); i++)
       {
-        if (adj_edges[i]->GetSource() == old_lsv.vertex)
+        std::vector<Edge<LocalizedRangeScan>*> adj_edges = adj_verts[i]->GetEdges();
+        bool found = false;
+        for (int j=0; j!=adj_edges.size(); j++)
         {
-          // visit target and remove from its list TODO
+          if (adj_edges[j]->GetTarget() == old_lsv.vertex || adj_edges[j]->GetSource() == old_lsv.vertex)
+          {
+            adj_verts[i]->RemoveEdge(j); //remove from other edges
+            m_pScanOptimizer->RemoveConstraint(0,0); // remove from optimization TODO
+            std::vector<Edge<LocalizedRangeScan>*>::const_iterator edge_graph_it = std::find(m_pGraph->GetEdges().begin(), m_pGraph->GetEdges().end(), adj_edges[j]);
+            if (edge_graph_it == m_pGraph->GetEdges().end())
+            {
+              std::cout << "Edge not found in graph to remove!" << std::endl;
+            }
+            delete *edge_graph_it; // free hat!
+            m_pGraph->RemoveEdge(edge_graph_it); // remove from graph
+            found = true;
+          }
         }
-        else if (adj_edges[i]->GetTarget() == old_lsv.vertex)
+        if (!found)
         {
-          // visit source and remove from its list TODO
+          std::cout << "Failed to find any edge in adj. vertex with a matching vertex to current!" << std::endl;
         }
-        else
-        {
-          std::cout << "Error! Edge vertex to delete is malformed!" << std::endl;
-        }
-
-        // delete the edge pointer then remove from vector TODO
-
       }
 
       // 2) delete from optimizer
-      m_pScanOptimizer->RemoveNode(old_lsv.vertex->GetObject()->GetUniqueId());
-      for (int i = 0; i != adj_edges.size(); i++)
+      m_pScanOptimizer->RemoveNode(old_lsv.vertex->GetObject()->GetUniqueId()); // remove from optimizer
+
+      // 3) delete from vertex map
+      std::map<Name, std::vector<Vertex<LocalizedRangeScan>*> > vertex_map = m_pGraph->GetVertices();
+      std::vector<Vertex<LocalizedRangeScan>*> graph_vertices = vertex_map[pScan->GetSensorName()];
+      std::vector<Vertex<LocalizedRangeScan>*>::const_iterator vertex_graph_it = std::find(graph_vertices.begin(), graph_vertices.end(), old_lsv.vertex);
+      if (vertex_graph_it == graph_vertices.end())
       {
-        m_pScanOptimizer->RemoveConstraint(0,0);
+        std::cout << "Vertex not found in graph to remove!" << std::endl;
       }
+      m_pGraph->RemoveVertex(pScan->GetSensorName(), vertex_graph_it); //remove from graph
 
-      // 3) delete nodes
+      // 4) delete nodes
+      delete old_lsv.vertex; // free hat!
+      delete old_lsv.scan; 
 
-      //delete old_lsv.vertex; TODO
-      //remove vertex from vertex map TODO
+      // what about m_scans? TODO
 
       m_LocalizationScanVertices.pop();
     }
 
     LocalizationScanVertex lsv;
-    //lsv.scan = Scan;
+    lsv.scan = pScan;
     lsv.vertex = scan_vertex;
     m_LocalizationScanVertices.push(lsv);
 

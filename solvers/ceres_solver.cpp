@@ -16,7 +16,7 @@ namespace solver_plugins
 
 /*****************************************************************************/
 CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>()),
-                             problem_(new ceres::Problem()), was_constant_set_(false)
+                             problem_(NULL), was_constant_set_(false)
 /*****************************************************************************/
 {
   ros::NodeHandle nh("~");
@@ -134,8 +134,10 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   if (mode == std::string("localization"))
   {
     // doubles the memory footprint, but lets us remove contraints faster
-    options_.enable_fast_removal = true;
+    options_problem_.enable_fast_removal = true;
   }
+
+  problem_ = new ceres::Problem(options_problem_);
 
   return;
 }
@@ -319,29 +321,29 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   problem_->AddResidualBlock( cost_function, loss_function_, 
                      &node1it->second(0), &node1it->second(1), &node1it->second(2),
                      &node2it->second(0), &node2it->second(1), &node2it->second(2));
-  problem_->SetParameterization(&node1it->second(2), angle_local_parameterization_);
-  problem_->SetParameterization(&node2it->second(2), angle_local_parameterization_);
+  problem_->SetParameterization(&node1it->second(2), angle_local_parameterization_);//TODO is required?
+  problem_->SetParameterization(&node2it->second(2), angle_local_parameterization_);//TODO is required?
   return;
 }
 
 /*****************************************************************************/
-void RemoveNode(kt_int32s id)
+void CeresSolver::RemoveNode(kt_int32s id)
 /*****************************************************************************/
 {
-  //TODO
   boost::mutex::scoped_lock lock(nodes_mutex_);
   nodes_->erase(id);
-  // RM residual blocks with it?
-  //http://ceres-solver.org/nnls_modeling.html
 }
 
 /*****************************************************************************/
-void RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
+void CeresSolver::RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
 /*****************************************************************************/
 {
   //TODO
   //http://ceres-solver.org/nnls_modeling.html
-  // RM residual blocks
+  //RemoveResidualBlock(residualBlockId)
+  //RemoveParameterBlock(*dobule)
+
+  // store lookup table of these?
 }
 
 /*****************************************************************************/
