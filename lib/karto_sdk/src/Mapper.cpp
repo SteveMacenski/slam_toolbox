@@ -2658,7 +2658,6 @@ namespace karto
 	  return false;
   }
 
-
   kt_bool Mapper::ProcessForLocalization(LocalizedRangeScan* pScan)
   {
     karto::LaserRangeFinder* pLaserRangeFinder = pScan->GetLaserRangeFinder();
@@ -2778,9 +2777,9 @@ namespace karto
       m_pGraph->RemoveVertex(pScan->GetSensorName(), vertex_graph_it); //remove from graph
 
       // 4) delete node and scans
+      // No need to delete from m_scans in the sensor manager or mapper sensor manager as those pointers will be freed too
       delete old_lsv.vertex; // free hat!
       old_lsv.vertex = NULL;
-      // No need to delete from m_scans in the sensor manager or mapper sensor manager as those pointers will be freed too
       delete old_lsv.scan;
       old_lsv.scan = NULL; 
 

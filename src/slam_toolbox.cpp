@@ -268,6 +268,7 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   tfB_ = new tf::TransformBroadcaster();
   sst_ = node.advertise<nav_msgs::OccupancyGrid>("/map", 1, true);
   sstm_ = node.advertise<nav_msgs::MapMetaData>("/map_metadata", 1, true);
+  localization_pose_sub_ = node.subscribe("/initialpose", 2, &SlamToolbox::LocalizePoseCallback, this);
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::MapCallback, this);
   ssClear_ = node.advertiseService("clear_queue", &SlamToolbox::ClearQueueCallback, this);
   ssPause_processing_ = node.advertiseService("pause_processing", &SlamToolbox::PauseProcessingCallback, this);
@@ -860,7 +861,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
     {
       localization_pose_set_ = true;
     }
-  
+
     karto::Pose2 estimated_starting_pose;
     estimated_starting_pose.SetX(process_near_region_pose_.x);
     estimated_starting_pose.SetY(process_near_region_pose_.y);
@@ -1346,6 +1347,18 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
   }
 
   return true;
+}
+
+/*****************************************************************************/
+void SlamToolbox::LocalizePoseCallback(const \
+                         geometry_msgs::PoseWithCovarianceStampedConstPtr& msg)
+/*****************************************************************************/
+{
+  matcher_to_use_ = PROCESS_LOCALIZATION;
+  process_near_region_pose_.x = msg->pose.pose.position.x;
+  process_near_region_pose_.y = msg->pose.pose.position.y;
+  process_near_region_pose_.theta = tf::getYaw(msg->pose.pose.orientation);
+  localization_pose_set_ = false;
 }
 
 /*****************************************************************************/

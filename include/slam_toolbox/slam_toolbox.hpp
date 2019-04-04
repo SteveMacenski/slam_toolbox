@@ -18,15 +18,15 @@
 /* Author: Brian Gerkey */
 /* Heavily Modified: Steven Macenski */
 
-#include "ros/ros.h"
-#include "ros/console.h"
-#include "message_filters/subscriber.h"
-#include "tf/transform_broadcaster.h"
-#include "tf/transform_listener.h"
-#include "tf/message_filter.h"
+#include <ros/ros.h>
+#include <ros/console.h>
+#include <message_filters/subscriber.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
+#include <tf/message_filter.h>
 #include <tf/LinearMath/Matrix3x3.h>
 #include <tf/transform_datatypes.h>
-#include "visualization_msgs/MarkerArray.h"
+#include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>
 #include <visualization_msgs/InteractiveMarkerControl.h> 
 #include <visualization_msgs/InteractiveMarkerFeedback.h>
@@ -35,9 +35,10 @@
 #include <interactive_markers/menu_handler.h>
 #include <pluginlib/class_loader.h>
 
-#include "nav_msgs/MapMetaData.h"
-#include "sensor_msgs/LaserScan.h"
-#include "nav_msgs/GetMap.h"
+#include <nav_msgs/MapMetaData.h>
+#include <sensor_msgs/LaserScan.h>
+#include <nav_msgs/GetMap.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include "karto_sdk/Mapper.h"
 
@@ -143,6 +144,7 @@ private:
                                   slam_toolbox::SerializePoseGraph::Response &resp);
   bool DeserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request &req,
                                     slam_toolbox::DeserializePoseGraph::Response &resp);
+  void LocalizePoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
   // functional bits
   bool GetOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
@@ -166,6 +168,7 @@ private:
   tf::TransformListener tf_;
   tf::TransformBroadcaster* tfB_;
   message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
+  ros::Subscriber localization_pose_sub_;
   tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
   ros::Publisher sst_, sstm_, marker_publisher_, scan_publisher_;
   ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_processing_, ssPause_measurements_, ssClear_manual_, ssSave_map_, ssSerialize_, ssLoadMap_;
