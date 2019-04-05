@@ -2660,6 +2660,11 @@ namespace karto
 
   kt_bool Mapper::ProcessForLocalization(LocalizedRangeScan* pScan)
   {
+    if (pScan == NULL)
+    {
+      return false;
+    }
+
     karto::LaserRangeFinder* pLaserRangeFinder = pScan->GetLaserRangeFinder();
 
     // validate scan
@@ -2792,7 +2797,6 @@ namespace karto
     m_LocalizationScanVertices.push(lsv);
 
     return true;
-
   }
 
   /**

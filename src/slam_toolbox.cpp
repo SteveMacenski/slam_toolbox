@@ -932,11 +932,14 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   }
   else
   {
-    delete range_scan;
+    if (matcher_to_use_ != PROCESS_LOCALIZATION)
+    {
+      delete range_scan;
+    }
   }
 
-  // Add the localized range scan to the dataset (for memory management)
-  if (true)//TODO not in localization mode
+  // Add the localized range scan to the dataset for memory management
+  if (matcher_to_use_ != PROCESS_LOCALIZATION)
   {
     dataset_->Add(range_scan);
   }
