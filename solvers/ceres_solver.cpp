@@ -16,12 +16,14 @@ namespace solver_plugins
 
 /*****************************************************************************/
 CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>()),
-                             blocks_(new std::unordered_map<std::size_t, ceres::ResidualBlockId>()),
+                             blocks_(new std::unordered_map<std::size_t, \
+                              ceres::ResidualBlockId>()),
                              problem_(NULL), was_constant_set_(false)
 /*****************************************************************************/
 {
   ros::NodeHandle nh("~");
-  std::string solver_type, preconditioner_type, dogleg_type, trust_strategy, loss_fn, mode;
+  std::string solver_type, preconditioner_type, dogleg_type, \
+    trust_strategy, loss_fn, mode;
   nh.getParam("ceres_linear_solver", solver_type);
   nh.getParam("ceres_preconditioner", preconditioner_type);
   nh.getParam("ceres_dogleg_type", dogleg_type);
@@ -113,7 +115,8 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
 
   options_.sparse_linear_algebra_library_type = ceres::SUITE_SPARSE;
   options_.max_num_consecutive_invalid_steps = 3;
-  options_.max_consecutive_nonmonotonic_steps = options_.max_num_consecutive_invalid_steps;
+  options_.max_consecutive_nonmonotonic_steps = \
+                                     options_.max_num_consecutive_invalid_steps;
   options_.num_threads = 50;
   options_.use_nonmonotonic_steps = true;
   options_.jacobi_scaling = true;
@@ -203,7 +206,7 @@ void CeresSolver::Compute()
   if (!summary.IsSolutionUsable())
   {
     ROS_WARN("CeresSolver: "
-                          "Ceres could not find a usable solution to optimize.");
+                         "Ceres could not find a usable solution to optimize.");
     return;
   }
 
@@ -302,7 +305,8 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   const int node2 = pEdge->GetTarget()->GetObject()->GetUniqueId();
   graph_iterator node2it = nodes_->find(node2);
 
-  if (node1it == nodes_->end() || node2it == nodes_->end() || node1it == node2it)
+  if (node1it == nodes_->end() || 
+      node2it == nodes_->end() || node1it == node2it)
   {
     ROS_WARN("CeresSolver: Failed to add constraint, could not find nodes.");
     return;
@@ -343,8 +347,15 @@ void CeresSolver::RemoveNode(kt_int32s id)
 {
   boost::mutex::scoped_lock lock(nodes_mutex_);
   graph_iterator nodeit = nodes_->find(id);
-  problem_->RemoveParameterBlock(&nodeit->second(2));
-  nodes_->erase(id);
+  if (nodeit == nodes_->end())
+  {
+    ROS_ERROR("RemoveNode: Failed to find node matching id %i", (int)id);
+  }
+  else
+  {
+    problem_->RemoveParameterBlock(&nodeit->second(2));
+    nodes_->erase(id);    
+  }
 }
 
 /*****************************************************************************/
@@ -366,7 +377,7 @@ void CeresSolver::RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
   }
   else
   {
-    ROS_WARN("RemoveConstraint: Failed to find residual block for %i %i", 
+    ROS_ERROR("RemoveConstraint: Failed to find residual block for %i %i", 
                                                  (int)sourceId, (int)targetId);
   }
 }

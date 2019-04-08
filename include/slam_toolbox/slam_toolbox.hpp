@@ -180,7 +180,7 @@ private:
   ros::Duration transform_timeout_;
   double resolution_, minimum_time_interval_, minimum_travel_distance_;
   bool publish_occupancy_map_, first_measurement_, sychronous_, online_;
-  ProcessType matcher_to_use_;
+  ProcessType processor_type_;
   geometry_msgs::Pose2D process_near_region_pose_;
   tf::Transform reprocessing_transform_;
 

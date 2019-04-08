@@ -2658,7 +2658,7 @@ namespace karto
 	  return false;
   }
 
-  kt_bool Mapper::ProcessForLocalization(LocalizedRangeScan* pScan)
+  kt_bool Mapper::ProcessLocalization(LocalizedRangeScan* pScan)
   {
     if (pScan == NULL)
     {
@@ -2736,29 +2736,42 @@ namespace karto
     // generate the info to store and later decay, outside of dataset
     if (m_LocalizationScanVertices.size() > getParamScanBufferSize())
     {
-      LocalizationScanVertex& old_lsv = m_LocalizationScanVertices.front();
+      LocalizationScanVertex& oldLSV = m_LocalizationScanVertices.front();
 
       // 1) delete edges in adjacent vertices and in general
-      std::vector<Vertex<LocalizedRangeScan>*> adj_verts = old_lsv.vertex->GetAdjacentVertices();
-      for (int i = 0; i != adj_verts.size(); i++)
+      std::vector<Vertex<LocalizedRangeScan>*> adjVerts = oldLSV.vertex->GetAdjacentVertices();
+      std::cout << "DBUG: Top has "<< adjVerts.size() << " verticies" << std::endl;
+
+      for (int i = 0; i != adjVerts.size(); i++)
       {
-        std::vector<Edge<LocalizedRangeScan>*> adj_edges = adj_verts[i]->GetEdges();
+        std::vector<Edge<LocalizedRangeScan>*> adjEdges = adjVerts[i]->GetEdges();
+        std::cout << "DBUG: Vertex has " << adjEdges.size() << " edges"<< std::endl;
         bool found = false;
-        for (int j=0; j!=adj_edges.size(); j++)
+        for (int j=0; j!=adjEdges.size(); j++)
         {
-          if (adj_edges[j]->GetTarget() == old_lsv.vertex || adj_edges[j]->GetSource() == old_lsv.vertex)
+          if (adjEdges[j]->GetTarget() == oldLSV.vertex || adjEdges[j]->GetSource() == oldLSV.vertex)
           {
-            adj_verts[i]->RemoveEdge(j); //remove from other vertices
-            m_pScanOptimizer->RemoveConstraint(adj_edges[j]->GetSource()->GetObject()->GetUniqueId(), adj_edges[j]->GetTarget()->GetObject()->GetUniqueId()); // remove from optimization
+            std::cout << "DBUG: Edge has matching vertex from deletion, removing edge from this vertex" << std::endl;
+            adjVerts[i]->RemoveEdge(j); //remove from other vertices
+            std::cout << "DBUG: Removing constraint from optimizer" << std::endl;
+            m_pScanOptimizer->RemoveConstraint(adjEdges[j]->GetSource()->GetObject()->GetUniqueId(), adjEdges[j]->GetTarget()->GetObject()->GetUniqueId()); // remove from optimization
             std::vector<Edge<LocalizedRangeScan>*> edges = m_pGraph->GetEdges();
-            std::vector<Edge<LocalizedRangeScan>*>::iterator edge_graph_it = std::find(edges.begin(), edges.end(), adj_edges[j]);
-            if (edge_graph_it == m_pGraph->GetEdges().end())
+            std::vector<Edge<LocalizedRangeScan>*>::iterator edgeGraphIt = std::find(edges.begin(), edges.end(), adjEdges[j]);
+
+            if (edgeGraphIt == edges.end())
             {
               std::cout << "Edge not found in graph to remove!" << std::endl;
+              continue;
             }
-            delete *edge_graph_it; // free hat!
-            *edge_graph_it = NULL;
-            m_pGraph->RemoveEdge(edge_graph_it); // remove from graph
+
+            std::cout << "DBUG: Delete edge" << std::endl;
+            delete *edgeGraphIt; // free hat!
+            *edgeGraphIt = NULL;
+            int posEdge = edgeGraphIt - edges.begin(); // TODO STEVE I'm suspect... 44 a bunch... make sure unqiue, no F up, and just from link
+                                                        // also suspect because the iterator made it crash
+            std::cout << "DBUG edgeposition: " << posEdge << std::endl;
+            m_pGraph->RemoveEdge(posEdge); // remove from graph
+            std::cout << "DBUG: Delete edge from graph" << std::endl;
             found = true;
           }
         }
@@ -2769,25 +2782,43 @@ namespace karto
       }
 
       // 2) delete from optimizer
-      m_pScanOptimizer->RemoveNode(old_lsv.vertex->GetObject()->GetUniqueId()); // remove from optimizer
+      std::cout << "DBUG: remove node from optimizer" << std::endl;
+      m_pScanOptimizer->RemoveNode(oldLSV.vertex->GetObject()->GetUniqueId()); // remove from optimizer
 
       // 3) delete from vertex map
-      std::map<Name, std::vector<Vertex<LocalizedRangeScan>*> > vertex_map = m_pGraph->GetVertices();
-      std::vector<Vertex<LocalizedRangeScan>*> graph_vertices = vertex_map[pScan->GetSensorName()];
-      std::vector<Vertex<LocalizedRangeScan>*>::const_iterator vertex_graph_it = std::find(graph_vertices.begin(), graph_vertices.end(), old_lsv.vertex);
-      if (vertex_graph_it == graph_vertices.end())
+      std::map<Name, std::vector<Vertex<LocalizedRangeScan>*> > vertexMap = m_pGraph->GetVertices();
+      std::vector<Vertex<LocalizedRangeScan>*> graphVertices = vertexMap[pScan->GetSensorName()];
+      std::vector<Vertex<LocalizedRangeScan>*>::iterator vertexGraphIt = std::find(graphVertices.begin(), graphVertices.end(), oldLSV.vertex);
+      if (vertexGraphIt == graphVertices.end())
       {
         std::cout << "Vertex not found in graph to remove!" << std::endl;
       }
-      m_pGraph->RemoveVertex(pScan->GetSensorName(), vertex_graph_it); //remove from graph
+      else
+      {
+        std::cout << "DBUG: Removing vertex from graph" << std::endl;    
+        int posVert = vertexGraphIt - graphVertices.begin();
+        std::cout << "DBUG vertposition: " << posVert << std::endl;
+        //m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert); //remove from graph TODO STEVE, right now just orphaned
+        std::cout << "DBUG: Vertex to be removed has: "<< (*vertexGraphIt)->GetEdges().size() << " edges" << std::endl; //TODO STEVE this is > 0!!! 
+              // STEVE that might be OK since we dont delete them BUT ALSO LOOK AT THEM AND SEE THEY"RE NULL!!!!
+      }
 
       // 4) delete node and scans
+      // free hat!
       // No need to delete from m_scans in the sensor manager or mapper sensor manager as those pointers will be freed too
-      delete old_lsv.vertex; // free hat!
-      old_lsv.vertex = NULL;
-      delete old_lsv.scan;
-      old_lsv.scan = NULL; 
+      std::cout << "DBUG: delete some pointers" << std::endl;
+      if (oldLSV.vertex)
+      {
+        delete oldLSV.vertex;
+        oldLSV.vertex = NULL;
+      }
+      if (oldLSV.scan)
+      {
+        delete oldLSV.scan;
+        oldLSV.scan = NULL;
+      }
 
+      std::cout << "DBUG: popping top" << std::endl;
       m_LocalizationScanVertices.pop();
     }
 
@@ -2795,7 +2826,7 @@ namespace karto
     lsv.scan = pScan;
     lsv.vertex = scan_vertex;
     m_LocalizationScanVertices.push(lsv);
-
+    std::cout << "DBUG: Completed!" << std::endl;
     return true;
   }
 
