@@ -2798,14 +2798,14 @@ namespace karto
         std::cout << "DBUG: Removing vertex from graph" << std::endl;    
         int posVert = vertexGraphIt - graphVertices.begin();
         std::cout << "DBUG vertposition: " << posVert << std::endl;
-        //m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert); //remove from graph TODO STEVE, right now just orphaned
-        std::cout << "DBUG: Vertex to be removed has: "<< (*vertexGraphIt)->GetEdges().size() << " edges" << std::endl; //TODO STEVE this is > 0!!! 
-              // STEVE that might be OK since we dont delete them BUT ALSO LOOK AT THEM AND SEE THEY"RE NULL!!!!
+        //m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert); //remove from graph TODO STEVE
+        std::cout << "DBUG: Vertex to be removed has: "<< (*vertexGraphIt)->GetEdges().size() << " edges" << std::endl;
+              //TODO STEVE verify wach of these are freed pointers
       }
 
       // 4) delete node and scans
       // free hat!
-      // No need to delete from m_scans in the sensor manager or mapper sensor manager as those pointers will be freed too
+      // No need to delete from m_scans as those pointers will be freed memory
       std::cout << "DBUG: delete some pointers" << std::endl;
       if (oldLSV.vertex)
       {
