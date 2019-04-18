@@ -2738,22 +2738,19 @@ namespace karto
     {
       LocalizationScanVertex& oldLSV = m_LocalizationScanVertices.front();
 
-      // 1) delete edges in adjacent vertices and in general
+std::cout << "1" << std::endl;
+      // 1) delete edges in adjacent vertices, graph, and optimizer
       std::vector<Vertex<LocalizedRangeScan>*> adjVerts = oldLSV.vertex->GetAdjacentVertices();
-      std::cout << "DBUG: Top has "<< adjVerts.size() << " verticies" << std::endl;
-
       for (int i = 0; i != adjVerts.size(); i++)
       {
         std::vector<Edge<LocalizedRangeScan>*> adjEdges = adjVerts[i]->GetEdges();
-        std::cout << "DBUG: Vertex has " << adjEdges.size() << " edges"<< std::endl;
         bool found = false;
         for (int j=0; j!=adjEdges.size(); j++)
         {
           if (adjEdges[j]->GetTarget() == oldLSV.vertex || adjEdges[j]->GetSource() == oldLSV.vertex)
           {
-            std::cout << "DBUG: Edge has matching vertex from deletion, removing edge from this vertex" << std::endl;
             adjVerts[i]->RemoveEdge(j); //remove from other vertices
-            std::cout << "DBUG: Removing constraint from optimizer" << std::endl;
+
             m_pScanOptimizer->RemoveConstraint(adjEdges[j]->GetSource()->GetObject()->GetUniqueId(), adjEdges[j]->GetTarget()->GetObject()->GetUniqueId()); // remove from optimization
             std::vector<Edge<LocalizedRangeScan>*> edges = m_pGraph->GetEdges();
             std::vector<Edge<LocalizedRangeScan>*>::iterator edgeGraphIt = std::find(edges.begin(), edges.end(), adjEdges[j]);
@@ -2764,14 +2761,10 @@ namespace karto
               continue;
             }
 
-            std::cout << "DBUG: Delete edge" << std::endl;
+            int posEdge = edgeGraphIt - edges.begin();
+            m_pGraph->RemoveEdge(posEdge); // remove from graph
             delete *edgeGraphIt; // free hat!
             *edgeGraphIt = NULL;
-            int posEdge = edgeGraphIt - edges.begin(); // TODO STEVE I'm suspect... 44 a bunch... make sure unqiue, no F up, and just from link
-                                                        // also suspect because the iterator made it crash
-            std::cout << "DBUG edgeposition: " << posEdge << std::endl;
-            m_pGraph->RemoveEdge(posEdge); // remove from graph
-            std::cout << "DBUG: Delete edge from graph" << std::endl;
             found = true;
           }
         }

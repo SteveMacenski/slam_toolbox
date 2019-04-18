@@ -172,19 +172,12 @@ CeresSolver::~CeresSolver()
 void CeresSolver::Compute()
 /*****************************************************************************/
 {
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+
   if (nodes_->size() == 0)
   {
     ROS_ERROR("CeresSolver: Ceres was called when there are no nodes."
               " This shouldn't happen.");
-    return;
-  }
-
-  boost::mutex::scoped_lock lock(nodes_mutex_, boost::try_to_lock);
-  if (!lock)
-  {
-    ROS_DEBUG("CeresSolver: Did not achieve lock to compute, "
-              "someone else must be already optimizing "
-              " it's okay, this isn't time critical.");
     return;
   }
 
@@ -346,6 +339,7 @@ void CeresSolver::RemoveNode(kt_int32s id)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(nodes_mutex_);
+
   graph_iterator nodeit = nodes_->find(id);
   if (nodeit == nodes_->end())
   {
@@ -353,8 +347,7 @@ void CeresSolver::RemoveNode(kt_int32s id)
   }
   else
   {
-    problem_->RemoveParameterBlock(&nodeit->second(2));
-    nodes_->erase(id);    
+    //nodes_->erase(id); // maybe TODO STEVE cant remove this then invalidates Ceres' residual blocks
   }
 }
 
@@ -370,10 +363,12 @@ void CeresSolver::RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
   if (it_a != blocks_->end())
   {
     problem_->RemoveResidualBlock(it_a->second);  
+    blocks_->erase(it_a);
   }
   else if (it_b != blocks_->end())
   {
     problem_->RemoveResidualBlock(it_b->second);
+    blocks_->erase(it_b);
   }
   else
   {

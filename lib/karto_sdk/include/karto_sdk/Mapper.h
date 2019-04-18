@@ -631,9 +631,7 @@ namespace karto
      */
     inline void RemoveEdge(const int& idx)
     {
-      std::cout << "Calling RemoveEdge" << std::endl;
       m_Edges.erase(m_Edges.begin() + idx);
-      std::cout << "Called RemoveEdge" << std::endl;
     }
 
 

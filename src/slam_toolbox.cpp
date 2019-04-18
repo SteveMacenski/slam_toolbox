@@ -478,7 +478,6 @@ void SlamToolbox::PublishGraph()
 /*****************************************************************************/
 {
   std::vector<Eigen::Vector2d> graph;
-  boost::mutex::scoped_lock lock(mapper_mutex_);
   solver_->getGraph(graph);
 
   if (graph.size() == 0)
@@ -810,7 +809,6 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
                    karto::Pose2& karto_pose)
 /*****************************************************************************/
 {  
-  ROS_INFO("Processing scan...");
   // Create a vector of doubles for karto
   std::vector<kt_double> readings;
   if (lasers_inverted_[scan->header.frame_id])
@@ -882,9 +880,9 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   }
   else if (processor_type_ == PROCESS_LOCALIZATION)
   {
-    ROS_INFO("Processing localization...");
+    ROS_INFO("DBUG: Processing localization...");
     processed = mapper_->ProcessLocalization(range_scan);
-    ROS_INFO("Processed localization...");
+    ROS_INFO("DBUG: Processed localization...");
   }
   else
   {
@@ -949,7 +947,6 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
     delete range_scan;
   }
 
-  ROS_INFO("Leaving...");
   return processed;
 }
 
@@ -1121,7 +1118,6 @@ bool SlamToolbox::SaveMapCallback(slam_toolbox::SaveMap::Request  &req,
 /*****************************************************************************/
 {
   std::vector<Eigen::Vector2d> graph;
-  boost::mutex::scoped_lock lock(mapper_mutex_);
   solver_->getGraph(graph);
   if (graph.size() == 0)
   {
@@ -1304,6 +1300,7 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
     }
 
     mapper->SetScanSolver(solver_.get());
+    solver_->Compute();
 
     if (mapper_)
     {
@@ -1373,6 +1370,7 @@ void SlamToolbox::LocalizePoseCallback(const \
                                               process_near_region_pose_.x, 
                                               process_near_region_pose_.y, 
                                               process_near_region_pose_.theta);
+  first_measurement_ = true;
 }
 
 /*****************************************************************************/
