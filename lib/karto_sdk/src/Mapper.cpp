@@ -1191,12 +1191,19 @@ namespace karto
 
     virtual kt_bool Visit(Vertex<LocalizedRangeScan>* pVertex)
     {
-      LocalizedRangeScan* pScan = pVertex->GetObject();
+      try
+      {
+        LocalizedRangeScan* pScan = pVertex->GetObject();
 
-      Pose2 pose = pScan->GetReferencePose(m_UseScanBarycenter);
-
-      kt_double squaredDistance = pose.GetPosition().SquaredDistance(m_CenterPose.GetPosition());
-      return (squaredDistance <= m_MaxDistanceSquared - KT_TOLERANCE);
+        Pose2 pose = pScan->GetReferencePose(m_UseScanBarycenter);
+        kt_double squaredDistance = pose.GetPosition().SquaredDistance(m_CenterPose.GetPosition());
+        return (squaredDistance <= m_MaxDistanceSquared - KT_TOLERANCE);
+      }
+      catch(...)
+      {
+        // relocalization vertex elements missing
+        return false;
+      }
     }
 
   protected:
@@ -2720,7 +2727,7 @@ namespace karto
       m_pGraph->AddEdges(pScan, covariance);
 
       m_pMapperSensorManager->AddRunningScan(pScan);
-
+      
       if (m_pDoLoopClosing->GetValue())
       {
         std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
@@ -2738,7 +2745,6 @@ namespace karto
     {
       LocalizationScanVertex& oldLSV = m_LocalizationScanVertices.front();
 
-std::cout << "1" << std::endl;
       // 1) delete edges in adjacent vertices, graph, and optimizer
       std::vector<Vertex<LocalizedRangeScan>*> adjVerts = oldLSV.vertex->GetAdjacentVertices();
       for (int i = 0; i != adjVerts.size(); i++)
@@ -2774,32 +2780,30 @@ std::cout << "1" << std::endl;
         }
       }
 
-      // 2) delete from optimizer
-      std::cout << "DBUG: remove node from optimizer" << std::endl;
+      // 2) delete vertex from optimizer
       m_pScanOptimizer->RemoveNode(oldLSV.vertex->GetObject()->GetUniqueId()); // remove from optimizer
 
       // 3) delete from vertex map
       std::map<Name, std::vector<Vertex<LocalizedRangeScan>*> > vertexMap = m_pGraph->GetVertices();
       std::vector<Vertex<LocalizedRangeScan>*> graphVertices = vertexMap[pScan->GetSensorName()];
       std::vector<Vertex<LocalizedRangeScan>*>::iterator vertexGraphIt = std::find(graphVertices.begin(), graphVertices.end(), oldLSV.vertex);
-      if (vertexGraphIt == graphVertices.end())
-      {
-        std::cout << "Vertex not found in graph to remove!" << std::endl;
-      }
-      else
+      if (vertexGraphIt != graphVertices.end())
       {
         std::cout << "DBUG: Removing vertex from graph" << std::endl;    
         int posVert = vertexGraphIt - graphVertices.begin();
         std::cout << "DBUG vertposition: " << posVert << std::endl;
         //m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert); //remove from graph TODO STEVE
-        std::cout << "DBUG: Vertex to be removed has: "<< (*vertexGraphIt)->GetEdges().size() << " edges" << std::endl;
-              //TODO STEVE verify wach of these are freed pointers
+      }
+      else
+      {
+        std::cout << "Vertex not found in graph to remove!" << std::endl;
       }
 
       // 4) delete node and scans
       // free hat!
       // No need to delete from m_scans as those pointers will be freed memory
-      std::cout << "DBUG: delete some pointers" << std::endl;
+
+      // TODO STEVE recomment back in when RemoveVertex is stable and complete
       if (oldLSV.vertex)
       {
         delete oldLSV.vertex;
@@ -2811,7 +2815,6 @@ std::cout << "1" << std::endl;
         oldLSV.scan = NULL;
       }
 
-      std::cout << "DBUG: popping top" << std::endl;
       m_LocalizationScanVertices.pop();
     }
 
@@ -2819,7 +2822,6 @@ std::cout << "1" << std::endl;
     lsv.scan = pScan;
     lsv.vertex = scan_vertex;
     m_LocalizationScanVertices.push(lsv);
-    std::cout << "DBUG: Completed!" << std::endl;
     return true;
   }
 
