@@ -2812,22 +2812,24 @@ namespace karto
       {
         std::cout << "Vertex not found in graph to remove!" << std::endl;
       }
+std::cout << "10" << std::endl;
 
       // 4) delete node and scans
       // free hat!
       // No need to delete from m_scans as those pointers will be freed memory
-
+        std::cout << "DBUG deleting scan and vertex ptrs" << std::endl;
       // TODO STEVE recomment back in when RemoveVertex is stable and complete
-      if (oldLSV.vertex)
-      {
-        delete oldLSV.vertex;
-        oldLSV.vertex = NULL;
-      }
-      if (oldLSV.scan)
-      {
-        delete oldLSV.scan;
-        oldLSV.scan = NULL;
-      }
+        // this is commented out because it tries to access methods of the LocalizedLaserScan in GetReferencePose->FindPossibleLoopClosure->TryCloseLoop
+      // if (oldLSV.vertex)
+      // {
+      //   delete oldLSV.vertex;
+      //   oldLSV.vertex = NULL;
+      // }
+      // if (oldLSV.scan)
+      // {
+      //   delete oldLSV.scan;
+      //   oldLSV.scan = NULL;
+      // }
 
       m_LocalizationScanVertices.pop();
     }

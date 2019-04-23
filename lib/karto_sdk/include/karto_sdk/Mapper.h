@@ -404,6 +404,9 @@ namespace karto
      * @param pTarget
      */
     Edge()
+      : m_pSource(NULL)
+      , m_pTarget(NULL)
+      , m_pLabel(NULL)
     {
     }
     Edge(Vertex<T>* pSource, Vertex<T>* pTarget)
