@@ -938,6 +938,11 @@ namespace karto
     // add all scans to grid
     const_forEach(LocalizedRangeScanVector, &rScans)
     {
+      if (!(*iter))
+      {
+        continue;
+      }
+
       AddScan(*iter, viewPoint);
     }
   }
@@ -1498,7 +1503,7 @@ namespace karto
     kt_bool isNewEdge = true;
     Edge<LocalizedRangeScan>* pEdge = AddEdge(pFromScan, pToScan, isNewEdge);
 
-    if (!pEdge)
+    if (pEdge == NULL)
     {
       return;
     }
@@ -1778,6 +1783,11 @@ namespace karto
     for (; rStartNum < nScans; rStartNum++)
     {
       LocalizedRangeScan* pCandidateScan = m_pMapper->m_pMapperSensorManager->GetScan(rSensorName, rStartNum);
+
+      if (pCandidateScan == NULL)
+      {
+        continue;
+      }
 
       Pose2 candidateScanPose = pCandidateScan->GetReferencePose(m_pMapper->m_pUseScanBarycenter->GetValue());
 
@@ -2804,15 +2814,14 @@ namespace karto
       std::vector<Vertex<LocalizedRangeScan>*>::iterator vertexGraphIt = std::find(graphVertices.begin(), graphVertices.end(), oldLSV.vertex);
       if (vertexGraphIt != graphVertices.end())
       {
+        // right now just sets to NULL, vector map will scale in size but just contain a bunch of null pointers
         int posVert = vertexGraphIt - graphVertices.begin();
-        std::cout << "DBUG vertposition: " << posVert << std::endl;
-        m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert); //remove from graph TODO STEVE
+        m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert); // remove from graph
       }
       else
       {
         std::cout << "Vertex not found in graph to remove!" << std::endl;
       }
-std::cout << "10" << std::endl;
 
       // 4) delete node and scans
       // free hat!
@@ -2838,6 +2847,7 @@ std::cout << "10" << std::endl;
     lsv.scan = pScan;
     lsv.vertex = scan_vertex;
     m_LocalizationScanVertices.push(lsv);
+
     return true;
   }
 

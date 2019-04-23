@@ -615,7 +615,7 @@ namespace karto
      */
     inline void RemoveVertex(const Name& rName, const int& idx)
     {
-      m_Vertices[rName][idx] = NULL;//.erase(m_Vertices[rName].begin() + idx);// TODO STEVE [][idx] = NULL
+      m_Vertices[rName][idx] = NULL;//.erase(m_Vertices[rName].begin() + idx);// TODO STEVE
     }
 
     /**
