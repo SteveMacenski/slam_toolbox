@@ -272,6 +272,11 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
 /*****************************************************************************/
 {
   // store nodes
+  if (!pVertex)
+  {
+    return;
+  }
+  
   karto::Pose2 pose = pVertex->GetObject()->GetCorrectedPose();
   Eigen::Vector3d pose2d(pose.GetX(), pose.GetY(), pose.GetHeading());
 
@@ -292,6 +297,11 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 {
   // get IDs in graph for this edge
   boost::mutex::scoped_lock lock(nodes_mutex_);
+
+  if (!pEdge)
+  {
+    return;
+  }
 
   const int node1 = pEdge->GetSource()->GetObject()->GetUniqueId();
   graph_iterator node1it = nodes_->find(node1);
@@ -339,15 +349,14 @@ void CeresSolver::RemoveNode(kt_int32s id)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(nodes_mutex_);
-
   graph_iterator nodeit = nodes_->find(id);
-  if (nodeit == nodes_->end())
+  if (nodeit != nodes_->end())
   {
-    ROS_ERROR("RemoveNode: Failed to find node matching id %i", (int)id);
+    //nodes_->erase(id); // maybe TODO STEVE cant remove this then invalidates Ceres' residual blocks, but now still reported in graph
   }
   else
   {
-    //nodes_->erase(id); // maybe TODO STEVE cant remove this then invalidates Ceres' residual blocks
+    ROS_ERROR("RemoveNode: Failed to find node matching id %i", (int)id);
   }
 }
 

@@ -70,7 +70,7 @@ SlamToolbox::SlamToolbox() :
                               boost::bind(&SlamToolbox::PublishTransformLoop, \
                               this, transform_publish_period));
   run_thread_ = new boost::thread(boost::bind(&SlamToolbox::Run, this));
-  visualization_thread_ = new boost::thread( \
+  //visualization_thread_ = new boost::thread( \
                        boost::bind(&SlamToolbox::PublishVisualizations, this));
 }
 

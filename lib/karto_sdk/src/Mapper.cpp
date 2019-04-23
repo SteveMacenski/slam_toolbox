@@ -1312,7 +1312,12 @@ namespace karto
     if (pSensorManager->GetLastScan(rSensorName) != NULL)
     {
       assert(previousScanNum >= 0);
-      LinkScans(pSensorManager->GetScan(rSensorName, previousScanNum), pScan, pScan->GetSensorPose(), rCovariance);
+      LocalizedRangeScan* pPrevScan = pSensorManager->GetScan(rSensorName, previousScanNum);
+      if (!pPrevScan)
+      {
+        return;
+      }
+      LinkScans(pPrevScan, pScan, pScan->GetSensorPose(), rCovariance);
     }
 
     Pose2Vector means;
@@ -1464,6 +1469,11 @@ namespace karto
     Vertex<LocalizedRangeScan>* v1 = m_Vertices[pSourceScan->GetSensorName()][pSourceScan->GetStateId()];
     Vertex<LocalizedRangeScan>* v2 = m_Vertices[pTargetScan->GetSensorName()][pTargetScan->GetStateId()];
 
+    if (!v1 || !v2)
+    {
+      return NULL;
+    }
+
     // see if edge already exists
     const_forEach(std::vector<Edge<LocalizedRangeScan>*>, &(v1->GetEdges()))
     {
@@ -1487,6 +1497,11 @@ namespace karto
   {
     kt_bool isNewEdge = true;
     Edge<LocalizedRangeScan>* pEdge = AddEdge(pFromScan, pToScan, isNewEdge);
+
+    if (!pEdge)
+    {
+      return;
+    }
 
     // only attach link information if the edge is new
     if (isNewEdge == true)
@@ -2789,10 +2804,9 @@ namespace karto
       std::vector<Vertex<LocalizedRangeScan>*>::iterator vertexGraphIt = std::find(graphVertices.begin(), graphVertices.end(), oldLSV.vertex);
       if (vertexGraphIt != graphVertices.end())
       {
-        std::cout << "DBUG: Removing vertex from graph" << std::endl;    
         int posVert = vertexGraphIt - graphVertices.begin();
         std::cout << "DBUG vertposition: " << posVert << std::endl;
-        //m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert); //remove from graph TODO STEVE
+        m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert); //remove from graph TODO STEVE
       }
       else
       {

@@ -259,6 +259,7 @@ namespace karto
      * @param pObject
      */
     Vertex()
+      : m_pObject(NULL)
     {
     }
     Vertex(T* pObject)
@@ -611,9 +612,7 @@ namespace karto
      */
     inline void RemoveVertex(const Name& rName, const int& idx)
     {
-      std::cout << "Calling RemoveVertex" << std::endl;
-      m_Vertices[rName].erase(m_Vertices[rName].begin() + idx);
-      std::cout << "Called RemoveVertex" << std::endl;
+      m_Vertices[rName][idx] = NULL;//.erase(m_Vertices[rName].begin() + idx);// TODO STEVE [][idx] = NULL
     }
 
     /**
