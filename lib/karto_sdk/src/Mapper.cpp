@@ -170,7 +170,7 @@ namespace karto
      * Finds and replaces a scan from m_scans with NULL
      * @param pScan
      */
-    void RemoveScan(LocalizedRangeScan* pScan)      // TODO STEVE
+    void RemoveScan(LocalizedRangeScan* pScan)
     {
       LocalizedRangeScanVector::iterator it = std::find(m_Scans.begin(), m_Scans.end(), pScan);
       if (it != m_Scans.end())
@@ -297,7 +297,7 @@ namespace karto
      * Finds and replaces a scan from m_Scans with NULL
      * @param pScan
      */
-  inline void MapperSensorManager::RemoveScan(LocalizedRangeScan* pScan)    // TODO STEVE
+  inline void MapperSensorManager::RemoveScan(LocalizedRangeScan* pScan)
   {
     GetScanManager(pScan)->RemoveScan(pScan);
     

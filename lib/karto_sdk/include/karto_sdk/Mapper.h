@@ -638,6 +638,7 @@ namespace karto
      */
     inline void RemoveEdge(const int& idx)
     {
+      m_Edges[idx] = NULL;
       m_Edges.erase(m_Edges.begin() + idx);
     }
 

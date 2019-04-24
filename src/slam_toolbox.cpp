@@ -880,9 +880,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   }
   else if (processor_type_ == PROCESS_LOCALIZATION)
   {
-    ROS_INFO("DBUG: Processing localization...");
     processed = mapper_->ProcessLocalization(range_scan);
-    ROS_INFO("DBUG: Processed localization...");
   }
   else
   {

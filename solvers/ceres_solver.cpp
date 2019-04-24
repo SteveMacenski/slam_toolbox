@@ -352,7 +352,7 @@ void CeresSolver::RemoveNode(kt_int32s id)
   graph_iterator nodeit = nodes_->find(id);
   if (nodeit != nodes_->end())
   {
-    //nodes_->erase(id); // maybe TODO STEVE cant remove this then invalidates Ceres' residual blocks, but now still reported in graph
+    //nodes_->erase(id); // TODO STEVE cant remove this then invalidates Ceres' residual blocks, but now still reported in graph
   }
   else
   {
