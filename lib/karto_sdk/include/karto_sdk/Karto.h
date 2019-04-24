@@ -6149,8 +6149,14 @@ namespace karto
                                   Vector2<kt_double>& rOffset)
     {
       BoundingBox2 boundingBox;
+
       const_forEach(LocalizedRangeScanVector, &rScans)
       {
+        if (*iter == nullptr)
+        {
+          continue;
+        }
+
         boundingBox.Add((*iter)->GetBoundingBox());
       }
 
@@ -6176,6 +6182,11 @@ namespace karto
 
       const_forEach(LocalizedRangeScanVector, &rScans)
       {
+        if (*iter == nullptr)
+        {
+          continue;
+        }
+
         LocalizedRangeScan* pScan = *iter;
         AddScan(pScan);
       }

@@ -313,6 +313,11 @@ namespace karto
       {
         Edge<T>* pEdge = *iter;
 
+        if (pEdge == NULL)
+        {
+          continue;
+        }
+
         // check both source and target because we have a undirected graph
         if (pEdge->GetSource() != this)
         {
@@ -615,7 +620,7 @@ namespace karto
      */
     inline void RemoveVertex(const Name& rName, const int& idx)
     {
-      m_Vertices[rName][idx] = NULL;//.erase(m_Vertices[rName].begin() + idx);// TODO STEVE
+      m_Vertices[rName][idx] = NULL;
     }
 
     /**
@@ -1574,6 +1579,12 @@ namespace karto
      * @param pScan
      */
     void AddRunningScan(LocalizedRangeScan* pScan);
+
+    /**
+     * Finds and replaces a scan from m_scans with NULL
+     * @param pScan
+     */
+    void RemoveScan(LocalizedRangeScan* pScan);
 
     /**
      * Gets scans of device

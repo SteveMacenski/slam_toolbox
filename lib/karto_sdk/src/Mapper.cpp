@@ -165,6 +165,23 @@ namespace karto
         squaredDistance = frontScanPose.GetPosition().SquaredDistance(backScanPose.GetPosition());
       }
     }
+    
+    /**
+     * Finds and replaces a scan from m_scans with NULL
+     * @param pScan
+     */
+    void RemoveScan(LocalizedRangeScan* pScan)      // TODO STEVE
+    {
+      LocalizedRangeScanVector::iterator it = std::find(m_Scans.begin(), m_Scans.end(), pScan);
+      if (it != m_Scans.end())
+      {
+        (*it) = NULL;
+      }
+      else
+      {
+        std::cout << "Remove Scan: Failed to find scan in m_Scans" << std::endl;
+      }
+    }
 
     /**
      * Clears the vector of running scans
@@ -274,6 +291,25 @@ namespace karto
   inline void MapperSensorManager::AddRunningScan(LocalizedRangeScan* pScan)
   {
     GetScanManager(pScan)->AddRunningScan(pScan);
+  }
+
+    /**
+     * Finds and replaces a scan from m_Scans with NULL
+     * @param pScan
+     */
+  inline void MapperSensorManager::RemoveScan(LocalizedRangeScan* pScan)    // TODO STEVE
+  {
+    GetScanManager(pScan)->RemoveScan(pScan);
+    
+    LocalizedRangeScanVector::iterator it = std::find(m_Scans.begin(), m_Scans.end(), pScan);
+    if (it != m_Scans.end())
+    {
+      (*it) = NULL;
+    }
+    else
+    {
+      std::cout << "Remove Scan: Failed to find scan in m_Scans" << std::endl;
+    }
   }
 
   /**
@@ -938,7 +974,7 @@ namespace karto
     // add all scans to grid
     const_forEach(LocalizedRangeScanVector, &rScans)
     {
-      if (!(*iter))
+      if (*iter == NULL)
       {
         continue;
       }
@@ -1143,7 +1179,7 @@ namespace karto
         Vertex<T>* pNext = toVisit.front();
         toVisit.pop();
 
-        if (pVisitor->Visit(pNext))
+        if (pNext != NULL && pVisitor->Visit(pNext))
         {
           // vertex is valid, explore neighbors
           validVertices.push_back(pNext);
@@ -2826,19 +2862,18 @@ namespace karto
       // 4) delete node and scans
       // free hat!
       // No need to delete from m_scans as those pointers will be freed memory
-        std::cout << "DBUG deleting scan and vertex ptrs" << std::endl;
-      // TODO STEVE recomment back in when RemoveVertex is stable and complete
-        // this is commented out because it tries to access methods of the LocalizedLaserScan in GetReferencePose->FindPossibleLoopClosure->TryCloseLoop
-      // if (oldLSV.vertex)
-      // {
-      //   delete oldLSV.vertex;
-      //   oldLSV.vertex = NULL;
-      // }
-      // if (oldLSV.scan)
-      // {
-      //   delete oldLSV.scan;
-      //   oldLSV.scan = NULL;
-      // }
+      if (oldLSV.vertex)
+      {
+        delete oldLSV.vertex;
+        oldLSV.vertex = NULL;
+      }
+      
+      m_pMapperSensorManager->RemoveScan(oldLSV.scan);
+      if (oldLSV.scan)
+      {
+        delete oldLSV.scan;
+        oldLSV.scan = NULL;
+      }
 
       m_LocalizationScanVertices.pop();
     }
