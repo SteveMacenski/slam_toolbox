@@ -406,8 +406,7 @@ namespace karto
      * Constructor
      */
     Name(const Name& rOther)
-      : m_Name(rOther.m_Name)
-      , m_Scope(rOther.m_Scope)
+      : m_Scope(rOther.m_Scope), m_Name(rOther.m_Name)
     {
     }
 
@@ -3829,6 +3828,7 @@ namespace karto
      * Sensor map
      */
     SensorManagerMap m_Sensors;
+
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)

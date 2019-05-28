@@ -125,7 +125,7 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
   if(!private_nh_.getParam("base_frame", base_frame_))
     base_frame_ = "base_footprint";
   if(!private_nh_.getParam("laser_frame", laser_frame_))
-    laser_frame_ = "base_laser_link";
+    laser_frame_ = "laser_link";
   if(!private_nh_.getParam("throttle_scans", throttle_scans_))
     throttle_scans_ = 1;
   if(!private_nh_.getParam("publish_occupancy_map", publish_occupancy_map_))
@@ -377,6 +377,13 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const \
                                         sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
 {
+  if (laser_frame_ != scan->header.frame_id)
+  {
+    ROS_FATAL_ONCE("Laser param frame: %s is not the same as the scan frame: %s."
+      " This WILL cause fatal issues with deserialization or lifelong mapping.",
+      laser_frame_.c_str(), scan->header.frame_id.c_str());
+  }
+
   if(lasers_.find(scan->header.frame_id) == lasers_.end())
   {
     tf::Stamped<tf::Pose> ident;
@@ -439,12 +446,10 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const \
     laser->SetRangeThreshold(max_laser_range);
 
     // Store this laser device for later
-    if(lasers_.find(scan->header.frame_id) == lasers_.end())
-    {
-      lasers_[scan->header.frame_id] = laser;
-      dataset_->Add(laser, true);
-    }
+    lasers_[scan->header.frame_id] = laser;
+    dataset_->Add(laser, true);
   }
+
   return lasers_[scan->header.frame_id];
 }
 
@@ -1274,6 +1279,8 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
     return true;
   }
 
+  ROS_INFO("DeserializePoseGraph: Successfully read file.");
+
   {
     boost::mutex::scoped_lock lock(mapper_mutex_);
 
@@ -1298,7 +1305,6 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
     }
 
     mapper->SetScanSolver(solver_.get());
-    solver_->Compute();
 
     if (mapper_)
     {
@@ -1311,10 +1317,17 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
       dataset_ = NULL;
     }
 
-    karto::LaserRangeFinder* laser = \
-          dynamic_cast<karto::LaserRangeFinder*>(dataset->GetObjects()[0]);
     mapper_ = mapper;
     dataset_ = dataset;
+
+    if (dataset_->GetObjects().size() < 1)
+    {
+      ROS_FATAL("DeserializePoseGraph: Cannot deserialize dataset with no laser objects.");
+      exit(-1);
+    }
+
+    karto::LaserRangeFinder* laser = \
+      dynamic_cast<karto::LaserRangeFinder*>(dataset_->GetObjects()[0]);
     karto::Sensor* pSensor = dynamic_cast<karto::Sensor *>(laser);
     if (pSensor)
     {
@@ -1324,9 +1337,16 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
       nh_.getParam("inverted_laser", is_inverted);
       lasers_inverted_[laser_frame_] = is_inverted;
     }
+    else
+    {
+      ROS_ERROR("Invalid sensor pointer in dataset. Not able to register sensor.");
+    }
   }
 
+  solver_->Compute();
+
   UpdateMap();
+
   first_measurement_ = true;
   if (req.match_type == \
                slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE)
