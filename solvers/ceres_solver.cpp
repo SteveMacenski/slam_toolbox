@@ -162,10 +162,6 @@ CeresSolver::~CeresSolver()
   {
     delete problem_;  
   }
-  if (angle_local_parameterization_ != NULL)
-  {
-    delete angle_local_parameterization_;
-  }
 }
 
 /*****************************************************************************/

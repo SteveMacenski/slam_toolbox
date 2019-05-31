@@ -320,6 +320,10 @@ SlamToolbox::~SlamToolbox()
   {
     delete interactive_server_;
   }
+  if (tfB_)
+  {
+    delete tfB_;
+  }
 }
 
 /*****************************************************************************/
@@ -945,7 +949,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
       dataset_->Add(range_scan);
     }
   }
-  else if (processor_type_ != PROCESS_LOCALIZATION)
+  else
   {
     delete range_scan;
   }
