@@ -2302,7 +2302,6 @@ namespace karto
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-      std::cout << "**Serializing Mapper**\n";
       std::cout << "Mapper <- Module\n";
       ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Module);
       ar & BOOST_SERIALIZATION_NVP(m_Initialized);

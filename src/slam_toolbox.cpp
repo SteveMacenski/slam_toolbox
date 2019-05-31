@@ -490,7 +490,7 @@ void SlamToolbox::PublishGraph()
     return;
   }
 
-  ROS_INFO_THROTTLE(60., "Graph size: %i",(int)graph.size());
+  ROS_DEBUG("Graph size: %i",(int)graph.size());
   bool interactive_mode = false;
   {
     boost::mutex::scoped_lock lock(interactive_mutex_);
