@@ -466,7 +466,7 @@ namespace karto
      */
     inline std::string ToString() const
     {
-      if (m_Scope == "")
+      if (m_Scope.empty())
       {
         return m_Name;
       }
@@ -518,7 +518,7 @@ namespace karto
      */
     kt_bool operator < (const Name& rOther) const
     {
-      return ToString() < rOther.ToString();
+      return this->ToString() < rOther.ToString();
     }
 
     /**
@@ -6190,7 +6190,7 @@ namespace karto
         LocalizedRangeScan* pScan = *iter;
         AddScan(pScan);
       }
-
+      
       Update();
     }
 

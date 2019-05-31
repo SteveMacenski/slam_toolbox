@@ -1379,7 +1379,13 @@ void SlamToolbox::LocalizePoseCallback(const \
                          geometry_msgs::PoseWithCovarianceStampedConstPtr& msg)
 /*****************************************************************************/
 {
-  processor_type_ = PROCESS_LOCALIZATION;
+  if (processor_type_ != PROCESS_LOCALIZATION)
+  {
+    ROS_WARN("LocalizePoseCallback: Cannot process localization command "
+      "if not in localization mode.");
+    return;
+  }
+
   process_near_region_pose_.x = msg->pose.pose.position.x;
   process_near_region_pose_.y = msg->pose.pose.position.y;
   process_near_region_pose_.theta = tf::getYaw(msg->pose.pose.orientation);

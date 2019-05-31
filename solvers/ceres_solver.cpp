@@ -218,6 +218,7 @@ void CeresSolver::Compute()
     pose.SetHeading(iter->second(2));
     corrections_.push_back(std::make_pair(iter->first, pose));
   }
+
   return;
 }
 

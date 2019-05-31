@@ -1243,6 +1243,7 @@ namespace karto
       catch(...)
       {
         // relocalization vertex elements missing
+        std::cout << "Unable to visit valid vertex elements!" << std::endl;
         return false;
       }
     }
@@ -1512,6 +1513,7 @@ namespace karto
 
     if (!v1 || !v2)
     {
+      std::cout << "AddEdge: At least one vertex is invalid." << std::endl;
       return NULL;
     }
 
@@ -1867,7 +1869,12 @@ namespace karto
 
       const_forEach(ScanSolver::IdPoseVector, &pSolver->GetCorrections())
       {
-        m_pMapper->m_pMapperSensorManager->GetScan(iter->first)->SetSensorPose(iter->second);
+        LocalizedRangeScan* scan = m_pMapper->m_pMapperSensorManager->GetScan(iter->first);
+        if (scan == NULL)
+        {
+          continue;
+        }
+        scan->SetSensorPose(iter->second);
       }
 
       pSolver->Clear();
