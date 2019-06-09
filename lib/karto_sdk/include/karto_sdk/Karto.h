@@ -406,8 +406,7 @@ namespace karto
      * Constructor
      */
     Name(const Name& rOther)
-      : m_Name(rOther.m_Name)
-      , m_Scope(rOther.m_Scope)
+      : m_Scope(rOther.m_Scope), m_Name(rOther.m_Name)
     {
     }
 
@@ -467,7 +466,7 @@ namespace karto
      */
     inline std::string ToString() const
     {
-      if (m_Scope == "")
+      if (m_Scope.empty())
       {
         return m_Name;
       }
@@ -519,7 +518,7 @@ namespace karto
      */
     kt_bool operator < (const Name& rOther) const
     {
-      return ToString() < rOther.ToString();
+      return this->ToString() < rOther.ToString();
     }
 
     /**
@@ -3829,6 +3828,7 @@ namespace karto
      * Sensor map
      */
     SensorManagerMap m_Sensors;
+
     friend class boost::serialization::access;
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
@@ -6149,8 +6149,14 @@ namespace karto
                                   Vector2<kt_double>& rOffset)
     {
       BoundingBox2 boundingBox;
+
       const_forEach(LocalizedRangeScanVector, &rScans)
       {
+        if (*iter == nullptr)
+        {
+          continue;
+        }
+
         boundingBox.Add((*iter)->GetBoundingBox());
       }
 
@@ -6176,10 +6182,15 @@ namespace karto
 
       const_forEach(LocalizedRangeScanVector, &rScans)
       {
+        if (*iter == nullptr)
+        {
+          continue;
+        }
+
         LocalizedRangeScan* pScan = *iter;
         AddScan(pScan);
       }
-
+      
       Update();
     }
 
@@ -6192,9 +6203,10 @@ namespace karto
      */
     virtual kt_bool AddScan(LocalizedRangeScan* pScan, kt_bool doUpdate = false)
     {
-      kt_double rangeThreshold = pScan->GetLaserRangeFinder()->GetRangeThreshold();
-      kt_double maxRange = pScan->GetLaserRangeFinder()->GetMaximumRange();
-      kt_double minRange = pScan->GetLaserRangeFinder()->GetMinimumRange();
+      LaserRangeFinder* laserRangeFinder = pScan->GetLaserRangeFinder();
+      kt_double rangeThreshold = laserRangeFinder->GetRangeThreshold();
+      kt_double maxRange = laserRangeFinder->GetMaximumRange();
+      kt_double minRange = laserRangeFinder->GetMinimumRange();
 
       Vector2<kt_double> scanPosition = pScan->GetSensorPose().GetPosition();
       // get scan point readings

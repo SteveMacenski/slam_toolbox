@@ -40,6 +40,14 @@ References above suggest starting to map from your dock or charging areas, since
 
 In order to do some operations quickly, I use NanoFlann to speed up some K-d tree searchs of the graph (shout out!).
 
+
+### Localization
+
+Beta feature, using `mode: localization` will right now use 2x the memory for the optimizer at the trade off of easier removal of parameter and residual blocks. This is in order to add and quickly remove contraints and nodes from the graph for a built-in localization module. Surrounds an approach I'll dub `elastic pose-graph localization` where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using this awesome scan matcher, but not long term update the map should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The continuous slam mode above will do better if you'd like to modify the underlying graph while moving.
+
+Be sure to not serialize the graph in localization mode, you will corrupt it!
+
+
 ### Map Merging 
 
 ## Kinematic

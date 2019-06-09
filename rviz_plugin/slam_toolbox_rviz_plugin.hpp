@@ -64,7 +64,8 @@ enum ContinueMappingType
 {
   PROCESS_CMT = 0,
   PROCESS_FIRST_NODE_CMT = 1,
-  PROCESS_NEAR_REGION_CMT = 2
+  PROCESS_NEAR_REGION_CMT = 2,
+  LOCALIZE_CMT = 3
 };
 
 class SlamToolboxPlugin : public rviz::Panel
@@ -87,6 +88,7 @@ protected Q_SLOTS:
   void FirstNodeMatchCb();
   void PoseEstMatchCb();
   void CurEstMatchCb();
+  void LocalizeCb();
   void LoadSubmap();
   void GenerateMap();
   void SerializeMap();
@@ -131,6 +133,7 @@ protected:
   QRadioButton* _radio1;
   QRadioButton* _radio2;
   QRadioButton* _radio3;
+  QRadioButton* _radio4;
 
   QLabel* _label1;
   QLabel* _label2;

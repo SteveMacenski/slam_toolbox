@@ -16,16 +16,20 @@ namespace solver_plugins
 
 /*****************************************************************************/
 CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>()),
-                             problem_(new ceres::Problem()), was_constant_set_(false)
+                             blocks_(new std::unordered_map<std::size_t, \
+                              ceres::ResidualBlockId>()),
+                             problem_(NULL), was_constant_set_(false)
 /*****************************************************************************/
 {
   ros::NodeHandle nh("~");
-  std::string solver_type, preconditioner_type, dogleg_type, trust_strategy, loss_fn;
+  std::string solver_type, preconditioner_type, dogleg_type, \
+    trust_strategy, loss_fn, mode;
   nh.getParam("ceres_linear_solver", solver_type);
   nh.getParam("ceres_preconditioner", preconditioner_type);
   nh.getParam("ceres_dogleg_type", dogleg_type);
   nh.getParam("ceres_trust_strategy", trust_strategy);
   nh.getParam("ceres_loss_function", loss_fn);
+  nh.getParam("mode", mode);
 
   corrections_.clear();
   first_node_ = nodes_->end();
@@ -111,7 +115,8 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
 
   options_.sparse_linear_algebra_library_type = ceres::SUITE_SPARSE;
   options_.max_num_consecutive_invalid_steps = 3;
-  options_.max_consecutive_nonmonotonic_steps = options_.max_num_consecutive_invalid_steps;
+  options_.max_consecutive_nonmonotonic_steps = \
+                                     options_.max_num_consecutive_invalid_steps;
   options_.num_threads = 50;
   options_.use_nonmonotonic_steps = true;
   options_.jacobi_scaling = true;
@@ -129,6 +134,15 @@ CeresSolver::CeresSolver() : nodes_(new std::unordered_map<int, Eigen::Vector3d>
   {
     options_.dynamic_sparsity = true;
   }
+
+  if (mode == std::string("localization"))
+  {
+    // doubles the memory footprint, but lets us remove contraints faster
+    options_problem_.enable_fast_removal = true;
+  }
+
+  problem_ = new ceres::Problem(options_problem_);
+
   return;
 }
 
@@ -148,29 +162,18 @@ CeresSolver::~CeresSolver()
   {
     delete problem_;  
   }
-  if (angle_local_parameterization_ != NULL)
-  {
-    delete angle_local_parameterization_;
-  }
 }
 
 /*****************************************************************************/
 void CeresSolver::Compute()
 /*****************************************************************************/
 {
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+
   if (nodes_->size() == 0)
   {
     ROS_ERROR("CeresSolver: Ceres was called when there are no nodes."
               " This shouldn't happen.");
-    return;
-  }
-
-  boost::mutex::scoped_lock lock(nodes_mutex_, boost::try_to_lock);
-  if (!lock)
-  {
-    ROS_DEBUG("CeresSolver: Did not achieve lock to compute, "
-              "someone else must be already optimizing "
-              " it's okay, this isn't time critical.");
     return;
   }
 
@@ -192,7 +195,7 @@ void CeresSolver::Compute()
   if (!summary.IsSolutionUsable())
   {
     ROS_WARN("CeresSolver: "
-                          "Ceres could not find a usable solution to optimize.");
+                         "Ceres could not find a usable solution to optimize.");
     return;
   }
 
@@ -211,6 +214,7 @@ void CeresSolver::Compute()
     pose.SetHeading(iter->second(2));
     corrections_.push_back(std::make_pair(iter->first, pose));
   }
+
   return;
 }
 
@@ -247,7 +251,13 @@ void CeresSolver::Reset()
     delete nodes_;
   }
 
+  if (blocks_)
+  {
+    delete blocks_;
+  }
+
   nodes_ = new std::unordered_map<int, Eigen::Vector3d>();
+  blocks_ = new std::unordered_map<std::size_t, ceres::ResidualBlockId>();
   problem_ = new ceres::Problem();
   first_node_ = nodes_->end();
 
@@ -259,6 +269,11 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
 /*****************************************************************************/
 {
   // store nodes
+  if (!pVertex)
+  {
+    return;
+  }
+  
   karto::Pose2 pose = pVertex->GetObject()->GetCorrectedPose();
   Eigen::Vector3d pose2d(pose.GetX(), pose.GetY(), pose.GetHeading());
 
@@ -280,12 +295,18 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   // get IDs in graph for this edge
   boost::mutex::scoped_lock lock(nodes_mutex_);
 
+  if (!pEdge)
+  {
+    return;
+  }
+
   const int node1 = pEdge->GetSource()->GetObject()->GetUniqueId();
   graph_iterator node1it = nodes_->find(node1);
   const int node2 = pEdge->GetTarget()->GetObject()->GetUniqueId();
   graph_iterator node2it = nodes_->find(node2);
 
-  if (node1it == nodes_->end() || node2it == nodes_->end() || node1it == node2it)
+  if (node1it == nodes_->end() || 
+      node2it == nodes_->end() || node1it == node2it)
   {
     ROS_WARN("CeresSolver: Failed to add constraint, could not find nodes.");
     return;
@@ -308,12 +329,58 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   // populate residual and parameterization for heading normalization
   ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create(pose2d(0), 
                                        pose2d(1), pose2d(2), sqrt_information);
-  problem_->AddResidualBlock( cost_function, loss_function_, 
+  ceres::ResidualBlockId block = problem_->AddResidualBlock( \
+                     cost_function, loss_function_, 
                      &node1it->second(0), &node1it->second(1), &node1it->second(2),
                      &node2it->second(0), &node2it->second(1), &node2it->second(2));
   problem_->SetParameterization(&node1it->second(2), angle_local_parameterization_);
   problem_->SetParameterization(&node2it->second(2), angle_local_parameterization_);
+
+  blocks_->insert(std::pair<std::size_t, ceres::ResidualBlockId>( \
+                                                GetHash(node1, node2), block));
   return;
+}
+
+/*****************************************************************************/
+void CeresSolver::RemoveNode(kt_int32s id)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+  graph_iterator nodeit = nodes_->find(id);
+  if (nodeit != nodes_->end())
+  {
+    nodes_->erase(nodeit);
+  }
+  else
+  {
+    ROS_ERROR("RemoveNode: Failed to find node matching id %i", (int)id);
+  }
+}
+
+/*****************************************************************************/
+void CeresSolver::RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+  std::unordered_map<std::size_t, ceres::ResidualBlockId>::iterator it_a = \
+                                    blocks_->find(GetHash(sourceId, targetId));
+  std::unordered_map<std::size_t, ceres::ResidualBlockId>::iterator it_b = \
+                                    blocks_->find(GetHash(targetId, sourceId));
+  if (it_a != blocks_->end())
+  {
+    problem_->RemoveResidualBlock(it_a->second);  
+    blocks_->erase(it_a);
+  }
+  else if (it_b != blocks_->end())
+  {
+    problem_->RemoveResidualBlock(it_b->second);
+    blocks_->erase(it_b);
+  }
+  else
+  {
+    ROS_ERROR("RemoveConstraint: Failed to find residual block for %i %i", 
+                                                 (int)sourceId, (int)targetId);
+  }
 }
 
 /*****************************************************************************/
@@ -347,11 +414,10 @@ void CeresSolver::getGraph(std::vector<Eigen::Vector2d> &g)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(nodes_mutex_);
-  g.resize(nodes_->size());
   const_graph_iterator it = nodes_->begin();
   for (it; it!=nodes_->end(); ++it)
   {
-    g[it->first] = Eigen::Vector2d(it->second(0), it->second(1));
+    g.push_back(Eigen::Vector2d(it->second(0), it->second(1)));
   }
   return;
 }

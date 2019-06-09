@@ -18,15 +18,15 @@
 /* Author: Brian Gerkey */
 /* Heavily Modified: Steven Macenski */
 
-#include "ros/ros.h"
-#include "ros/console.h"
-#include "message_filters/subscriber.h"
-#include "tf/transform_broadcaster.h"
-#include "tf/transform_listener.h"
-#include "tf/message_filter.h"
+#include <ros/ros.h>
+#include <ros/console.h>
+#include <message_filters/subscriber.h>
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
+#include <tf/message_filter.h>
 #include <tf/LinearMath/Matrix3x3.h>
 #include <tf/transform_datatypes.h>
-#include "visualization_msgs/MarkerArray.h"
+#include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>
 #include <visualization_msgs/InteractiveMarkerControl.h> 
 #include <visualization_msgs/InteractiveMarkerFeedback.h>
@@ -35,9 +35,10 @@
 #include <interactive_markers/menu_handler.h>
 #include <pluginlib/class_loader.h>
 
-#include "nav_msgs/MapMetaData.h"
-#include "sensor_msgs/LaserScan.h"
-#include "nav_msgs/GetMap.h"
+#include <nav_msgs/MapMetaData.h>
+#include <sensor_msgs/LaserScan.h>
+#include <nav_msgs/GetMap.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include "karto_sdk/Mapper.h"
 
@@ -88,14 +89,15 @@ enum ProcessType
 {
   PROCESS = 0,
   PROCESS_FIRST_NODE = 1,
-  PROCESS_NEAR_REGION = 2
+  PROCESS_NEAR_REGION = 2,
+  PROCESS_LOCALIZATION = 3
 };
 
 tf::Pose KartoPose2TfPose(const karto::Pose2& pose)
 {
   tf::Pose new_pose;
   new_pose.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-  new_pose.setRotation(tf::createQuaternionFromRPY(0., 0., pose.GetHeading()));
+  new_pose.setRotation(tf::createQuaternionFromYaw(pose.GetHeading()));
   return new_pose;
 };
 
@@ -142,6 +144,7 @@ private:
                                   slam_toolbox::SerializePoseGraph::Response &resp);
   bool DeserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request &req,
                                     slam_toolbox::DeserializePoseGraph::Response &resp);
+  void LocalizePoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
   // functional bits
   bool GetOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
@@ -165,6 +168,7 @@ private:
   tf::TransformListener tf_;
   tf::TransformBroadcaster* tfB_;
   message_filters::Subscriber<sensor_msgs::LaserScan>* scan_filter_sub_;
+  ros::Subscriber localization_pose_sub_;
   tf::MessageFilter<sensor_msgs::LaserScan>* scan_filter_;
   ros::Publisher sst_, sstm_, marker_publisher_, scan_publisher_;
   ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_processing_, ssPause_measurements_, ssClear_manual_, ssSave_map_, ssSerialize_, ssLoadMap_;
@@ -176,7 +180,7 @@ private:
   ros::Duration transform_timeout_;
   double resolution_, minimum_time_interval_, minimum_travel_distance_;
   bool publish_occupancy_map_, first_measurement_, sychronous_, online_;
-  ProcessType matcher_to_use_;
+  ProcessType processor_type_;
   geometry_msgs::Pose2D process_near_region_pose_;
   tf::Transform reprocessing_transform_;
 
@@ -189,7 +193,7 @@ private:
   // Internal state
   boost::thread *transform_thread_, *run_thread_, *visualization_thread_;
   tf::Transform map_to_odom_;
-  bool inverted_laser_, pause_graph_, pause_processing_, pause_new_measurements_, interactive_mode_;
+  bool inverted_laser_, pause_graph_, pause_processing_, pause_new_measurements_, interactive_mode_, localization_pose_set_;
   std::queue<posed_scan> q_;
   boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_, interactive_mutex_, moved_nodes_mutex_;
 

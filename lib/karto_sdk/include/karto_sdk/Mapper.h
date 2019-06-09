@@ -20,6 +20,7 @@
 
 #include <map>
 #include <vector>
+#include <queue>
 
 #include <Eigen/Core>
 
@@ -258,6 +259,7 @@ namespace karto
      * @param pObject
      */
     Vertex()
+      : m_pObject(NULL)
     {
     }
     Vertex(T* pObject)
@@ -282,6 +284,15 @@ namespace karto
     }
 
     /**
+     * Deletes an edge at a position
+     */
+    inline void RemoveEdge(const int& idx)
+    {
+      m_Edges.erase(m_Edges.begin() + idx);
+      return;
+    }
+
+    /**
      * Gets the object associated with this vertex
      * @return the object
      */
@@ -301,6 +312,11 @@ namespace karto
       const_forEach(typename std::vector<Edge<T>*>, &m_Edges)
       {
         Edge<T>* pEdge = *iter;
+
+        if (pEdge == NULL)
+        {
+          continue;
+        }
 
         // check both source and target because we have a undirected graph
         if (pEdge->GetSource() != this)
@@ -393,6 +409,9 @@ namespace karto
      * @param pTarget
      */
     Edge()
+      : m_pSource(NULL)
+      , m_pTarget(NULL)
+      , m_pLabel(NULL)
     {
     }
     Edge(Vertex<T>* pSource, Vertex<T>* pTarget)
@@ -595,6 +614,16 @@ namespace karto
     }
 
     /**
+     * Removes a given vertex into the map using the given name
+     * @param rName
+     * @param pVertex
+     */
+    inline void RemoveVertex(const Name& rName, const int& idx)
+    {
+      m_Vertices[rName][idx] = NULL;
+    }
+
+    /**
      * Adds an edge to the graph
      * @param pEdge
      */
@@ -602,6 +631,17 @@ namespace karto
     {
       m_Edges.push_back(pEdge);
     }
+
+    /**
+     * Removes an edge to the graph
+     * @param pEdge
+     */
+    inline void RemoveEdge(const int& idx)
+    {
+      m_Edges[idx] = NULL;
+      m_Edges.erase(m_Edges.begin() + idx);
+    }
+
 
     /**
      * Deletes the graph data
@@ -699,7 +739,7 @@ namespace karto
      * Adds a vertex representing the given scan to the graph
      * @param pScan
      */
-    void AddVertex(LocalizedRangeScan* pScan);
+    Vertex<LocalizedRangeScan>* AddVertex(LocalizedRangeScan* pScan);
 
     /**
      * Creates an edge between the source scan vertex and the target scan vertex if it
@@ -1447,7 +1487,7 @@ namespace karto
   /**
    * Manages the devices for the mapper
    */
-  class KARTO_EXPORT MapperSensorManager //: public SensorManager
+  class KARTO_EXPORT MapperSensorManager //: public SensorManager // was commented out, works with it in, but I'll leave out for now...
   {
     typedef std::map<Name, ScanManager*> ScanManagerMap;
 
@@ -1540,6 +1580,12 @@ namespace karto
      * @param pScan
      */
     void AddRunningScan(LocalizedRangeScan* pScan);
+
+    /**
+     * Finds and replaces a scan from m_scans with NULL
+     * @param pScan
+     */
+    void RemoveScan(LocalizedRangeScan* pScan);
 
     /**
      * Gets scans of device
@@ -1787,6 +1833,17 @@ namespace karto
    *     If response is larger then this then initiate loop closure search at the fine resolution.
    *     Default value is 0.5.
    */
+
+  struct LocalizationScanVertex
+  {
+    LocalizationScanVertex(){return;};
+    LocalizationScanVertex(const LocalizationScanVertex& obj){scan = obj.scan; vertex = obj.vertex;};
+    LocalizedRangeScan* scan;
+    Vertex<LocalizedRangeScan>* vertex;
+  };
+
+  typedef std::queue<LocalizationScanVertex> LocalizationScanVertices;
+
   class KARTO_EXPORT Mapper : public Module
   {
     friend class MapperGraph;
@@ -1894,6 +1951,19 @@ namespace karto
      * @return true if the scan was added successfully, false otherwise
      */
     virtual kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
+
+    /**
+     * Process a localized range scan for localization inside a map.  The scan must
+     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
+     * localized scan will be updated to the correct pose as determined by the mapper.
+     *
+     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
+     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
+     * information in the scan object based on matching against starting point (nodeId = 0)
+     *
+     * @return true if the scan was processed successfully, false otherwise
+     */
+    virtual kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
 
     /**
      * Returns all processed scans added to the mapper.
@@ -2041,6 +2111,7 @@ namespace karto
 
     std::vector<MapperListener*> m_Listeners;
 
+    LocalizationScanVertices m_LocalizationScanVertices;
 
     /**
      * When set to true, the mapper will use a scan matching algorithm. In most real-world situations
@@ -2231,7 +2302,6 @@ namespace karto
     template<class Archive>
     void serialize(Archive &ar, const unsigned int version)
     {
-      std::cout << "**Serializing Mapper**\n";
       std::cout << "Mapper <- Module\n";
       ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Module);
       ar & BOOST_SERIALIZATION_NVP(m_Initialized);

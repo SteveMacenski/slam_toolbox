@@ -43,6 +43,8 @@ public:
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex); //Adds a node to the solver
   virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge); //Adds a constraint to the solver
   virtual void getGraph(std::vector<Eigen::Vector2d> &g); //Get graph stored
+  virtual void RemoveNode(kt_int32s id); //Removes a node from the solver correction table
+  virtual void RemoveConstraint(kt_int32s sourceId, kt_int32s targetId); // Removes constraints from the optimization problem
 
   virtual void ModifyNode(const int& unique_id, Eigen::Vector3d pose); // change a node's pose
   virtual void GetNodeOrientation(const int& unique_id, double& pose); // get a node's current pose yaw
@@ -53,6 +55,7 @@ private:
 
   // ceres
   ceres::Solver::Options options_;
+  ceres::Problem::Options options_problem_;
   ceres::LossFunction* loss_function_;
   ceres::Problem* problem_;
   ceres::LocalParameterization* angle_local_parameterization_;
@@ -60,6 +63,7 @@ private:
 
   // graph
   std::unordered_map<int, Eigen::Vector3d>* nodes_;
+  std::unordered_map<size_t, ceres::ResidualBlockId>* blocks_;
   std::unordered_map<int, Eigen::Vector3d>::iterator first_node_;
   boost::mutex nodes_mutex_;
 };
