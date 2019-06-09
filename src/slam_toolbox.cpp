@@ -1347,7 +1347,6 @@ bool SlamToolbox::DeserializePoseGraphCallback( \
   }
 
   solver_->Compute();
-
   UpdateMap();
 
   first_measurement_ = true;
