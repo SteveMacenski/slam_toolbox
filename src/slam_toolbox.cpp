@@ -401,7 +401,7 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const \
     }
     catch(tf::TransformException e)
     {
-      ROS_WARN("Failed to compute laser pose, aborting initialization (%s)",
+      ROS_ERROR("Failed to compute laser pose, aborting initialization (%s)",
 	       e.what());
       return NULL;
     }
@@ -839,7 +839,6 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
 
   tf::Pose pose_original = KartoPose2TfPose(karto_pose);
   tf::Pose tf_pose_transformed = (reprocessing_transform_ * pose_original);
-
 
   karto::Pose2 transformed_pose;
   transformed_pose.SetX(tf_pose_transformed.getOrigin().x());

@@ -349,7 +349,7 @@ void CeresSolver::RemoveNode(kt_int32s id)
   graph_iterator nodeit = nodes_->find(id);
   if (nodeit != nodes_->end())
   {
-    //nodes_->erase(id); // TODO STEVE cant remove this then invalidates Ceres' residual blocks, but now still reported in graph
+    nodes_->erase(nodeit);
   }
   else
   {
@@ -414,11 +414,10 @@ void CeresSolver::getGraph(std::vector<Eigen::Vector2d> &g)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(nodes_mutex_);
-  g.resize(nodes_->size());
   const_graph_iterator it = nodes_->begin();
   for (it; it!=nodes_->end(); ++it)
   {
-    g[it->first] = Eigen::Vector2d(it->second(0), it->second(1));
+    g.push_back(Eigen::Vector2d(it->second(0), it->second(1)));
   }
   return;
 }

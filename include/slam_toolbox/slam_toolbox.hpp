@@ -97,7 +97,7 @@ tf::Pose KartoPose2TfPose(const karto::Pose2& pose)
 {
   tf::Pose new_pose;
   new_pose.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-  new_pose.setRotation(tf::createQuaternionFromRPY(0., 0., pose.GetHeading()));
+  new_pose.setRotation(tf::createQuaternionFromYaw(pose.GetHeading()));
   return new_pose;
 };
 
