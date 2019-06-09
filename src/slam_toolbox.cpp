@@ -838,7 +838,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
   }
 
   tf::Pose pose_original = KartoPose2TfPose(karto_pose);
-  tf::Pose tf_pose_transformed = (reprocessing_transform_ * pose_original);
+  tf::Pose tf_pose_transformed = reprocessing_transform_ * pose_original;
 
   karto::Pose2 transformed_pose;
   transformed_pose.SetX(tf_pose_transformed.getOrigin().x());
@@ -902,7 +902,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
 
     // Compute the map->odom transform
     tf::Stamped<tf::Pose> odom_to_map;
-    tf::Stamped<tf::Pose> map_to_base(
+    tf::Stamped<tf::Pose> base_to_map(
                             tf::Transform(
                               tf::createQuaternionFromRPY(0., 0., 
                                 corrected_pose.GetHeading()),
@@ -913,7 +913,7 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
                             scan->header.stamp, base_frame_);
     try
     {
-      tf_.transformPose(odom_frame_, map_to_base, odom_to_map);
+      tf_.transformPose(odom_frame_, base_to_map, odom_to_map);
 
       // if we're continuing a previous session, we need to
       // estimate the homogenous transformation between the old and new
@@ -921,13 +921,13 @@ bool SlamToolbox::AddScan(karto::LaserRangeFinder* laser,
       // into the older session's frame
       if (update_offset)
       {
-        tf::Pose odom_to_base_old = map_to_base.inverse();
+        tf::Pose odom_to_base_serialized = base_to_map.inverse();
         tf::Quaternion q1;
         tf::quaternionMsgToTF(tf::createQuaternionMsgFromYaw( \
-                               tf::getYaw(odom_to_base_old.getRotation())), q1);
-        odom_to_base_old.setRotation(q1);
-        tf::Pose odom_to_base_new = KartoPose2TfPose(karto_pose);
-        reprocessing_transform_ = odom_to_base_old * odom_to_base_new.inverse();
+                               tf::getYaw(odom_to_base_serialized.getRotation())), q1);
+        odom_to_base_serialized.setRotation(q1);
+        tf::Pose odom_to_base_current = KartoPose2TfPose(karto_pose);
+        reprocessing_transform_ = odom_to_base_serialized * odom_to_base_current.inverse();
       }
     }
     catch(tf::TransformException e)
