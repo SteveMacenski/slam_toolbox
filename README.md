@@ -1,28 +1,32 @@
 ## Slam Toolbox
 
-For live running on robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/slam-toolbox)
 
-I've seen this way maps building at 5x+ realtime up to about 20,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 145,000 sq.ft. building at this point. 
+# Introduction
 
-The core scan matcher is taken out of open_karto but alot of other heavy changes have been made in the processing of the scans in the lib sdk version in this repository. If you're familiar with Karto however it should still be approachable. 
+Slam Toolbox is a set of tools and capabilities for 2D planar SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](simberobotics.com) and in my free time. 
 
-## Introduction 
+This project contains the ability to do most everything any other available SLAM library, both free and paid, and more. This includes:
+- Ordinary point-and-shoot 2D SLAM mobile robotics folks expect (start, map, save pgm file)
+- life-long mapping (start, serialize, wait any time, restart anywhere, continue refining)
+- an optimization-based localization mode (start, serialize, restart anywhere in Localization mode, optimization based localizer)
+- synchronous and asynchronous modes
+- kinematic map merging (with an elastic graph manipulation merging technique in the works)
+- plugin-based optimization solvers with a new optimized Google Ceres based plugin
+- RVIZ plugin for interating with the tools
+- graph manipulation tools in RVIZ to manipulate nodes and connections during mapping
+- Map serialization and lossless data storage
+- ... more but those are the highlights 
 
-### Solver Plugins
+For running on live production robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
 
-I have generated pluginlib plugins for a few different solvers that people might be interested in. I like to swap them out for benchmarking and make sure its the same code running for all. I have supported Ceres, G2O, SPA, and GTSAM. I wrapped my own Ceres one as well since no one's open-sourced it but I know _certain_ people are using it. 
+This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 145,000 sq.ft. building in sychronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
-GTSAM is currently "unsupported" although all the code is there. I was having problems linking against the library. If someone wants to PR a fix, I can add support but I'm done trying. It definitely won't out perform the others.
+<!-- image here large map-->
 
-I have spent a extremely long time working with Ceres to optimize it for creation of massive maps, so unless you feel your application is very unique, I'd use my recommended settings. 
+# LifeLong Mapping
 
-I have commented out G2O to speed up build time as I really don't recommend using it. SPA + Ceres are the way to go here I believe. 
-
-### Tools
-
-Manual loop closure, pausing and resuming SLAM, interspection and modification of the pose graph, synchronous SLAM (no missing laser scans) for online or offline application alike without change, more exposed options, rviz plugin for visual interspection and assisting in mapping, complete serialization and deserialization of the entire data set to continue mapping or refine.
-
-### Continuous SLAM
+<!-- Gif here-->
 
 As it sounds, this will allow the user to update existing maps and serialize the data for use in other mapping sessions, something sorely lacking from most SLAM implementations and nearly all planar SLAM implementations. Other good libraries that do this include rtabmap and cartographer, though they themselves have their own quirks. This library provides the mechanics to save not only the data, but the pose graph, and associated metadata to work with. This has been used to create maps by merging techniques (taking 2 or more serialized objects and creating 1 globally consistent one) as well as continuous mapping techniques (updating 1, same, serialized map object over time and refining it). 
 
@@ -40,21 +44,45 @@ References above suggest starting to map from your dock or charging areas, since
 
 In order to do some operations quickly, I use NanoFlann to speed up some K-d tree searchs of the graph (shout out!).
 
+# Localization
 
-### Localization
+<!-- Gif here-->
 
-Beta feature, using `mode: localization` will right now use 2x the memory for the optimizer at the trade off of easier removal of parameter and residual blocks. This is in order to add and quickly remove contraints and nodes from the graph for a built-in localization module. Surrounds an approach I'll dub `elastic pose-graph localization` where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using this awesome scan matcher, but not long term update the map should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The continuous slam mode above will do better if you'd like to modify the underlying graph while moving.
+Localization mode consists of 3 things:
+- Loads existing serialized map into the node
+- Maintains a rolling buffer of recent scans in the pose-graph
+- After expiring from the buffer scans are removed and the underlying map is not affected
 
-Be sure to not serialize the graph in localization mode, you will corrupt it!
+It is comparable to Cartographer's pure-localization mode. To enable, set `mode: localization` in the configuration file to allow for the Ceres plugin to set itself correctly to be able to quickly add *and remove* nodes and constraints from the pose graph. Also, on run, send the service request to Slam Toolbox to enter localization mode and the location to start at. The localization mode will automatically load you map, take the first scan and match it against the local area to further refine your estimated position, and start localizing. 
+
+To minimize the amount of changes required for moving to this mode over AMCL, we also expose a subscriber to the `/initial_pose` topic used by AMCL to relocalize to a position, which also hooks up to the `2D Pose Estimation` tool in RVIZ. This way you can enter localization mode with our approach but continue to use the same API as you expect from AMCL for ease of integration.
+
+In summary, this approach I dub `elastic pose-graph localization` is where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using the scan matcher, but not update the underlaying map long-term should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The lifelong mapping/continuous slam mode above will do better if you'd like to modify the underlying graph while moving.
+
+Note: Be sure to **not** serialize the graph in localization mode, you will corrupt it!
 
 
-### Map Merging 
+## Tools 
 
-## Kinematic
+### Plugin based Optimizers
+
+I have created a pluginlib interface for the ScanSolver abstract class so that you can change optimizers on runtime to test many different ones if you like.
+
+Then I generated plugins for a few different solvers that people might be interested in. I like to swap them out for benchmarking and make sure its the same code running for all. I have supported Ceres, G2O, SPA, and GTSAM. 
+
+GTSAM/G2O/SPA is currently "unsupported" although all the code is there. They don't outperform Ceres settings I describe below so I stopped compiling them to save on build time, but they're there and work if you would like to use them. PRs to implement other optimizer plugins are welcome.
+
+### Map Merging
+
+#### Kinematic
+
+<!-- Gif here -->
 
 This uses RVIZ and the plugin to load any number of posegraphs that will show up in RVIZ under `map_N` and a set of interactive markers to allow you to move them around. Once you have them all positioned relative to each other in the way you like, you can merge the submaps into a global `map` which can be downloaded with your map server implementation of choice. 
 
-## Pose Graph Merging
+More information in the RVIZ Plugin section below.
+
+#### Pose Graph Merging
 
 This is under development.
 
@@ -62,44 +90,49 @@ This is to solve the problem of merging many maps together with an initial guess
 
 Hint: This is also really good for multi-robot map updating as well :)  
 
-## Optimization based
+#### Optimization based
 
 This uses RVIZ and the plugin to load any number of posegraphs that will show up in RVIZ under `map_N` and a set of interactive markers to allow you to move them around. Once you have them all positioned relative to each other in the way you like, it will use these relative transforms to offset the pose-graphs into a common frame and minimize the constraint error between them using the Ceres optimizer.  You can merge the submaps into a global `map` which can be downloaded with your map server implementation of choice. Think of this like populating N mappers into 1 global mapper.
 
 Using just kinematic placement of the maps will give you some improvements over an image stiching/editing software since you have sub-pixel accuracy, but you're still a little screwed if your submaps aren't globally consistent and unwarped - this is an intermediate to help with that until the pose-graph merging tool is complete.
 
-Hint: This is also really good for multi-robot map updating as well :)  
-
-### Rviz Plugin
+### RVIZ Plugin
 
 An rviz plugin is furnished to help with manual loop closures and online / offline mapping. By default interactive mode is off (allowing you to move nodes) as this takes quite a toll on rviz. When you want to move nodes, tick the interactive box, move what you want, and save changes to prompt a manual loop closure. Clear if you made a mistake. When done, exit interactive mode again. 
 
-There's also a tool to help you control online and offline data. You can at any time stop processing new scans or accepting new scans into the queue. this is desirable when you want to allow the package to catch up while the robot sits still or you want to stop processing new scans while you do a manual loop closure / manual "help". If there's more in the queue than you want, you may also clear it.
+There's also a tool to help you control online and offline data. You can at any time stop processing new scans or accepting new scans into the queue. This is desirable when you want to allow the package to catch up while the robot sits still (**This option is only meaningful in sychronous mode. In asynchronous mode the robot will never fall behind.**) or you want to stop processing new scans while you do a manual loop closure / manual "help". If there's more in the queue than you want, you may also clear it. 
 
-Additionally there's exposed buttons for the serialization and deserialization services to load an old pose-graph to update and refine, or continue mapping, then save back to file. The "Start By Dock" checkbox will try to scan match against the first node (at dock) to give you an odometry estimate to start with. Other option is to start using the last map->base_link transform available (probably from AMCL). In practice, you probaly dont have both of these running at once, so for an application you should get that value and feed it in to the service request for that mode, this application is primarily for demonstration. If using the current estimate checkbox, it will assume you're starting at the last position and may take a few nodes to converge together. It's recommended to always continue mapping near the dock, if that's not possible, look into the starting from pose or map merging techniques. Starting from current odom is not recommended unless you had to stop mapping and you're continuing to map a few minutes later with the *robot in the same spot*. It's mostly here as a debug utility, but if you often find yourself mapping areas in sprints and pausing between, this is valuable. 
+Additionally there's exposed buttons for the serialization and deserialization services to load an old pose-graph to update and refine, or continue mapping, then save back to file. The "Start By Dock" checkbox will try to scan match against the first node (assuming you started at your dock) to give you an odometry estimate to start with. Another option is to start using an inputted position in the GUI or by calling the underlying service. Additionally, you can use the current odometric position estimation if you happened to have just paused the robot or not moved much between runs. Finally (and most usefully), you can use the RVIZ tool for **2D Pose Estimation** to tell it where to go in **localization mode** just like AMCL.
 
-The interface is shown below.
+Additionally the RVIZ plugin will allow you to add serialized map files as submaps in RVIZ. They will be displayed with an interactive marker you can translate and rotate to match up, then generate a composite map with the Generate Map button. At that point the composite map is being broadcasted on the `/map` topic and you can save it with the `map_saver`.
+
+It's recommended to always continue mapping near the dock, if that's not possible, look into the starting from pose or map merging techniques. This RVIZ plugin is mostly here as a debug utility, but if you often find yourself mapping areas using rviz already, I'd just have it open. All the RVIZ buttons are implemented using services that a master application can control. 
+
+The interface is shown below. *It is a little outdated! Sorry, I need to update this.*
 
 ![rviz_plugin](/images/rviz_plugin.png?raw=true "Rviz Plugin")
 
+### Graph Manipulation
 
-### Metrics
+By enabling `Interactive Mode`, the graph nodes will change from markers to interactive markers which you can manipulate. When you move a node(s), you can Save Changes and it will send the updated position to the pose-graph and cause an optimization run to occur to change the pose-graph with your new node location. This is helpful if the robot gets pushed, slips, runs into a wall, or otherwise has drifting odometry and you would like to manually correct it. 
 
-If you're a weirdo like me and you want to see how I came up with the settings I had, see below.
+When a map is sufficiently large, the number of interactive markers in RVIZ may be too large and RVIZ may start to lag. I only recommend using this feature as a testing debug tool and not for production. However if you are able to make it work with 10,000 interactive markers, I'll merge that PR in a heartbeat. Otherwise I'd restrict the use of this feature to small maps or with limited time to make a quick change and return to static mode by unchecking the box.
+
+## Metrics
+
+If you're a weirdo like me and you want to see how I came up with the settings I had for the Ceres optimizer, see below.
 
 ![ceres_solver_comparison](https://user-images.githubusercontent.com/14944147/41576505-a6802d76-733c-11e8-8eca-334da2c8bd50.png)
 
 The data sets present solve time vs number of nodes in the pose graph on a large dataset, as that is not open source, but suffice to say that the settings I recommend work well. I think anyone would be hardset in a normal application to exceed or find that another solver type is better (that super low curve on the bottom one, yeah, that's it). Benchmark on a low power 7th gen i7 machine.
 
-### Performance
+It can map _very_ large spaces with reasonable CPU and memory consumption. My default settings increase O(N) on number of elements in the pose graph. I recommend from extensive testing to use the `SPARSE_NORMAL_CHOLESKY` solver with Ceres and the `SCHUR_JACOBI` preconditioner. Using `LM` at the trust region strategy is comparable to the dogleg subspace strategy, but `LM` is much better supported so why argue with it. 
 
-It can map _very_ large spaces with reasonable CPU and memory consumption. Default settings increase O(N) on number of elements in the pose graph. I recommend from extensive testing to use the SPARSE_NORMAL_CHOLESKY solver with Ceres and the SCHUR_JACOBI preconditioner. Using LM at the trust region strategy is comparable to the dogleg subspace strategy, but LM is much better supported so why argue with it. 
+You can get away without a loss function if your odometry is good (ie likelihood for outliers is extremely low). If you have an abnormal application or expect wheel slippage, I might recommend a `HuberLoss` function, which is a really good catch-all loss function if you're looking for a place to start. All these options and more are available from the ROS parameter server.
 
-You can get away without a loss function if your odometry is good (ie likelihood for outliers is extremely low). If you have an abnormal application, I might recommend a HuberLoss function. All these options and more are available from the ROS parameter server.
+# Configuration
 
-## Parameters
-
-On top of ordinary Slam Karto, the following settings and options are exposed to you. My default configuration is given in `config` directory.
+The following settings and options are exposed to you. My default configuration is given in `config` directory.
 
 `solver_plugin` - The type of nonlinear solver to utilize for karto's scan solver. Options: `solver_plugins::CeresSolver`, `solver_plugins::SpaSolver`, `solver_plugins::G2oSolver`. Default: `solver_plugins::CeresSolver`.
 
@@ -121,29 +154,25 @@ On top of ordinary Slam Karto, the following settings and options are exposed to
 
 All other parameters, see SlamKarto documentation. They're all just the inputs to OpenKarto so that documentation would be identical as well. 
 
-## Installation
+# Install
 
-ROSDep will take care of the major things.
+ROSDep will take care of the major things
+
+```
+rosdep install -q -y -r --from-paths src --ignore-src
+```
 
 I also have a Snap built for this that's super easy to install if you know snaps, named `slam-toolbox`.
 
+```
+sudo snap install slam-toolbox --beta --devmode
+```
+
 Run your catkin build procedure of choice.
 
-You can run via `roslaunch slam_toolbox build_map_w_params.launch`
+You can run via `roslaunch slam_toolbox online_sync.launch`
 
-### Motivating Example / Tutorial
-
-... Coming Soon to theatres near you ...
-
-
-### Notes for documentation for myself to fill in later
-- Dock starting, mapping, continuing example
-- Cloud mapping example
-- Mapping from an estimated starting pose example (via amcl)
-- rviz plugin similification (setting dock,continue,estimated deserialization, pausing)
-- explanation of the transform for the continue against node (map->base_link)
-- explanation why the special case of node 0 relating to that (or does anyone care if it works?)
-
+# Etc
 
 ## Brief incursion into snaps
 
@@ -162,3 +191,9 @@ sudo ln -s /home/steve/maps/serialized_map/ /var/snap/slam-toolbox/common
 ```
 
 and then all you have to do when you specify a map to use is set the filename to `slam-toolbox/map_name` and it should work no matter if you're running in a snap, docker, or on bare metal. The `-s` makes a symbol link so rather than `/var/snap/slam-toolbox/common/*` containing the maps, `/var/snap/slam-toolbox/common/serialized_map/*` will. By default on bare metal, the maps will be saved in `.ros`
+
+## Notes for documentation to fill in later
+
+- Dock starting, mapping, continuing example
+- Cloud mapping example
+- Mapping from an estimated starting pose example (via amcl)
