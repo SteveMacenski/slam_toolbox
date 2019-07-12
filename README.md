@@ -28,21 +28,25 @@ This package has been benchmarked mapping building at 5x+ realtime up to about 3
 
 <!-- Gif here-->
 
-As it sounds, this will allow the user to update existing maps and serialize the data for use in other mapping sessions, something sorely lacking from most SLAM implementations and nearly all planar SLAM implementations. Other good libraries that do this include rtabmap and cartographer, though they themselves have their own quirks. This library provides the mechanics to save not only the data, but the pose graph, and associated metadata to work with. This has been used to create maps by merging techniques (taking 2 or more serialized objects and creating 1 globally consistent one) as well as continuous mapping techniques (updating 1, same, serialized map object over time and refining it). 
+LifeLong mapping is the concept of being able to map a space, completely or partially, and over time, refine and update that map as you continue to interact with the space. Our approach implements this and also takes care to allow for the application of operating in the cloud, as well as mapping with many robots in a shared space (cloud distributed mapping). While Slam Toolbox can also just be used for a point-and-shoot mapping of a space and saving that map as a .pgm file as maps are traditionally stored in, it also allows you to save the pose-graph and metadata losslessly to reload later with the same or different robot and continue to map the space. 
 
-A user may build maps by optimizing/merging submap pose graphs (see next section), but if you'd like continue building a map object rather than merging a few together, we provide special tools for that. In the plugin interface you'll see a checkbox for Starting Near Dock, when selected, slam_toolbox will automatically scan match and correct the robot's starting position relative to the pose graph so you start cleanly with optimized relative odometry. This also allows you to not start at strictly the same point in space - just in the general region as your original map's starting point. This has been tested to up to 2-3 meters away from the starting point with relatively the same view of the environment with shockingly high recall. This is needed or the map may start to see double walls or otherwise pose graph not converging to the original form. 
+Our lifelong mapping consists of a few key steps
+- Serialization and Deserialization to store and reload map information
+- KD-Tree search matching to locate the robot in its position on reinitalization
+- pose-graph optimizition based SLAM with 2D scan matching (Karto) abstraction 
 
-Today we support two major modes:
-- Starting from the first node (assuming to be a dock or dock-region)
+This will allow the user to create and update existing maps, then serialize the data for use in other mapping sessions, something sorely lacking from most SLAM implementations and nearly all planar SLAM implementations. Other good libraries that do this include RTab-Map and Cartoprapher, though they themselves have their own quirks that make them (in my opinion) unusable for production robotics applications. This library provides the mechanics to save not only the data, but the pose graph, and associated metadata to work with. This has been used to create maps by merging techniques (taking 2 or more serialized objects and creating 1 globally consistent one) as well as continuous mapping techniques (updating 1, same, serialized map object over time and refining it). The major benefit of this over RTab-Map or Cartoprapher is the maturity of the underlying (but heavily modified) `open_karto` library the project is based on. The scan matcher of Karto is well known as an extremely good matcher for 2D laser scans and modified versions of Karto can be found in companies across the world. 
+
+Slam Toolbox supports all the major modes:
+- Starting from a predefined dock (assuming to be near start region)
 - Starting from where you left off
-
-In the very immediate future, there will be support for:
 - Starting at any particular node - select a node ID to start near
-- Starting in any particular area - indicate current pose in the map frame to start at (*cough* like from AMCL *cough*) 
+- Starting in any particular area - indicate current pose in the map frame to start at, like AMCL 
 
-References above suggest starting to map from your dock or charging areas, since those are unlikely to frequently change and its a globally known position in the map. Starting at the dock/charging/storage position or area provides a great deal of benefits. Rather than asking someone to start near an arbitrary set of coordinates -- or more correctly the first node in the pose graph, who's going to remember that? -- starting at the dock is an intuitive and simple way to make sure the robots are starting around where they should to continue updating an existing serialized map object. References to the above planned additions weaken the need for this since a user can start from where ever they like, but this is a good way to get started and easy to build an automated map updating pipeline around. None of this matters if you intend to do offline, or multi-robot mapping, which is discussed below. This application probably wants to merge existing maps and submaps into one larger map to share rather than live update maps. 
+In the RVIZ interface (see section below) you'll be able to re-localize in a map or continue mapping graphically or programatically using ROS services. 
 
-In order to do some operations quickly, I use NanoFlann to speed up some K-d tree searchs of the graph (shout out!).
+On time of writing: the LifeLong mapping implementation has no established method for removing nodes over time when not in localization mode. As a result its recommended to run LifeLong mapping mode in the cloud for the increased computational burdens. However a real and desperately needed application of this is to have multi-session mapping to update just a section of the map or map half an area at a time to create a full (and then static) map for AMCL or Slam Toolbox AMCL mode. The immediate plan is to create a mode within LifeLong mapping to decay old nodes to bound the computation and allow it to run on the edge, but for now that is not recommended except for demonstrations or small spaces. To clarity- lifelong mapping works, but the number of nodes will grow unbounded if you never switch to localization mode. Continuing mapping should be used to build a complete map then switch to the pose-graph deformation localization mode until node decay is implemented, and **you should not see any substantial performance impacts**. 
+
 
 # Localization
 
@@ -173,6 +177,11 @@ Run your catkin build procedure of choice.
 You can run via `roslaunch slam_toolbox online_sync.launch`
 
 # Etc
+
+## NanoFlann!
+
+In order to do some operations quickly for continued mapping and localization, I make liberal use of NanoFlann (shout out!).
+
 
 ## Brief incursion into snaps
 
