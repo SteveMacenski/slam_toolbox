@@ -4,7 +4,7 @@
 
 # Introduction
 
-Slam Toolbox is a set of tools and capabilities for 2D planar SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](simberobotics.com) and in my free time. 
+Slam Toolbox is a set of tools and capabilities for 2D planar SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/) and in my free time. 
 
 This project contains the ability to do most everything any other available SLAM library, both free and paid, and more. This includes:
 - Ordinary point-and-shoot 2D SLAM mobile robotics folks expect (start, map, save pgm file)
@@ -22,11 +22,11 @@ For running on live production robots, I recommend using the snap: slam-toolbox,
 
 This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 145,000 sq.ft. building in sychronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
-<!-- image here large map-->
+![map_image](/images/map_image.png?raw=true "Map Image")
 
 # LifeLong Mapping
 
-<!-- Gif here-->
+<!--  MEDIA Gif here-->
 
 LifeLong mapping is the concept of being able to map a space, completely or partially, and over time, refine and update that map as you continue to interact with the space. Our approach implements this and also takes care to allow for the application of operating in the cloud, as well as mapping with many robots in a shared space (cloud distributed mapping). While Slam Toolbox can also just be used for a point-and-shoot mapping of a space and saving that map as a .pgm file as maps are traditionally stored in, it also allows you to save the pose-graph and metadata losslessly to reload later with the same or different robot and continue to map the space. 
 
@@ -50,7 +50,7 @@ On time of writing: the LifeLong mapping implementation has no established metho
 
 # Localization
 
-<!-- Gif here-->
+<!-- MEDIA Gif here-->
 
 Localization mode consists of 3 things:
 - Loads existing serialized map into the node
@@ -80,7 +80,7 @@ GTSAM/G2O/SPA is currently "unsupported" although all the code is there. They do
 
 #### Kinematic
 
-<!-- Gif here -->
+<!-- MEDIA Gif here -->
 
 This uses RVIZ and the plugin to load any number of posegraphs that will show up in RVIZ under `map_N` and a set of interactive markers to allow you to move them around. Once you have them all positioned relative to each other in the way you like, you can merge the submaps into a global `map` which can be downloaded with your map server implementation of choice. 
 
@@ -112,7 +112,7 @@ Additionally the RVIZ plugin will allow you to add serialized map files as subma
 
 It's recommended to always continue mapping near the dock, if that's not possible, look into the starting from pose or map merging techniques. This RVIZ plugin is mostly here as a debug utility, but if you often find yourself mapping areas using rviz already, I'd just have it open. All the RVIZ buttons are implemented using services that a master application can control. 
 
-The interface is shown below. *It is a little outdated! Sorry, I need to update this.*
+The interface is shown below.
 
 ![rviz_plugin](/images/rviz_plugin.png?raw=true "Rviz Plugin")
 
