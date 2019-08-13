@@ -291,6 +291,8 @@ SlamToolbox::~SlamToolbox()
   transform_thread_->join();
   run_thread_->join();
   visualization_thread_->join();
+  mapper_.reset();
+  dataset_.reset();
 }
 
 /*****************************************************************************/
