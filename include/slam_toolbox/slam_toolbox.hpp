@@ -33,6 +33,7 @@
 #include "karto_sdk/Mapper.h"
 #include "slam_toolbox/toolbox_msgs.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
+#include "slam_toolbox/snap_utils.hpp"
 
 #include <string>
 #include <map>

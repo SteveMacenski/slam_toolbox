@@ -1,5 +1,5 @@
 /*
- * slam_toolbox
+ * toolbox_types
  * Copyright (c) 2019, Samsung Research America
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
