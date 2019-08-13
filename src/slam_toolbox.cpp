@@ -1083,8 +1083,10 @@ bool SlamToolbox::ClearQueueCallback(
 /*****************************************************************************/
 {
   ROS_INFO("SlamToolbox: Clearing all queued scans to add to map.");
-  std::queue<posedScan> empty;
-  std::swap( q_, empty );
+  while(!q_.empty())
+  {
+    q_.pop();
+  }
   resp.status = true;
   return true;
 }
