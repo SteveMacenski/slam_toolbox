@@ -25,17 +25,20 @@
 
 namespace serialization
 {
+
 inline bool FileExists(const std::string& name)
 {
   struct stat buffer;
   return (stat (name.c_str(), &buffer) == 0);
 }
 
-void Write(const std::string& filename, karto::Mapper* mapper, karto::Dataset* dataset)
+inline void Write(const std::string& filename,
+  karto::Mapper & mapper,
+  karto::Dataset & dataset)
 {
   try
   {
-    mapper->SaveToFile(filename + std::string(".posegraph"));
+    mapper.SaveToFile(filename + std::string(".posegraph"));
     std::ofstream ofs((filename + std::string(".data")).c_str());
     boost::archive::binary_oarchive oa(ofs, boost::archive::no_codecvt);
     oa << BOOST_SERIALIZATION_NVP(dataset);
@@ -46,17 +49,20 @@ void Write(const std::string& filename, karto::Mapper* mapper, karto::Dataset* d
   }
 }
 
-bool Read(const std::string& filename, karto::Mapper* mapper, karto::Dataset*& dataset)
+inline bool Read(const std::string& filename,
+  karto::Mapper & mapper,
+  karto::Dataset & dataset)
 {
   if (!FileExists(filename + std::string(".posegraph")))
   {
-    ROS_ERROR("serialization::Read : Failed to open requested file %s.", filename.c_str());
+    ROS_ERROR("serialization::Read: Failed to open "
+      "requested file: %s.", filename.c_str());
     return false;
   }
 
   try
   {
-    mapper->LoadFromFile(filename + std::string(".posegraph"));
+    mapper.LoadFromFile(filename + std::string(".posegraph"));
     std::ifstream ifs((filename + std::string(".data")).c_str());
     boost::archive::binary_iarchive ia(ifs);
     ia >> BOOST_SERIALIZATION_NVP(dataset);
@@ -64,7 +70,8 @@ bool Read(const std::string& filename, karto::Mapper* mapper, karto::Dataset*& d
   }
   catch (boost::archive::archive_exception e)
   {
-    ROS_ERROR("Failed to read file: Exception %s", e.what());
+    ROS_ERROR("serialization::Read: Failed to read file: "
+      "Exception: %s", e.what());
   }
 
   return false;

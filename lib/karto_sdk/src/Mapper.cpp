@@ -2724,7 +2724,6 @@ namespace karto
 			  }
 		  }
 
-
 		  m_pMapperSensorManager->SetLastScan(pScan);
 
 		  return true;

@@ -6190,7 +6190,7 @@ namespace karto
         LocalizedRangeScan* pScan = *iter;
         AddScan(pScan);
       }
-      
+
       Update();
     }
 
@@ -6519,7 +6519,6 @@ namespace karto
           if (pSensor != NULL)
           {
             m_SensorNameLookup[pSensor->GetName()] = pSensor;
-
             karto::SensorManager::GetInstance()->RegisterSensor(pSensor, overrideSensorName);
           }
 
