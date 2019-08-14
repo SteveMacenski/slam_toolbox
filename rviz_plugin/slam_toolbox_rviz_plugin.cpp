@@ -17,7 +17,7 @@
 /* Author: Steven Macenski */
 
 // Header
-#include "slam_toolbox_rviz_plugin.hpp"
+#include "slam_toolbox_rviz_plugin.h"
 // QT
 #include <QPushButton>
 #include <QCheckBox>
@@ -28,6 +28,9 @@
 #include <QtGui>
 #include <QLabel>
 #include <QFrame>
+
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_EXPORT_CLASS(slam_toolbox::SlamToolboxPlugin, rviz::Panel)
 
 namespace slam_toolbox
 {
@@ -474,6 +477,3 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
 }
 
 } // end namespace
-
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(slam_toolbox::SlamToolboxPlugin, rviz::Panel)

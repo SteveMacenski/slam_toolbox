@@ -179,10 +179,10 @@ namespace karto
   class KARTO_EXPORT NonCopyable
   {
   private:
-    NonCopyable(const NonCopyable&);
-    const NonCopyable& operator=(const NonCopyable&);
+    NonCopyable(const NonCopyable&) = delete;
+    const NonCopyable& operator=(const NonCopyable&) = delete;
 
-  protected:
+  public:
     NonCopyable()
     {
     }
@@ -191,7 +191,7 @@ namespace karto
     {
     }
 
-	friend class boost::serialization::access;
+  friend class boost::serialization::access;
 	template<class Archive>
 	void serialize(Archive &ar, const unsigned int version)
 	{
@@ -6190,7 +6190,7 @@ namespace karto
         LocalizedRangeScan* pScan = *iter;
         AddScan(pScan);
       }
-      
+
       Update();
     }
 
@@ -6519,7 +6519,6 @@ namespace karto
           if (pSensor != NULL)
           {
             m_SensorNameLookup[pSensor->GetName()] = pSensor;
-
             karto::SensorManager::GetInstance()->RegisterSensor(pSensor, overrideSensorName);
           }
 

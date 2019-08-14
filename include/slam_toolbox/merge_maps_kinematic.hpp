@@ -16,39 +16,28 @@
 
 /* Author: Steven Macenski */
 
-#include "ros/ros.h"
-#include "visualization_msgs/MarkerArray.h"
-#include <visualization_msgs/InteractiveMarker.h>
-#include <visualization_msgs/InteractiveMarkerControl.h> 
-#include <visualization_msgs/InteractiveMarkerFeedback.h>
-#include <interactive_markers/interactive_marker_server.h>
-#include <interactive_markers/menu_handler.h>
-
-#include <tf/LinearMath/Matrix3x3.h>
-#include <tf/transform_datatypes.h>
-#include "tf/transform_broadcaster.h"
-#include "tf/transform_listener.h"
-
-#include "nav_msgs/MapMetaData.h"
-#include "nav_msgs/OccupancyGrid.h"
-#include "sensor_msgs/LaserScan.h"
-#include "nav_msgs/GetMap.h"
-
-#include "karto_sdk/Mapper.h"
-
-#include <boost/thread.hpp>
-
-#include "slam_toolbox/MergeMaps.h"
-#include "slam_toolbox/AddSubmap.h"
-
 #include <string>
 #include <map>
+#include <memory>
 #include <vector>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fstream>
+#include <boost/thread.hpp>
 
-#define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
+#include "ros/ros.h"
+#include "interactive_markers/interactive_marker_server.h"
+#include "interactive_markers/menu_handler.h"
+#include "tf/LinearMath/Matrix3x3.h"
+#include "tf/transform_datatypes.h"
+#include "tf/transform_broadcaster.h"
+#include "tf/transform_listener.h"
+
+#include "karto_sdk/Mapper.h"
+#include "slam_toolbox/toolbox_msgs.hpp"
+#include "slam_toolbox/toolbox_types.hpp"
+
+using namespace toolbox_types;
 
 class MergeMapsKinematic
 {
@@ -60,7 +49,7 @@ public:
 private:
 
   // setup
-  void SetConfigs();
+  void Setup();
 
   // callback
   bool MergeMapCallback(slam_toolbox::MergeMaps::Request  &req, slam_toolbox::MergeMaps::Response &resp);
@@ -82,14 +71,14 @@ private:
   int num_submaps_;
 
   //karto bookkeeping
-  std::map<std::string, karto::LaserRangeFinder*> lasers_;
-  std::vector<karto::Dataset*> dataset_vec_;
+  std::map<std::string, laserMetadata> lasers_;
+  std::vector<std::unique_ptr<karto::Dataset> > dataset_vec_;
 
   // TF
-  tf::TransformBroadcaster* tfB_;
+  std::unique_ptr<tf::TransformBroadcaster> tfB_;
 
   // visualization
-  interactive_markers::InteractiveMarkerServer* interactive_server_;
+  std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
   std::map<int, Eigen::Vector3d> submap_locations_;
   std::vector<karto::LocalizedRangeScanVector> scans_vec_;
   std::map<int, tf::Transform> submap_marker_transform_;
