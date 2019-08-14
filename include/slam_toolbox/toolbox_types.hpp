@@ -22,6 +22,8 @@
 #include <tf/transform_datatypes.h>
 #include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include "slam_toolbox/toolbox_msgs.hpp"
+#include "karto_sdk/Mapper.h"
 
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
@@ -100,5 +102,6 @@ tf::Pose kartoPose2TfPose(const karto::Pose2& pose)
 typedef std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> VerticeMap;
 typedef std::vector<karto::Edge<karto::LocalizedRangeScan>*> EdgeVector;
 typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> ScanVector;
+typedef slam_toolbox::DeserializePoseGraph::Request procType;
 
 }  // end namespace

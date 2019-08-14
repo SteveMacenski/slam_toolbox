@@ -34,7 +34,6 @@
 #include "tf/transform_listener.h"
 
 #include "karto_sdk/Mapper.h"
-#include "slam_toolbox/toolbox_msgs.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
 
 using namespace toolbox_types;

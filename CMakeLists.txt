@@ -129,10 +129,12 @@ set(HEADER_FILES rviz_plugin/slam_toolbox_rviz_plugin.h )
 add_library(SlamToolboxPlugin ${SOURCE_FILES} ${HEADER_FILES})
 add_dependencies(SlamToolboxPlugin ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES}  ${catkin_LIBRARIES} )
+
 #### Main tool for mapping
-add_executable(slam_toolbox src/slam_toolbox.cpp)
+add_library(toolbox_lib src/slam_toolbox.cpp)
+add_executable(slam_toolbox src/slam_toolbox_node.cpp)
 add_dependencies(slam_toolbox ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(slam_toolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(slam_toolbox toolbox_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 #### Merging maps tool
 add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)

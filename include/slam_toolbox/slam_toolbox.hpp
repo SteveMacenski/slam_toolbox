@@ -30,9 +30,8 @@
 #include "interactive_markers/menu_handler.h"
 #include "pluginlib/class_loader.h"
 
-#include "karto_sdk/Mapper.h"
-#include "slam_toolbox/toolbox_msgs.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
+#include "slam_toolbox/mapper_utils.hpp"
 #include "slam_toolbox/snap_utils.hpp"
 
 #include <string>
@@ -41,10 +40,13 @@
 #include <queue>
 #include <cstdlib>
 #include <fstream>
-#include <sys/resource.h>
 #include <boost/thread.hpp>
 
-using namespace toolbox_types;
+namespace slam_toolbox
+{
+
+// dirty, dirty cheat I love
+using namespace ::toolbox_types;
 
 class SlamToolbox
 {
@@ -145,3 +147,5 @@ private:
   pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;
   boost::shared_ptr<karto::ScanSolver> solver_;
 };
+
+} // end namespace
