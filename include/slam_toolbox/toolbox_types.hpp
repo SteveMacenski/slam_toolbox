@@ -46,20 +46,16 @@ struct laserMetadata
   laserMetadata()
   {
   };
+
+  ~laserMetadata()
+  {
+  }
   
   laserMetadata(karto::LaserRangeFinder* lsr, bool invert)
   {
-    laser.reset(lsr);
+    laser = lsr;
     inverted = invert;
   };
-
-  laserMetadata& operator=(laserMetadata& lmd)
-  {
-    //this->laser.reset(lmd.laser.release());
-    laser = std::move(lmd.laser);
-    this->inverted = lmd.inverted;
-    return *this;
-  }
 
   bool isInverted()
   {
@@ -68,10 +64,10 @@ struct laserMetadata
 
   karto::LaserRangeFinder* getLaser()
   {
-    return laser.get();
+    return laser;
   }
 
-  std::unique_ptr<karto::LaserRangeFinder> laser;
+  karto::LaserRangeFinder* laser;
   bool inverted;
 };
 
