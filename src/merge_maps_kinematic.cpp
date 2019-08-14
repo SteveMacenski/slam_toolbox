@@ -24,15 +24,11 @@ MergeMapsKinematic::MergeMapsKinematic() : nh_("~")
 /*****************************************************************************/
 {
   ROS_INFO("MergeMapsKinematic: Starting up!");
-  interactive_server_ = 
-    std::make_unique<interactive_markers::InteractiveMarkerServer>(
-    "merge_maps_tool","",true);
-
-  SetConfigs();
+  Setup();
 }
 
 /*****************************************************************************/
-void MergeMapsKinematic::SetConfigs()
+void MergeMapsKinematic::Setup()
 /*****************************************************************************/
 {
   if(!nh_.getParam("map_frame", map_frame_))
@@ -53,6 +49,9 @@ void MergeMapsKinematic::SetConfigs()
     &MergeMapsKinematic::AddSubmapCallback, this);
   num_submaps_ = 0;
   tfB_ = std::make_unique<tf::TransformBroadcaster>();
+  interactive_server_ = 
+    std::make_unique<interactive_markers::InteractiveMarkerServer>(
+    "merge_maps_tool","",true);
 }
 
 /*****************************************************************************/
@@ -69,15 +68,19 @@ bool MergeMapsKinematic::AddSubmapCallback(
 {
   std::unique_ptr<karto::Mapper> mapper = std::make_unique<karto::Mapper>();
   std::unique_ptr<karto::Dataset> dataset = std::make_unique<karto::Dataset>();
+
   serialization::Read(req.filename, *mapper, *dataset);
+
+  // we know the position because we put it there before any scans
   karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(
     dataset->GetObjects()[0]);
+  dataset->Add(laser, true);
+  dataset_vec_.push_back(std::move(dataset));
+
   if (lasers_.find(laser->GetName().GetName()) == lasers_.end())
   {
     laserMetadata laserMeta(laser, false);
     lasers_[laser->GetName().GetName()] = laserMeta;
-    dataset->Add(laser);
-    dataset_vec_.push_back(std::move(dataset));
   }
 
   karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
@@ -85,20 +88,29 @@ bool MergeMapsKinematic::AddSubmapCallback(
   num_submaps_++;
 
   // create and publish map with marker that will move the map around
-  sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>( \
+  sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>(
     "/map_"+std::to_string(num_submaps_), 1, true));
-  sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>( \
+  sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>(
     "/map_metadata_" + std::to_string(num_submaps_), 1, true));
-  ros::Duration(1.).sleep();
+  sleep(1.0);
+
   nav_msgs::GetMap::Response map;
-  KartoToROSOccupancyGrid(scans,map);
+  try
+  {
+    KartoToROSOccupancyGrid(scans, map);
+  } catch (const karto::Exception & e)
+  {
+    ROS_WARN("Failed to build grid to add submap, Exception: %s",
+      e.GetErrorMessage().c_str());
+    return false;
+  }
 
   tf::Transform transform;
   transform.setIdentity();
   transform.setOrigin(tf::Vector3(map.map.info.origin.position.x +
-    map.map.info.width * map.map.info.resolution / 2.0,\
+    map.map.info.width * map.map.info.resolution / 2.0,
     map.map.info.origin.position.y +
-    map.map.info.height * map.map.info.resolution / 2.0,\
+    map.map.info.height * map.map.info.resolution / 2.0,
     0.));
   map.map.info.origin.position.x = - (map.map.info.width * map.map.info.resolution / 2.0);
   map.map.info.origin.position.y = - (map.map.info.height * map.map.info.resolution / 2.0);
@@ -121,7 +133,7 @@ bool MergeMapsKinematic::AddSubmapCallback(
   m.pose.position.x =  transform.getOrigin().getX();
   m.pose.position.y =  transform.getOrigin().getY();
   submap_locations_[num_submaps_] = Eigen::Vector3d(transform.getOrigin().getX(),
-          transform.getOrigin().getY(),0.);
+    transform.getOrigin().getY(),0.);
   m.pose.orientation.w = 1.;
   m.scale.x = 2; m.scale.y = 2; m.scale.z = 2;
   m.color.r = 1.0; m.color.g = 0; m.color.b = 0.0; m.color.a = 1.;
@@ -141,35 +153,36 @@ bool MergeMapsKinematic::AddSubmapCallback(
 
   // translate control
   visualization_msgs::InteractiveMarkerControl control;
-  control.orientation_mode = \
+  control.orientation_mode =
     visualization_msgs::InteractiveMarkerControl::FIXED;
   control.always_visible = true;
   control.orientation.w = 0;
   control.orientation.x = 0.7071;
   control.orientation.y = 0;
   control.orientation.z = 0.7071;
-  control.interaction_mode = \
+  control.interaction_mode =
     visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
   control.markers.push_back( m );
   int_marker.controls.push_back( control );
 
   // rotate control
   visualization_msgs::InteractiveMarkerControl control_rot;
-  control_rot.orientation_mode = \
+  control_rot.orientation_mode =
     visualization_msgs::InteractiveMarkerControl::FIXED;
   control_rot.always_visible = true;
   control_rot.orientation.w = 0;
   control_rot.orientation.x = 0.7071;
   control_rot.orientation.y = 0;
   control_rot.orientation.z = 0.7071;
-  control_rot.interaction_mode = \
+  control_rot.interaction_mode =
     visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
   int_marker.controls.push_back( control_rot );
 
-  interactive_server_->insert(int_marker, \
+  interactive_server_->insert(int_marker,
     boost::bind(&MergeMapsKinematic::ProcessInteractiveFeedback, this, _1));
   interactive_server_->applyChanges();
-
+  ROS_INFO("Map %s was loaded into topic %s!", req.filename.c_str(),
+    ("/map_"+std::to_string(num_submaps_)).c_str());
   return true;
 }
 
@@ -179,12 +192,12 @@ karto::Pose2 MergeMapsKinematic::ApplyCorrection(const
   const tf::Transform& submap_correction)
 /*****************************************************************************/
 {
-  tf::Transform pose_tf, pose_corr;
-  pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-  pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, pose.GetHeading()));
-  pose_corr = submap_correction * pose_tf;
-  return karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(),\
-    tf::getYaw(pose_corr.getRotation()));
+  tf::Transform poseTf, poseCorr;
+  poseTf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
+  poseTf.setRotation(tf::createQuaternionFromRPY(0, 0, pose.GetHeading()));
+  poseCorr = submap_correction * poseTf;
+  return karto::Pose2(poseCorr.getOrigin().x(), poseCorr.getOrigin().y(),
+    tf::getYaw(poseCorr.getRotation()));
 }
 
 /*****************************************************************************/
@@ -193,11 +206,11 @@ karto::Vector2<kt_double> MergeMapsKinematic::ApplyCorrection(const
   const tf::Transform& submap_correction)
 /*****************************************************************************/
 {
-  tf::Transform pose_tf, pose_corr;
-  pose_tf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-  pose_tf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
-  pose_corr = submap_correction * pose_tf;
-  return karto::Vector2<kt_double>(pose_corr.getOrigin().x(), pose_corr.getOrigin().y());
+  tf::Transform poseTf, poseCorr;
+  poseTf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
+  poseTf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
+  poseCorr = submap_correction * poseTf;
+  return karto::Vector2<kt_double>(poseCorr.getOrigin().x(), poseCorr.getOrigin().y());
 }
 
 /*****************************************************************************/
@@ -206,73 +219,81 @@ bool MergeMapsKinematic::MergeMapCallback(
   slam_toolbox::MergeMaps::Response &resp)
 /*****************************************************************************/
 {
-  int id = 0;
-  karto::Pose2 corrected_pose;
-  karto::LocalizedRangeScan* pScan;
-  karto::LocalizedRangeScanVector transformed_scans;
-  std::vector<karto::LocalizedRangeScanVector>& vector_of_scans = scans_vec_;
-  karto::LocalizedRangeScan* pScan_copy;
+  ROS_INFO("Merging maps!");
 
-  for(localized_range_scans_vec_it it_LRV = vector_of_scans.begin();
-    it_LRV!= vector_of_scans.end(); ++it_LRV)
+  int id = 0;
+  karto::LocalizedRangeScanVector transformed_scans;
+  karto::LocalizedRangeScan* pScan;
+
+  for(localized_range_scans_vec_it it_LRV = scans_vec_.begin();
+    it_LRV != scans_vec_.end(); ++it_LRV)
   {
     id++;
-    for ( localized_range_scans_it iter = (*it_LRV).begin();
-      iter != (*it_LRV).end();++iter)
+    for (localized_range_scans_it iter = it_LRV->begin();
+      iter != it_LRV->end(); ++iter)
     {
-      pScan= *iter;
-      pScan_copy = pScan;
-      tf::Transform submap_correction = submap_marker_transform_[id];
+      pScan = *iter;
+      tf::Transform submapCorrection = submap_marker_transform_[id];
 
-      //TRANSFORM BARYCENTERR POSE
-      const karto::Pose2 baryCenter_pose = pScan_copy->GetBarycenterPose();
-      karto::Pose2 karto_baryCenterPose_corr = ApplyCorrection(baryCenter_pose, submap_correction);
-      pScan_copy->SetBarycenterPose(karto_baryCenterPose_corr);
+      // TRANSFORM BARYCENTERR POSE
+      const karto::Pose2 baryCenterPose = pScan->GetBarycenterPose();
+      auto baryCenterPoseCorr = ApplyCorrection(baryCenterPose, submapCorrection);
+      pScan->SetBarycenterPose(baryCenterPoseCorr);
 
-      //TRANSFORM BOUNDING BOX POSITIONS
-      karto::BoundingBox2 bbox = pScan_copy->GetBoundingBox();
-      const karto::Vector2<kt_double> bbox_min_corr = ApplyCorrection(bbox.GetMinimum(),\
-              submap_correction);
-      bbox.SetMinimum(bbox_min_corr);
-      const karto::Vector2<kt_double> bbox_max_corr = ApplyCorrection(bbox.GetMaximum(),\
-              submap_correction);
-      bbox.SetMaximum(bbox_max_corr);
-      pScan_copy->SetBoundingBox(bbox);
+      // TRANSFORM BOUNDING BOX POSITIONS
+      karto::BoundingBox2 bbox = pScan->GetBoundingBox();
+      const karto::Vector2<kt_double> bboxMinCorr = ApplyCorrection(bbox.GetMinimum(),
+        submapCorrection);
+      bbox.SetMinimum(bboxMinCorr);
+      const karto::Vector2<kt_double> bboxMaxCorr = ApplyCorrection(bbox.GetMaximum(),
+        submapCorrection);
+      bbox.SetMaximum(bboxMaxCorr);
+      pScan->SetBoundingBox(bbox);
 
       // TRANSFORM UNFILTERED POINTS USED
-      karto::PointVectorDouble UPR_vec = pScan_copy->GetPointReadings();
-      for(karto::PointVectorDouble::iterator it_upr = UPR_vec.begin();
-              it_upr!=UPR_vec.end(); ++it_upr)
+      karto::PointVectorDouble UPRVec = pScan->GetPointReadings();
+      for(karto::PointVectorDouble::iterator itUpr = UPRVec.begin();
+        itUpr != UPRVec.end(); ++itUpr)
       {
-        const karto::Vector2<kt_double> upr_corr = ApplyCorrection(*it_upr, submap_correction);
-        (*it_upr).SetX(upr_corr.GetX());
-        (*it_upr).SetY(upr_corr.GetY());
+        const karto::Vector2<kt_double> uprCorr = ApplyCorrection(*itUpr, submapCorrection);
+        itUpr->SetX(uprCorr.GetX());
+        itUpr->SetY(uprCorr.GetY());
       }
-      pScan_copy->SetPointReadings(UPR_vec);
+      pScan->SetPointReadings(UPRVec);
 
-      //TRANSFORM CORRECTED POSE
-      corrected_pose = pScan_copy->GetCorrectedPose();
-      karto::Pose2 karto_robotPose_corr = ApplyCorrection(corrected_pose, submap_correction);
-      pScan_copy->SetCorrectedPose(karto_robotPose_corr);
+      // TRANSFORM CORRECTED POSE
+      const karto::Pose2 correctedPose = pScan->GetCorrectedPose();
+      karto::Pose2 kartoRobotPoseCorr = ApplyCorrection(correctedPose, submapCorrection);
+      pScan->SetCorrectedPose(kartoRobotPoseCorr);
       kt_bool rIsDirty = false;
-      pScan_copy->SetIsDirty(rIsDirty);
+      pScan->SetIsDirty(rIsDirty);
 
-      //TRANSFORM ODOM POSE
-      karto::Pose2 odom_pose = pScan_copy->GetOdometricPose();
-      karto::Pose2 karto_robotPose_odom = ApplyCorrection(odom_pose, submap_correction);
-      pScan_copy->SetOdometricPose(karto_robotPose_odom);
-      transformed_scans.push_back(pScan_copy);
+      // TRANSFORM ODOM POSE
+      karto::Pose2 odomPose = pScan->GetOdometricPose();
+      karto::Pose2 kartoRobotPoseOdom = ApplyCorrection(odomPose, submapCorrection);
+      pScan->SetOdometricPose(kartoRobotPoseOdom);
+      transformed_scans.push_back(pScan);
     }
   }
+
   nav_msgs::GetMap::Response map;
-  KartoToROSOccupancyGrid(transformed_scans, map);
+  try
+  {
+    KartoToROSOccupancyGrid(transformed_scans, map);
+  } catch (const karto::Exception & e)
+  {
+    ROS_WARN("Failed to build grid to merge maps together, Exception: %s",
+      e.GetErrorMessage().c_str());
+  }
+
   map.map.header.stamp = ros::Time::now();
   map.map.header.frame_id = "map";
   sstS_[0].publish(map.map);
   sstmS_[0].publish(map.map.info);
 }
+
 /*****************************************************************************/
-void MergeMapsKinematic::KartoToROSOccupancyGrid( \
+void MergeMapsKinematic::KartoToROSOccupancyGrid(
   const karto::LocalizedRangeScanVector& scans,
   nav_msgs::GetMap::Response& map)
 /*****************************************************************************/
@@ -288,7 +309,7 @@ void MergeMapsKinematic::KartoToROSOccupancyGrid( \
   // Translate to ROS format
   kt_int32s width = occ_grid->GetWidth();
   kt_int32s height = occ_grid->GetHeight();
-  karto::Vector2<kt_double> offset = \
+  karto::Vector2<kt_double> offset =
     occ_grid->GetCoordinateConverter()->GetOffset();
 
   if(map.map.info.width != (unsigned int) width ||
@@ -333,11 +354,11 @@ void MergeMapsKinematic::KartoToROSOccupancyGrid( \
 }
 
 /*****************************************************************************/
-void MergeMapsKinematic::ProcessInteractiveFeedback(const \
-  visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+void MergeMapsKinematic::ProcessInteractiveFeedback(const
+  visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 /*****************************************************************************/
 {
-  if (feedback->event_type == \
+  if (feedback->event_type ==
       visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP && 
       feedback->mouse_point_valid)
   {
@@ -356,23 +377,23 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const \
       submap_locations_[id](1), 0.));
 
     // update internal knowledge of submap locations
-    submap_locations_[id] = Eigen::Vector3d(feedback->pose.position.x, \
-      feedback->pose.position.y, \
+    submap_locations_[id] = Eigen::Vector3d(feedback->pose.position.x,
+      feedback->pose.position.y,
       submap_locations_[id](2) + yaw);
 
     // add the map_N frame there
     tf::Transform new_submap_location;
-    new_submap_location.setOrigin(tf::Vector3(submap_locations_[id](0), \
+    new_submap_location.setOrigin(tf::Vector3(submap_locations_[id](0),
       submap_locations_[id](1), 0.));
     new_submap_location.setRotation(quat);
     tfB_->sendTransform(tf::StampedTransform (new_submap_location,
       ros::Time::now(), "/map", "/map_"+std::to_string(id)));
 
-    submap_marker_transform_[id] = submap_marker_transform_[id] * \
+    submap_marker_transform_[id] = submap_marker_transform_[id] *
       previous_submap_correction.inverse() * new_submap_location;
   }
 
-  if (feedback->event_type == \
+  if (feedback->event_type ==
     visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
   {
     const int id = std::stoi(feedback->marker_name,nullptr,10);
@@ -386,7 +407,7 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const \
 
     // add the map_N frame there
     tf::Transform new_submap_location;
-    new_submap_location.setOrigin(tf::Vector3(feedback->pose.position.x, \
+    new_submap_location.setOrigin(tf::Vector3(feedback->pose.position.x,
       feedback->pose.position.y, 0.));
     new_submap_location.setRotation(quat);
     tfB_->sendTransform(tf::StampedTransform (new_submap_location,

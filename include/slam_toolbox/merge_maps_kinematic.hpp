@@ -49,7 +49,7 @@ public:
 private:
 
   // setup
-  void SetConfigs();
+  void Setup();
 
   // callback
   bool MergeMapCallback(slam_toolbox::MergeMaps::Request  &req, slam_toolbox::MergeMaps::Response &resp);
