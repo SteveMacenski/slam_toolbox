@@ -132,8 +132,8 @@ target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LI
 
 #### Main tool for mapping
 add_library(toolbox_lib src/slam_toolbox.cpp)
+add_dependencies(toolbox_lib ${PROJECT_NAME}_generate_messages_cpp)
 add_executable(slam_toolbox src/slam_toolbox_node.cpp)
-add_dependencies(slam_toolbox ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(slam_toolbox toolbox_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 #### Merging maps tool
