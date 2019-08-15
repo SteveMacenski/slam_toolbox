@@ -52,6 +52,7 @@ SlamToolbox::SlamToolbox()
   SetSolver(private_nh);
 
   laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(private_nh, tf_.get(), base_frame_);
+  current_scans_ = std::make_unique<std::vector<sensor_msgs::LaserScan> >();
   reprocessing_transform_.setIdentity();
 
   nh_.setParam("paused_processing", pause_processing_);
@@ -391,6 +392,13 @@ void SlamToolbox::ProcessInteractiveFeedback(const
   visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
 /*****************************************************************************/
 {
+  if (processor_type_ == PROCESS_LOCALIZATION)
+  {
+    ROS_WARN_ONCE("Cannot manually correct nodes in localization modes. "
+      "This message will appear once.");
+    return;
+  }
+
   // was depressed, something moved, and now released
   if (feedback->event_type ==
       visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP && 
@@ -406,12 +414,14 @@ void SlamToolbox::ProcessInteractiveFeedback(const
     AddMovedNodes(id, Eigen::Vector3d(feedback->mouse_point.x,
       feedback->mouse_point.y, tf::getYaw(quat)));
   }
+
   if (feedback->event_type ==
       visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
   {
+
     // get scan
     const int id = std::stoi(feedback->marker_name,nullptr,10) - 1;
-    sensor_msgs::LaserScan scan = current_scans_[id];
+    sensor_msgs::LaserScan scan = current_scans_->at(id);
 
     // create correct frame
     tf::Transform transform;
@@ -431,15 +441,21 @@ void SlamToolbox::ProcessInteractiveFeedback(const
     quat *= q1;
     quat *= q2;
 
-
     if (lasers_[scan.header.frame_id].isInverted())
     {
+
       sensor_msgs::LaserScan temp;
-      for (int i=scan.ranges.size() ;i!=0;i--)
+      const bool has_intensities = scan.intensities.size() > 0 ? true : false;
+
+      for (int i = scan.ranges.size(); i != 0; i--)
       {
         temp.ranges.push_back(scan.ranges[i]);
-        temp.intensities.push_back(scan.intensities[i]);
+        if (has_intensities)
+        {
+          temp.intensities.push_back(scan.intensities[i]);
+        }
       }
+
       scan.ranges = temp.ranges;
       scan.intensities = temp.intensities;
     }
@@ -705,7 +721,7 @@ bool SlamToolbox::AddScan(
 
   if(processed)
   {
-    current_scans_.push_back(*scan);
+    current_scans_->push_back(*scan);
     const karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
 
     // Compute the map->odom transform
