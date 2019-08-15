@@ -30,6 +30,7 @@
 #include "slam_toolbox/ClearQueue.h"
 #include "slam_toolbox/ToggleInteractive.h"
 #include "slam_toolbox/Clear.h"
+#include "slam_toolbox/ClearQueue.h"
 #include "slam_toolbox/SaveMap.h"
 #include "slam_toolbox/LoopClosure.h"
 #include "slam_toolbox/SerializePoseGraph.h"

@@ -253,33 +253,37 @@ void SlamToolboxPlugin::SerializeMap()
 void SlamToolboxPlugin::DeserializeMap()
 /*****************************************************************************/
 {
+  typedef slam_toolbox::DeserializePoseGraph::Request procType;
+
   slam_toolbox::DeserializePoseGraph msg;
   msg.request.filename = _line4->text().toStdString();
   if (_match_type == PROCESS_FIRST_NODE_CMT)
   {
-    msg.request.match_type = slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
+    msg.request.match_type = procType::START_AT_FIRST_NODE;
   }
   else if (_match_type == PROCESS_NEAR_REGION_CMT)
   {
-    msg.request.match_type = slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;
+    msg.request.match_type = procType::START_AT_GIVEN_POSE;
     msg.request.initial_pose.x = std::stod(_line5->text().toStdString());
     msg.request.initial_pose.y = std::stod(_line6->text().toStdString());
     msg.request.initial_pose.theta = std::stod(_line7->text().toStdString());
   }
   else if (_match_type == LOCALIZE_CMT)
   {
-    msg.request.match_type = slam_toolbox::DeserializePoseGraph::Request::LOCALIZE_AT_POSE;
+    msg.request.match_type = procType::LOCALIZE_AT_POSE;
     msg.request.initial_pose.x = std::stod(_line5->text().toStdString());
     msg.request.initial_pose.y = std::stod(_line6->text().toStdString());
     msg.request.initial_pose.theta = std::stod(_line7->text().toStdString());
   }
   else
   {
-    msg.request.match_type = slam_toolbox::DeserializePoseGraph::Request::START_WHERE_ODOMETRY_LEFT_OFF;
+    ROS_WARN("No match type selected, cannot send request.");
+    return;
   }
   if (!_load_map.call(msg))
   {
-     ROS_WARN("SlamToolbox: Failed to deserialize mapper object from file, is service running?");
+     ROS_WARN("SlamToolbox: Failed to deserialize mapper object "
+      "from file, is service running?");
   }
 }
 

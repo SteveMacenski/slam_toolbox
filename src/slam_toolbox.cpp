@@ -21,8 +21,8 @@
 #include "slam_toolbox/slam_toolbox.hpp"
 #include "slam_toolbox/serialization.hpp"
 
-// program needs a larger stack size to serialize large maps
-#define MAX_STACK_SIZE 40000000
+namespace slam_toolbox
+{
 
 /*****************************************************************************/
 SlamToolbox::SlamToolbox()
@@ -37,21 +37,21 @@ SlamToolbox::SlamToolbox()
   first_measurement_(true)
 /*****************************************************************************/
 {
+  ros::NodeHandle private_nh("~");
+  nh_ = private_nh;
+
   interactive_server_ =
     std::make_unique<interactive_markers::InteractiveMarkerServer>(
     "slam_toolbox","",true);
 
-  tf_ = std::make_unique<tf::TransformListener>(ros::Duration(14400.));
-
   mapper_ = std::make_unique<karto::Mapper>();
   dataset_ = std::make_unique<karto::Dataset>();
 
-  ros::NodeHandle private_nh("~");
-  nh_ = private_nh;
   SetParams(private_nh);
-  SetSolver(private_nh);
   SetROSInterfaces(private_nh);
+  SetSolver(private_nh);
 
+  laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(private_nh, tf_.get(), base_frame_);
   reprocessing_transform_.setIdentity();
 
   nh_.setParam("paused_processing", pause_processing_);
@@ -136,133 +136,22 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
   private_nh_.getParam("debug_logging", debug);
   if (debug)
   {
-    if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug) )
+    if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
+      ros::console::levels::Debug))
     {
       ros::console::notifyLoggerLevelsChanged();   
     }
   }
 
-  // Setting General Parameters
-  bool use_scan_matching;
-  if(private_nh_.getParam("use_scan_matching", use_scan_matching))
-    mapper_->setParamUseScanMatching(use_scan_matching);
-  
-  bool use_scan_barycenter;
-  if(private_nh_.getParam("use_scan_barycenter", use_scan_barycenter))
-    mapper_->setParamUseScanBarycenter(use_scan_barycenter);
-
-  minimum_travel_distance_ = 0.5;
-  if(private_nh_.getParam("minimum_travel_distance", minimum_travel_distance_))
-    mapper_->setParamMinimumTravelDistance(minimum_travel_distance_);
-
-  double minimum_travel_heading;
-  if(private_nh_.getParam("minimum_travel_heading", minimum_travel_heading))
-    mapper_->setParamMinimumTravelHeading(minimum_travel_heading);
-
-  int scan_buffer_size;
-  if(private_nh_.getParam("scan_buffer_size", scan_buffer_size))
-    mapper_->setParamScanBufferSize(scan_buffer_size);
-
-  double scan_buffer_maximum_scan_distance;
-  if(private_nh_.getParam("scan_buffer_maximum_scan_distance", scan_buffer_maximum_scan_distance))
-    mapper_->setParamScanBufferMaximumScanDistance(scan_buffer_maximum_scan_distance);
-
-  double link_match_minimum_response_fine;
-  if(private_nh_.getParam("link_match_minimum_response_fine", link_match_minimum_response_fine))
-    mapper_->setParamLinkMatchMinimumResponseFine(link_match_minimum_response_fine);
-
-  double link_scan_maximum_distance;
-  if(private_nh_.getParam("link_scan_maximum_distance", link_scan_maximum_distance))
-    mapper_->setParamLinkScanMaximumDistance(link_scan_maximum_distance);
-
-  double loop_search_maximum_distance;
-  if(private_nh_.getParam("loop_search_maximum_distance", loop_search_maximum_distance))
-    mapper_->setParamLoopSearchMaximumDistance(loop_search_maximum_distance);
-
-  bool do_loop_closing;
-  if(private_nh_.getParam("do_loop_closing", do_loop_closing))
-    mapper_->setParamDoLoopClosing(do_loop_closing);
-
-  int loop_match_minimum_chain_size;
-  if(private_nh_.getParam("loop_match_minimum_chain_size", loop_match_minimum_chain_size))
-    mapper_->setParamLoopMatchMinimumChainSize(loop_match_minimum_chain_size);
-
-  double loop_match_maximum_variance_coarse;
-  if(private_nh_.getParam("loop_match_maximum_variance_coarse", loop_match_maximum_variance_coarse))
-    mapper_->setParamLoopMatchMaximumVarianceCoarse(loop_match_maximum_variance_coarse);
-
-  double loop_match_minimum_response_coarse;
-  if(private_nh_.getParam("loop_match_minimum_response_coarse", loop_match_minimum_response_coarse))
-    mapper_->setParamLoopMatchMinimumResponseCoarse(loop_match_minimum_response_coarse);
-
-  double loop_match_minimum_response_fine;
-  if(private_nh_.getParam("loop_match_minimum_response_fine", loop_match_minimum_response_fine))
-    mapper_->setParamLoopMatchMinimumResponseFine(loop_match_minimum_response_fine);
-
-  // Setting Correlation Parameters
-  double correlation_search_space_dimension;
-  if(private_nh_.getParam("correlation_search_space_dimension", correlation_search_space_dimension))
-    mapper_->setParamCorrelationSearchSpaceDimension(correlation_search_space_dimension);
-
-  double correlation_search_space_resolution;
-  if(private_nh_.getParam("correlation_search_space_resolution", correlation_search_space_resolution))
-    mapper_->setParamCorrelationSearchSpaceResolution(correlation_search_space_resolution);
-
-  double correlation_search_space_smear_deviation;
-  if(private_nh_.getParam("correlation_search_space_smear_deviation", correlation_search_space_smear_deviation))
-    mapper_->setParamCorrelationSearchSpaceSmearDeviation(correlation_search_space_smear_deviation);
-
-  // Setting Correlation Parameters, Loop Closure Parameters
-  double loop_search_space_dimension;
-  if(private_nh_.getParam("loop_search_space_dimension", loop_search_space_dimension))
-    mapper_->setParamLoopSearchSpaceDimension(loop_search_space_dimension);
-
-  double loop_search_space_resolution;
-  if(private_nh_.getParam("loop_search_space_resolution", loop_search_space_resolution))
-    mapper_->setParamLoopSearchSpaceResolution(loop_search_space_resolution);
-
-  double loop_search_space_smear_deviation;
-  if(private_nh_.getParam("loop_search_space_smear_deviation", loop_search_space_smear_deviation))
-    mapper_->setParamLoopSearchSpaceSmearDeviation(loop_search_space_smear_deviation);
-
-  // Setting Scan Matcher Parameters
-  double distance_variance_penalty;
-  if(private_nh_.getParam("distance_variance_penalty", distance_variance_penalty))
-    mapper_->setParamDistanceVariancePenalty(distance_variance_penalty);
-
-  double angle_variance_penalty;
-  if(private_nh_.getParam("angle_variance_penalty", angle_variance_penalty))
-    mapper_->setParamAngleVariancePenalty(angle_variance_penalty);
-
-  double fine_search_angle_offset;
-  if(private_nh_.getParam("fine_search_angle_offset", fine_search_angle_offset))
-    mapper_->setParamFineSearchAngleOffset(fine_search_angle_offset);
-
-  double coarse_search_angle_offset;
-  if(private_nh_.getParam("coarse_search_angle_offset", coarse_search_angle_offset))
-    mapper_->setParamCoarseSearchAngleOffset(coarse_search_angle_offset);
-
-  double coarse_angle_resolution;
-  if(private_nh_.getParam("coarse_angle_resolution", coarse_angle_resolution))
-    mapper_->setParamCoarseAngleResolution(coarse_angle_resolution);
-
-  double minimum_angle_penalty;
-  if(private_nh_.getParam("minimum_angle_penalty", minimum_angle_penalty))
-    mapper_->setParamMinimumAnglePenalty(minimum_angle_penalty);
-
-  double minimum_distance_penalty;
-  if(private_nh_.getParam("minimum_distance_penalty", minimum_distance_penalty))
-    mapper_->setParamMinimumDistancePenalty(minimum_distance_penalty);
-
-  bool use_response_expansion;
-  if(private_nh_.getParam("use_response_expansion", use_response_expansion))
-    mapper_->setParamUseResponseExpansion(use_response_expansion);
+  mapper_utils::setMapperParams(private_nh_, mapper_.get());
+  minimum_travel_distance_ = mapper_->getParamMinimumTravelDistance();
 }
 
 /*****************************************************************************/
 void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
 /*****************************************************************************/
 {
+  tf_ = std::make_unique<tf::TransformListener>(ros::Duration(14400.));
   tfB_ = std::make_unique<tf::TransformBroadcaster>();
   sst_ = node.advertise<nav_msgs::OccupancyGrid>("/map", 1, true);
   sstm_ = node.advertise<nav_msgs::MapMetaData>("/map_metadata", 1, true);
@@ -359,69 +248,17 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const
 
   if(lasers_.find(frame) == lasers_.end())
   {
-    tf::Stamped<tf::Pose> ident;
-    tf::Stamped<tf::Transform> laser_pose;
-    ident.setIdentity();
-    ident.frame_id_ = frame;
-    ident.stamp_ = scan->header.stamp;
     try
     {
-      tf_->transformPose(base_frame_, ident, laser_pose);
-    }
-    catch(tf::TransformException e)
-    {
-      ROS_ERROR("Failed to compute laser pose, aborting initialization (%s)",
-	      e.what());
-      return NULL;
-    }
-
-    double yaw = tf::getYaw(laser_pose.getRotation());
-
-    ROS_DEBUG("laser %s's pose wrt base: %.3f %.3f %.3f",
-      frame.c_str(), laser_pose.getOrigin().x(),
-      laser_pose.getOrigin().y(), yaw);
-
-    tf::Vector3 v;
-    v.setValue(0, 0, 1 + laser_pose.getOrigin().z());
-    tf::Stamped<tf::Vector3> up(v, scan->header.stamp, base_frame_);
-
-    try
-    {
-      tf_->transformPoint(frame, up, up);
+      lasers_[frame] = laser_assistant_->toLaserMetadata(*scan);
+      dataset_->Add(lasers_[frame].getLaser(), true);
     }
     catch (tf::TransformException& e)
     {
-      ROS_WARN("Unable to determine orientation of laser: %s", e.what());
-      return NULL;
+      ROS_ERROR("Failed to compute laser pose, aborting initialization (%s)",
+        e.what());
+      return nullptr;
     }
-
-    bool inverse = up.z() <= 0;
-    if (inverse)
-    {
-      ROS_DEBUG("laser is mounted upside-down");
-    }
-
-    // Create a laser range finder device and copy in data from the first scan
-    std::string name = frame;
-    karto::LaserRangeFinder* laser = 
-      karto::LaserRangeFinder::CreateLaserRangeFinder(
-      karto::LaserRangeFinder_Custom, karto::Name("Custom Described Lidar"));
-    laser->SetOffsetPose(karto::Pose2(laser_pose.getOrigin().x(),
-      laser_pose.getOrigin().y(), yaw));
-    laser->SetMinimumRange(scan->range_min);
-    laser->SetMaximumRange(scan->range_max);
-    laser->SetMinimumAngle(scan->angle_min);
-    laser->SetMaximumAngle(scan->angle_max);
-    laser->SetAngularResolution(scan->angle_increment);
-
-    double max_laser_range = 25;
-    nh_.getParam("max_laser_range", max_laser_range);
-    laser->SetRangeThreshold(max_laser_range);
-
-    // Store this laser device for later
-    laserMetadata laserMeta(laser, inverse);
-    lasers_[name] = laserMeta;
-    dataset_->Add(laser, true);
   }
 
   return lasers_[frame].getLaser();
@@ -649,7 +486,7 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 
   static karto::Pose2 last_pose;
   static double last_scan_time = 0.;
-  static double min_dist2 = minimum_travel_distance_*minimum_travel_distance_;
+  static double min_dist2 = minimum_travel_distance_ * minimum_travel_distance_;
 
   // we are in a paused mode, reject incomming information
   if(IsPaused(NEW_MEASUREMENTS))
@@ -824,6 +661,7 @@ bool SlamToolbox::AddScan(
   boost::mutex::scoped_lock lock(mapper_mutex_);
   bool processed = false, update_offset = false;
   bool localize_first_match = PROCESS_LOCALIZATION && !localization_pose_set_;
+
   if (processor_type_ == PROCESS)
   {
     processed = mapper_->Process(range_scan);
@@ -861,7 +699,8 @@ bool SlamToolbox::AddScan(
   }
   else
   {
-    ROS_ERROR("AddScan: Unable to add scan, no valid processing method given.");
+    ROS_FATAL("No valid processor type set! Exiting.");
+    exit(-1);
   }
 
   if(processed)
@@ -1232,6 +1071,13 @@ bool SlamToolbox::DeserializePoseGraphCallback(
   slam_toolbox::DeserializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
+  if (req.match_type == slam_toolbox::DeserializePoseGraph::Request::UNSET) 
+  {
+    ROS_ERROR("Deserialization called without valid processor type set. "
+      "Undefined behavior!");
+    return false;
+  }
+
   std::string filename = req.filename;
 
   std::unique_ptr<karto::Dataset> dataset = std::make_unique<karto::Dataset>();
@@ -1299,9 +1145,16 @@ bool SlamToolbox::DeserializePoseGraphCallback(
     if (pSensor)
     {
       karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
+
+      // while true STEVE
+      //  ros::topic::get_msg laserscan with timeout
+      //  LOG waiting for scan...
+      //  laser = laser_assistant_->toLaserMetadata(scan)
+      // lasers_[laser_frame_] = laser
+
       bool is_inverted = false;
       nh_.getParam("inverted_laser", is_inverted);
-      laserMetadata laserMeta(laser, is_inverted);
+      laser_utils::LaserMetadata laserMeta(laser, is_inverted);
       lasers_[laser_frame_] = laserMeta;
     }
     else
@@ -1314,27 +1167,23 @@ bool SlamToolbox::DeserializePoseGraphCallback(
   UpdateMap();
 
   first_measurement_ = true;
-  if (req.match_type ==
-    slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE)
+  switch (req.match_type)
   {
-    processor_type_ = PROCESS_FIRST_NODE;
-  }
-  else if (req.match_type ==
-    slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE)
-  {
-    processor_type_ = PROCESS_NEAR_REGION;
-    process_near_region_pose_ = req.initial_pose;
-  }
-  else if (req.match_type ==
-    slam_toolbox::DeserializePoseGraph::Request::LOCALIZE_AT_POSE)
-  {
-    processor_type_ = PROCESS_LOCALIZATION;
-    process_near_region_pose_ = req.initial_pose;
-    localization_pose_set_ = false;
-  }
-  else
-  {
-    processor_type_ = PROCESS;
+    case procType::START_AT_FIRST_NODE:
+      processor_type_ = PROCESS_FIRST_NODE;
+      break;
+    case procType::START_AT_GIVEN_POSE:
+      processor_type_ = PROCESS_NEAR_REGION;
+      process_near_region_pose_ = req.initial_pose;
+      break;
+    case procType::LOCALIZE_AT_POSE: 
+      processor_type_ = PROCESS_LOCALIZATION;
+      process_near_region_pose_ = req.initial_pose;
+      localization_pose_set_ = false;
+      break;
+    default:
+      ROS_FATAL("Deserialization called without valid processor type set.");
+      exit(-1);
   }
 
   return true;
@@ -1347,7 +1196,7 @@ void SlamToolbox::LocalizePoseCallback(const
 {
   if (processor_type_ != PROCESS_LOCALIZATION)
   {
-    ROS_WARN("LocalizePoseCallback: Cannot process localization command "
+    ROS_ERROR("LocalizePoseCallback: Cannot process localization command "
       "if not in localization mode.");
     return;
   }
@@ -1356,27 +1205,12 @@ void SlamToolbox::LocalizePoseCallback(const
   process_near_region_pose_.y = msg->pose.pose.position.y;
   process_near_region_pose_.theta = tf::getYaw(msg->pose.pose.orientation);
   localization_pose_set_ = false;
+  first_measurement_ = true;
+
   ROS_INFO("LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
     process_near_region_pose_.x, process_near_region_pose_.y,
     process_near_region_pose_.theta);
-  first_measurement_ = true;
+  return;
 }
 
-/*****************************************************************************/
-int main(int argc, char** argv)
-/*****************************************************************************/
-{
-  const rlim_t max_stack_size = MAX_STACK_SIZE;
-  struct rlimit stack_limit;
-  getrlimit(RLIMIT_STACK, &stack_limit);
-  if (stack_limit.rlim_cur < max_stack_size)
-  {
-    stack_limit.rlim_cur = max_stack_size;
-  }
-  setrlimit(RLIMIT_STACK, &stack_limit);
-
-  ros::init(argc, argv, "slam_toolbox");
-  SlamToolbox kt;
-  ros::spin();
-  return 0;
-}
+} // end namespace

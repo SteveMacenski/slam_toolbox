@@ -30,10 +30,10 @@
 #include "interactive_markers/menu_handler.h"
 #include "pluginlib/class_loader.h"
 
-#include "karto_sdk/Mapper.h"
-#include "slam_toolbox/toolbox_msgs.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
+#include "slam_toolbox/mapper_utils.hpp"
 #include "slam_toolbox/snap_utils.hpp"
+#include "slam_toolbox/laser_utils.hpp"
 
 #include <string>
 #include <map>
@@ -41,10 +41,13 @@
 #include <queue>
 #include <cstdlib>
 #include <fstream>
-#include <sys/resource.h>
 #include <boost/thread.hpp>
 
-using namespace toolbox_types;
+namespace slam_toolbox
+{
+
+// dirty, dirty cheat I love
+using namespace ::toolbox_types;
 
 class SlamToolbox
 {
@@ -127,7 +130,10 @@ private:
   // Book keeping
   std::unique_ptr<karto::Mapper> mapper_;
   std::unique_ptr<karto::Dataset> dataset_;
-  std::map<std::string, laserMetadata> lasers_;
+  std::map<std::string, laser_utils::LaserMetadata> lasers_;
+
+  // helpers
+  std::unique_ptr<laser_utils::LaserAssistant> laser_assistant_;
 
   // Internal state
   std::unique_ptr<boost::thread> transform_thread_, run_thread_, visualization_thread_;
@@ -145,3 +151,5 @@ private:
   pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;
   boost::shared_ptr<karto::ScanSolver> solver_;
 };
+
+} // end namespace

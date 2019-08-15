@@ -34,8 +34,8 @@
 #include "tf/transform_listener.h"
 
 #include "karto_sdk/Mapper.h"
-#include "slam_toolbox/toolbox_msgs.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
+#include "slam_toolbox/laser_utils.hpp"
 
 using namespace toolbox_types;
 
@@ -71,7 +71,7 @@ private:
   int num_submaps_;
 
   //karto bookkeeping
-  std::map<std::string, laserMetadata> lasers_;
+  std::map<std::string, laser_utils::LaserMetadata> lasers_;
   std::vector<std::unique_ptr<karto::Dataset> > dataset_vec_;
 
   // TF
