@@ -52,6 +52,7 @@ SlamToolbox::SlamToolbox()
   SetSolver(private_nh);
 
   laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(private_nh, tf_.get(), base_frame_);
+  current_scans_ = std::make_unique<std::vector<sensor_msgs::LaserScan> >();
   reprocessing_transform_.setIdentity();
 
   nh_.setParam("paused_processing", pause_processing_);
@@ -391,6 +392,13 @@ void SlamToolbox::ProcessInteractiveFeedback(const
   visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
 /*****************************************************************************/
 {
+  if (processor_type_ == PROCESS_LOCALIZATION)
+  {
+    ROS_WARN_ONCE("Cannot manually correct nodes in localization modes. "
+      "This message will appear once.");
+    return;
+  }
+
   // was depressed, something moved, and now released
   if (feedback->event_type ==
       visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP && 
@@ -413,7 +421,7 @@ void SlamToolbox::ProcessInteractiveFeedback(const
 
     // get scan
     const int id = std::stoi(feedback->marker_name,nullptr,10) - 1;
-    sensor_msgs::LaserScan scan = current_scans_[id];
+    sensor_msgs::LaserScan scan = current_scans_->at(id);
 
     // create correct frame
     tf::Transform transform;
@@ -713,7 +721,7 @@ bool SlamToolbox::AddScan(
 
   if(processed)
   {
-    current_scans_.push_back(*scan);
+    current_scans_->push_back(*scan);
     const karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
 
     // Compute the map->odom transform
