@@ -47,13 +47,11 @@ SlamToolbox::SlamToolbox()
   mapper_ = std::make_unique<karto::Mapper>();
   dataset_ = std::make_unique<karto::Dataset>();
 
-  tf_ = std::make_unique<tf::TransformListener>(ros::Duration(14400.));
-  laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(private_nh, tf_.get(), base_frame_);
-
   SetParams(private_nh);
-  SetSolver(private_nh);
   SetROSInterfaces(private_nh);
+  SetSolver(private_nh);
 
+  laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(private_nh, tf_.get(), base_frame_);
   reprocessing_transform_.setIdentity();
 
   nh_.setParam("paused_processing", pause_processing_);
@@ -153,6 +151,7 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
 void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
 /*****************************************************************************/
 {
+  tf_ = std::make_unique<tf::TransformListener>(ros::Duration(14400.));
   tfB_ = std::make_unique<tf::TransformBroadcaster>();
   sst_ = node.advertise<nav_msgs::OccupancyGrid>("/map", 1, true);
   sstm_ = node.advertise<nav_msgs::MapMetaData>("/map_metadata", 1, true);

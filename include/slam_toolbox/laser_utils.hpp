@@ -111,6 +111,7 @@ private:
     ident.stamp_ = scan_.header.stamp;
 
     tf_->transformPose(base_frame_, ident, laser_pose_);
+
     mountingYaw = tf::getYaw(laser_pose_.getRotation());
 
     ROS_DEBUG("laser %s's pose wrt base: %.3f %.3f %.3f",
@@ -122,6 +123,7 @@ private:
     tf::Stamped<tf::Vector3> up(v, scan_.header.stamp, base_frame_);
 
     tf_->transformPoint(frame_, up, up);
+    
     if (up.z() <= 0)
     {
       ROS_DEBUG("laser is mounted upside-down");
