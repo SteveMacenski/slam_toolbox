@@ -41,8 +41,6 @@ SlamToolbox::SlamToolbox()
     std::make_unique<interactive_markers::InteractiveMarkerServer>(
     "slam_toolbox","",true);
 
-  tf_ = std::make_unique<tf::TransformListener>(ros::Duration(14400.));
-
   mapper_ = std::make_unique<karto::Mapper>();
   dataset_ = std::make_unique<karto::Dataset>();
 
@@ -51,6 +49,9 @@ SlamToolbox::SlamToolbox()
   SetParams(private_nh);
   SetSolver(private_nh);
   SetROSInterfaces(private_nh);
+
+  tf_ = std::make_unique<tf::TransformListener>(ros::Duration(14400.));
+  laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(nh_, tf_.get(), base_frame_);
 
   reprocessing_transform_.setIdentity();
 
@@ -247,69 +248,9 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const
 
   if(lasers_.find(frame) == lasers_.end())
   {
-    tf::Stamped<tf::Pose> ident;
-    tf::Stamped<tf::Transform> laser_pose;
-    ident.setIdentity();
-    ident.frame_id_ = frame;
-    ident.stamp_ = scan->header.stamp;
-    try
-    {
-      tf_->transformPose(base_frame_, ident, laser_pose);
-    }
-    catch(tf::TransformException e)
-    {
-      ROS_ERROR("Failed to compute laser pose, aborting initialization (%s)",
-	      e.what());
-      return NULL;
-    }
-
-    double yaw = tf::getYaw(laser_pose.getRotation());
-
-    ROS_DEBUG("laser %s's pose wrt base: %.3f %.3f %.3f",
-      frame.c_str(), laser_pose.getOrigin().x(),
-      laser_pose.getOrigin().y(), yaw);
-
-    tf::Vector3 v;
-    v.setValue(0, 0, 1 + laser_pose.getOrigin().z());
-    tf::Stamped<tf::Vector3> up(v, scan->header.stamp, base_frame_);
-
-    try
-    {
-      tf_->transformPoint(frame, up, up);
-    }
-    catch (tf::TransformException& e)
-    {
-      ROS_WARN("Unable to determine orientation of laser: %s", e.what());
-      return NULL;
-    }
-
-    bool inverse = up.z() <= 0;
-    if (inverse)
-    {
-      ROS_DEBUG("laser is mounted upside-down");
-    }
-
-    // Create a laser range finder device and copy in data from the first scan
-    std::string name = frame;
-    karto::LaserRangeFinder* laser = 
-      karto::LaserRangeFinder::CreateLaserRangeFinder(
-      karto::LaserRangeFinder_Custom, karto::Name("Custom Described Lidar"));
-    laser->SetOffsetPose(karto::Pose2(laser_pose.getOrigin().x(),
-      laser_pose.getOrigin().y(), yaw));
-    laser->SetMinimumRange(scan->range_min);
-    laser->SetMaximumRange(scan->range_max);
-    laser->SetMinimumAngle(scan->angle_min);
-    laser->SetMaximumAngle(scan->angle_max);
-    laser->SetAngularResolution(scan->angle_increment);
-
-    double max_laser_range = 25;
-    nh_.getParam("max_laser_range", max_laser_range);
-    laser->SetRangeThreshold(max_laser_range);
-
-    // Store this laser device for later
-    laserMetadata laserMeta(laser, inverse);
-    lasers_[name] = laserMeta;
-    dataset_->Add(laser, true);
+    laserMetaData laserMeta = laser_assistant_->toLaserMetadata(*scan);
+    lasers_[frame] = laserMeta;
+    dataset_->Add(laserMeta.getLaser(), true);
   }
 
   return lasers_[frame].getLaser();
@@ -1196,6 +1137,13 @@ bool SlamToolbox::DeserializePoseGraphCallback(
     if (pSensor)
     {
       karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
+
+      // while true STEVE
+      //  ros::topic::get_msg laserscan with timeout
+      //  LOG waiting for scan...
+      //  laser = laser_assistant_->toLaserMetadata(scan)
+      // lasers_[laser_frame_] = laser
+
       bool is_inverted = false;
       nh_.getParam("inverted_laser", is_inverted);
       laserMetadata laserMeta(laser, is_inverted);

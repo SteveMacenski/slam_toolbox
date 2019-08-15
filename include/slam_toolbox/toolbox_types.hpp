@@ -42,37 +42,6 @@ struct posedScan
   karto::Pose2 pose;
 };
 
-// Store laser scanner information
-struct laserMetadata
-{
-  laserMetadata()
-  {
-  };
-
-  ~laserMetadata()
-  {
-  }
-  
-  laserMetadata(karto::LaserRangeFinder* lsr, bool invert)
-  {
-    laser = lsr;
-    inverted = invert;
-  };
-
-  bool isInverted()
-  {
-    return inverted;
-  }
-
-  karto::LaserRangeFinder* getLaser()
-  {
-    return laser;
-  }
-
-  karto::LaserRangeFinder* laser;
-  bool inverted;
-};
-
 // types of pause functionality available
 enum PausedApplication
 {

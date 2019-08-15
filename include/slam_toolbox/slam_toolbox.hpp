@@ -33,6 +33,7 @@
 #include "slam_toolbox/toolbox_types.hpp"
 #include "slam_toolbox/mapper_utils.hpp"
 #include "slam_toolbox/snap_utils.hpp"
+#include "slam_toolbox/laser_utils.hpp"
 
 #include <string>
 #include <map>
@@ -130,6 +131,9 @@ private:
   std::unique_ptr<karto::Mapper> mapper_;
   std::unique_ptr<karto::Dataset> dataset_;
   std::map<std::string, laserMetadata> lasers_;
+
+  // helpers
+  std::unique_ptr<laser_utils::LaserAssistant> laser_assistant_;
 
   // Internal state
   std::unique_ptr<boost::thread> transform_thread_, run_thread_, visualization_thread_;
