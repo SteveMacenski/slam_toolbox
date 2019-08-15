@@ -79,7 +79,7 @@ bool MergeMapsKinematic::AddSubmapCallback(
 
   if (lasers_.find(laser->GetName().GetName()) == lasers_.end())
   {
-    laserMetadata laserMeta(laser, false);
+    laser_utils::LaserMetadata laserMeta(laser, false);
     lasers_[laser->GetName().GetName()] = laserMeta;
   }
 
