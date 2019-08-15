@@ -248,9 +248,17 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const
 
   if(lasers_.find(frame) == lasers_.end())
   {
-    laserMetaData laserMeta = laser_assistant_->toLaserMetadata(*scan);
-    lasers_[frame] = laserMeta;
-    dataset_->Add(laserMeta.getLaser(), true);
+    try
+    {
+      lasers_[frame] = laser_assistant_->toLaserMetadata(*scan);
+      dataset_->Add(lasers_[frame].getLaser(), true);
+    }
+    catch (tf::TransformException& e)
+    {
+      ROS_ERROR("Failed to compute laser pose, aborting initialization (%s)",
+        e.what());
+      return nullptr;
+    }
   }
 
   return lasers_[frame].getLaser();
@@ -1146,7 +1154,7 @@ bool SlamToolbox::DeserializePoseGraphCallback(
 
       bool is_inverted = false;
       nh_.getParam("inverted_laser", is_inverted);
-      laserMetadata laserMeta(laser, is_inverted);
+      laser_utils::LaserMetadata laserMeta(laser, is_inverted);
       lasers_[laser_frame_] = laserMeta;
     }
     else

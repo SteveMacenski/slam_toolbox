@@ -71,7 +71,7 @@ private:
   int num_submaps_;
 
   //karto bookkeeping
-  std::map<std::string, laserMetadata> lasers_;
+  std::map<std::string, laser_utils::LaserMetadata> lasers_;
   std::vector<std::unique_ptr<karto::Dataset> > dataset_vec_;
 
   // TF
