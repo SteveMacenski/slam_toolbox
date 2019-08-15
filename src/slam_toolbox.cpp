@@ -37,6 +37,9 @@ SlamToolbox::SlamToolbox()
   first_measurement_(true)
 /*****************************************************************************/
 {
+  ros::NodeHandle private_nh("~");
+  nh_ = private_nh;
+
   interactive_server_ =
     std::make_unique<interactive_markers::InteractiveMarkerServer>(
     "slam_toolbox","",true);
@@ -44,14 +47,12 @@ SlamToolbox::SlamToolbox()
   mapper_ = std::make_unique<karto::Mapper>();
   dataset_ = std::make_unique<karto::Dataset>();
 
-  ros::NodeHandle private_nh("~");
-  nh_ = private_nh;
+  tf_ = std::make_unique<tf::TransformListener>(ros::Duration(14400.));
+  laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(private_nh, tf_.get(), base_frame_);
+
   SetParams(private_nh);
   SetSolver(private_nh);
   SetROSInterfaces(private_nh);
-
-  tf_ = std::make_unique<tf::TransformListener>(ros::Duration(14400.));
-  laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(nh_, tf_.get(), base_frame_);
 
   reprocessing_transform_.setIdentity();
 
