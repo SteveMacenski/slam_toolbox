@@ -117,6 +117,7 @@ private:
   std::unique_ptr<tf::MessageFilter<sensor_msgs::LaserScan> > scan_filter_;
   ros::Publisher sst_, sstm_, marker_publisher_, scan_publisher_;
   ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_measurements_, ssClear_manual_, ssSerialize_, ssLoadMap_;
+
   nav_msgs::GetMap::Response map_;
 
   // Storage for ROS parameters

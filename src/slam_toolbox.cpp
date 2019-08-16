@@ -395,6 +395,7 @@ void SlamToolbox::ProcessInteractiveFeedback(const
   if (feedback->event_type ==
       visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
   {
+
     // get scan
     const int id = std::stoi(feedback->marker_name,nullptr,10) - 1;
     sensor_msgs::LaserScan scan = current_scans_->at(id);
