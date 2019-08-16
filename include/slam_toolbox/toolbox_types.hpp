@@ -64,4 +64,8 @@ typedef std::vector<karto::Edge<karto::LocalizedRangeScan>*> EdgeVector;
 typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> ScanVector;
 typedef slam_toolbox::DeserializePoseGraph::Request procType;
 
+typedef std::vector<karto::Matrix3> CovarianceVector;
+typedef std::unordered_map<int, Eigen::Vector3d>::iterator graph_iterator;
+typedef std::unordered_map<int, Eigen::Vector3d>::const_iterator const_graph_iterator;
+
 }  // end namespace

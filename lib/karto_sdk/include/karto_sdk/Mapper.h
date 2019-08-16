@@ -20,6 +20,7 @@
 
 #include <map>
 #include <vector>
+#include <unordered_map>
 #include <queue>
 
 #include <Eigen/Core>
@@ -985,17 +986,24 @@ namespace karto
     /**
      * Resets the solver
      */
-    virtual void Clear(){};
+    virtual void Clear()
+    {
+    }
 
     /**
      * Resets the solver for reinitialization
      */
-    virtual void Reset(){};
+    virtual void Reset()
+    {
+    }
 
     /**
      * Get graph stored
      */
-    virtual void getGraph(std::vector<Eigen::Vector2d>& ag) {};
+    virtual std::unordered_map<int, Eigen::Vector3d>* getGraph()
+    {
+      std::cout << "getGraph method not implemented for this solver type. Graph visualization unavailable." << std::endl;
+    }
 
     /**
      * Modify a node's pose

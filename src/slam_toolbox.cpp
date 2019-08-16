@@ -271,15 +271,15 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const
 void SlamToolbox::PublishGraph()
 /*****************************************************************************/
 {
-  std::vector<Eigen::Vector2d> graph;
-  solver_->getGraph(graph);
+  interactive_server_->clear();
+  std::unordered_map<int, Eigen::Vector3d>* graph = solver_->getGraph();
 
-  if (graph.size() == 0)
+  if (graph->size() == 0)
   {
     return;
   }
 
-  ROS_DEBUG("Graph size: %i",(int)graph.size());
+  ROS_DEBUG("Graph size: %i",(int)graph->size());
   bool interactive_mode = false;
   {
     boost::mutex::scoped_lock lock(interactive_mutex_);
@@ -299,12 +299,11 @@ void SlamToolbox::PublishGraph()
   m.action = visualization_msgs::Marker::ADD;
   m.lifetime = ros::Duration(0.);
 
-  uint i = 0;
-  for (i; i < graph.size(); i++) 
+  for (const_graph_iterator it = graph->begin(); it != graph->end(); ++it)
   {
-    m.id = i+1;
-    m.pose.position.x = graph[i](0);
-    m.pose.position.y = graph[i](1);
+    m.id = it->first + 1;
+    m.pose.position.x = it->second(0);
+    m.pose.position.y = it->second(1);
 
     if (interactive_mode)
     {
@@ -312,7 +311,7 @@ void SlamToolbox::PublishGraph()
       visualization_msgs::InteractiveMarker int_marker;
       int_marker.header.frame_id = map_frame_;
       int_marker.header.stamp = ros::Time::now();
-      int_marker.name = std::to_string(i+1);
+      int_marker.name = std::to_string(m.id);
       int_marker.pose.orientation.w = 1.;
       int_marker.pose.position.x = m.pose.position.x;
       int_marker.pose.position.y = m.pose.position.y;
