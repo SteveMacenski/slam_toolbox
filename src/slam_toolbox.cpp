@@ -1162,16 +1162,17 @@ bool SlamToolbox::DeserializePoseGraphCallback(
     {
       karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
 
-      // while true STEVE
-      //  ros::topic::get_msg laserscan with timeout
-      //  LOG waiting for scan...
-      //  laser = laser_assistant_->toLaserMetadata(scan)
-      // lasers_[laser_frame_] = laser
-
-      bool is_inverted = false;
-      nh_.getParam("inverted_laser", is_inverted);
-      laser_utils::LaserMetadata laserMeta(laser, is_inverted);
-      lasers_[laser_frame_] = laserMeta;
+      while (true)
+      {
+        ROS_INFO("Waiting for scan to get metadata...");
+        boost::shared_ptr<sensor_msgs::LaserScan const> scan = ros::topic::waitForMessage<sensor_msgs::LaserScan>(std::string("/scan"), ros::Duration(1.0));
+        if (scan)
+        {
+          ROS_INFO("Got scan!");
+          lasers_[laser_frame_] = laser_assistant_->toLaserMetadata(*scan);
+          break;
+        }
+      }
     }
     else
     {
