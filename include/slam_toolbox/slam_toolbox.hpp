@@ -35,6 +35,7 @@
 #include "slam_toolbox/snap_utils.hpp"
 #include "slam_toolbox/laser_utils.hpp"
 #include "slam_toolbox/pose_utils.hpp"
+#include "slam_toolbox/map_saver.hpp"
 
 #include <string>
 #include <map>
@@ -72,20 +73,12 @@ private:
   void LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
   bool MapCallback(nav_msgs::GetMap::Request  &req,
                    nav_msgs::GetMap::Response &res);
-  bool PauseProcessingCallback(slam_toolbox::Pause::Request& req,
-                     slam_toolbox::Pause::Response& resp);
-  bool PauseNewMeasurementsCallback(slam_toolbox::Pause::Request& req,
-                     slam_toolbox::Pause::Response& resp);
   bool ClearQueueCallback(slam_toolbox::ClearQueue::Request& req,
                           slam_toolbox::ClearQueue::Response& resp);
   bool InteractiveCallback(slam_toolbox::ToggleInteractive::Request  &req,
                            slam_toolbox::ToggleInteractive::Response &resp);
   bool ClearChangesCallback(slam_toolbox::Clear::Request  &req,
                             slam_toolbox::Clear::Response &resp);
-  bool SaveMapCallback(slam_toolbox::SaveMap::Request  &req,
-                       slam_toolbox::SaveMap::Response &resp);
-  bool ManualLoopClosureCallback(slam_toolbox::LoopClosure::Request  &req,
-                                 slam_toolbox::LoopClosure::Response &resp);
   bool SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
                                   slam_toolbox::SerializePoseGraph::Response &resp);
   bool DeserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request &req,
@@ -99,13 +92,21 @@ private:
                karto::Pose2& karto_pose);
   bool UpdateMap();
   void PublishGraph();
+
+  // TODO loop closure util
+  bool ManualLoopClosureCallback(slam_toolbox::LoopClosure::Request  &req,
+                                 slam_toolbox::LoopClosure::Response &resp);
   void MoveNode(const int& id, const Eigen::Vector3d& pose, const bool correct = true);
   void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void ClearMovedNodes();
   void AddMovedNodes(const int& id, Eigen::Vector3d vec);
 
-  // state
+  // TODO state helper
   bool IsPaused(const PausedApplication& app);
+  bool PauseProcessingCallback(slam_toolbox::Pause::Request& req,
+                     slam_toolbox::Pause::Response& resp);
+  bool PauseNewMeasurementsCallback(slam_toolbox::Pause::Request& req,
+                     slam_toolbox::Pause::Response& resp);
 
   // ROS-y-ness
   ros::NodeHandle nh_;
@@ -115,11 +116,11 @@ private:
   ros::Subscriber localization_pose_sub_;
   std::unique_ptr<tf::MessageFilter<sensor_msgs::LaserScan> > scan_filter_;
   ros::Publisher sst_, sstm_, marker_publisher_, scan_publisher_;
-  ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_measurements_, ssClear_manual_, ssSave_map_, ssSerialize_, ssLoadMap_;
+  ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_measurements_, ssClear_manual_, ssSerialize_, ssLoadMap_;
   nav_msgs::GetMap::Response map_;
 
   // Storage for ROS parameters
-  std::string odom_frame_, map_frame_, base_frame_, laser_frame_;
+  std::string odom_frame_, map_frame_, base_frame_, laser_frame_, map_name_;
   int throttle_scans_;
   ros::Duration transform_timeout_;
   double resolution_, minimum_time_interval_, minimum_travel_distance_;
@@ -136,6 +137,7 @@ private:
   // helpers
   std::unique_ptr<laser_utils::LaserAssistant> laser_assistant_;
   std::unique_ptr<pose_utils::GetPoseHelper> pose_helper_;
+  std::unique_ptr<map_saver::MapSaver> map_saver_;
 
   // Internal state
   std::unique_ptr<boost::thread> transform_thread_, run_thread_, visualization_thread_;
