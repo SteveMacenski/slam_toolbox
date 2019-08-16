@@ -25,6 +25,29 @@
 namespace laser_utils
 {
 
+// Convert a laser scan to a vector of readings
+inline std::vector<double> scanToReadings(const sensor_msgs::LaserScan& scan, const bool& inverted)
+{
+  std::vector<double> readings;
+
+  if (inverted)
+  {
+    for(std::vector<float>::const_reverse_iterator it = scan.ranges.rbegin(); it != scan.ranges.rend(); ++it)
+    {
+      readings.push_back(*it);
+    }
+  }
+  else 
+  {
+    for(std::vector<float>::const_iterator it = scan.ranges.begin(); it != scan.ranges.end(); ++it)
+    {
+      readings.push_back(*it);
+    }
+  }
+
+  return readings;
+};
+
 // Store laser scanner information
 class LaserMetadata
 {
@@ -43,7 +66,7 @@ public:
     inverted = invert;
   };
 
-  bool isInverted()
+  bool isInverted() const
   {
     return inverted;
   }
@@ -52,6 +75,27 @@ public:
   {
     return laser;
   }
+
+  void invertScan(sensor_msgs::LaserScan& scan) const
+  {
+    sensor_msgs::LaserScan temp;
+    temp.intensities.reserve(scan.intensities.size());
+    temp.ranges.reserve(scan.ranges.size());
+    const bool has_intensities = scan.intensities.size() > 0 ? true : false;
+
+    for (int i = scan.ranges.size(); i != 0; i--)
+    {
+      temp.ranges.push_back(scan.ranges[i]);
+      if (has_intensities)
+      {
+        temp.intensities.push_back(scan.intensities[i]);
+      }
+    }
+
+    scan.ranges = temp.ranges;
+    scan.intensities = temp.intensities;
+    return;
+  };
 
 private:
   karto::LaserRangeFinder* laser;
