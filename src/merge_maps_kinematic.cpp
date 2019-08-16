@@ -48,7 +48,7 @@ void MergeMapsKinematic::Setup()
   ssSubmap_ = nh.advertiseService("add_submap",
     &MergeMapsKinematic::AddSubmapCallback, this);
   num_submaps_ = 0;
-  tfB_ = std::make_unique<tf::TransformBroadcaster>();
+  tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>();
   interactive_server_ = 
     std::make_unique<interactive_markers::InteractiveMarkerServer>(
     "merge_maps_tool","",true);
@@ -105,9 +105,9 @@ bool MergeMapsKinematic::AddSubmapCallback(
     return false;
   }
 
-  tf::Transform transform;
+  tf2::Transform transform;
   transform.setIdentity();
-  transform.setOrigin(tf::Vector3(map.map.info.origin.position.x +
+  transform.setOrigin(tf2::Vector3(map.map.info.origin.position.x +
     map.map.info.width * map.map.info.resolution / 2.0,
     map.map.info.origin.position.y +
     map.map.info.height * map.map.info.resolution / 2.0,
@@ -118,10 +118,10 @@ bool MergeMapsKinematic::AddSubmapCallback(
   map.map.header.frame_id = "map_"+std::to_string(num_submaps_);
   sstS_[num_submaps_].publish(map.map);
   sstmS_[num_submaps_].publish(map.map.info);
-  tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(),
-    "/map", "/map_"+std::to_string(num_submaps_)));
-  submap_marker_transform_[num_submaps_]=tf::Transform(tf::createQuaternionFromRPY(0,0,0),
-    tf::Vector3(0,0,0)); //no initial correction -- identity mat
+  // tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(),
+  //   "/map", "/map_"+std::to_string(num_submaps_)));
+  submap_marker_transform_[num_submaps_]=tf2::Transform(tf2::Quaternion(),
+    tf2::Vector3(0,0,0)); //no initial correction -- identity mat
 
   // create an interactive marker for the base of this frame and attach it
   visualization_msgs::Marker m;
@@ -189,26 +189,28 @@ bool MergeMapsKinematic::AddSubmapCallback(
 /*****************************************************************************/
 karto::Pose2 MergeMapsKinematic::ApplyCorrection(const
   karto::Pose2& pose,
-  const tf::Transform& submap_correction)
+  const tf2::Transform& submap_correction)
 /*****************************************************************************/
 {
-  tf::Transform poseTf, poseCorr;
-  poseTf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-  poseTf.setRotation(tf::createQuaternionFromRPY(0, 0, pose.GetHeading()));
+  tf2::Transform poseTf, poseCorr;
+  tf2::Quaternion q;
+  q.setEuler(pose.GetHeading(), 0., 0.);
+  poseTf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
+  poseTf.setRotation(q);
   poseCorr = submap_correction * poseTf;
   return karto::Pose2(poseCorr.getOrigin().x(), poseCorr.getOrigin().y(),
-    tf::getYaw(poseCorr.getRotation()));
+    tf2::getYaw(poseCorr.getRotation()));
 }
 
 /*****************************************************************************/
 karto::Vector2<kt_double> MergeMapsKinematic::ApplyCorrection(const
   karto::Vector2<kt_double>&  pose,
-  const tf::Transform& submap_correction)
+  const tf2::Transform& submap_correction)
 /*****************************************************************************/
 {
-  tf::Transform poseTf, poseCorr;
-  poseTf.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-  poseTf.setRotation(tf::createQuaternionFromRPY(0, 0, 0));
+  tf2::Transform poseTf, poseCorr;
+  poseTf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
+  poseTf.setRotation(tf2::Quaternion());
   poseCorr = submap_correction * poseTf;
   return karto::Vector2<kt_double>(poseCorr.getOrigin().x(), poseCorr.getOrigin().y());
 }
@@ -233,7 +235,7 @@ bool MergeMapsKinematic::MergeMapCallback(
       iter != it_LRV->end(); ++iter)
     {
       pScan = *iter;
-      tf::Transform submapCorrection = submap_marker_transform_[id];
+      tf2::Transform submapCorrection = submap_marker_transform_[id];
 
       // TRANSFORM BARYCENTERR POSE
       const karto::Pose2 baryCenterPose = pScan->GetBarycenterPose();
@@ -367,13 +369,13 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const
 
     // get yaw
     tfScalar yaw, pitch, roll;
-    tf::Quaternion quat;
-    tf::quaternionMsgToTF(feedback->pose.orientation, quat); // relative
-    tf::Matrix3x3 mat(quat);
+    tf2::Quaternion quat;
+    tf2::convert(feedback->pose.orientation, quat); // relative
+    tf2::Matrix3x3 mat(quat);
     mat.getRPY(roll, pitch, yaw);
-    tf::Transform previous_submap_correction ;
+    tf2::Transform previous_submap_correction ;
     previous_submap_correction.setIdentity();
-    previous_submap_correction.setOrigin(tf::Vector3(submap_locations_[id](0),
+    previous_submap_correction.setOrigin(tf2::Vector3(submap_locations_[id](0),
       submap_locations_[id](1), 0.));
 
     // update internal knowledge of submap locations
@@ -382,12 +384,12 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const
       submap_locations_[id](2) + yaw);
 
     // add the map_N frame there
-    tf::Transform new_submap_location;
-    new_submap_location.setOrigin(tf::Vector3(submap_locations_[id](0),
+    tf2::Transform new_submap_location;
+    new_submap_location.setOrigin(tf2::Vector3(submap_locations_[id](0),
       submap_locations_[id](1), 0.));
     new_submap_location.setRotation(quat);
-    tfB_->sendTransform(tf::StampedTransform (new_submap_location,
-      ros::Time::now(), "/map", "/map_"+std::to_string(id)));
+    // tfB_->sendTransform(tf::StampedTransform (new_submap_location,
+    //   ros::Time::now(), "/map", "/map_"+std::to_string(id)));
 
     submap_marker_transform_[id] = submap_marker_transform_[id] *
       previous_submap_correction.inverse() * new_submap_location;
@@ -400,18 +402,18 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const
 
     // get yaw
     tfScalar yaw, pitch, roll;
-    tf::Quaternion quat;
-    tf::quaternionMsgToTF(feedback->pose.orientation, quat); // relative
-    tf::Matrix3x3 mat(quat);
+    tf2::Quaternion quat;
+    tf2::convert(feedback->pose.orientation, quat); // relative
+    tf2::Matrix3x3 mat(quat);
     mat.getRPY(roll, pitch, yaw);
 
     // add the map_N frame there
-    tf::Transform new_submap_location;
-    new_submap_location.setOrigin(tf::Vector3(feedback->pose.position.x,
+    tf2::Transform new_submap_location;
+    new_submap_location.setOrigin(tf2::Vector3(feedback->pose.position.x,
       feedback->pose.position.y, 0.));
     new_submap_location.setRotation(quat);
-    tfB_->sendTransform(tf::StampedTransform (new_submap_location,
-      ros::Time::now(), "/map", "/map_"+std::to_string(id)));
+    // tfB_->sendTransform(tf::StampedTransform (new_submap_location,
+    //   ros::Time::now(), "/map", "/map_"+std::to_string(id))); //TODO util to poulate. done 5x
   }
 }
 

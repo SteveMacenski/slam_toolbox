@@ -16,20 +16,30 @@
 
 /* Author: Steven Macenski */
 
-#include <tf/transform_datatypes.h>
+#include "tf2_ros/buffer.h"
+#include "tf2/transform_datatypes.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include "slam_toolbox/toolbox_msgs.hpp"
 #include "karto_sdk/Mapper.h"
+
+namespace tf2
+{
+  typedef tf2::Transform Pose;  //TODO remove
+  typedef tf2::Vector3 Point;
+}
 
 namespace pose_utils
 {
 
 // convert Karto pose to TF pose
-tf::Pose kartoPose2TfPose(const karto::Pose2& pose)
+tf2::Pose kartoPose2TfPose(const karto::Pose2& pose)
 {
-  tf::Pose new_pose;
-  new_pose.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-  new_pose.setRotation(tf::createQuaternionFromYaw(pose.GetHeading()));
+  tf2::Pose new_pose;
+  new_pose.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
+  tf2::Quaternion q;
+  q.setEuler(pose.GetHeading(), 0., 0.);
+  new_pose.setRotation(q);
   return new_pose;
 };
 
@@ -37,7 +47,7 @@ tf::Pose kartoPose2TfPose(const karto::Pose2& pose)
 class GetPoseHelper
 {
 public:
-  GetPoseHelper(tf::TransformListener* tf,
+  GetPoseHelper(tf2_ros::Buffer* tf,
     const std::string& base_frame,
     const std::string& odom_frame)
   : tf_(tf), base_frame_(base_frame), odom_frame_(odom_frame)
@@ -46,19 +56,24 @@ public:
 
   bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
   {
-    tf::Stamped<tf::Pose> ident(tf::Transform(tf::createQuaternionFromRPY(0,0,0),
-      tf::Vector3(0,0,0)), t, base_frame_);
-    tf::Stamped<tf::Transform> odom_pose;
+    tf2::Stamped<tf2::Pose> ident(tf2::Transform(tf2::Quaternion(),
+      tf2::Vector3(0,0,0)), t, base_frame_);
+    tf2::Stamped<tf2::Transform> odom_pose;
+
+    geometry_msgs::TransformStamped ident_msg, odom_pose_msg;
+    tf2::convert(ident, ident_msg);
+    tf2::convert(odom_pose, odom_pose_msg);
+
     try
     {
-      tf_->transformPose(odom_frame_, ident, odom_pose);
+      tf_->transform(ident_msg, odom_pose_msg, odom_frame_);
     }
-    catch(tf::TransformException e)
+    catch(tf2::TransformException e)
     {
       ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
       return false;
     }
-    double yaw = tf::getYaw(odom_pose.getRotation());
+    double yaw = tf2::getYaw(odom_pose.getRotation());
 
     karto_pose = karto::Pose2(odom_pose.getOrigin().x(),
       odom_pose.getOrigin().y(), yaw);
@@ -66,7 +81,7 @@ public:
   };
 
 private:
-  tf::TransformListener* tf_;
+  tf2_ros::Buffer* tf_;
   std::string base_frame_, odom_frame_;
 };
 

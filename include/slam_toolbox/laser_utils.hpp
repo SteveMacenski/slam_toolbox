@@ -19,8 +19,19 @@
 #include <string>
 
 #include "ros/ros.h"
-#include "tf/transform_listener.h"
+#include "tf2_ros/buffer.h"
+#include "tf2/transform_datatypes.h"
+#include "tf2/LinearMath/Transform.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2/utils.h"
+#include "tf2/convert.h"
 #include "karto_sdk/Mapper.h"
+
+namespace tf2
+{
+  typedef tf2::Transform Pose;  //TODO remove
+  typedef tf2::Vector3 Point;
+}
 
 namespace laser_utils
 {
@@ -106,7 +117,7 @@ private:
 class LaserAssistant
 {
 public:
-  LaserAssistant(ros::NodeHandle& nh, tf::TransformListener* tf, const std::string& base_frame)
+  LaserAssistant(ros::NodeHandle& nh, tf2_ros::Buffer* tf, const std::string& base_frame)
   : nh_(nh), tf_(tf), base_frame_(base_frame)
   {
   };
@@ -133,8 +144,8 @@ private:
     karto::LaserRangeFinder* laser = 
       karto::LaserRangeFinder::CreateLaserRangeFinder(
       karto::LaserRangeFinder_Custom, karto::Name("Custom Described Lidar"));
-    laser->SetOffsetPose(karto::Pose2(laser_pose_.getOrigin().x(),
-      laser_pose_.getOrigin().y(), mountingYaw));
+    laser->SetOffsetPose(karto::Pose2(laser_pose_.transform.translation.x,
+      laser_pose_.transform.translation.y, mountingYaw));
     laser->SetMinimumRange(scan_.range_min);
     laser->SetMaximumRange(scan_.range_max);
     laser->SetMinimumAngle(scan_.angle_min);
@@ -149,24 +160,26 @@ private:
 
   bool isInverted(double& mountingYaw)
   {
-    tf::Stamped<tf::Pose> ident;
+    tf2::Stamped<tf2::Pose> ident;
     ident.setIdentity();
     ident.frame_id_ = frame_;
     ident.stamp_ = scan_.header.stamp;
+    geometry_msgs::TransformStamped ident_msg;
+    tf2::convert(ident, ident_msg);
+    tf_->transform(ident_msg, laser_pose_, base_frame_);
 
-    tf_->transformPose(base_frame_, ident, laser_pose_);
-
-    mountingYaw = tf::getYaw(laser_pose_.getRotation());
+    mountingYaw = tf2::getYaw(laser_pose_.transform.rotation);
 
     ROS_DEBUG("laser %s's pose wrt base: %.3f %.3f %.3f",
-      frame_.c_str(), laser_pose_.getOrigin().x(),
-      laser_pose_.getOrigin().y(), mountingYaw);
+      frame_.c_str(), laser_pose_.transform.translation.x,
+      laser_pose_.transform.translation.y, mountingYaw);
 
-    tf::Vector3 v;
-    v.setValue(0, 0, 1 + laser_pose_.getOrigin().z());
-    tf::Stamped<tf::Vector3> up(v, scan_.header.stamp, base_frame_);
-
-    tf_->transformPoint(frame_, up, up);
+    tf2::Vector3 v;
+    v.setValue(0, 0, 1 + laser_pose_.transform.translation.z);
+    tf2::Stamped<tf2::Vector3> up(v, scan_.header.stamp, base_frame_);
+    geometry_msgs::Vector3Stamped msg;
+    tf2::convert(up, msg);
+    tf_->transform(msg, msg, frame_);
     
     if (up.z() <= 0)
     {
@@ -178,10 +191,10 @@ private:
   };
 
   ros::NodeHandle nh_;
-  tf::TransformListener* tf_;
+  tf2_ros::Buffer* tf_;
   sensor_msgs::LaserScan scan_;
   std::string frame_, base_frame_;
-  tf::Stamped<tf::Transform> laser_pose_;
+  geometry_msgs::TransformStamped laser_pose_;
 };
 
 } // end namespace

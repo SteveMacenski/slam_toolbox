@@ -156,8 +156,9 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
 void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
 /*****************************************************************************/
 {
-  tf_ = std::make_unique<tf::TransformListener>(ros::Duration(14400.));
-  tfB_ = std::make_unique<tf::TransformBroadcaster>();
+  tf_ = std::make_unique<tf2_ros::Buffer>(ros::Duration(14400.));
+  tfL_ = std::make_unique<tf2_ros::TransformListener>(*tf_);
+  tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>();
   sst_ = node.advertise<nav_msgs::OccupancyGrid>(map_name_, 1, true);
   sstm_ = node.advertise<nav_msgs::MapMetaData>(map_name_ + "_metadata", 1, true);
   localization_pose_sub_ = node.subscribe("/initialpose", 2, &SlamToolbox::LocalizePoseCallback, this);
@@ -170,7 +171,7 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::SerializePoseGraphCallback, this);
   ssLoadMap_ = node.advertiseService("deserialize_map", &SlamToolbox::DeserializePoseGraphCallback, this);
   scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, "/scan", 5);
-  scan_filter_ = std::make_unique<tf::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_sub_, *tf_, odom_frame_, 5);
+  scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_sub_, *tf_, odom_frame_, 5, node);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::LaserCallback, this, _1));
   marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>("karto_graph_visualization",1);
   scan_publisher_ = node.advertise<sensor_msgs::LaserScan>("karto_scan_visualization",10);
@@ -199,8 +200,12 @@ void SlamToolbox::PublishTransformLoop(const double& transform_publish_period)
   {
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      tfB_->sendTransform(tf::StampedTransform (map_to_odom_, 
-        ros::Time::now() + transform_timeout_, map_frame_, odom_frame_));
+      geometry_msgs::TransformStamped msg;
+      tf2::convert(map_to_odom_, msg.transform);
+      msg.child_frame_id = odom_frame_;
+      msg.header.frame_id = map_frame_;
+      msg.header.stamp = ros::Time::now() + transform_timeout_;
+      tfB_->sendTransform(msg);
     }
     r.sleep();
   }
@@ -256,7 +261,7 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const
       lasers_[frame] = laser_assistant_->toLaserMetadata(*scan);
       dataset_->Add(lasers_[frame].getLaser(), true);
     }
-    catch (tf::TransformException& e)
+    catch (tf2::TransformException& e)
     {
       ROS_ERROR("Failed to compute laser pose, aborting initialization (%s)",
         e.what());
@@ -385,11 +390,11 @@ void SlamToolbox::ProcessInteractiveFeedback(const
     const int id = std::stoi(feedback->marker_name,nullptr,10) - 1;
 
     // get yaw
-    tf::Quaternion quat(0.,0.,0.,1.0);
-    tf::quaternionMsgToTF(feedback->pose.orientation, quat); // relative
+    tf2::Quaternion quat(0.,0.,0.,1.0);
+    tf2::convert(feedback->pose.orientation, quat); // relative
 
     AddMovedNodes(id, Eigen::Vector3d(feedback->mouse_point.x,
-      feedback->mouse_point.y, tf::getYaw(quat)));
+      feedback->mouse_point.y, tf2::getYaw(quat)));
   }
 
   if (feedback->event_type ==
@@ -405,31 +410,36 @@ void SlamToolbox::ProcessInteractiveFeedback(const
     }
 
     // create correct frame
-    tf::Transform transform;
-    transform.setOrigin(tf::Vector3(feedback->pose.position.x,
+    tf2::Transform transform;
+    transform.setOrigin(tf2::Vector3(feedback->pose.position.x,
       feedback->pose.position.y, 0.));
 
     // get correct orientation
-    tf::Quaternion quat(0.,0.,0.,1.0), msg_quat;
+    tf2::Quaternion quat(0.,0.,0.,1.0), msg_quat;
 
     double node_yaw, first_node_yaw;
     solver_->GetNodeOrientation(id, node_yaw);
     solver_->GetNodeOrientation(0, first_node_yaw);
-    tf::Quaternion q1;
+    tf2::Quaternion q1;
     q1.setEuler(0., 0., node_yaw - 3.14159);
-    tf::Quaternion q2;
+    tf2::Quaternion q2;
     q2.setEuler(0., 0., 3.14159); 
     quat *= q1;
     quat *= q2;
 
     // interfactive move
-    tf::quaternionMsgToTF(feedback->pose.orientation, msg_quat);
+    tf2::convert(feedback->pose.orientation, msg_quat);
     quat *= msg_quat;
     quat.normalize();
-
     transform.setRotation(quat);
-    tfB_->sendTransform(tf::StampedTransform(transform, 
-      ros::Time::now(), map_frame_, "karto_scan_visualization"));
+
+    geometry_msgs::TransformStamped msg;
+    tf2::convert(transform, msg.transform);
+    msg.child_frame_id = "karto_scan_visualization";
+    msg.header.frame_id = map_frame_;
+    msg.header.stamp = ros::Time::now();
+    tfB_->sendTransform(msg);
+
     scan.header.frame_id = "karto_scan_visualization";
     scan.header.stamp = ros::Time::now();
     scan_publisher_.publish(scan);
@@ -605,13 +615,13 @@ bool SlamToolbox::AddScan(
   // Create a vector of doubles for karto
   std::vector<kt_double> readings = laser_utils::scanToReadings(*scan, lasers_[scan->header.frame_id].isInverted());
 
-  tf::Pose pose_original = kartoPose2TfPose(karto_pose);
-  tf::Pose tf_pose_transformed = reprocessing_transform_ * pose_original;
+  tf2::Pose pose_original = kartoPose2TfPose(karto_pose);
+  tf2::Pose tf_pose_transformed = reprocessing_transform_ * pose_original;
 
   karto::Pose2 transformed_pose;
   transformed_pose.SetX(tf_pose_transformed.getOrigin().x());
   transformed_pose.SetY(tf_pose_transformed.getOrigin().y());
-  transformed_pose.SetHeading(tf::getYaw(tf_pose_transformed.getRotation()));
+  transformed_pose.SetHeading(tf2::getYaw(tf_pose_transformed.getRotation()));
 
   // create localized range scan
   karto::LocalizedRangeScan* range_scan = 
@@ -671,19 +681,25 @@ bool SlamToolbox::AddScan(
     const karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
 
     // Compute the map->odom transform
-    tf::Stamped<tf::Pose> odom_to_map;
-    tf::Stamped<tf::Pose> base_to_map(
-                            tf::Transform(
-                              tf::createQuaternionFromRPY(0., 0., 
-                                corrected_pose.GetHeading()),
-                              tf::Vector3(corrected_pose.GetX(), 
+    tf2::Stamped<tf2::Pose> odom_to_map;
+    tf2::Quaternion q;
+    q.setEuler(corrected_pose.GetHeading(), 0., 0.);
+    tf2::Stamped<tf2::Pose> base_to_map(
+                            tf2::Transform(
+                              q,
+                              tf2::Vector3(corrected_pose.GetX(), 
                                           corrected_pose.GetY(), 
                                           0.0)
                             ).inverse(), 
                             scan->header.stamp, base_frame_);
     try
     {
-      tf_->transformPose(odom_frame_, base_to_map, odom_to_map);
+      geometry_msgs::TransformStamped base_to_map_msg, odom_to_map_msg;
+      tf2::convert(base_to_map, base_to_map_msg);
+      tf2::convert(odom_to_map, odom_to_map_msg);
+      tf_->transform(base_to_map_msg, odom_to_map_msg, odom_frame_);
+      tf2::convert(base_to_map_msg, base_to_map);
+      tf2::convert(odom_to_map_msg, odom_to_map);//TODO fix all these conversions
 
       // if we're continuing a previous session, we need to
       // estimate the homogenous transformation between the old and new
@@ -691,25 +707,25 @@ bool SlamToolbox::AddScan(
       // into the older session's frame
       if (update_offset)
       {
-        tf::Pose odom_to_base_serialized = base_to_map.inverse();
-        tf::Quaternion q1;
-        tf::quaternionMsgToTF(tf::createQuaternionMsgFromYaw(
-          tf::getYaw(odom_to_base_serialized.getRotation())), q1);
+        // TODO something went missing in tran
+        tf2::Pose odom_to_base_serialized = base_to_map.inverse();
+        tf2::Quaternion q1;
+        q1.setEuler(tf2::getYaw(odom_to_base_serialized.getRotation()), 0., 0.);
         odom_to_base_serialized.setRotation(q1);
-        tf::Pose odom_to_base_current = kartoPose2TfPose(karto_pose);
+        tf2::Pose odom_to_base_current = kartoPose2TfPose(karto_pose);
         reprocessing_transform_ = odom_to_base_serialized * odom_to_base_current.inverse();
       }
     }
-    catch(tf::TransformException e)
+    catch(tf2::TransformException& e)
     {
-      ROS_ERROR("Transform from base_link to odom failed.");
+      ROS_ERROR("Transform from base_link to odom failed: %s", e.what());
       odom_to_map.setIdentity();
     }
 
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      map_to_odom_ = tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
-        tf::Point( odom_to_map.getOrigin() ) ).inverse();
+      map_to_odom_ = tf2::Transform(tf2::Quaternion( odom_to_map.getRotation() ),
+        tf2::Point( odom_to_map.getOrigin() ) ).inverse();
     }
 
     // Add the localized range scan to the dataset for memory management
@@ -1121,7 +1137,7 @@ void SlamToolbox::LocalizePoseCallback(const
 
   process_near_region_pose_.x = msg->pose.pose.position.x;
   process_near_region_pose_.y = msg->pose.pose.position.y;
-  process_near_region_pose_.theta = tf::getYaw(msg->pose.pose.orientation);
+  process_near_region_pose_.theta = tf2::getYaw(msg->pose.pose.orientation);
   localization_pose_set_ = false;
   first_measurement_ = true;
 

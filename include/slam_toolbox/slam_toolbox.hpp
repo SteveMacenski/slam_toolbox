@@ -20,11 +20,11 @@
 
 #include "ros/ros.h"
 #include "message_filters/subscriber.h"
-#include "tf/transform_broadcaster.h"
-#include "tf/transform_listener.h"
-#include "tf/message_filter.h"
-#include "tf/LinearMath/Matrix3x3.h"
-#include "tf/transform_datatypes.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/message_filter.h"
+#include "tf2/LinearMath/Matrix3x3.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include "interactive_markers/interactive_marker_server.h"
 #include "interactive_markers/menu_handler.h"
@@ -110,11 +110,12 @@ private:
 
   // ROS-y-ness
   ros::NodeHandle nh_;
-  std::unique_ptr<tf::TransformListener> tf_;
-  std::unique_ptr<tf::TransformBroadcaster> tfB_;
+  std::unique_ptr<tf2_ros::Buffer> tf_;
+  std::unique_ptr<tf2_ros::TransformListener> tfL_;
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   std::unique_ptr<message_filters::Subscriber<sensor_msgs::LaserScan> > scan_filter_sub_;
   ros::Subscriber localization_pose_sub_;
-  std::unique_ptr<tf::MessageFilter<sensor_msgs::LaserScan> > scan_filter_;
+  std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::LaserScan> > scan_filter_;
   ros::Publisher sst_, sstm_, marker_publisher_, scan_publisher_;
   ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssLoopClosure_, ssPause_measurements_, ssClear_manual_, ssSerialize_, ssLoadMap_;
   nav_msgs::GetMap::Response map_;
@@ -127,7 +128,7 @@ private:
   bool publish_occupancy_map_, first_measurement_, sychronous_, online_;
   ProcessType processor_type_;
   geometry_msgs::Pose2D process_near_region_pose_;
-  tf::Transform reprocessing_transform_;
+  tf2::Transform reprocessing_transform_;
 
   // Book keeping
   std::unique_ptr<karto::Mapper> mapper_;
@@ -141,7 +142,7 @@ private:
 
   // Internal state
   std::unique_ptr<boost::thread> transform_thread_, run_thread_, visualization_thread_;
-  tf::Transform map_to_odom_;
+  tf2::Transform map_to_odom_;
   bool inverted_laser_, pause_graph_, pause_processing_, pause_new_measurements_, interactive_mode_, localization_pose_set_;
   std::queue<posedScan> q_;
   boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_, interactive_mutex_, moved_nodes_mutex_;
