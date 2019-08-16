@@ -131,7 +131,7 @@ add_dependencies(SlamToolboxPlugin ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES}  ${catkin_LIBRARIES} )
 
 #### Main tool for mapping
-add_library(toolbox_lib src/slam_toolbox.cpp)
+add_library(toolbox_lib src/slam_toolbox.cpp src/map_saver.cpp)
 add_dependencies(toolbox_lib ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(toolbox_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 

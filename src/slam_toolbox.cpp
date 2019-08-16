@@ -34,7 +34,8 @@ SlamToolbox::SlamToolbox()
   transform_timeout_(ros::Duration(0.2)),
   processor_type_(PROCESS),
   localization_pose_set_(false),
-  first_measurement_(true)
+  first_measurement_(true),
+  map_name_("/map")
 /*****************************************************************************/
 {
   ros::NodeHandle private_nh("~");
@@ -54,6 +55,8 @@ SlamToolbox::SlamToolbox()
   laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(private_nh, tf_.get(), base_frame_);
   pose_helper_ = std::make_unique<pose_utils::GetPoseHelper>(tf_.get(), base_frame_, odom_frame_);
   current_scans_ = std::make_unique<std::vector<sensor_msgs::LaserScan> >();
+  map_saver_ = std::make_unique<map_saver::MapSaver>(nh_, map_name_);
+
   reprocessing_transform_.setIdentity();
 
   double transform_publish_period;
@@ -155,8 +158,8 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
 {
   tf_ = std::make_unique<tf::TransformListener>(ros::Duration(14400.));
   tfB_ = std::make_unique<tf::TransformBroadcaster>();
-  sst_ = node.advertise<nav_msgs::OccupancyGrid>("/map", 1, true);
-  sstm_ = node.advertise<nav_msgs::MapMetaData>("/map_metadata", 1, true);
+  sst_ = node.advertise<nav_msgs::OccupancyGrid>(map_name_, 1, true);
+  sstm_ = node.advertise<nav_msgs::MapMetaData>(map_name_ + "_metadata", 1, true);
   localization_pose_sub_ = node.subscribe("/initialpose", 2, &SlamToolbox::LocalizePoseCallback, this);
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::MapCallback, this);
   ssClear_ = node.advertiseService("clear_queue", &SlamToolbox::ClearQueueCallback, this);
@@ -164,7 +167,6 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   ssLoopClosure_ = node.advertiseService("manual_loop_closure", &SlamToolbox::ManualLoopClosureCallback, this);
   ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::InteractiveCallback,this);
   ssClear_manual_ = node.advertiseService("clear_changes", &SlamToolbox::ClearChangesCallback, this);
-  ssSave_map_ = node.advertiseService("save_map", &SlamToolbox::SaveMapCallback, this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::SerializePoseGraphCallback, this);
   ssLoadMap_ = node.advertiseService("deserialize_map", &SlamToolbox::DeserializePoseGraphCallback, this);
   scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, "/scan", 5);
@@ -269,15 +271,15 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const
 void SlamToolbox::PublishGraph()
 /*****************************************************************************/
 {
-  std::vector<Eigen::Vector2d> graph;
-  solver_->getGraph(graph);
+  interactive_server_->clear();
+  std::unordered_map<int, Eigen::Vector3d>* graph = solver_->getGraph();
 
-  if (graph.size() == 0)
+  if (graph->size() == 0)
   {
     return;
   }
 
-  ROS_DEBUG("Graph size: %i",(int)graph.size());
+  ROS_DEBUG("Graph size: %i",(int)graph->size());
   bool interactive_mode = false;
   {
     boost::mutex::scoped_lock lock(interactive_mutex_);
@@ -286,7 +288,7 @@ void SlamToolbox::PublishGraph()
 
   visualization_msgs::MarkerArray marray;
   visualization_msgs::Marker m;
-  m.header.frame_id = "map";
+  m.header.frame_id = map_frame_;
   m.header.stamp = ros::Time::now();
   m.ns = "slam_toolbox";
   m.type = visualization_msgs::Marker::SPHERE;
@@ -297,20 +299,19 @@ void SlamToolbox::PublishGraph()
   m.action = visualization_msgs::Marker::ADD;
   m.lifetime = ros::Duration(0.);
 
-  uint i = 0;
-  for (i; i < graph.size(); i++) 
+  for (const_graph_iterator it = graph->begin(); it != graph->end(); ++it)
   {
-    m.id = i+1;
-    m.pose.position.x = graph[i](0);
-    m.pose.position.y = graph[i](1);
+    m.id = it->first + 1;
+    m.pose.position.x = it->second(0);
+    m.pose.position.y = it->second(1);
 
     if (interactive_mode)
     {
       // marker and metadata
       visualization_msgs::InteractiveMarker int_marker;
-      int_marker.header.frame_id = "map";
+      int_marker.header.frame_id = map_frame_;
       int_marker.header.stamp = ros::Time::now();
-      int_marker.name = std::to_string(i+1);
+      int_marker.name = std::to_string(m.id);
       int_marker.pose.orientation.w = 1.;
       int_marker.pose.position.x = m.pose.position.x;
       int_marker.pose.position.y = m.pose.position.y;
@@ -394,10 +395,14 @@ void SlamToolbox::ProcessInteractiveFeedback(const
   if (feedback->event_type ==
       visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
   {
-
     // get scan
     const int id = std::stoi(feedback->marker_name,nullptr,10) - 1;
     sensor_msgs::LaserScan scan = current_scans_->at(id);
+    const laser_utils::LaserMetadata& laser = lasers_[scan.header.frame_id];
+    if (laser.isInverted())
+    {
+      laser.invertScan(scan);
+    }
 
     // create correct frame
     tf::Transform transform;
@@ -417,25 +422,6 @@ void SlamToolbox::ProcessInteractiveFeedback(const
     quat *= q1;
     quat *= q2;
 
-    if (lasers_[scan.header.frame_id].isInverted())
-    {
-
-      sensor_msgs::LaserScan temp;
-      const bool has_intensities = scan.intensities.size() > 0 ? true : false;
-
-      for (int i = scan.ranges.size(); i != 0; i--)
-      {
-        temp.ranges.push_back(scan.ranges[i]);
-        if (has_intensities)
-        {
-          temp.intensities.push_back(scan.intensities[i]);
-        }
-      }
-
-      scan.ranges = temp.ranges;
-      scan.intensities = temp.intensities;
-    }
-
     // interfactive move
     tf::quaternionMsgToTF(feedback->pose.orientation, msg_quat);
     quat *= msg_quat;
@@ -443,7 +429,7 @@ void SlamToolbox::ProcessInteractiveFeedback(const
 
     transform.setRotation(quat);
     tfB_->sendTransform(tf::StampedTransform(transform, 
-      ros::Time::now(), "map", "karto_scan_visualization"));
+      ros::Time::now(), map_frame_, "karto_scan_visualization"));
     scan.header.frame_id = "karto_scan_visualization";
     scan.header.stamp = ros::Time::now();
     scan_publisher_.publish(scan);
@@ -617,23 +603,7 @@ bool SlamToolbox::AddScan(
 /*****************************************************************************/
 {  
   // Create a vector of doubles for karto
-  std::vector<kt_double> readings;
-  if (lasers_[scan->header.frame_id].isInverted())
-  {
-    for(std::vector<float>::const_reverse_iterator it = scan->ranges.rbegin();
-      it != scan->ranges.rend(); ++it)
-    {
-      readings.push_back(*it);
-    }
-  }
-  else
-  {
-    for(std::vector<float>::const_iterator it = scan->ranges.begin();
-      it != scan->ranges.end(); ++it)
-    {
-      readings.push_back(*it);
-    }
-  }
+  std::vector<kt_double> readings = laser_utils::scanToReadings(*scan, lasers_[scan->header.frame_id].isInverted());
 
   tf::Pose pose_original = kartoPose2TfPose(karto_pose);
   tf::Pose tf_pose_transformed = reprocessing_transform_ * pose_original;
@@ -905,35 +875,6 @@ bool SlamToolbox::ClearQueueCallback(
     q_.pop();
   }
   resp.status = true;
-  return true;
-}
-
-/*****************************************************************************/
-bool SlamToolbox::SaveMapCallback(
-  slam_toolbox::SaveMap::Request  &req,
-  slam_toolbox::SaveMap::Response &resp)
-/*****************************************************************************/
-{
-  std::vector<Eigen::Vector2d> graph;
-  solver_->getGraph(graph);
-  if (graph.size() == 0)
-  {
-    ROS_WARN("Graph is empty, no map to save.");
-    return true;
-  }
-
-  const std::string name = req.name.data;
-  if (name != "")
-  {
-    ROS_INFO("SlamToolbox: Saving map as %s.", name.c_str());
-    system(("rosrun map_server map_saver -f " + name).c_str());
-  }
-  else
-  {
-    ROS_INFO("SlamToolbox: Saving map in current directory.");
-    system("rosrun map_server map_saver");
-  }
-  ros::Duration(1.0).sleep();
   return true;
 }
 

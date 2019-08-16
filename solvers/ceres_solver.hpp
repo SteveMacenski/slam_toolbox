@@ -19,14 +19,13 @@
 #include <cmath>
 #include <math.h>
 
+#include "../include/slam_toolbox/toolbox_types.hpp"
 #include "ceres_utils.h"
 
 namespace solver_plugins
 {
 
-typedef std::vector<karto::Matrix3> CovarianceVector;
-typedef std::unordered_map<int, Eigen::Vector3d>::iterator graph_iterator;
-typedef std::unordered_map<int, Eigen::Vector3d>::const_iterator const_graph_iterator;
+using namespace ::toolbox_types;
 
 class CeresSolver : public karto::ScanSolver
 {
@@ -42,7 +41,7 @@ public:
 
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex); //Adds a node to the solver
   virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge); //Adds a constraint to the solver
-  virtual void getGraph(std::vector<Eigen::Vector2d> &g); //Get graph stored
+  virtual std::unordered_map<int, Eigen::Vector3d>* getGraph(); //Get graph stored
   virtual void RemoveNode(kt_int32s id); //Removes a node from the solver correction table
   virtual void RemoveConstraint(kt_int32s sourceId, kt_int32s targetId); // Removes constraints from the optimization problem
 

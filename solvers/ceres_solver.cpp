@@ -410,16 +410,11 @@ void CeresSolver::GetNodeOrientation(const int& unique_id, double& pose)
 }
 
 /*****************************************************************************/
-void CeresSolver::getGraph(std::vector<Eigen::Vector2d> &g)
+std::unordered_map<int, Eigen::Vector3d>* CeresSolver::getGraph()
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(nodes_mutex_);
-  const_graph_iterator it = nodes_->begin();
-  for (it; it!=nodes_->end(); ++it)
-  {
-    g.push_back(Eigen::Vector2d(it->second(0), it->second(1)));
-  }
-  return;
+  return nodes_;
 }
 
 } // end namespace
