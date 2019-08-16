@@ -59,15 +59,6 @@ enum ProcessType
   PROCESS_LOCALIZATION = 3
 };
 
-// convert Karto pose to TF pose
-tf::Pose kartoPose2TfPose(const karto::Pose2& pose)
-{
-  tf::Pose new_pose;
-  new_pose.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-  new_pose.setRotation(tf::createQuaternionFromYaw(pose.GetHeading()));
-  return new_pose;
-};
-
 typedef std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> VerticeMap;
 typedef std::vector<karto::Edge<karto::LocalizedRangeScan>*> EdgeVector;
 typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> ScanVector;

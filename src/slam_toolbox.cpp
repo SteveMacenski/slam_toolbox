@@ -52,12 +52,9 @@ SlamToolbox::SlamToolbox()
   SetSolver(private_nh);
 
   laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(private_nh, tf_.get(), base_frame_);
+  pose_helper_ = std::make_unique<pose_utils::GetPoseHelper>(tf_.get(), base_frame_, odom_frame_);
   current_scans_ = std::make_unique<std::vector<sensor_msgs::LaserScan> >();
   reprocessing_transform_.setIdentity();
-
-  nh_.setParam("paused_processing", pause_processing_);
-  nh_.setParam("paused_new_measurements", pause_new_measurements_);
-  nh_.setParam("interactive_mode", interactive_mode_);
 
   double transform_publish_period;
   private_nh.param("transform_publish_period", transform_publish_period, 0.05);
@@ -146,6 +143,10 @@ void SlamToolbox::SetParams(ros::NodeHandle& private_nh_)
 
   mapper_utils::setMapperParams(private_nh_, mapper_.get());
   minimum_travel_distance_ = mapper_->getParamMinimumTravelDistance();
+
+  nh_.setParam("paused_processing", pause_processing_);
+  nh_.setParam("paused_new_measurements", pause_new_measurements_);
+  nh_.setParam("interactive_mode", interactive_mode_);
 }
 
 /*****************************************************************************/
@@ -159,7 +160,6 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   localization_pose_sub_ = node.subscribe("/initialpose", 2, &SlamToolbox::LocalizePoseCallback, this);
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::MapCallback, this);
   ssClear_ = node.advertiseService("clear_queue", &SlamToolbox::ClearQueueCallback, this);
-  ssPause_processing_ = node.advertiseService("pause_processing", &SlamToolbox::PauseProcessingCallback, this);
   ssPause_measurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::PauseNewMeasurementsCallback, this);
   ssLoopClosure_ = node.advertiseService("manual_loop_closure", &SlamToolbox::ManualLoopClosureCallback, this);
   ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::InteractiveCallback,this);
@@ -263,30 +263,6 @@ karto::LaserRangeFinder* SlamToolbox::GetLaser(const
   }
 
   return lasers_[frame].getLaser();
-}
-
-/*****************************************************************************/
-bool SlamToolbox::GetOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
-/*****************************************************************************/
-{
-  // Get the robot's pose
-  tf::Stamped<tf::Pose> ident(tf::Transform(tf::createQuaternionFromRPY(0,0,0),
-    tf::Vector3(0,0,0)), t, base_frame_);
-  tf::Stamped<tf::Transform> odom_pose;
-  try
-  {
-    tf_->transformPose(odom_frame_, ident, odom_pose);
-  }
-  catch(tf::TransformException e)
-  {
-    ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
-    return false;
-  }
-  double yaw = tf::getYaw(odom_pose.getRotation());
-
-  karto_pose = karto::Pose2(odom_pose.getOrigin().x(),
-    odom_pose.getOrigin().y(), yaw);
-  return true;
 }
 
 /*****************************************************************************/
@@ -491,7 +467,7 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     }
 
     karto::Pose2 pose;
-    if(!GetOdomPose(pose, scan->header.stamp))
+    if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
     {
       return;
     }
@@ -514,7 +490,7 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
   if (first_measurement_)
   {
     karto::Pose2 pose;
-    if(!GetOdomPose(pose, scan->header.stamp))
+    if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
     {
       return;
     }
@@ -539,7 +515,7 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 
   // no odom info
   karto::Pose2 pose;
-  if(!GetOdomPose(pose, scan->header.stamp))
+  if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
   {
     return;
   }
@@ -885,22 +861,6 @@ bool SlamToolbox::InteractiveCallback(
     nh_.setParam("paused_processing", pause_processing_);
   }
 
-  return true;
-}
-
-
-/*****************************************************************************/
-bool SlamToolbox::PauseProcessingCallback(
-  slam_toolbox::Pause::Request& req,
-  slam_toolbox::Pause::Response& resp)
-/*****************************************************************************/
-{
-  boost::mutex::scoped_lock lock(pause_mutex_); 
-  pause_processing_ = !pause_processing_;
-  nh_.setParam("paused_processing", pause_processing_);
-  ROS_INFO("SlamToolbox: Toggled to %s",
-    pause_processing_ ? "paused processing." : "active processing.");
-  resp.status = true;
   return true;
 }
 
