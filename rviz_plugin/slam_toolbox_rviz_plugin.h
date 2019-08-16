@@ -119,7 +119,6 @@ protected:
 
   QCheckBox* _check1;
   QCheckBox* _check2;
-  QCheckBox* _check3;
 
   QRadioButton* _radio1;
   QRadioButton* _radio2;
@@ -128,7 +127,6 @@ protected:
 
   QLabel* _label1;
   QLabel* _label2;
-  QLabel* _label3;
   QLabel* _label4;
   QLabel* _label5;
   QLabel* _label6;
@@ -137,7 +135,7 @@ protected:
 
   QFrame* _line;
 
-  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_processing, _pause_measurements, _load_submap_for_merging, _merge, _serialize, _load_map;
+  ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_measurements, _load_submap_for_merging, _merge, _serialize, _load_map;
 
   std::thread* _thread;
 
