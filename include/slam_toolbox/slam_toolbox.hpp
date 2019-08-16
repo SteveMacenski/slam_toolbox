@@ -34,6 +34,7 @@
 #include "slam_toolbox/mapper_utils.hpp"
 #include "slam_toolbox/snap_utils.hpp"
 #include "slam_toolbox/laser_utils.hpp"
+#include "slam_toolbox/toolbox_utils.hpp"
 
 #include <string>
 #include <map>
@@ -48,6 +49,7 @@ namespace slam_toolbox
 
 // dirty, dirty cheat I love
 using namespace ::toolbox_types;
+using namespace ::toolbox_utils;
 
 class SlamToolbox
 {
@@ -91,7 +93,6 @@ private:
   void LocalizePoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
   // functional bits
-  bool GetOdomPose(karto::Pose2& karto_pose, const ros::Time& t);
   karto::LaserRangeFinder* GetLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
   bool AddScan(karto::LaserRangeFinder* laser,
                const sensor_msgs::LaserScan::ConstPtr& scan,
@@ -134,6 +135,7 @@ private:
 
   // helpers
   std::unique_ptr<laser_utils::LaserAssistant> laser_assistant_;
+  std::unique_ptr<toolbox_utils::GetPoseHelper> pose_helper_;
 
   // Internal state
   std::unique_ptr<boost::thread> transform_thread_, run_thread_, visualization_thread_;
