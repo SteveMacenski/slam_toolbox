@@ -160,7 +160,6 @@ void SlamToolbox::SetROSInterfaces(ros::NodeHandle& node)
   localization_pose_sub_ = node.subscribe("/initialpose", 2, &SlamToolbox::LocalizePoseCallback, this);
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::MapCallback, this);
   ssClear_ = node.advertiseService("clear_queue", &SlamToolbox::ClearQueueCallback, this);
-  ssPause_processing_ = node.advertiseService("pause_processing", &SlamToolbox::PauseProcessingCallback, this);
   ssPause_measurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::PauseNewMeasurementsCallback, this);
   ssLoopClosure_ = node.advertiseService("manual_loop_closure", &SlamToolbox::ManualLoopClosureCallback, this);
   ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::InteractiveCallback,this);
@@ -862,22 +861,6 @@ bool SlamToolbox::InteractiveCallback(
     nh_.setParam("paused_processing", pause_processing_);
   }
 
-  return true;
-}
-
-
-/*****************************************************************************/
-bool SlamToolbox::PauseProcessingCallback(
-  slam_toolbox::Pause::Request& req,
-  slam_toolbox::Pause::Response& resp)
-/*****************************************************************************/
-{
-  boost::mutex::scoped_lock lock(pause_mutex_); 
-  pause_processing_ = !pause_processing_;
-  nh_.setParam("paused_processing", pause_processing_);
-  ROS_INFO("SlamToolbox: Toggled to %s",
-    pause_processing_ ? "paused processing." : "active processing.");
-  resp.status = true;
   return true;
 }
 
