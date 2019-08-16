@@ -52,7 +52,7 @@ SlamToolbox::SlamToolbox()
   SetSolver(private_nh);
 
   laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(private_nh, tf_.get(), base_frame_);
-  pose_helper_ = std::make_unique<toolbox_utils::GetPoseHelper>(tf_.get(), base_frame_, odom_frame_);
+  pose_helper_ = std::make_unique<pose_utils::GetPoseHelper>(tf_.get(), base_frame_, odom_frame_);
   current_scans_ = std::make_unique<std::vector<sensor_msgs::LaserScan> >();
   reprocessing_transform_.setIdentity();
 

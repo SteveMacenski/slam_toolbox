@@ -21,7 +21,7 @@
 #include "slam_toolbox/toolbox_msgs.hpp"
 #include "karto_sdk/Mapper.h"
 
-namespace toolbox_utils
+namespace pose_utils
 {
 
 // convert Karto pose to TF pose

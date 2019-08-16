@@ -34,7 +34,7 @@
 #include "slam_toolbox/mapper_utils.hpp"
 #include "slam_toolbox/snap_utils.hpp"
 #include "slam_toolbox/laser_utils.hpp"
-#include "slam_toolbox/toolbox_utils.hpp"
+#include "slam_toolbox/pose_utils.hpp"
 
 #include <string>
 #include <map>
@@ -49,7 +49,7 @@ namespace slam_toolbox
 
 // dirty, dirty cheat I love
 using namespace ::toolbox_types;
-using namespace ::toolbox_utils;
+using namespace ::pose_utils;
 
 class SlamToolbox
 {
@@ -135,7 +135,7 @@ private:
 
   // helpers
   std::unique_ptr<laser_utils::LaserAssistant> laser_assistant_;
-  std::unique_ptr<toolbox_utils::GetPoseHelper> pose_helper_;
+  std::unique_ptr<pose_utils::GetPoseHelper> pose_helper_;
 
   // Internal state
   std::unique_ptr<boost::thread> transform_thread_, run_thread_, visualization_thread_;
