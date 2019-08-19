@@ -201,9 +201,9 @@ void SlamToolbox::PublishTransformLoop(const double& transform_publish_period)
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       geometry_msgs::TransformStamped msg;
-      tf2::convert(map_to_odom_, msg.transform);
-      msg.child_frame_id = odom_frame_;
-      msg.header.frame_id = map_frame_;
+      tf2::convert(map_to_odom_, msg.transform); //TODO too much work
+      msg.child_frame_id = map_frame_;
+      msg.header.frame_id = odom_frame_;
       msg.header.stamp = ros::Time::now() + transform_timeout_;
       tfB_->sendTransform(msg);
     }
@@ -420,9 +420,9 @@ void SlamToolbox::ProcessInteractiveFeedback(const
     double node_yaw, first_node_yaw;
     solver_->GetNodeOrientation(id, node_yaw);
     solver_->GetNodeOrientation(0, first_node_yaw);
-    tf2::Quaternion q1;
+    tf2::Quaternion q1(0.,0.,0.,1.0);
     q1.setEuler(0., 0., node_yaw - 3.14159);
-    tf2::Quaternion q2;
+    tf2::Quaternion q2(0.,0.,0.,1.0);
     q2.setEuler(0., 0., 3.14159); 
     quat *= q1;
     quat *= q2;
@@ -450,6 +450,13 @@ void SlamToolbox::ProcessInteractiveFeedback(const
 void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
 {
+  // no odom info
+  karto::Pose2 pose;
+  if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
+  {
+    return;
+  }
+
   if (!sychronous_)
   {
     // asynchonous
@@ -459,12 +466,6 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     {
       ROS_WARN("Failed to create laser device for %s; discarding scan",
         scan->header.frame_id.c_str());
-      return;
-    }
-
-    karto::Pose2 pose;
-    if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
-    {
       return;
     }
 
@@ -485,11 +486,6 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
   // let the first measurement pass to start the ball rolling
   if (first_measurement_)
   {
-    karto::Pose2 pose;
-    if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
-    {
-      return;
-    }
     q_.push(posedScan(scan, pose));
     last_scan_time = scan->header.stamp.toSec(); 
     last_pose = pose;
@@ -505,13 +501,6 @@ void SlamToolbox::LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 
   // not enough time
   if ((scan->header.stamp.toSec()-last_scan_time ) < minimum_time_interval_)
-  {
-    return;
-  }
-
-  // no odom info
-  karto::Pose2 pose;
-  if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
   {
     return;
   }
@@ -682,7 +671,7 @@ bool SlamToolbox::AddScan(
 
     // Compute the map->odom transform
     tf2::Stamped<tf2::Pose> odom_to_map;
-    tf2::Quaternion q;
+    tf2::Quaternion q(0.,0.,0.,1.0);
     q.setEuler(corrected_pose.GetHeading(), 0., 0.);
     tf2::Stamped<tf2::Pose> base_to_map(
                             tf2::Transform(
@@ -696,9 +685,7 @@ bool SlamToolbox::AddScan(
     {
       geometry_msgs::TransformStamped base_to_map_msg, odom_to_map_msg;
       tf2::convert(base_to_map, base_to_map_msg);
-      tf2::convert(odom_to_map, odom_to_map_msg);
-      tf_->transform(base_to_map_msg, odom_to_map_msg, odom_frame_);
-      tf2::convert(base_to_map_msg, base_to_map);
+      odom_to_map_msg = tf_->transform(base_to_map_msg, odom_frame_);
       tf2::convert(odom_to_map_msg, odom_to_map);//TODO fix all these conversions
 
       // if we're continuing a previous session, we need to
@@ -707,9 +694,8 @@ bool SlamToolbox::AddScan(
       // into the older session's frame
       if (update_offset)
       {
-        // TODO something went missing in tran
         tf2::Pose odom_to_base_serialized = base_to_map.inverse();
-        tf2::Quaternion q1;
+        tf2::Quaternion q1(0.,0.,0.,1.0);
         q1.setEuler(tf2::getYaw(odom_to_base_serialized.getRotation()), 0., 0.);
         odom_to_base_serialized.setRotation(q1);
         tf2::Pose odom_to_base_current = kartoPose2TfPose(karto_pose);

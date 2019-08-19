@@ -18,6 +18,9 @@
 /* Author: Brian Gerkey */
 /* Heavily Modified: Steven Macenski */
 
+#ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_H_
+#define SLAM_TOOLBOX_SLAM_TOOLBOX_H_
+
 #include "ros/ros.h"
 #include "message_filters/subscriber.h"
 #include "tf2_ros/transform_broadcaster.h"
@@ -158,3 +161,5 @@ private:
 };
 
 } // end namespace
+
+#endif //SLAM_TOOLBOX_SLAM_TOOLBOX_H_

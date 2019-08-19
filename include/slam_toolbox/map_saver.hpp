@@ -16,6 +16,9 @@
 
 /* Author: Steven Macenski */
 
+#ifndef SLAM_TOOLBOX_MAP_SAVER_H_
+#define SLAM_TOOLBOX_MAP_SAVER_H_
+
 #include <string>
 #include "ros/ros.h"
 #include "slam_toolbox/toolbox_msgs.hpp"
@@ -43,3 +46,5 @@ private:
 };
 
 } // end namespace
+
+#endif //SLAM_TOOLBOX_MAP_SAVER_H_

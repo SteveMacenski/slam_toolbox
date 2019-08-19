@@ -16,18 +16,12 @@
 
 /* Author: Steven Macenski */
 
-#include "tf2_ros/buffer.h"
-#include "tf2/transform_datatypes.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include "slam_toolbox/toolbox_msgs.hpp"
-#include "karto_sdk/Mapper.h"
+#ifndef SLAM_TOOLBOX_POSE_UTILS_H_
+#define SLAM_TOOLBOX_POSE_UTILS_H_
 
-namespace tf2
-{
-  typedef tf2::Transform Pose;  //TODO remove
-  typedef tf2::Vector3 Point;
-}
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include "slam_toolbox/toolbox_types.hpp"
+#include "karto_sdk/Mapper.h"
 
 namespace pose_utils
 {
@@ -56,27 +50,25 @@ public:
 
   bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
   {
-    tf2::Stamped<tf2::Pose> ident(tf2::Transform(tf2::Quaternion(),
-      tf2::Vector3(0,0,0)), t, base_frame_);
-    tf2::Stamped<tf2::Transform> odom_pose;
-
-    geometry_msgs::TransformStamped ident_msg, odom_pose_msg;
-    tf2::convert(ident, ident_msg);
-    tf2::convert(odom_pose, odom_pose_msg);
+    geometry_msgs::TransformStamped base_ident, odom_pose;
+    base_ident.header.stamp = t;
+    base_ident.header.frame_id = base_frame_;
+    base_ident.transform.rotation.w = 1.0;
 
     try
     {
-      tf_->transform(ident_msg, odom_pose_msg, odom_frame_);
+      odom_pose = tf_->transform(base_ident, odom_frame_);
     }
     catch(tf2::TransformException e)
     {
       ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
       return false;
     }
-    double yaw = tf2::getYaw(odom_pose.getRotation());
 
-    karto_pose = karto::Pose2(odom_pose.getOrigin().x(),
-      odom_pose.getOrigin().y(), yaw);
+    const double yaw = tf2::getYaw(odom_pose.transform.rotation);
+    karto_pose = karto::Pose2(odom_pose.transform.translation.x,
+      odom_pose.transform.translation.y, yaw);
+
     return true;
   };
 
@@ -86,3 +78,5 @@ private:
 };
 
 } // end namespace
+
+#endif //SLAM_TOOLBOX_POSE_UTILS_H_

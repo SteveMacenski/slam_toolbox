@@ -16,6 +16,9 @@
 
 /* Author: Steven Macenski */
 
+#ifndef SLAM_TOOLBOX_MAPPER_UTILS_H_
+#define SLAM_TOOLBOX_MAPPER_UTILS_H_
+
 #include "ros/ros.h"
 #include "karto_sdk/Mapper.h"
 
@@ -197,3 +200,5 @@ inline void setMapperParams(const ros::NodeHandle & nh, karto::Mapper* mapper)
 };
 
 } // end namespace
+
+#endif //SLAM_TOOLBOX_MAPPER_UTILS_H_

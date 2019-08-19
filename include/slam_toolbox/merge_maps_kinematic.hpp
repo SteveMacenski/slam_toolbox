@@ -16,6 +16,9 @@
 
 /* Author: Steven Macenski */
 
+#ifndef SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
+#define SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
+
 #include <string>
 #include <map>
 #include <memory>
@@ -88,3 +91,5 @@ private:
   karto::Pose2 ApplyCorrection(const karto::Pose2& pose, const tf2::Transform& submap_correction);
   karto::Vector2<kt_double> ApplyCorrection(const karto::Vector2<kt_double>&  pose, const tf2::Transform& submap_correction);
 };
+
+#endif //SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_

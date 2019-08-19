@@ -16,6 +16,9 @@
 
 /* Author: Steven Macenski */
 
+#ifndef SLAM_TOOLBOX_SNAP_UTILS_H_
+#define SLAM_TOOLBOX_SNAP_UTILS_H_
+
 namespace snap_utils
 {
 
@@ -38,3 +41,5 @@ inline std::string getSnapPath()
 }
 
 }  // end namespace
+
+#endif //SLAM_TOOLBOX_SNAP_UTILS_H_

@@ -19,19 +19,9 @@
 #include <string>
 
 #include "ros/ros.h"
-#include "tf2_ros/buffer.h"
-#include "tf2/transform_datatypes.h"
-#include "tf2/LinearMath/Transform.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "slam_toolbox/toolbox_types.hpp"
 #include "tf2/utils.h"
-#include "tf2/convert.h"
 #include "karto_sdk/Mapper.h"
-
-namespace tf2
-{
-  typedef tf2::Transform Pose;  //TODO remove
-  typedef tf2::Vector3 Point;
-}
 
 namespace laser_utils
 {
@@ -160,34 +150,33 @@ private:
 
   bool isInverted(double& mountingYaw)
   {
-    tf2::Stamped<tf2::Pose> ident;
-    ident.setIdentity();
-    ident.frame_id_ = frame_;
-    ident.stamp_ = scan_.header.stamp;
-    geometry_msgs::TransformStamped ident_msg;
-    tf2::convert(ident, ident_msg);
-    tf_->transform(ident_msg, laser_pose_, base_frame_);
+    geometry_msgs::TransformStamped laser_ident;
+    laser_ident.header.stamp = scan_.header.stamp;
+    laser_ident.header.frame_id = frame_;
+    laser_ident.transform.rotation.w = 1.0;
 
+    laser_pose_ = tf_->transform(laser_ident, base_frame_);
     mountingYaw = tf2::getYaw(laser_pose_.transform.rotation);
 
-    ROS_DEBUG("laser %s's pose wrt base: %.3f %.3f %.3f",
+    ROS_INFO("laser %s's pose wrt base: %.3f %.3f %.3f %.3f",
       frame_.c_str(), laser_pose_.transform.translation.x,
-      laser_pose_.transform.translation.y, mountingYaw);
+      laser_pose_.transform.translation.y,
+      laser_pose_.transform.translation.z, mountingYaw);
 
-    tf2::Vector3 v;
-    v.setValue(0, 0, 1 + laser_pose_.transform.translation.z);
-    tf2::Stamped<tf2::Vector3> up(v, scan_.header.stamp, base_frame_);
-    geometry_msgs::Vector3Stamped msg;
-    tf2::convert(up, msg);
-    tf_->transform(msg, msg, frame_);
+    geometry_msgs::Vector3Stamped laser_orient;
+    laser_orient.vector.z = laser_orient.vector.y = 0.;
+    laser_orient.vector.z = 1 + laser_pose_.transform.translation.z;
+    laser_orient.header.stamp = scan_.header.stamp;
+    laser_orient.header.frame_id = base_frame_;
+    laser_orient = tf_->transform(laser_orient, frame_);
     
-    if (up.z() <= 0)
+    if (laser_orient.vector.z <= 0)
     {
-      ROS_DEBUG("laser is mounted upside-down");
+      ROS_INFO("laser is mounted upside-down");
       return true;
     }
-    return false;
 
+    return false;
   };
 
   ros::NodeHandle nh_;

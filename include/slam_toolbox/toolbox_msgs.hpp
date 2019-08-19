@@ -16,6 +16,9 @@
 
 /* Author: Steven Macenski */
 
+#ifndef SLAM_TOOLBOX_TOOLBOX_MSGS_H_
+#define SLAM_TOOLBOX_TOOLBOX_MSGS_H_
+
 #include <nav_msgs/MapMetaData.h>
 #include <sensor_msgs/LaserScan.h>
 #include <nav_msgs/GetMap.h>
@@ -37,3 +40,5 @@
 #include "slam_toolbox/DeserializePoseGraph.h"
 #include "slam_toolbox/MergeMaps.h"
 #include "slam_toolbox/AddSubmap.h"
+
+#endif //SLAM_TOOLBOX_TOOLBOX_MSGS_H_
