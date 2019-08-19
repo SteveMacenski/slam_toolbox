@@ -421,9 +421,9 @@ void SlamToolbox::ProcessInteractiveFeedback(const
     solver_->GetNodeOrientation(id, node_yaw);
     solver_->GetNodeOrientation(0, first_node_yaw);
     tf2::Quaternion q1(0.,0.,0.,1.0);
-    q1.setEuler(0., 0., node_yaw - 3.14159);
+    q1.setRPY(node_yaw - 3.14159, 0., 0.);
     tf2::Quaternion q2(0.,0.,0.,1.0);
-    q2.setEuler(0., 0., 3.14159); 
+    q2.setRPY(3.14159, 0., 0.); 
     quat *= q1;
     quat *= q2;
 
@@ -672,7 +672,7 @@ bool SlamToolbox::AddScan(
     // Compute the map->odom transform
     tf2::Stamped<tf2::Pose> odom_to_map;
     tf2::Quaternion q(0.,0.,0.,1.0);
-    q.setEuler(corrected_pose.GetHeading(), 0., 0.);
+    q.setRPY(0., 0., corrected_pose.GetHeading());
     tf2::Stamped<tf2::Pose> base_to_map(
                             tf2::Transform(
                               q,
@@ -696,7 +696,7 @@ bool SlamToolbox::AddScan(
       {
         tf2::Pose odom_to_base_serialized = base_to_map.inverse();
         tf2::Quaternion q1(0.,0.,0.,1.0);
-        q1.setEuler(tf2::getYaw(odom_to_base_serialized.getRotation()), 0., 0.);
+        q1.setRPY(0., 0., tf2::getYaw(odom_to_base_serialized.getRotation()));
         odom_to_base_serialized.setRotation(q1);
         tf2::Pose odom_to_base_current = kartoPose2TfPose(karto_pose);
         reprocessing_transform_ = odom_to_base_serialized * odom_to_base_current.inverse();

@@ -194,7 +194,7 @@ karto::Pose2 MergeMapsKinematic::ApplyCorrection(const
 {
   tf2::Transform poseTf, poseCorr;
   tf2::Quaternion q;
-  q.setEuler(pose.GetHeading(), 0., 0.);
+  q.setRPY(pose.GetHeading(), 0., 0.);
   poseTf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
   poseTf.setRotation(q);
   poseCorr = submap_correction * poseTf;

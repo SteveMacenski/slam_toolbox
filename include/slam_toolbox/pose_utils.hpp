@@ -32,7 +32,7 @@ tf2::Pose kartoPose2TfPose(const karto::Pose2& pose)
   tf2::Pose new_pose;
   new_pose.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
   tf2::Quaternion q;
-  q.setEuler(pose.GetHeading(), 0., 0.);
+  q.setRPY(0., 0., pose.GetHeading());
   new_pose.setRotation(q);
   return new_pose;
 };
