@@ -158,7 +158,7 @@ private:
     laser_pose_ = tf_->transform(laser_ident, base_frame_);
     mountingYaw = tf2::getYaw(laser_pose_.transform.rotation);
 
-    ROS_INFO("laser %s's pose wrt base: %.3f %.3f %.3f %.3f",
+    ROS_DEBUG("laser %s's pose wrt base: %.3f %.3f %.3f %.3f",
       frame_.c_str(), laser_pose_.transform.translation.x,
       laser_pose_.transform.translation.y,
       laser_pose_.transform.translation.z, mountingYaw);
@@ -172,7 +172,7 @@ private:
     
     if (laser_orient.vector.z <= 0)
     {
-      ROS_INFO("laser is mounted upside-down");
+      ROS_DEBUG("laser is mounted upside-down");
       return true;
     }
 

@@ -120,7 +120,7 @@ bool MergeMapsKinematic::AddSubmapCallback(
   sstmS_[num_submaps_].publish(map.map.info);
   // tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(),
   //   "/map", "/map_"+std::to_string(num_submaps_)));
-  submap_marker_transform_[num_submaps_]=tf2::Transform(tf2::Quaternion(),
+  submap_marker_transform_[num_submaps_]=tf2::Transform(tf2::Quaternion(0.,0.,0.,1.0),
     tf2::Vector3(0,0,0)); //no initial correction -- identity mat
 
   // create an interactive marker for the base of this frame and attach it
@@ -193,8 +193,8 @@ karto::Pose2 MergeMapsKinematic::ApplyCorrection(const
 /*****************************************************************************/
 {
   tf2::Transform poseTf, poseCorr;
-  tf2::Quaternion q;
-  q.setRPY(pose.GetHeading(), 0., 0.);
+  tf2::Quaternion q(0.,0.,0.,1.0);
+  q.setRPY(0., 0., pose.GetHeading());
   poseTf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
   poseTf.setRotation(q);
   poseCorr = submap_correction * poseTf;
@@ -210,7 +210,7 @@ karto::Vector2<kt_double> MergeMapsKinematic::ApplyCorrection(const
 {
   tf2::Transform poseTf, poseCorr;
   poseTf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
-  poseTf.setRotation(tf2::Quaternion());
+  poseTf.setRotation(tf2::Quaternion(0.,0.,0.,1.0));
   poseCorr = submap_correction * poseTf;
   return karto::Vector2<kt_double>(poseCorr.getOrigin().x(), poseCorr.getOrigin().y());
 }
@@ -369,7 +369,7 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const
 
     // get yaw
     tfScalar yaw, pitch, roll;
-    tf2::Quaternion quat;
+    tf2::Quaternion quat(0.,0.,0.,1.0);
     tf2::convert(feedback->pose.orientation, quat); // relative
     tf2::Matrix3x3 mat(quat);
     mat.getRPY(roll, pitch, yaw);
@@ -402,7 +402,7 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const
 
     // get yaw
     tfScalar yaw, pitch, roll;
-    tf2::Quaternion quat;
+    tf2::Quaternion quat(0.,0.,0.,1.0);
     tf2::convert(feedback->pose.orientation, quat); // relative
     tf2::Matrix3x3 mat(quat);
     mat.getRPY(roll, pitch, yaw);

@@ -415,15 +415,15 @@ void SlamToolbox::ProcessInteractiveFeedback(const
       feedback->pose.position.y, 0.));
 
     // get correct orientation
-    tf2::Quaternion quat(0.,0.,0.,1.0), msg_quat;
+    tf2::Quaternion quat(0.,0.,0.,1.0), msg_quat(0.,0.,0.,1.0);
 
     double node_yaw, first_node_yaw;
     solver_->GetNodeOrientation(id, node_yaw);
     solver_->GetNodeOrientation(0, first_node_yaw);
     tf2::Quaternion q1(0.,0.,0.,1.0);
-    q1.setRPY(node_yaw - 3.14159, 0., 0.);
+    q1.setEuler(0., 0., node_yaw - 3.14159);
     tf2::Quaternion q2(0.,0.,0.,1.0);
-    q2.setRPY(3.14159, 0., 0.); 
+    q2.setEuler(0., 0., 3.14159); 
     quat *= q1;
     quat *= q2;
 
