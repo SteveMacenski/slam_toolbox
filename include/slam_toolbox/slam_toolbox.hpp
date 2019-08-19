@@ -64,52 +64,55 @@ public:
 
 private:
   // threads
-  void Run();
-  void PublishVisualizations();
-  void PublishTransformLoop(const double& transform_publish_period);
+  void run();
+  void publishVisualizations();
+  void publishTransformLoop(const double& transform_publish_period);
 
   // setup
-  void SetParams(ros::NodeHandle& nh);
-  void SetSolver(ros::NodeHandle& private_nh_);
-  void SetROSInterfaces(ros::NodeHandle& node);
+  void setParams(ros::NodeHandle& nh);
+  void setSolver(ros::NodeHandle& private_nh_);
+  void setROSInterfaces(ros::NodeHandle& node);
 
   // callbacks
-  void LaserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
-  bool MapCallback(nav_msgs::GetMap::Request  &req,
+  void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
+  bool mapCallback(nav_msgs::GetMap::Request  &req,
                    nav_msgs::GetMap::Response &res);
-  bool ClearQueueCallback(slam_toolbox::ClearQueue::Request& req,
+  bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req,
                           slam_toolbox::ClearQueue::Response& resp);
-  bool InteractiveCallback(slam_toolbox::ToggleInteractive::Request  &req,
+  bool interactiveCallback(slam_toolbox::ToggleInteractive::Request  &req,
                            slam_toolbox::ToggleInteractive::Response &resp);
-  bool ClearChangesCallback(slam_toolbox::Clear::Request  &req,
+  bool clearChangesCallback(slam_toolbox::Clear::Request  &req,
                             slam_toolbox::Clear::Response &resp);
-  bool SerializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
+  bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
                                   slam_toolbox::SerializePoseGraph::Response &resp);
-  bool DeserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request &req,
+  bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request &req,
                                     slam_toolbox::DeserializePoseGraph::Response &resp);
-  void LocalizePoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
+  void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper>&, std::unique_ptr<karto::Dataset>&);
+  void localizePoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
   // functional bits
-  karto::LaserRangeFinder* GetLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
-  bool AddScan(karto::LaserRangeFinder* laser,
+  karto::LaserRangeFinder* getLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
+  bool addScan(karto::LaserRangeFinder* laser,
                const sensor_msgs::LaserScan::ConstPtr& scan,
                karto::Pose2& karto_pose);
-  bool UpdateMap();
-  void PublishGraph();
+  bool updateMap();
+  void publishGraph();
+  sensor_msgs::LaserScan getCorrectedScan(const int& id);
+  bool shouldProcessScan(const sensor_msgs::LaserScan::ConstPtr& scan, const karto::Pose2& pose);
 
   // TODO loop closure util
-  bool ManualLoopClosureCallback(slam_toolbox::LoopClosure::Request  &req,
+  bool manualLoopClosureCallback(slam_toolbox::LoopClosure::Request  &req,
                                  slam_toolbox::LoopClosure::Response &resp);
-  void MoveNode(const int& id, const Eigen::Vector3d& pose, const bool correct = true);
-  void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  void ClearMovedNodes();
-  void AddMovedNodes(const int& id, Eigen::Vector3d vec);
+  void moveNode(const int& id, const Eigen::Vector3d& pose, const bool correct = true);
+  void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void clearMovedNodes();
+  void addMovedNodes(const int& id, Eigen::Vector3d vec);
 
   // TODO state helper
-  bool IsPaused(const PausedApplication& app);
-  bool PauseProcessingCallback(slam_toolbox::Pause::Request& req,
+  bool isPaused(const PausedApplication& app);
+  bool pauseProcessingCallback(slam_toolbox::Pause::Request& req,
                      slam_toolbox::Pause::Response& resp);
-  bool PauseNewMeasurementsCallback(slam_toolbox::Pause::Request& req,
+  bool pauseNewMeasurementsCallback(slam_toolbox::Pause::Request& req,
                      slam_toolbox::Pause::Response& resp);
 
   // ROS-y-ness
@@ -127,11 +130,12 @@ private:
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, laser_frame_, map_name_;
   int throttle_scans_;
-  ros::Duration transform_timeout_;
-  double resolution_, minimum_time_interval_, minimum_travel_distance_;
+  ros::Duration transform_timeout_, tf_buffer_dur_, minimum_time_interval_;
+  double resolution_, minimum_travel_distance_;
   bool publish_occupancy_map_, first_measurement_, sychronous_, online_;
   ProcessType processor_type_;
-  geometry_msgs::Pose2D process_near_region_pose_;
+  geometry_msgs::Pose2D process_near_pose_;
+  karto::Pose2 process_near_pose_;
   tf2::Transform reprocessing_transform_;
 
   // Book keeping

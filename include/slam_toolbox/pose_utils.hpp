@@ -37,6 +37,16 @@ tf2::Transform kartoPose2TfPose(const karto::Pose2& pose)
   return new_pose;
 };
 
+// convert Karto pose to TF pose
+tf2::Transform tfPose2KartoPose(const tf::Transform& pose)
+{
+  karto::Pose2 transformed_pose;
+  transformed_pose.SetX(pose.getOrigin().x());
+  transformed_pose.SetY(pose.getOrigin().y());
+  transformed_pose.SetHeading(tf2::getYaw(pose.getRotation()));
+  return transformed_pose;
+};
+
 // helper to get the robots position
 class GetPoseHelper
 {
