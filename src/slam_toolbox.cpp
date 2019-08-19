@@ -497,7 +497,6 @@ bool SlamToolbox::updateMap()
   
   if(!occ_grid)
   {
-    ROS_WARN("UpdateMap: Unable to create map from scans.");
     return false;
   }
 

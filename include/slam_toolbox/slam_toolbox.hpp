@@ -135,7 +135,6 @@ private:
   bool publish_occupancy_map_, first_measurement_, sychronous_, online_;
   ProcessType processor_type_;
   geometry_msgs::Pose2D process_near_pose_;
-  karto::Pose2 process_near_pose_;
   tf2::Transform reprocessing_transform_;
 
   // Book keeping
