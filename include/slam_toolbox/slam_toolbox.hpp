@@ -39,6 +39,7 @@
 #include "slam_toolbox/laser_utils.hpp"
 #include "slam_toolbox/pose_utils.hpp"
 #include "slam_toolbox/map_saver.hpp"
+#include "slam_toolbox/visualization_utils.hpp"
 
 #include <string>
 #include <map>

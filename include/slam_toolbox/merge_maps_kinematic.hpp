@@ -40,6 +40,7 @@
 #include "karto_sdk/Mapper.h"
 #include "slam_toolbox/toolbox_types.hpp"
 #include "slam_toolbox/laser_utils.hpp"
+#include "slam_toolbox/visualization_utils.hpp"
 
 using namespace toolbox_types;
 

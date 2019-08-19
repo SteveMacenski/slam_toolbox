@@ -292,17 +292,7 @@ void SlamToolbox::PublishGraph()
   }
 
   visualization_msgs::MarkerArray marray;
-  visualization_msgs::Marker m;
-  m.header.frame_id = map_frame_;
-  m.header.stamp = ros::Time::now();
-  m.ns = "slam_toolbox";
-  m.type = visualization_msgs::Marker::SPHERE;
-  m.pose.position.z = 0.0;
-  m.pose.orientation.w = 1.;
-  m.scale.x = 0.1; m.scale.y = 0.1; m.scale.z = 0.1;
-  m.color.r = 1.0; m.color.g = 0; m.color.b = 0.0; m.color.a = 1.;
-  m.action = visualization_msgs::Marker::ADD;
-  m.lifetime = ros::Duration(0.);
+  visualization_msgs::Marker m = vis_utils::toMarker(map_frame_, "slam_toolbox", 0.1);
 
   for (const_graph_iterator it = graph->begin(); it != graph->end(); ++it)
   {
@@ -313,42 +303,8 @@ void SlamToolbox::PublishGraph()
     if (interactive_mode)
     {
       // marker and metadata
-      visualization_msgs::InteractiveMarker int_marker;
-      int_marker.header.frame_id = map_frame_;
-      int_marker.header.stamp = ros::Time::now();
-      int_marker.name = std::to_string(m.id);
-      int_marker.pose.orientation.w = 1.;
-      int_marker.pose.position.x = m.pose.position.x;
-      int_marker.pose.position.y = m.pose.position.y;
-      int_marker.scale = 0.3;
-
-      // translate control
-      visualization_msgs::InteractiveMarkerControl control;
-      control.orientation_mode =
-        visualization_msgs::InteractiveMarkerControl::FIXED;
-      control.always_visible = true;
-      control.orientation.w = 0;
-      control.orientation.x = 0.7071;
-      control.orientation.y = 0;
-      control.orientation.z = 0.7071;
-      control.interaction_mode =
-        visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
-      control.markers.push_back( m );
-      int_marker.controls.push_back( control );
-
-      // rotate control
-      visualization_msgs::InteractiveMarkerControl control_rot;
-      control_rot.orientation_mode =
-        visualization_msgs::InteractiveMarkerControl::FIXED;
-      control_rot.always_visible = true;
-      control_rot.orientation.w = 0;
-      control_rot.orientation.x = 0.7071;
-      control_rot.orientation.y = 0;
-      control_rot.orientation.z = 0.7071;
-      control_rot.interaction_mode =
-        visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
-      int_marker.controls.push_back( control_rot );
-
+      visualization_msgs::InteractiveMarker int_marker =
+        vis_utils::toInteractiveMarker(m, 0.3);
       interactive_server_->insert(int_marker,
         boost::bind(&SlamToolbox::ProcessInteractiveFeedback, this, _1));
     }
@@ -543,47 +499,8 @@ bool SlamToolbox::UpdateMap()
     return false;
   }
 
-  // Translate to ROS format
-  kt_int32s width = occ_grid->GetWidth();
-  kt_int32s height = occ_grid->GetHeight();
-  karto::Vector2<kt_double> offset =
-    occ_grid->GetCoordinateConverter()->GetOffset();
+  vis_utils::toNavMap(occ_grid, map_.map);
 
-  if(map_.map.info.width != (unsigned int) width || 
-     map_.map.info.height != (unsigned int) height ||
-     map_.map.info.origin.position.x != offset.GetX() ||
-     map_.map.info.origin.position.y != offset.GetY())
-  {
-    map_.map.info.origin.position.x = offset.GetX();
-    map_.map.info.origin.position.y = offset.GetY();
-    map_.map.info.width = width;
-    map_.map.info.height = height;
-    map_.map.data.resize(map_.map.info.width * map_.map.info.height);
-  }
-
-  for (kt_int32s y = 0; y < height; y++)
-  {
-    for (kt_int32s x = 0; x < width; x++) 
-    {
-      kt_int8u value = occ_grid->GetValue(karto::Vector2<kt_int32s>(x, y));
-      switch (value)
-      {
-        case karto::GridStates_Unknown:
-          map_.map.data[MAP_IDX(map_.map.info.width, x, y)] = -1;
-          break;
-        case karto::GridStates_Occupied:
-          map_.map.data[MAP_IDX(map_.map.info.width, x, y)] = 100;
-          break;
-        case karto::GridStates_Free:
-          map_.map.data[MAP_IDX(map_.map.info.width, x, y)] = 0;
-          break;
-        default:
-          ROS_WARN("Encountered unknown cell value at %d, %d", x, y);
-          break;
-      }
-    }
-  }
-  
   // Set the header information on the map
   map_.map.header.stamp = ros::Time::now();
   map_.map.header.frame_id = map_frame_;
@@ -796,7 +713,6 @@ bool SlamToolbox::ManualLoopClosureCallback(
   ClearMovedNodes();
   return true;
 }
-
 
 /*****************************************************************************/
 bool SlamToolbox::InteractiveCallback(

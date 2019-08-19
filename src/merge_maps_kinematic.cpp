@@ -128,65 +128,21 @@ bool MergeMapsKinematic::AddSubmapCallback(
 
   submap_marker_transform_[num_submaps_]=tf2::Transform(tf2::Quaternion(0.,0.,0.,1.0),
     tf2::Vector3(0,0,0)); //no initial correction -- identity mat
-
-  // create an interactive marker for the base of this frame and attach it
-  visualization_msgs::Marker m;
-  m.header.frame_id = "map";
-  m.header.stamp = ros::Time::now();
-  m.ns = "merge_maps_tool";
-  m.type = visualization_msgs::Marker::SPHERE;
-  m.pose.position.z = 0.0;
-  m.pose.position.x =  transform.getOrigin().getX();
-  m.pose.position.y =  transform.getOrigin().getY();
   submap_locations_[num_submaps_] = Eigen::Vector3d(transform.getOrigin().getX(),
     transform.getOrigin().getY(),0.);
-  m.pose.orientation.w = 1.;
-  m.scale.x = 2; m.scale.y = 2; m.scale.z = 2;
-  m.color.r = 1.0; m.color.g = 0; m.color.b = 0.0; m.color.a = 1.;
-  m.action = visualization_msgs::Marker::ADD;
-  m.lifetime = ros::Duration(0.);
+
+  // create an interactive marker for the base of this frame and attach it
+  visualization_msgs::Marker m = vis_utils::toMarker("map", "merge_maps_tool", 2.0);
+  m.pose.position.x =  transform.getOrigin().getX();
+  m.pose.position.y =  transform.getOrigin().getY();
   m.id = num_submaps_;
 
-  // marker and metadata
-  visualization_msgs::InteractiveMarker int_marker;
-  int_marker.header.frame_id = "map";
-  int_marker.header.stamp = ros::Time::now();
-  int_marker.name = std::to_string(num_submaps_);
-  int_marker.pose.orientation.w = 1.;
-  int_marker.pose.position.x = m.pose.position.x;
-  int_marker.pose.position.y = m.pose.position.y;
-  int_marker.scale = 2.4;
-
-  // translate control
-  visualization_msgs::InteractiveMarkerControl control;
-  control.orientation_mode =
-    visualization_msgs::InteractiveMarkerControl::FIXED;
-  control.always_visible = true;
-  control.orientation.w = 0;
-  control.orientation.x = 0.7071;
-  control.orientation.y = 0;
-  control.orientation.z = 0.7071;
-  control.interaction_mode =
-    visualization_msgs::InteractiveMarkerControl::MOVE_PLANE;
-  control.markers.push_back( m );
-  int_marker.controls.push_back( control );
-
-  // rotate control
-  visualization_msgs::InteractiveMarkerControl control_rot;
-  control_rot.orientation_mode =
-    visualization_msgs::InteractiveMarkerControl::FIXED;
-  control_rot.always_visible = true;
-  control_rot.orientation.w = 0;
-  control_rot.orientation.x = 0.7071;
-  control_rot.orientation.y = 0;
-  control_rot.orientation.z = 0.7071;
-  control_rot.interaction_mode =
-    visualization_msgs::InteractiveMarkerControl::ROTATE_AXIS;
-  int_marker.controls.push_back( control_rot );
-
+  visualization_msgs::InteractiveMarker int_marker =
+    vis_utils::toInteractiveMarker(m, 2.4);
   interactive_server_->insert(int_marker,
     boost::bind(&MergeMapsKinematic::ProcessInteractiveFeedback, this, _1));
   interactive_server_->applyChanges();
+
   ROS_INFO("Map %s was loaded into topic %s!", req.filename.c_str(),
     ("/map_"+std::to_string(num_submaps_)).c_str());
   return true;
@@ -314,49 +270,9 @@ void MergeMapsKinematic::KartoToROSOccupancyGrid(
     delete occ_grid;
     return;
   }
-  // Translate to ROS format
-  kt_int32s width = occ_grid->GetWidth();
-  kt_int32s height = occ_grid->GetHeight();
-  karto::Vector2<kt_double> offset =
-    occ_grid->GetCoordinateConverter()->GetOffset();
 
-  if(map.map.info.width != (unsigned int) width ||
-     map.map.info.height != (unsigned int) height ||
-     map.map.info.origin.position.x != offset.GetX() ||
-     map.map.info.origin.position.y != offset.GetY())
-  {
-    map.map.info.origin.position.x = offset.GetX();
-    map.map.info.origin.position.y = offset.GetY();
-    map.map.info.origin.position.z = 0.0;
-    map.map.info.origin.orientation.w = 1.0;
-    map.map.info.width = width;
-    map.map.info.height = height;
-    map.map.info.resolution = resolution_;
-    map.map.data.resize(map.map.info.width * map.map.info.height);
-  }
+  vis_utils::toNavMap(occ_grid, map.map);
 
-  for (kt_int32s y=0; y<height; y++)
-  {
-    for (kt_int32s x=0; x<width; x++) 
-    {
-      kt_int8u value = occ_grid->GetValue(karto::Vector2<kt_int32s>(x, y));
-      switch (value)
-      {
-        case karto::GridStates_Unknown:
-          map.map.data[MAP_IDX(map.map.info.width, x, y)] = -1;
-          break;
-        case karto::GridStates_Occupied:
-          map.map.data[MAP_IDX(map.map.info.width, x, y)] = 100;
-          break;
-        case karto::GridStates_Free:
-          map.map.data[MAP_IDX(map.map.info.width, x, y)] = 0;
-          break;
-        default:
-          ROS_WARN("Encountered unknown cell value at %d, %d", x, y);
-          break;
-      }
-    }
-  }
   delete occ_grid;
   return;
 }
