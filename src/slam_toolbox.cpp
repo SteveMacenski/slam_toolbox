@@ -201,9 +201,9 @@ void SlamToolbox::PublishTransformLoop(const double& transform_publish_period)
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       geometry_msgs::TransformStamped msg;
-      tf2::convert(map_to_odom_, msg.transform); //TODO too much work
-      msg.child_frame_id = map_frame_;
-      msg.header.frame_id = odom_frame_;
+      tf2::convert(map_to_odom_, msg.transform);
+      msg.child_frame_id = odom_frame_;
+      msg.header.frame_id = map_frame_;
       msg.header.stamp = ros::Time::now() + transform_timeout_;
       tfB_->sendTransform(msg);
     }
@@ -604,8 +604,8 @@ bool SlamToolbox::AddScan(
   // Create a vector of doubles for karto
   std::vector<kt_double> readings = laser_utils::scanToReadings(*scan, lasers_[scan->header.frame_id].isInverted());
 
-  tf2::Pose pose_original = kartoPose2TfPose(karto_pose);
-  tf2::Pose tf_pose_transformed = reprocessing_transform_ * pose_original;
+  tf2::Transform pose_original = kartoPose2TfPose(karto_pose);
+  tf2::Transform tf_pose_transformed = reprocessing_transform_ * pose_original;
 
   karto::Pose2 transformed_pose;
   transformed_pose.SetX(tf_pose_transformed.getOrigin().x());
@@ -670,10 +670,10 @@ bool SlamToolbox::AddScan(
     const karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
 
     // Compute the map->odom transform
-    tf2::Stamped<tf2::Pose> odom_to_map;
+    tf2::Stamped<tf2::Transform> odom_to_map;
     tf2::Quaternion q(0.,0.,0.,1.0);
     q.setRPY(0., 0., corrected_pose.GetHeading());
-    tf2::Stamped<tf2::Pose> base_to_map(
+    tf2::Stamped<tf2::Transform> base_to_map(
                             tf2::Transform(
                               q,
                               tf2::Vector3(corrected_pose.GetX(), 
@@ -686,7 +686,7 @@ bool SlamToolbox::AddScan(
       geometry_msgs::TransformStamped base_to_map_msg, odom_to_map_msg;
       tf2::convert(base_to_map, base_to_map_msg);
       odom_to_map_msg = tf_->transform(base_to_map_msg, odom_frame_);
-      tf2::convert(odom_to_map_msg, odom_to_map);//TODO fix all these conversions
+      tf2::convert(odom_to_map_msg, odom_to_map);
 
       // if we're continuing a previous session, we need to
       // estimate the homogenous transformation between the old and new
@@ -694,11 +694,11 @@ bool SlamToolbox::AddScan(
       // into the older session's frame
       if (update_offset)
       {
-        tf2::Pose odom_to_base_serialized = base_to_map.inverse();
+        tf2::Transform odom_to_base_serialized = base_to_map.inverse();
         tf2::Quaternion q1(0.,0.,0.,1.0);
         q1.setRPY(0., 0., tf2::getYaw(odom_to_base_serialized.getRotation()));
         odom_to_base_serialized.setRotation(q1);
-        tf2::Pose odom_to_base_current = kartoPose2TfPose(karto_pose);
+        tf2::Transform odom_to_base_current = kartoPose2TfPose(karto_pose);
         reprocessing_transform_ = odom_to_base_serialized * odom_to_base_current.inverse();
       }
     }
@@ -711,7 +711,7 @@ bool SlamToolbox::AddScan(
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       map_to_odom_ = tf2::Transform(tf2::Quaternion( odom_to_map.getRotation() ),
-        tf2::Point( odom_to_map.getOrigin() ) ).inverse();
+        tf2::Vector3( odom_to_map.getOrigin() ) ).inverse();
     }
 
     // Add the localized range scan to the dataset for memory management

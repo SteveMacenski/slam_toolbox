@@ -33,12 +33,6 @@
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
 
-namespace tf2
-{
-  typedef tf2::Transform Pose;  //TODO remove
-  typedef tf2::Vector3 Point;
-}
-
 namespace toolbox_types
 {
 

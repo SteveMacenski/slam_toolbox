@@ -27,9 +27,9 @@ namespace pose_utils
 {
 
 // convert Karto pose to TF pose
-tf2::Pose kartoPose2TfPose(const karto::Pose2& pose)
+tf2::Transform kartoPose2TfPose(const karto::Pose2& pose)
 {
-  tf2::Pose new_pose;
+  tf2::Transform new_pose;
   new_pose.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
   tf2::Quaternion q;
   q.setRPY(0., 0., pose.GetHeading());

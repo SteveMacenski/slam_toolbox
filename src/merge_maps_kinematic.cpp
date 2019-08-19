@@ -118,8 +118,14 @@ bool MergeMapsKinematic::AddSubmapCallback(
   map.map.header.frame_id = "map_"+std::to_string(num_submaps_);
   sstS_[num_submaps_].publish(map.map);
   sstmS_[num_submaps_].publish(map.map.info);
-  // tfB_->sendTransform(tf::StampedTransform (transform, ros::Time::now(),
-  //   "/map", "/map_"+std::to_string(num_submaps_)));
+
+  geometry_msgs::TransformStamped msg;
+  tf2::convert(transform, msg.transform);
+  msg.child_frame_id = "/map_"+std::to_string(num_submaps_);
+  msg.header.frame_id = "/map";
+  msg.header.stamp = ros::Time::now();
+  tfB_->sendTransform(msg);
+
   submap_marker_transform_[num_submaps_]=tf2::Transform(tf2::Quaternion(0.,0.,0.,1.0),
     tf2::Vector3(0,0,0)); //no initial correction -- identity mat
 
@@ -388,8 +394,13 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const
     new_submap_location.setOrigin(tf2::Vector3(submap_locations_[id](0),
       submap_locations_[id](1), 0.));
     new_submap_location.setRotation(quat);
-    // tfB_->sendTransform(tf::StampedTransform (new_submap_location,
-    //   ros::Time::now(), "/map", "/map_"+std::to_string(id)));
+
+    geometry_msgs::TransformStamped msg;
+    tf2::convert(new_submap_location, msg.transform);
+    msg.child_frame_id = "/map_"+std::to_string(id);
+    msg.header.frame_id = "/map";
+    msg.header.stamp = ros::Time::now();
+    tfB_->sendTransform(msg);
 
     submap_marker_transform_[id] = submap_marker_transform_[id] *
       previous_submap_correction.inverse() * new_submap_location;
@@ -412,8 +423,13 @@ void MergeMapsKinematic::ProcessInteractiveFeedback(const
     new_submap_location.setOrigin(tf2::Vector3(feedback->pose.position.x,
       feedback->pose.position.y, 0.));
     new_submap_location.setRotation(quat);
-    // tfB_->sendTransform(tf::StampedTransform (new_submap_location,
-    //   ros::Time::now(), "/map", "/map_"+std::to_string(id))); //TODO util to poulate. done 5x
+
+    geometry_msgs::TransformStamped msg;
+    tf2::convert(new_submap_location, msg.transform);
+    msg.child_frame_id = "/map_"+std::to_string(id);
+    msg.header.frame_id = "/map";
+    msg.header.stamp = ros::Time::now();
+    tfB_->sendTransform(msg);
   }
 }
 
