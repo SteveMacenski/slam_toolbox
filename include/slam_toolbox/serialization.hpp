@@ -16,6 +16,9 @@
 
 /* Author: Steven Macenski */
 
+#ifndef SLAM_TOOLBOX_SERIALIZATION_H_
+#define SLAM_TOOLBOX_SERIALIZATION_H_
+
 #include <vector>
 #include <string>
 #include <ros/ros.h>
@@ -78,3 +81,5 @@ inline bool Read(const std::string& filename,
 }
 
 } // end namespace
+
+#endif //SLAM_TOOLBOX_SERIALIZATION_H_

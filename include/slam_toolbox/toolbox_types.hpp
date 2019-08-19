@@ -16,12 +16,17 @@
 
 /* Author: Steven Macenski */
 
+#ifndef SLAM_TOOLBOX_TOOLBOX_TYPES_H_
+#define SLAM_TOOLBOX_TOOLBOX_TYPES_H_
+
 #include <map>
 #include <vector>
 
-#include <tf/transform_datatypes.h>
-#include <sensor_msgs/LaserScan.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include "tf/transform_datatypes.h"
+#include "tf2_ros/buffer.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "sensor_msgs/LaserScan.h"
+#include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "slam_toolbox/toolbox_msgs.hpp"
 #include "karto_sdk/Mapper.h"
 
@@ -69,3 +74,5 @@ typedef std::unordered_map<int, Eigen::Vector3d>::iterator graph_iterator;
 typedef std::unordered_map<int, Eigen::Vector3d>::const_iterator const_graph_iterator;
 
 }  // end namespace
+
+#endif //SLAM_TOOLBOX_TOOLBOX_TYPES_H_

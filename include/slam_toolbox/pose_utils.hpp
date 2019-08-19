@@ -16,20 +16,24 @@
 
 /* Author: Steven Macenski */
 
-#include <tf/transform_datatypes.h>
+#ifndef SLAM_TOOLBOX_POSE_UTILS_H_
+#define SLAM_TOOLBOX_POSE_UTILS_H_
+
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include "slam_toolbox/toolbox_msgs.hpp"
+#include "slam_toolbox/toolbox_types.hpp"
 #include "karto_sdk/Mapper.h"
 
 namespace pose_utils
 {
 
 // convert Karto pose to TF pose
-tf::Pose kartoPose2TfPose(const karto::Pose2& pose)
+tf2::Transform kartoPose2TfPose(const karto::Pose2& pose)
 {
-  tf::Pose new_pose;
-  new_pose.setOrigin(tf::Vector3(pose.GetX(), pose.GetY(), 0.));
-  new_pose.setRotation(tf::createQuaternionFromYaw(pose.GetHeading()));
+  tf2::Transform new_pose;
+  new_pose.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
+  tf2::Quaternion q;
+  q.setRPY(0., 0., pose.GetHeading());
+  new_pose.setRotation(q);
   return new_pose;
 };
 
@@ -37,7 +41,7 @@ tf::Pose kartoPose2TfPose(const karto::Pose2& pose)
 class GetPoseHelper
 {
 public:
-  GetPoseHelper(tf::TransformListener* tf,
+  GetPoseHelper(tf2_ros::Buffer* tf,
     const std::string& base_frame,
     const std::string& odom_frame)
   : tf_(tf), base_frame_(base_frame), odom_frame_(odom_frame)
@@ -46,28 +50,33 @@ public:
 
   bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
   {
-    tf::Stamped<tf::Pose> ident(tf::Transform(tf::createQuaternionFromRPY(0,0,0),
-      tf::Vector3(0,0,0)), t, base_frame_);
-    tf::Stamped<tf::Transform> odom_pose;
+    geometry_msgs::TransformStamped base_ident, odom_pose;
+    base_ident.header.stamp = t;
+    base_ident.header.frame_id = base_frame_;
+    base_ident.transform.rotation.w = 1.0;
+
     try
     {
-      tf_->transformPose(odom_frame_, ident, odom_pose);
+      odom_pose = tf_->transform(base_ident, odom_frame_);
     }
-    catch(tf::TransformException e)
+    catch(tf2::TransformException e)
     {
       ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
       return false;
     }
-    double yaw = tf::getYaw(odom_pose.getRotation());
 
-    karto_pose = karto::Pose2(odom_pose.getOrigin().x(),
-      odom_pose.getOrigin().y(), yaw);
+    const double yaw = tf2::getYaw(odom_pose.transform.rotation);
+    karto_pose = karto::Pose2(odom_pose.transform.translation.x,
+      odom_pose.transform.translation.y, yaw);
+
     return true;
   };
 
 private:
-  tf::TransformListener* tf_;
+  tf2_ros::Buffer* tf_;
   std::string base_frame_, odom_frame_;
 };
 
 } // end namespace
+
+#endif //SLAM_TOOLBOX_POSE_UTILS_H_

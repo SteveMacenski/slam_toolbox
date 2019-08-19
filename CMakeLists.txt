@@ -20,12 +20,14 @@ find_package(catkin REQUIRED
     roscpp
     sensor_msgs
     sparse_bundle_adjustment
-    tf
+    tf2
+    tf2_ros
     visualization_msgs
     pluginlib
     message_generation
     std_srvs
     std_msgs
+    tf2_geometry_msgs
     interactive_markers
     rviz
 )
@@ -106,12 +108,14 @@ catkin_package(
       sparse_bundle_adjustment
       sensor_msgs
       rviz
-      tf
+      tf2
+      tf2_ros
       visualization_msgs
       pluginlib
       message_runtime
       std_srvs
       std_msgs
+      tf2_geometry_msgs
       interactive_markers
 )
 
@@ -143,7 +147,7 @@ add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 add_dependencies(merge_maps_kinematic ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(merge_maps_kinematic ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-install(TARGETS toolbox_lib slam_toolbox merge_maps_kinematic ceres_solver_plugin SlamToolboxPlugin
+install(TARGETS toolbox_lib slam_toolbox ceres_solver_plugin SlamToolboxPlugin merge_maps_kinematic
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

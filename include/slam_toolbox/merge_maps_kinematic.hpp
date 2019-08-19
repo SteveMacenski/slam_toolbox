@@ -16,6 +16,9 @@
 
 /* Author: Steven Macenski */
 
+#ifndef SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
+#define SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
+
 #include <string>
 #include <map>
 #include <memory>
@@ -28,10 +31,11 @@
 #include "ros/ros.h"
 #include "interactive_markers/interactive_marker_server.h"
 #include "interactive_markers/menu_handler.h"
-#include "tf/LinearMath/Matrix3x3.h"
-#include "tf/transform_datatypes.h"
-#include "tf/transform_broadcaster.h"
-#include "tf/transform_listener.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/message_filter.h"
+#include "tf2/LinearMath/Matrix3x3.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 #include "karto_sdk/Mapper.h"
 #include "slam_toolbox/toolbox_types.hpp"
@@ -75,15 +79,17 @@ private:
   std::vector<std::unique_ptr<karto::Dataset> > dataset_vec_;
 
   // TF
-  std::unique_ptr<tf::TransformBroadcaster> tfB_;
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
 
   // visualization
   std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
   std::map<int, Eigen::Vector3d> submap_locations_;
   std::vector<karto::LocalizedRangeScanVector> scans_vec_;
-  std::map<int, tf::Transform> submap_marker_transform_;
+  std::map<int, tf2::Transform> submap_marker_transform_;
 
   //apply transformation to correct pose
-  karto::Pose2 ApplyCorrection(const karto::Pose2& pose, const tf::Transform& submap_correction);
-  karto::Vector2<kt_double> ApplyCorrection(const karto::Vector2<kt_double>&  pose, const tf::Transform& submap_correction);
+  karto::Pose2 ApplyCorrection(const karto::Pose2& pose, const tf2::Transform& submap_correction);
+  karto::Vector2<kt_double> ApplyCorrection(const karto::Vector2<kt_double>&  pose, const tf2::Transform& submap_correction);
 };
+
+#endif //SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
