@@ -21,8 +21,6 @@
 namespace solver_plugins
 {
 
-typedef std::vector<karto::Matrix3> CovarianceVector;
-
 /**
  * @brief Wrapper for G2O to interface with Open Karto
  */
@@ -77,7 +75,7 @@ class GTSAMSolver : public karto::ScanSolver
      * 
      * @param g the graph
      */
-    virtual void getGraph(std::vector<Eigen::Vector2d> &nodes); // std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges);
+    virtual void getGraph(std::vector<Eigen::Vector2d>& nodes); // std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges);
 
     virtual void ModifyNode(const int& unique_id, const Eigen::Vector3d& pose); // change a node's pose
 

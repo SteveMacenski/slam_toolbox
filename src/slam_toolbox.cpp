@@ -186,7 +186,9 @@ void SlamToolbox::publishTransformLoop(const double& transform_publish_period)
 /*****************************************************************************/
 {
   if(transform_publish_period == 0)
+  {
     return;
+  }
 
   ros::Rate r(1.0 / transform_publish_period);
   while(ros::ok())
@@ -258,7 +260,7 @@ void SlamToolbox::publishGraph()
   visualization_msgs::Marker m = vis_utils::toMarker(map_frame_,
     "slam_toolbox", 0.1);
 
-  for (const_graph_iterator it = graph->begin(); it != graph->end(); ++it)
+  for (ConstGraphIterator it = graph->begin(); it != graph->end(); ++it)
   {
     m.id = it->first + 1;
     m.pose.position.x = it->second(0);
@@ -325,8 +327,8 @@ void SlamToolbox::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 
   if(!laser)
   {
-    ROS_WARN_THROTTLE(5., "Failed to create laser device for %s; discarding scan",
-      scan->header.frame_id.c_str());
+    ROS_WARN_THROTTLE(5., "Failed to create laser device for"
+      " %s; discarding scan", scan->header.frame_id.c_str());
     return;
   }
 
@@ -467,8 +469,10 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
     tf2::Quaternion q1(0.,0.,0.,1.0);
     q1.setRPY(0., 0., tf2::getYaw(odom_to_base_serialized.getRotation()));
     odom_to_base_serialized.setRotation(q1);
-    tf2::Transform odom_to_base_current = pose_utils::kartoPose2TfPose(karto_pose);
-    reprocessing_transform_ = odom_to_base_serialized * odom_to_base_current.inverse();
+    tf2::Transform odom_to_base_current =
+      pose_utils::kartoPose2TfPose(karto_pose);
+    reprocessing_transform_ = 
+      odom_to_base_serialized * odom_to_base_current.inverse();
   }
 
   // set map to odom for our transformation thread to publish
@@ -477,6 +481,15 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
     tf2::Vector3( odom_to_map.getOrigin() ) ).inverse();
 
   return odom_to_map;
+}
+
+/*****************************************************************************/
+bool SlamToolbox::addScan(
+  karto::LaserRangeFinder* laser,
+  PosedScan& scan_w_pose)
+/*****************************************************************************/
+{
+  return addScan(laser, scan_w_pose.scan, scan_w_pose.pose);
 }
 
 /*****************************************************************************/
@@ -492,7 +505,8 @@ bool SlamToolbox::addScan(
 
   tf2::Transform pose_original = pose_utils::kartoPose2TfPose(karto_pose);
   tf2::Transform tf_pose_transformed = reprocessing_transform_ * pose_original;
-  karto::Pose2 transformed_pose = pose_utils::tfPose2KartoPose(tf_pose_transformed);
+  karto::Pose2 transformed_pose =
+    pose_utils::tfPose2KartoPose(tf_pose_transformed);
 
   // create localized range scan
   karto::LocalizedRangeScan* range_scan = 
@@ -656,7 +670,7 @@ void SlamToolbox::run()
   {
     if (!q_.empty() && !isPaused(PROCESSING))
     {
-      PosedScan scanWithPose = q_.front();
+      PosedScan scan_w_pose = q_.front();
       q_.pop();
 
       if (q_.size() > 10)
@@ -666,7 +680,7 @@ void SlamToolbox::run()
           (int)q_.size());
       }
 
-      addScan(getLaser(scanWithPose.scan), scanWithPose.scan, scanWithPose.pose);
+      addScan(getLaser(scan_w_pose.scan), scan_w_pose);
       continue;
     }
 
@@ -740,7 +754,7 @@ void SlamToolbox::loadSerializedPoseGraph(
   // create a current laser sensor
   karto::LaserRangeFinder* laser =
     dynamic_cast<karto::LaserRangeFinder*>(dataset_->GetObjects()[0]);
-  karto::Sensor* pSensor = dynamic_cast<karto::Sensor *>(laser);
+  karto::Sensor* pSensor = dynamic_cast<karto::Sensor*>(laser);
   if (pSensor)
   {
     karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
@@ -754,7 +768,8 @@ void SlamToolbox::loadSerializedPoseGraph(
       if (scan)
       {
         ROS_INFO("Got scan!");
-        lasers_[scan->header.frame_id] = laser_assistant_->toLaserMetadata(*scan);
+        lasers_[scan->header.frame_id] =
+          laser_assistant_->toLaserMetadata(*scan);
         break;
       }
     }

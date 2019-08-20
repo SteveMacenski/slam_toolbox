@@ -31,8 +31,6 @@
 namespace solver_plugins
 {
 
-typedef std::vector<karto::Matrix3> CovarianceVector;
-
 class SpaSolver : public karto::ScanSolver
 {
 public:
@@ -47,7 +45,7 @@ public:
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex);
   virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge);
 
-  virtual void getGraph(std::vector<Eigen::Vector2d> &g);
+  virtual void getGraph(std::vector<Eigen::Vector2d>& g);
 
   virtual void ModifyNode(const int& unique_id, const Eigen::Vector3d& pose);
 

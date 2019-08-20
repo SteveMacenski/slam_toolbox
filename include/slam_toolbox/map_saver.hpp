@@ -30,11 +30,11 @@ namespace map_saver
 class MapSaver
 {
 public:
-  MapSaver(ros::NodeHandle & nh, const std::string& service_name);
+  MapSaver(ros::NodeHandle& nh, const std::string& service_name);
 
 protected:
-  bool saveMapCallback(slam_toolbox::SaveMap::Request  &req,
-                       slam_toolbox::SaveMap::Response &resp);
+  bool saveMapCallback(slam_toolbox::SaveMap::Request& req,
+                       slam_toolbox::SaveMap::Response& resp);
   void mapCallback(const nav_msgs::OccupancyGrid& msg);
 
 private:

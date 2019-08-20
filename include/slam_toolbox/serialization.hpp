@@ -36,8 +36,8 @@ inline bool fileExists(const std::string& name)
 }
 
 inline void write(const std::string& filename,
-  karto::Mapper & mapper,
-  karto::Dataset & dataset)
+  karto::Mapper& mapper,
+  karto::Dataset& dataset)
 {
   try
   {
@@ -53,8 +53,8 @@ inline void write(const std::string& filename,
 }
 
 inline bool read(const std::string& filename,
-  karto::Mapper & mapper,
-  karto::Dataset & dataset)
+  karto::Mapper& mapper,
+  karto::Dataset& dataset)
 {
   if (!fileExists(filename + std::string(".posegraph")))
   {

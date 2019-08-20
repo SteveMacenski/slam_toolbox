@@ -73,22 +73,22 @@ private:
 
   // callbacks
   void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
-  bool mapCallback(nav_msgs::GetMap::Request  &req,
-    nav_msgs::GetMap::Response &res);
+  bool mapCallback(nav_msgs::GetMap::Request& req,
+    nav_msgs::GetMap::Response& res);
   bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req,
     slam_toolbox::ClearQueue::Response& resp);
-  bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
-    slam_toolbox::SerializePoseGraph::Response &resp);
-  bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request &req,
-    slam_toolbox::DeserializePoseGraph::Response &resp);
+  bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request& req,
+    slam_toolbox::SerializePoseGraph::Response& resp);
+  bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
+    slam_toolbox::DeserializePoseGraph::Response& resp);
   void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper>&, std::unique_ptr<karto::Dataset>&);
   void localizePoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
   // functional bits
   karto::LaserRangeFinder* getLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
-  bool addScan(karto::LaserRangeFinder* laser,
-    const sensor_msgs::LaserScan::ConstPtr& scan,
+  bool addScan(karto::LaserRangeFinder* laser, const sensor_msgs::LaserScan::ConstPtr& scan,
     karto::Pose2& karto_pose);
+  bool addScan(karto::LaserRangeFinder* laser, PosedScan& scanWPose);
   bool updateMap();
   void publishGraph();
   bool shouldProcessScan(const sensor_msgs::LaserScan::ConstPtr& scan, const karto::Pose2& pose);
@@ -99,8 +99,8 @@ private:
   bool isPaused(const PausedApplication& app);
   bool pauseNewMeasurementsCallback(slam_toolbox::Pause::Request& req,
     slam_toolbox::Pause::Response& resp);
-  bool interactiveModeCallback(slam_toolbox::ToggleInteractive::Request  &req,
-    slam_toolbox::ToggleInteractive::Response &resp);
+  bool interactiveModeCallback(slam_toolbox::ToggleInteractive::Request& req,
+    slam_toolbox::ToggleInteractive::Response& resp);
 
   // ROS-y-ness
   ros::NodeHandle nh_;

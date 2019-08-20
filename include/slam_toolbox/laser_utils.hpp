@@ -132,7 +132,7 @@ public:
   };
 
 private:
-  karto::LaserRangeFinder* makeLaser(const double & mountingYaw)
+  karto::LaserRangeFinder* makeLaser(const double& mountingYaw)
   {
     karto::LaserRangeFinder* laser = 
       karto::LaserRangeFinder::CreateLaserRangeFinder(
