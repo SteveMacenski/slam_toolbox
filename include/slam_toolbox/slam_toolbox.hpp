@@ -74,31 +74,33 @@ private:
   // callbacks
   void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
   bool mapCallback(nav_msgs::GetMap::Request  &req,
-                   nav_msgs::GetMap::Response &res);
+    nav_msgs::GetMap::Response &res);
   bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req,
-                          slam_toolbox::ClearQueue::Response& resp);
+    slam_toolbox::ClearQueue::Response& resp);
   bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request  &req,
-                                  slam_toolbox::SerializePoseGraph::Response &resp);
+    slam_toolbox::SerializePoseGraph::Response &resp);
   bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request &req,
-                                    slam_toolbox::DeserializePoseGraph::Response &resp);
+    slam_toolbox::DeserializePoseGraph::Response &resp);
   void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper>&, std::unique_ptr<karto::Dataset>&);
   void localizePoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
   // functional bits
   karto::LaserRangeFinder* getLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
   bool addScan(karto::LaserRangeFinder* laser,
-               const sensor_msgs::LaserScan::ConstPtr& scan,
-               karto::Pose2& karto_pose);
+    const sensor_msgs::LaserScan::ConstPtr& scan,
+    karto::Pose2& karto_pose);
   bool updateMap();
   void publishGraph();
   bool shouldProcessScan(const sensor_msgs::LaserScan::ConstPtr& scan, const karto::Pose2& pose);
-  tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2& pose, const karto::Pose2& karto_pose, const ros::Time& t, const bool& update_reprocessing_transform);
+  tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2& pose,
+    const karto::Pose2& karto_pose, const ros::Time& t, const bool& update_reprocessing_transform);
 
+  // pausing bits
   bool isPaused(const PausedApplication& app);
   bool pauseNewMeasurementsCallback(slam_toolbox::Pause::Request& req,
-                                    slam_toolbox::Pause::Response& resp);
+    slam_toolbox::Pause::Response& resp);
   bool interactiveModeCallback(slam_toolbox::ToggleInteractive::Request  &req,
-                               slam_toolbox::ToggleInteractive::Response &resp);
+    slam_toolbox::ToggleInteractive::Response &resp);
 
   // ROS-y-ness
   ros::NodeHandle nh_;
@@ -106,21 +108,17 @@ private:
   std::unique_ptr<tf2_ros::TransformListener> tfL_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   std::unique_ptr<message_filters::Subscriber<sensor_msgs::LaserScan> > scan_filter_sub_;
-  ros::Subscriber localization_pose_sub_;
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::LaserScan> > scan_filter_;
   ros::Publisher sst_, sstm_, marker_publisher_;
   ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssPause_measurements_, ssSerialize_, ssLoadMap_;
-  nav_msgs::GetMap::Response map_;
+  ros::Subscriber localization_pose_sub_;
 
   // Storage for ROS parameters
-  std::string odom_frame_, map_frame_, base_frame_, laser_frame_, map_name_;
+  std::string odom_frame_, map_frame_, base_frame_, map_name_;
   int throttle_scans_;
   ros::Duration transform_timeout_, tf_buffer_dur_, minimum_time_interval_;
   double resolution_, minimum_travel_distance_;
   bool first_measurement_, sychronous_;
-  ProcessType processor_type_;
-  geometry_msgs::Pose2D process_near_pose_;
-  tf2::Transform reprocessing_transform_;
 
   // Book keeping
   std::unique_ptr<karto::Mapper> mapper_;
@@ -139,8 +137,12 @@ private:
   tf2::Transform map_to_odom_;
   bool interactive_mode_, localization_pose_set_;
   std::queue<PosedScan> q_;
-  boost::mutex map_mutex_, map_to_odom_mutex_, mapper_mutex_, interactive_mutex_;
+  boost::mutex map_to_odom_mutex_, mapper_mutex_, interactive_mutex_;
   PausedState state_;
+  nav_msgs::GetMap::Response map_;
+  ProcessType processor_type_;
+  geometry_msgs::Pose2D process_near_pose_;
+  tf2::Transform reprocessing_transform_;
 
   // visualization
   std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
