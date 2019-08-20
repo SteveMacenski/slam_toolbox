@@ -260,11 +260,12 @@ void MergeMapsKinematic::kartoToROSOccupancyGrid(
   if (!occ_grid)
   {
     ROS_INFO("MergeMapsKinematic: Could not make Karto occupancy grid.");
-    delete occ_grid;
-    return;
   }
-
-  vis_utils::toNavMap(occ_grid, map.map);
+  else
+  {
+    map.map.info.resolution = resolution_;
+    vis_utils::toNavMap(occ_grid, map.map);
+  }
 
   delete occ_grid;
   return;
