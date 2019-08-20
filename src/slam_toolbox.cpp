@@ -54,31 +54,42 @@ SlamToolbox::SlamToolbox()
     private_nh, tf_.get(), base_frame_);
   pose_helper_ = std::make_unique<pose_utils::GetPoseHelper>(
     tf_.get(), base_frame_, odom_frame_);
-  current_scans_ = std::make_unique<std::vector<sensor_msgs::LaserScan> >();
+  scan_holder_ = std::make_unique<laser_utils::ScanHolder>(lasers_);
   map_saver_ = std::make_unique<map_saver::MapSaver>(nh_, map_name_);
+  closure_assistant_ =
+    std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
+    nh_, mapper_.get(), scan_holder_.get(),
+    std::bind(&SlamToolbox::publishGraph, this));
 
   reprocessing_transform_.setIdentity();
 
   double transform_publish_period;
   private_nh.param("transform_publish_period", transform_publish_period, 0.05);
-  transform_thread_ = std::make_unique<boost::thread>(
+  threads_.push_back(std::make_unique<boost::thread>(
     boost::bind(&SlamToolbox::publishTransformLoop,
-    this, transform_publish_period));
-  run_thread_ = std::make_unique<boost::thread>(
-    boost::bind(&SlamToolbox::run, this));
-  visualization_thread_ = std::make_unique<boost::thread>(
-    boost::bind(&SlamToolbox::publishVisualizations, this));
+    this, transform_publish_period)));
+  threads_.push_back(std::make_unique<boost::thread>(
+    boost::bind(&SlamToolbox::run, this)));
+  threads_.push_back(std::make_unique<boost::thread>(
+    boost::bind(&SlamToolbox::publishVisualizations, this)));
 }
 
 /*****************************************************************************/
 SlamToolbox::~SlamToolbox()
 /*****************************************************************************/
 {
-  transform_thread_->join();
-  run_thread_->join();
-  visualization_thread_->join();
+  for (int i=0; i != threads_.size(); i++)
+  {
+    threads_[i]->join();
+  }
+
   mapper_.reset();
   dataset_.reset();
+  closure_assistant_.reset();
+  map_saver_.reset();
+  pose_helper_.reset();
+  laser_assistant_.reset();
+  scan_holder_.reset();
 }
 
 /*****************************************************************************/
@@ -111,7 +122,6 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh_)
 /*****************************************************************************/
 {
   map_to_odom_.setIdentity();
-  private_nh_.param("online", online_, true);
   private_nh_.param("sychronous", sychronous_, true);
   private_nh_.param("odom_frame", odom_frame_, std::string("odom"));
   private_nh_.param("map_frame", map_frame_, std::string("map"));
@@ -163,16 +173,13 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::mapCallback, this);
   ssClear_ = node.advertiseService("clear_queue", &SlamToolbox::clearQueueCallback, this);
   ssPause_measurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
-  ssLoopClosure_ = node.advertiseService("manual_loop_closure", &SlamToolbox::manualLoopClosureCallback, this);
-  ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::interactiveCallback,this);
-  ssClear_manual_ = node.advertiseService("clear_changes", &SlamToolbox::clearChangesCallback, this);
+  ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::pauseCallback,this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::serializePoseGraphCallback, this);
   ssLoadMap_ = node.advertiseService("deserialize_map", &SlamToolbox::deserializePoseGraphCallback, this);
   scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, "/scan", 5);
   scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_sub_, *tf_, odom_frame_, 5, node);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::laserCallback, this, _1));
   marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>("karto_graph_visualization",1);
-  scan_publisher_ = node.advertise<sensor_msgs::LaserScan>("karto_scan_visualization",10);
 }
 
 /*****************************************************************************/
@@ -230,6 +237,56 @@ void SlamToolbox::publishVisualizations()
 }
 
 /*****************************************************************************/
+void SlamToolbox::publishGraph()
+/*****************************************************************************/
+{
+  interactive_server_->clear();
+  std::unordered_map<int, Eigen::Vector3d>* graph = solver_->getGraph();
+
+  if (graph->size() == 0)
+  {
+    return;
+  }
+
+  ROS_DEBUG("Graph size: %i",(int)graph->size());
+  bool interactive_mode = false;
+  {
+    boost::mutex::scoped_lock lock(interactive_mutex_);
+    interactive_mode = interactive_mode_;
+  }
+
+  visualization_msgs::MarkerArray marray;
+  visualization_msgs::Marker m = vis_utils::toMarker(map_frame_,
+    "slam_toolbox", 0.1);
+
+  for (const_graph_iterator it = graph->begin(); it != graph->end(); ++it)
+  {
+    m.id = it->first + 1;
+    m.pose.position.x = it->second(0);
+    m.pose.position.y = it->second(1);
+
+    if (interactive_mode)
+    {
+      visualization_msgs::InteractiveMarker int_marker =
+        vis_utils::toInteractiveMarker(m, 0.3);
+      interactive_server_->insert(int_marker,
+        boost::bind(
+        &loop_closure_assistant::LoopClosureAssistant::processInteractiveFeedback,
+        closure_assistant_.get(), _1));
+    }
+    else
+    {
+      marray.markers.push_back(visualization_msgs::Marker(m));
+    }
+  }
+
+  // if disabled, clears out old markers
+  interactive_server_->applyChanges();
+  marker_publisher_.publish(marray);
+  return;
+}
+
+/*****************************************************************************/
 karto::LaserRangeFinder* SlamToolbox::getLaser(const
   sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
@@ -259,134 +316,6 @@ karto::LaserRangeFinder* SlamToolbox::getLaser(const
   }
 
   return lasers_[frame].getLaser();
-}
-
-/*****************************************************************************/
-void SlamToolbox::publishGraph()
-/*****************************************************************************/
-{
-  interactive_server_->clear();
-  std::unordered_map<int, Eigen::Vector3d>* graph = solver_->getGraph();
-
-  if (graph->size() == 0)
-  {
-    return;
-  }
-
-  ROS_DEBUG("Graph size: %i",(int)graph->size());
-  bool interactive_mode = false;
-  {
-    boost::mutex::scoped_lock lock(interactive_mutex_);
-    interactive_mode = interactive_mode_;
-  }
-
-  visualization_msgs::MarkerArray marray;
-  visualization_msgs::Marker m = vis_utils::toMarker(map_frame_, "slam_toolbox", 0.1);
-
-  for (const_graph_iterator it = graph->begin(); it != graph->end(); ++it)
-  {
-    m.id = it->first + 1;
-    m.pose.position.x = it->second(0);
-    m.pose.position.y = it->second(1);
-
-    if (interactive_mode)
-    {
-      visualization_msgs::InteractiveMarker int_marker =
-        vis_utils::toInteractiveMarker(m, 0.3);
-      interactive_server_->insert(int_marker,
-        boost::bind(&SlamToolbox::processInteractiveFeedback, this, _1));
-    }
-    else
-    {
-      marray.markers.push_back(visualization_msgs::Marker(m));
-    }
-  }
-
-  // if disabled, clears out old markers
-  interactive_server_->applyChanges();
-  marker_publisher_.publish(marray);
-  return;
-}
-
-/*****************************************************************************/
-sensor_msgs::LaserScan SlamToolbox::getCorrectedScan(const int& id)
-/*****************************************************************************/
-{
-  sensor_msgs::LaserScan scan = current_scans_->at(id);
-  const laser_utils::LaserMetadata& laser = lasers_[scan.header.frame_id];
-  if (laser.isInverted())
-  {
-    laser.invertScan(scan);
-  }
-
-  return scan;
-}
-
-/*****************************************************************************/
-void SlamToolbox::processInteractiveFeedback(const
-  visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
-/*****************************************************************************/
-{
-  if (processor_type_ == PROCESS_LOCALIZATION)
-  {
-    ROS_WARN_ONCE("Cannot manually correct nodes in localization modes. "
-      "This message will appear once.");
-    return;
-  }
-
-  const int id = std::stoi(feedback->marker_name, nullptr, 10) - 1;
-
-  // was depressed, something moved, and now released
-  if (feedback->event_type ==
-      visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP && 
-      feedback->mouse_point_valid)
-  {
-    addMovedNodes(id, Eigen::Vector3d(feedback->mouse_point.x,
-      feedback->mouse_point.y, tf2::getYaw(feedback->pose.orientation)));
-  }
-
-  // is currently depressed, being moved before release
-  if (feedback->event_type ==
-      visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
-  {
-    // get scan
-    sensor_msgs::LaserScan scan = getCorrectedScan(id);
-
-    // get correct orientation
-    tf2::Quaternion quat(0.,0.,0.,1.0), msg_quat(0.,0.,0.,1.0);
-    double node_yaw, first_node_yaw;
-    solver_->GetNodeOrientation(id, node_yaw);
-    solver_->GetNodeOrientation(0, first_node_yaw);
-    tf2::Quaternion q1(0.,0.,0.,1.0);
-    q1.setEuler(0., 0., node_yaw - 3.14159);
-    tf2::Quaternion q2(0.,0.,0.,1.0);
-    q2.setEuler(0., 0., 3.14159); 
-    quat *= q1;
-    quat *= q2;
-
-    // interactive move
-    tf2::convert(feedback->pose.orientation, msg_quat);
-    quat *= msg_quat;
-    quat.normalize();
-
-    // create correct transform
-    tf2::Transform transform;
-    transform.setOrigin(tf2::Vector3(feedback->pose.position.x,
-      feedback->pose.position.y, 0.));
-    transform.setRotation(quat);
-
-    // publish the scan visualization with transform
-    geometry_msgs::TransformStamped msg;
-    tf2::convert(transform, msg.transform);
-    msg.child_frame_id = "karto_scan_visualization";
-    msg.header.frame_id = map_frame_;
-    msg.header.stamp = ros::Time::now();
-    tfB_->sendTransform(msg);
-
-    scan.header.frame_id = "karto_scan_visualization";
-    scan.header.stamp = ros::Time::now();
-    scan_publisher_.publish(scan);
-  }
 }
 
 /*****************************************************************************/
@@ -523,9 +452,9 @@ bool SlamToolbox::addScan(
   std::vector<kt_double> readings = laser_utils::scanToReadings(
     *scan, lasers_[scan->header.frame_id].isInverted());
 
-  tf2::Transform pose_original = kartoPose2TfPose(karto_pose);
+  tf2::Transform pose_original = pose_utils::kartoPose2TfPose(karto_pose);
   tf2::Transform tf_pose_transformed = reprocessing_transform_ * pose_original;
-  karto::Pose2 transformed_pose = tfPose2KartoPose(tf_pose_transformed);
+  karto::Pose2 transformed_pose = pose_utils::tfPose2KartoPose(tf_pose_transformed);
 
   // create localized range scan
   karto::LocalizedRangeScan* range_scan = 
@@ -580,7 +509,7 @@ bool SlamToolbox::addScan(
 
   if(processed)
   {
-    current_scans_->push_back(*scan);
+    scan_holder_->addScan(*scan);
     const karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
 
     // Compute the map->odom transform
@@ -624,7 +553,7 @@ bool SlamToolbox::addScan(
       tf2::Quaternion q1(0.,0.,0.,1.0);
       q1.setRPY(0., 0., tf2::getYaw(odom_to_base_serialized.getRotation()));
       odom_to_base_serialized.setRotation(q1);
-      tf2::Transform odom_to_base_current = kartoPose2TfPose(karto_pose);
+      tf2::Transform odom_to_base_current = pose_utils::kartoPose2TfPose(karto_pose);
       reprocessing_transform_ = odom_to_base_serialized * odom_to_base_current.inverse();
     }
 
@@ -640,24 +569,6 @@ bool SlamToolbox::addScan(
   }
 
   return processed;
-}
-
-/*****************************************************************************/
-void  SlamToolbox::clearMovedNodes()
-/*****************************************************************************/
-{
-  boost::mutex::scoped_lock lock(moved_nodes_mutex_);
-  moved_nodes_.clear();
-}
-
-/*****************************************************************************/
-void SlamToolbox::addMovedNodes(const int& id, Eigen::Vector3d vec)
-/*****************************************************************************/
-{
-  ROS_INFO(
-    "SlamToolbox: Node %i new manual loop closure pose has been recorded.",id);
-  boost::mutex::scoped_lock lock(moved_nodes_mutex_);
-  moved_nodes_[id] = vec;
 }
 
 /*****************************************************************************/
@@ -677,42 +588,7 @@ bool SlamToolbox::mapCallback(
 }
 
 /*****************************************************************************/
-bool SlamToolbox::manualLoopClosureCallback(
-  slam_toolbox::LoopClosure::Request  &req,
-  slam_toolbox::LoopClosure::Response &resp)
-/*****************************************************************************/
-{
-  {
-    boost::mutex::scoped_lock lock(moved_nodes_mutex_);
-
-    if (moved_nodes_.size() == 0)
-    {
-      ROS_WARN("No moved nodes to attempt manual loop closure.");
-      return true;
-    }
-
-    ROS_INFO("SlamToolbox: Attempting to manual loop close with %i moved nodes.", 
-      (int)moved_nodes_.size());
-    // for each in node map
-    std::map<int, Eigen::Vector3d>::const_iterator it = moved_nodes_.begin();
-    for (it; it != moved_nodes_.end(); ++it)
-    {
-      moveNode(it->first,
-        Eigen::Vector3d(it->second(0),it->second(1), it->second(2)), false);
-    }
-  }
-
-  // optimize
-  mapper_->CorrectPoses();
-
-  // update visualization and clear out nodes completed
-  publishGraph();  
-  clearMovedNodes();
-  return true;
-}
-
-/*****************************************************************************/
-bool SlamToolbox::interactiveCallback(
+bool SlamToolbox::pauseCallback(
   slam_toolbox::ToggleInteractive::Request  &req,
   slam_toolbox::ToggleInteractive::Response &resp)
 /*****************************************************************************/
@@ -728,7 +604,7 @@ bool SlamToolbox::interactiveCallback(
   ROS_INFO("SlamToolbox: Toggling %s interactive mode.", 
     interactive_mode ? "on" : "off");
   publishGraph();
-  clearMovedNodes();
+  closure_assistant_->clearMovedNodes();
 
   boost::mutex::scoped_lock lock_p(pause_mutex_); 
   if (interactive_mode)
@@ -762,19 +638,6 @@ bool SlamToolbox::pauseNewMeasurementsCallback(
     pause_new_measurements_ ? "pause taking new measurements." : 
     "actively taking new measurements.");
   resp.status = true;
-  return true;
-}
-
-
-/*****************************************************************************/
-bool SlamToolbox::clearChangesCallback(
-  slam_toolbox::Clear::Request  &req,
-  slam_toolbox::Clear::Response &resp)
-/*****************************************************************************/
-{
-  ROS_INFO("SlamToolbox: Clearing manual loop closure nodes.");
-  publishGraph();
-  clearMovedNodes();
   return true;
 }
 
@@ -845,18 +708,6 @@ void SlamToolbox::run()
     }
 
     r.sleep();
-  }
-}
-
-/*****************************************************************************/
-void SlamToolbox::moveNode(
-  const int& id, const Eigen::Vector3d& pose, const bool correct)
-/*****************************************************************************/
-{
-  solver_->ModifyNode(id, pose);
-  if (correct)
-  {
-    mapper_->CorrectPoses();
   }
 }
 

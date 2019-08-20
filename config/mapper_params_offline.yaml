@@ -30,7 +30,6 @@ max_laser_range: 20.0 #for rastering images
 minimum_time_interval: 0.5
 transform_timeout: 0.2
 sychronous: true
-online: false
 tf_buffer_duration: 14400.
 
 # General Parameters
