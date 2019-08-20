@@ -169,7 +169,7 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::mapCallback, this);
   ssClear_ = node.advertiseService("clear_queue", &SlamToolbox::clearQueueCallback, this);
   ssPause_measurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
-  ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::pauseCallback,this);
+  ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::interactiveModeCallback,this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::serializePoseGraphCallback, this);
   ssLoadMap_ = node.advertiseService("deserialize_map", &SlamToolbox::deserializePoseGraphCallback, this);
   scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, "/scan", 5);
@@ -438,6 +438,57 @@ bool SlamToolbox::updateMap()
 }
 
 /*****************************************************************************/
+tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
+  const karto::Pose2& corrected_pose,
+  const karto::Pose2& karto_pose,
+  const ros::Time& t,
+  const bool& update_reprocessing_transform)
+/*****************************************************************************/
+{
+  // Compute the map->odom transform
+  tf2::Stamped<tf2::Transform> odom_to_map;
+  tf2::Quaternion q(0.,0.,0.,1.0);
+  q.setRPY(0., 0., corrected_pose.GetHeading());
+  tf2::Stamped<tf2::Transform> base_to_map(
+                          tf2::Transform(
+                            q,
+                            tf2::Vector3(corrected_pose.GetX(), corrected_pose.GetY(), 0.0)
+                          ).inverse(), t, base_frame_);
+  try
+  {
+    geometry_msgs::TransformStamped base_to_map_msg, odom_to_map_msg;
+    tf2::convert(base_to_map, base_to_map_msg);
+    odom_to_map_msg = tf_->transform(base_to_map_msg, odom_frame_);
+    tf2::convert(odom_to_map_msg, odom_to_map);
+  }
+  catch(tf2::TransformException& e)
+  {
+    ROS_ERROR("Transform from base_link to odom failed: %s", e.what());
+    odom_to_map.setIdentity();
+  }
+
+  // if we're continuing a previous session, we need to
+  // estimate the homogenous transformation between the old and new
+  // odometry frames and transform the new session 
+  // into the older session's frame
+  if (update_reprocessing_transform)
+  {
+    tf2::Transform odom_to_base_serialized = base_to_map.inverse();
+    tf2::Quaternion q1(0.,0.,0.,1.0);
+    q1.setRPY(0., 0., tf2::getYaw(odom_to_base_serialized.getRotation()));
+    odom_to_base_serialized.setRotation(q1);
+    tf2::Transform odom_to_base_current = pose_utils::kartoPose2TfPose(karto_pose);
+    reprocessing_transform_ = odom_to_base_serialized * odom_to_base_current.inverse();
+  }
+
+  boost::mutex::scoped_lock lock(map_to_odom_mutex_);
+  map_to_odom_ = tf2::Transform(tf2::Quaternion( odom_to_map.getRotation() ),
+    tf2::Vector3( odom_to_map.getOrigin() ) ).inverse();
+
+  return odom_to_map;
+}
+
+/*****************************************************************************/
 bool SlamToolbox::addScan(
   karto::LaserRangeFinder* laser,
 	const sensor_msgs::LaserScan::ConstPtr& scan, 
@@ -460,7 +511,7 @@ bool SlamToolbox::addScan(
 
   // Add the localized range scan to the mapper
   boost::mutex::scoped_lock lock(mapper_mutex_);
-  bool processed = false, update_offset = false;
+  bool processed = false, update_reprocessing_transform = false;
   bool localize_first_match = PROCESS_LOCALIZATION && !localization_pose_set_;
 
   if (processor_type_ == PROCESS)
@@ -471,7 +522,7 @@ bool SlamToolbox::addScan(
   {
     processed = mapper_->ProcessAtDock(range_scan);
     processor_type_ = PROCESS;
-    update_offset = true;
+    update_reprocessing_transform = true;
   }
   else if (processor_type_ == PROCESS_NEAR_REGION || localize_first_match)
   {
@@ -482,7 +533,7 @@ bool SlamToolbox::addScan(
     range_scan->SetOdometricPose(estimated_starting_pose);
     range_scan->SetCorrectedPose(estimated_starting_pose);
     processed = mapper_->ProcessAgainstNodesNearBy(range_scan);
-    update_offset = true;
+    update_reprocessing_transform = true;
     if (processor_type_ == PROCESS_LOCALIZATION)
     {
       localization_pose_set_ = true;
@@ -506,52 +557,8 @@ bool SlamToolbox::addScan(
   if(processed)
   {
     scan_holder_->addScan(*scan);
-    const karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
-
-    // Compute the map->odom transform
-    tf2::Stamped<tf2::Transform> odom_to_map;
-    tf2::Quaternion q(0.,0.,0.,1.0);
-    q.setRPY(0., 0., corrected_pose.GetHeading());
-    tf2::Stamped<tf2::Transform> base_to_map(
-                            tf2::Transform(
-                              q,
-                              tf2::Vector3(corrected_pose.GetX(), 
-                                          corrected_pose.GetY(), 
-                                          0.0)
-                            ).inverse(), 
-                            scan->header.stamp, base_frame_);
-    try
-    {
-      geometry_msgs::TransformStamped base_to_map_msg, odom_to_map_msg;
-      tf2::convert(base_to_map, base_to_map_msg);
-      odom_to_map_msg = tf_->transform(base_to_map_msg, odom_frame_);
-      tf2::convert(odom_to_map_msg, odom_to_map);
-    }
-    catch(tf2::TransformException& e)
-    {
-      ROS_ERROR("Transform from base_link to odom failed: %s", e.what());
-      odom_to_map.setIdentity();
-    }
-
-    {
-      boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      map_to_odom_ = tf2::Transform(tf2::Quaternion( odom_to_map.getRotation() ),
-        tf2::Vector3( odom_to_map.getOrigin() ) ).inverse();
-    }
-
-    // if we're continuing a previous session, we need to
-    // estimate the homogenous transformation between the old and new
-    // odometry frames and transform the new session 
-    // into the older session's frame
-    if (update_offset)
-    {
-      tf2::Transform odom_to_base_serialized = base_to_map.inverse();
-      tf2::Quaternion q1(0.,0.,0.,1.0);
-      q1.setRPY(0., 0., tf2::getYaw(odom_to_base_serialized.getRotation()));
-      odom_to_base_serialized.setRotation(q1);
-      tf2::Transform odom_to_base_current = pose_utils::kartoPose2TfPose(karto_pose);
-      reprocessing_transform_ = odom_to_base_serialized * odom_to_base_current.inverse();
-    }
+    setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
+      scan->header.stamp, update_reprocessing_transform);
 
     // Add the localized range scan to the dataset for memory management
     if (processor_type_ != PROCESS_LOCALIZATION)
@@ -584,7 +591,7 @@ bool SlamToolbox::mapCallback(
 }
 
 /*****************************************************************************/
-bool SlamToolbox::pauseCallback(
+bool SlamToolbox::interactiveModeCallback(
   slam_toolbox::ToggleInteractive::Request  &req,
   slam_toolbox::ToggleInteractive::Response &resp)
 /*****************************************************************************/

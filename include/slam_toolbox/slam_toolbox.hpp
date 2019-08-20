@@ -92,15 +92,13 @@ private:
   bool updateMap();
   void publishGraph();
   bool shouldProcessScan(const sensor_msgs::LaserScan::ConstPtr& scan, const karto::Pose2& pose);
+  tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2& pose, const karto::Pose2& karto_pose, const ros::Time& t, const bool& update_reprocessing_transform);
 
-  // TODO state helper
   bool isPaused(const PausedApplication& app);
-  bool pauseProcessingCallback(slam_toolbox::Pause::Request& req,
-                     slam_toolbox::Pause::Response& resp);
   bool pauseNewMeasurementsCallback(slam_toolbox::Pause::Request& req,
-                     slam_toolbox::Pause::Response& resp);
-  bool pauseCallback(slam_toolbox::ToggleInteractive::Request  &req,
-                     slam_toolbox::ToggleInteractive::Response &resp);
+                                    slam_toolbox::Pause::Response& resp);
+  bool interactiveModeCallback(slam_toolbox::ToggleInteractive::Request  &req,
+                               slam_toolbox::ToggleInteractive::Response &resp);
 
   // ROS-y-ness
   ros::NodeHandle nh_;
