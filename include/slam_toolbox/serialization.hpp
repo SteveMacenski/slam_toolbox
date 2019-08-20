@@ -29,13 +29,13 @@
 namespace serialization
 {
 
-inline bool FileExists(const std::string& name)
+inline bool fileExists(const std::string& name)
 {
   struct stat buffer;
   return (stat (name.c_str(), &buffer) == 0);
 }
 
-inline void Write(const std::string& filename,
+inline void write(const std::string& filename,
   karto::Mapper & mapper,
   karto::Dataset & dataset)
 {
@@ -52,11 +52,11 @@ inline void Write(const std::string& filename,
   }
 }
 
-inline bool Read(const std::string& filename,
+inline bool read(const std::string& filename,
   karto::Mapper & mapper,
   karto::Dataset & dataset)
 {
-  if (!FileExists(filename + std::string(".posegraph")))
+  if (!fileExists(filename + std::string(".posegraph")))
   {
     ROS_ERROR("serialization::Read: Failed to open "
       "requested file: %s.", filename.c_str());

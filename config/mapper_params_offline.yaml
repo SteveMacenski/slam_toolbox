@@ -31,6 +31,7 @@ minimum_time_interval: 0.5
 transform_timeout: 0.2
 sychronous: true
 online: false
+tf_buffer_duration: 14400.
 
 # General Parameters
 use_scan_matching: true

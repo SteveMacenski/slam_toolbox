@@ -40,6 +40,7 @@
 #include "karto_sdk/Mapper.h"
 #include "slam_toolbox/toolbox_types.hpp"
 #include "slam_toolbox/laser_utils.hpp"
+#include "slam_toolbox/visualization_utils.hpp"
 
 using namespace toolbox_types;
 
@@ -53,13 +54,13 @@ public:
 private:
 
   // setup
-  void Setup();
+  void setup();
 
   // callback
-  bool MergeMapCallback(slam_toolbox::MergeMaps::Request  &req, slam_toolbox::MergeMaps::Response &resp);
-  bool AddSubmapCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
-  void ProcessInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  void KartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map);
+  bool mergeMapCallback(slam_toolbox::MergeMaps::Request  &req, slam_toolbox::MergeMaps::Response &resp);
+  bool addSubmapCallback(slam_toolbox::AddSubmap::Request  &req, slam_toolbox::AddSubmap::Response &resp);
+  void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void kartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map);
   typedef std::vector<karto::LocalizedRangeScanVector>::iterator localized_range_scans_vec_it;
   typedef karto::LocalizedRangeScanVector::iterator localized_range_scans_it;
 
@@ -69,9 +70,7 @@ private:
   ros::ServiceServer ssMap_, ssSubmap_;
 
   // param and state
-  std::string map_frame_;
   double resolution_;
-  double max_laser_range_;
   int num_submaps_;
 
   //karto bookkeeping
@@ -88,8 +87,8 @@ private:
   std::map<int, tf2::Transform> submap_marker_transform_;
 
   //apply transformation to correct pose
-  karto::Pose2 ApplyCorrection(const karto::Pose2& pose, const tf2::Transform& submap_correction);
-  karto::Vector2<kt_double> ApplyCorrection(const karto::Vector2<kt_double>&  pose, const tf2::Transform& submap_correction);
+  karto::Pose2 applyCorrection(const karto::Pose2& pose, const tf2::Transform& submap_correction);
+  karto::Vector2<kt_double> applyCorrection(const karto::Vector2<kt_double>&  pose, const tf2::Transform& submap_correction);
 };
 
 #endif //SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
