@@ -125,7 +125,6 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh_)
   private_nh_.param("base_frame", base_frame_, std::string("base_footprint"));
   private_nh_.param("laser_frame", laser_frame_, std::string("laser_link"));
   private_nh_.param("throttle_scans", throttle_scans_, 1);
-  private_nh_.param("publish_occupancy_map", publish_occupancy_map_, false);
   private_nh_.param("resolution", resolution_, 0.05);
   private_nh_.param("map_name", map_name_, std::string("/map"));
 
@@ -407,7 +406,7 @@ bool SlamToolbox::shouldProcessScan(
 bool SlamToolbox::updateMap()
 /*****************************************************************************/
 {
-  if (!publish_occupancy_map_ || sst_.getNumSubscribers() == 0)
+  if (sst_.getNumSubscribers() == 0)
   {
     return true;
   }

@@ -119,7 +119,7 @@ private:
   int throttle_scans_;
   ros::Duration transform_timeout_, tf_buffer_dur_, minimum_time_interval_;
   double resolution_, minimum_travel_distance_;
-  bool publish_occupancy_map_, first_measurement_, sychronous_;
+  bool first_measurement_, sychronous_;
   ProcessType processor_type_;
   geometry_msgs::Pose2D process_near_pose_;
   tf2::Transform reprocessing_transform_;
