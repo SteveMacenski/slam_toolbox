@@ -3036,6 +3036,11 @@ namespace karto
 	  m_pScanOptimizer = pScanOptimizer;
   }
 
+  ScanSolver* Mapper::getScanSolver()
+  {
+    return m_pScanOptimizer;
+  }
+
   MapperGraph* Mapper::GetGraph() const
   {
 	  return m_pGraph;

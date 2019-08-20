@@ -2000,6 +2000,12 @@ namespace karto
     void SetScanSolver(ScanSolver* pSolver);
 
     /**
+     * Gets scan optimizer used by mapper when closing the loop
+     * @return pSolver
+     */
+    ScanSolver* getScanSolver();
+
+    /**
      * Get scan link graph
      * @return graph
      */

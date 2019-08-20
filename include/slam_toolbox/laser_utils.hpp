@@ -16,6 +16,9 @@
 
 /* Author: Steven Macenski */
 
+#ifndef SLAM_TOOLBOX_LASER_UTILS_H_
+#define SLAM_TOOLBOX_LASER_UTILS_H_
+
 #include <string>
 
 #include "ros/ros.h"
@@ -186,4 +189,41 @@ private:
   geometry_msgs::TransformStamped laser_pose_;
 };
 
+class ScanHolder
+{
+public:
+  ScanHolder(std::map<std::string, laser_utils::LaserMetadata>& lasers)
+  : lasers_(lasers)
+  {
+    current_scans_ = std::make_unique<std::vector<sensor_msgs::LaserScan> >();
+  };
+
+  ~ScanHolder()
+  {
+    current_scans_.reset();
+  };
+
+  sensor_msgs::LaserScan getCorrectedScan(const int& id)
+  {
+    sensor_msgs::LaserScan scan = current_scans_->at(id);
+    const laser_utils::LaserMetadata& laser = lasers_[scan.header.frame_id];
+    if (laser.isInverted())
+    {
+      laser.invertScan(scan);
+    }
+    return scan;
+  };
+
+  void addScan(const sensor_msgs::LaserScan scan)
+  {
+    current_scans_->push_back(scan);
+  };
+
+private:
+  std::unique_ptr<std::vector<sensor_msgs::LaserScan> > current_scans_;
+  std::map<std::string, laser_utils::LaserMetadata>& lasers_;
+};
+
 } // end namespace
+
+#endif //SLAM_TOOLBOX_LASER_UTILS_H_

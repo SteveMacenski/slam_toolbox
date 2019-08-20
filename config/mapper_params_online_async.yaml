@@ -30,7 +30,6 @@ max_laser_range: 20.0 #for rastering images
 minimum_time_interval: 0.5
 transform_timeout: 0.2
 sychronous: false # whether we should use all readings and queue up - might be delayed. if off will skip readings but not lag
-online: true
 tf_buffer_duration: 10.
 
 # General Parameters
