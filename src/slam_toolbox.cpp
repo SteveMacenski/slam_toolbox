@@ -27,9 +27,6 @@ namespace slam_toolbox
 /*****************************************************************************/
 SlamToolbox::SlamToolbox()
 : solver_loader_("slam_toolbox", "karto::ScanSolver"),
-  pause_graph_(false),
-  pause_processing_(false),
-  pause_new_measurements_(false),
   interactive_mode_(false),
   processor_type_(PROCESS),
   localization_pose_set_(false),
@@ -155,8 +152,8 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh_)
   mapper_utils::setMapperParams(private_nh_, mapper_.get());
   minimum_travel_distance_ = mapper_->getParamMinimumTravelDistance();
 
-  nh_.setParam("paused_processing", pause_processing_);
-  nh_.setParam("paused_new_measurements", pause_new_measurements_);
+  nh_.setParam("paused_processing", false);
+  nh_.setParam("paused_new_measurements", false);
   nh_.setParam("interactive_mode", interactive_mode_);
 }
 
@@ -350,7 +347,7 @@ void SlamToolbox::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     return;
   }
 
-  q_.push(posedScan(scan, pose));
+  q_.push(PosedScan(scan, pose));
   return;
 }
 
@@ -606,20 +603,19 @@ bool SlamToolbox::pauseCallback(
   publishGraph();
   closure_assistant_->clearMovedNodes();
 
-  boost::mutex::scoped_lock lock_p(pause_mutex_); 
   if (interactive_mode)
   {
     // stop publishing / processing new measurements so we can move things
-    pause_graph_  = true;
-    pause_processing_ = true;
-    nh_.setParam("paused_processing", pause_processing_);
+    state_.set(PROCESSING, true);
+    state_.set(VISUALIZING_GRAPH, true);
+    nh_.setParam("paused_processing", true);
   }
   else
   {
     // exiting interactive mode, continue publishing / processing measurements
-    pause_graph_ = false;
-    pause_processing_ = false;
-    nh_.setParam("paused_processing", pause_processing_);
+    state_.set(VISUALIZING_GRAPH, false);
+    state_.set(PROCESSING, false);
+    nh_.setParam("paused_processing", false);
   }
 
   return true;
@@ -631,11 +627,12 @@ bool SlamToolbox::pauseNewMeasurementsCallback(
   slam_toolbox::Pause::Response& resp)
 /*****************************************************************************/
 {
-  boost::mutex::scoped_lock lock(pause_mutex_); 
-  pause_new_measurements_ = !pause_new_measurements_;
-  nh_.setParam("paused_new_measurements", pause_new_measurements_);
+  bool curr_state = state_.get(NEW_MEASUREMENTS);
+  state_.set(NEW_MEASUREMENTS, !curr_state);
+
+  nh_.setParam("paused_new_measurements", !curr_state);
   ROS_INFO("SlamToolbox: Toggled to %s",
-    pause_new_measurements_ ? "pause taking new measurements." : 
+    !curr_state ? "pause taking new measurements." : 
     "actively taking new measurements.");
   resp.status = true;
   return true;
@@ -660,20 +657,7 @@ bool SlamToolbox::clearQueueCallback(
 bool SlamToolbox::isPaused(const PausedApplication& app)
 /*****************************************************************************/
 {
-  boost::mutex::scoped_lock lock(pause_mutex_);
-  if (app == NEW_MEASUREMENTS)
-  {
-    return pause_new_measurements_;
-  }
-  else if (app == PROCESSING)
-  {
-    return pause_processing_;
-  }
-  else if (app == VISUALIZING_GRAPH)
-  {
-    return pause_graph_;
-  }
-  return false; // then assume working
+  return state_.get(app);
 }
 
 /*****************************************************************************/
@@ -693,7 +677,7 @@ void SlamToolbox::run()
   {
     if (!q_.empty() && !isPaused(PROCESSING))
     {
-      posedScan scanWithPose = q_.front();
+      PosedScan scanWithPose = q_.front();
       q_.pop();
 
       if (q_.size() > 10)
@@ -784,7 +768,7 @@ void SlamToolbox::loadSerializedPoseGraph(
 
     while (true)
     {
-      ROS_INFO("Waiting for scan to get metadata...");
+      ROS_INFO("Waiting for incoming scan to get metadata...");
       boost::shared_ptr<sensor_msgs::LaserScan const> scan =
         ros::topic::waitForMessage<sensor_msgs::LaserScan>(
         std::string("/scan"), ros::Duration(1.0));
@@ -819,8 +803,6 @@ bool SlamToolbox::deserializePoseGraphCallback(
 
   std::string filename = req.filename;
 
-  std::unique_ptr<karto::Dataset> dataset = std::make_unique<karto::Dataset>();
-  std::unique_ptr<karto::Mapper> mapper = std::make_unique<karto::Mapper>();
   if (filename.empty())
   {
     ROS_WARN("No map file given!");
@@ -832,6 +814,9 @@ bool SlamToolbox::deserializePoseGraphCallback(
   {
     filename = snap_utils::getSnapPath() + std::string("/") + filename;
   }
+
+  std::unique_ptr<karto::Dataset> dataset = std::make_unique<karto::Dataset>();
+  std::unique_ptr<karto::Mapper> mapper = std::make_unique<karto::Mapper>();
 
   if (!serialization::read(filename, *mapper, *dataset))
   {
