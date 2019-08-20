@@ -25,7 +25,7 @@
 namespace mapper_utils
 {
 
-inline void setMapperParams(const ros::NodeHandle & nh, karto::Mapper* mapper)
+inline void setMapperParams(const ros::NodeHandle& nh, karto::Mapper* mapper)
 {
   bool use_scan_matching;
   if(nh.getParam("use_scan_matching", use_scan_matching))

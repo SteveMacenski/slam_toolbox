@@ -39,7 +39,7 @@ LoopClosureAssistant::LoopClosureAssistant(
 
 /*****************************************************************************/
 void LoopClosureAssistant::processInteractiveFeedback(const
-  visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback)
+  visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 /*****************************************************************************/
 {
   const int id = std::stoi(feedback->marker_name, nullptr, 10) - 1;
@@ -99,8 +99,8 @@ void LoopClosureAssistant::processInteractiveFeedback(const
 
 /*****************************************************************************/
 bool LoopClosureAssistant::manualLoopClosureCallback(
-  slam_toolbox::LoopClosure::Request  &req,
-  slam_toolbox::LoopClosure::Response &resp)
+  slam_toolbox::LoopClosure::Request& req,
+  slam_toolbox::LoopClosure::Response& resp)
 /*****************************************************************************/
 {
   {
@@ -112,8 +112,8 @@ bool LoopClosureAssistant::manualLoopClosureCallback(
       return true;
     }
 
-    ROS_INFO("LoopClosureAssistant: Attempting to manual loop close with %i moved nodes.", 
-      (int)moved_nodes_.size());
+    ROS_INFO("LoopClosureAssistant: Attempting to manual "
+      "loop close with %i moved nodes.", (int)moved_nodes_.size());
     // for each in node map
     std::map<int, Eigen::Vector3d>::const_iterator it = moved_nodes_.begin();
     for (it; it != moved_nodes_.end(); ++it)
@@ -142,8 +142,8 @@ void LoopClosureAssistant::moveNode(
 
 /*****************************************************************************/
 bool LoopClosureAssistant::clearChangesCallback(
-  slam_toolbox::Clear::Request  &req,
-  slam_toolbox::Clear::Response &resp)
+  slam_toolbox::Clear::Request& req,
+  slam_toolbox::Clear::Response& resp)
 /*****************************************************************************/
 {
   ROS_INFO("LoopClosureAssistant: Clearing manual loop closure nodes.");
@@ -164,8 +164,8 @@ void  LoopClosureAssistant::clearMovedNodes()
 void LoopClosureAssistant::addMovedNodes(const int& id, Eigen::Vector3d vec)
 /*****************************************************************************/
 {
-  ROS_INFO(
-    "LoopClosureAssistant: Node %i new manual loop closure pose has been recorded.",id);
+  ROS_INFO("LoopClosureAssistant: Node %i new manual loop closure "
+    "pose has been recorded.",id);
   boost::mutex::scoped_lock lock(moved_nodes_mutex_);
   moved_nodes_[id] = vec;
 }

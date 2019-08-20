@@ -66,9 +66,13 @@ SlamToolbox::SlamToolbox()
     boost::bind(&SlamToolbox::publishTransformLoop,
     this, transform_publish_period)));
   threads_.push_back(std::make_unique<boost::thread>(
-    boost::bind(&SlamToolbox::run, this)));
-  threads_.push_back(std::make_unique<boost::thread>(
     boost::bind(&SlamToolbox::publishVisualizations, this)));
+
+  if (sychronous_)
+  {
+    threads_.push_back(std::make_unique<boost::thread>(
+      boost::bind(&SlamToolbox::run, this)));
+  }
 }
 
 /*****************************************************************************/
@@ -123,9 +127,7 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh_)
   private_nh_.param("odom_frame", odom_frame_, std::string("odom"));
   private_nh_.param("map_frame", map_frame_, std::string("map"));
   private_nh_.param("base_frame", base_frame_, std::string("base_footprint"));
-  private_nh_.param("laser_frame", laser_frame_, std::string("laser_link"));
   private_nh_.param("throttle_scans", throttle_scans_, 1);
-  private_nh_.param("publish_occupancy_map", publish_occupancy_map_, false);
   private_nh_.param("resolution", resolution_, 0.05);
   private_nh_.param("map_name", map_name_, std::string("/map"));
 
@@ -170,7 +172,7 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::mapCallback, this);
   ssClear_ = node.advertiseService("clear_queue", &SlamToolbox::clearQueueCallback, this);
   ssPause_measurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
-  ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::pauseCallback,this);
+  ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::interactiveModeCallback,this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::serializePoseGraphCallback, this);
   ssLoadMap_ = node.advertiseService("deserialize_map", &SlamToolbox::deserializePoseGraphCallback, this);
   scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, "/scan", 5);
@@ -184,7 +186,9 @@ void SlamToolbox::publishTransformLoop(const double& transform_publish_period)
 /*****************************************************************************/
 {
   if(transform_publish_period == 0)
+  {
     return;
+  }
 
   ros::Rate r(1.0 / transform_publish_period);
   while(ros::ok())
@@ -256,7 +260,7 @@ void SlamToolbox::publishGraph()
   visualization_msgs::Marker m = vis_utils::toMarker(map_frame_,
     "slam_toolbox", 0.1);
 
-  for (const_graph_iterator it = graph->begin(); it != graph->end(); ++it)
+  for (ConstGraphIterator it = graph->begin(); it != graph->end(); ++it)
   {
     m.id = it->first + 1;
     m.pose.position.x = it->second(0);
@@ -273,7 +277,7 @@ void SlamToolbox::publishGraph()
     }
     else
     {
-      marray.markers.push_back(visualization_msgs::Marker(m));
+      marray.markers.push_back(m);
     }
   }
 
@@ -289,14 +293,6 @@ karto::LaserRangeFinder* SlamToolbox::getLaser(const
 /*****************************************************************************/
 {
   const std::string& frame = scan->header.frame_id;
-
-  if (laser_frame_ != frame)
-  {
-    ROS_FATAL_ONCE("Laser param frame: %s is not the same as the scan frame: %s."
-      " This WILL cause fatal issues with deserialization or lifelong mapping.",
-      laser_frame_.c_str(), frame.c_str());
-  }
-
   if(lasers_.find(frame) == lasers_.end())
   {
     try
@@ -331,23 +327,24 @@ void SlamToolbox::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
 
   if(!laser)
   {
-    ROS_WARN("Failed to create laser device for %s; discarding scan",
-      scan->header.frame_id.c_str());
+    ROS_WARN_THROTTLE(5., "Failed to create laser device for"
+      " %s; discarding scan", scan->header.frame_id.c_str());
     return;
   }
 
+  // if async, process now
   if (!sychronous_)
   {
     addScan(laser, scan, pose);
     return;
   }
 
-  if (!shouldProcessScan(scan, pose))
+  // if sync and valid, add to queue
+  if (shouldProcessScan(scan, pose))
   {
-    return;
+    q_.push(PosedScan(scan, pose));
   }
 
-  q_.push(PosedScan(scan, pose));
   return;
 }
 
@@ -407,19 +404,15 @@ bool SlamToolbox::shouldProcessScan(
 bool SlamToolbox::updateMap()
 /*****************************************************************************/
 {
-  if (!publish_occupancy_map_ || sst_.getNumSubscribers() == 0)
+  if (sst_.getNumSubscribers() == 0)
   {
     return true;
   }
-
-  boost::mutex::scoped_lock lock(map_mutex_);
+  boost::mutex::scoped_lock lock(mapper_mutex_);
 
   karto::OccupancyGrid* occ_grid = nullptr;
-  {
-    boost::mutex::scoped_lock lock(mapper_mutex_);
-    occ_grid = karto::OccupancyGrid::CreateFromScans(
-      mapper_->GetAllProcessedScans(), resolution_);
-  }
+  occ_grid = karto::OccupancyGrid::CreateFromScans(
+    mapper_->GetAllProcessedScans(), resolution_);
   
   if(!occ_grid)
   {
@@ -439,6 +432,67 @@ bool SlamToolbox::updateMap()
 }
 
 /*****************************************************************************/
+tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
+  const karto::Pose2& corrected_pose,
+  const karto::Pose2& karto_pose,
+  const ros::Time& t,
+  const bool& update_reprocessing_transform)
+/*****************************************************************************/
+{
+  // Compute the map->odom transform
+  tf2::Stamped<tf2::Transform> odom_to_map;
+  tf2::Quaternion q(0.,0.,0.,1.0);
+  q.setRPY(0., 0., corrected_pose.GetHeading());
+  tf2::Stamped<tf2::Transform> base_to_map(
+    tf2::Transform(q, tf2::Vector3(corrected_pose.GetX(),
+    corrected_pose.GetY(), 0.0)).inverse(), t, base_frame_);
+  try
+  {
+    geometry_msgs::TransformStamped base_to_map_msg, odom_to_map_msg;
+    tf2::convert(base_to_map, base_to_map_msg);
+    odom_to_map_msg = tf_->transform(base_to_map_msg, odom_frame_);
+    tf2::convert(odom_to_map_msg, odom_to_map);
+  }
+  catch(tf2::TransformException& e)
+  {
+    ROS_ERROR("Transform from base_link to odom failed: %s", e.what());
+    odom_to_map.setIdentity();
+  }
+
+  // if we're continuing a previous session, we need to
+  // estimate the homogenous transformation between the old and new
+  // odometry frames and transform the new session 
+  // into the older session's frame
+  if (update_reprocessing_transform)
+  {
+    tf2::Transform odom_to_base_serialized = base_to_map.inverse();
+    tf2::Quaternion q1(0.,0.,0.,1.0);
+    q1.setRPY(0., 0., tf2::getYaw(odom_to_base_serialized.getRotation()));
+    odom_to_base_serialized.setRotation(q1);
+    tf2::Transform odom_to_base_current =
+      pose_utils::kartoPose2TfPose(karto_pose);
+    reprocessing_transform_ = 
+      odom_to_base_serialized * odom_to_base_current.inverse();
+  }
+
+  // set map to odom for our transformation thread to publish
+  boost::mutex::scoped_lock lock(map_to_odom_mutex_);
+  map_to_odom_ = tf2::Transform(tf2::Quaternion( odom_to_map.getRotation() ),
+    tf2::Vector3( odom_to_map.getOrigin() ) ).inverse();
+
+  return odom_to_map;
+}
+
+/*****************************************************************************/
+bool SlamToolbox::addScan(
+  karto::LaserRangeFinder* laser,
+  PosedScan& scan_w_pose)
+/*****************************************************************************/
+{
+  return addScan(laser, scan_w_pose.scan, scan_w_pose.pose);
+}
+
+/*****************************************************************************/
 bool SlamToolbox::addScan(
   karto::LaserRangeFinder* laser,
 	const sensor_msgs::LaserScan::ConstPtr& scan, 
@@ -451,7 +505,8 @@ bool SlamToolbox::addScan(
 
   tf2::Transform pose_original = pose_utils::kartoPose2TfPose(karto_pose);
   tf2::Transform tf_pose_transformed = reprocessing_transform_ * pose_original;
-  karto::Pose2 transformed_pose = pose_utils::tfPose2KartoPose(tf_pose_transformed);
+  karto::Pose2 transformed_pose =
+    pose_utils::tfPose2KartoPose(tf_pose_transformed);
 
   // create localized range scan
   karto::LocalizedRangeScan* range_scan = 
@@ -461,7 +516,7 @@ bool SlamToolbox::addScan(
 
   // Add the localized range scan to the mapper
   boost::mutex::scoped_lock lock(mapper_mutex_);
-  bool processed = false, update_offset = false;
+  bool processed = false, update_reprocessing_transform = false;
   bool localize_first_match = PROCESS_LOCALIZATION && !localization_pose_set_;
 
   if (processor_type_ == PROCESS)
@@ -472,7 +527,7 @@ bool SlamToolbox::addScan(
   {
     processed = mapper_->ProcessAtDock(range_scan);
     processor_type_ = PROCESS;
-    update_offset = true;
+    update_reprocessing_transform = true;
   }
   else if (processor_type_ == PROCESS_NEAR_REGION || localize_first_match)
   {
@@ -483,7 +538,7 @@ bool SlamToolbox::addScan(
     range_scan->SetOdometricPose(estimated_starting_pose);
     range_scan->SetCorrectedPose(estimated_starting_pose);
     processed = mapper_->ProcessAgainstNodesNearBy(range_scan);
-    update_offset = true;
+    update_reprocessing_transform = true;
     if (processor_type_ == PROCESS_LOCALIZATION)
     {
       localization_pose_set_ = true;
@@ -504,55 +559,12 @@ bool SlamToolbox::addScan(
     exit(-1);
   }
 
+  // if successfully processed, create odom to map transformation
   if(processed)
   {
     scan_holder_->addScan(*scan);
-    const karto::Pose2 corrected_pose = range_scan->GetCorrectedPose();
-
-    // Compute the map->odom transform
-    tf2::Stamped<tf2::Transform> odom_to_map;
-    tf2::Quaternion q(0.,0.,0.,1.0);
-    q.setRPY(0., 0., corrected_pose.GetHeading());
-    tf2::Stamped<tf2::Transform> base_to_map(
-                            tf2::Transform(
-                              q,
-                              tf2::Vector3(corrected_pose.GetX(), 
-                                          corrected_pose.GetY(), 
-                                          0.0)
-                            ).inverse(), 
-                            scan->header.stamp, base_frame_);
-    try
-    {
-      geometry_msgs::TransformStamped base_to_map_msg, odom_to_map_msg;
-      tf2::convert(base_to_map, base_to_map_msg);
-      odom_to_map_msg = tf_->transform(base_to_map_msg, odom_frame_);
-      tf2::convert(odom_to_map_msg, odom_to_map);
-    }
-    catch(tf2::TransformException& e)
-    {
-      ROS_ERROR("Transform from base_link to odom failed: %s", e.what());
-      odom_to_map.setIdentity();
-    }
-
-    {
-      boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      map_to_odom_ = tf2::Transform(tf2::Quaternion( odom_to_map.getRotation() ),
-        tf2::Vector3( odom_to_map.getOrigin() ) ).inverse();
-    }
-
-    // if we're continuing a previous session, we need to
-    // estimate the homogenous transformation between the old and new
-    // odometry frames and transform the new session 
-    // into the older session's frame
-    if (update_offset)
-    {
-      tf2::Transform odom_to_base_serialized = base_to_map.inverse();
-      tf2::Quaternion q1(0.,0.,0.,1.0);
-      q1.setRPY(0., 0., tf2::getYaw(odom_to_base_serialized.getRotation()));
-      odom_to_base_serialized.setRotation(q1);
-      tf2::Transform odom_to_base_current = pose_utils::kartoPose2TfPose(karto_pose);
-      reprocessing_transform_ = odom_to_base_serialized * odom_to_base_current.inverse();
-    }
+    setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
+      scan->header.stamp, update_reprocessing_transform);
 
     // Add the localized range scan to the dataset for memory management
     if (processor_type_ != PROCESS_LOCALIZATION)
@@ -576,7 +588,7 @@ bool SlamToolbox::mapCallback(
 {
   if(map_.map.info.width && map_.map.info.height)
   {
-    boost::mutex::scoped_lock lock(map_mutex_);
+    boost::mutex::scoped_lock lock(mapper_mutex_);
     res = map_;
     return true;
   }
@@ -585,7 +597,7 @@ bool SlamToolbox::mapCallback(
 }
 
 /*****************************************************************************/
-bool SlamToolbox::pauseCallback(
+bool SlamToolbox::interactiveModeCallback(
   slam_toolbox::ToggleInteractive::Request  &req,
   slam_toolbox::ToggleInteractive::Response &resp)
 /*****************************************************************************/
@@ -603,21 +615,10 @@ bool SlamToolbox::pauseCallback(
   publishGraph();
   closure_assistant_->clearMovedNodes();
 
-  if (interactive_mode)
-  {
-    // stop publishing / processing new measurements so we can move things
-    state_.set(PROCESSING, true);
-    state_.set(VISUALIZING_GRAPH, true);
-    nh_.setParam("paused_processing", true);
-  }
-  else
-  {
-    // exiting interactive mode, continue publishing / processing measurements
-    state_.set(VISUALIZING_GRAPH, false);
-    state_.set(PROCESSING, false);
-    nh_.setParam("paused_processing", false);
-  }
-
+  // set state so we don't overwrite changes in rviz while loop closing
+  state_.set(PROCESSING, interactive_mode);
+  state_.set(VISUALIZING_GRAPH, interactive_mode);
+  nh_.setParam("paused_processing", interactive_mode);
   return true;
 }
 
@@ -664,20 +665,12 @@ bool SlamToolbox::isPaused(const PausedApplication& app)
 void SlamToolbox::run()
 /*****************************************************************************/
 {
-  if (!sychronous_)
-  {
-    ROS_DEBUG("Exiting Run thread - asynchronous mode selected.");
-    return;
-  }
-
-  ROS_INFO("Run thread enabled - synchronous mode selected.");
-
   ros::Rate r(100);
   while(ros::ok())
   {
     if (!q_.empty() && !isPaused(PROCESSING))
     {
-      PosedScan scanWithPose = q_.front();
+      PosedScan scan_w_pose = q_.front();
       q_.pop();
 
       if (q_.size() > 10)
@@ -687,7 +680,7 @@ void SlamToolbox::run()
           (int)q_.size());
       }
 
-      addScan(getLaser(scanWithPose.scan), scanWithPose.scan, scanWithPose.pose);
+      addScan(getLaser(scan_w_pose.scan), scan_w_pose);
       continue;
     }
 
@@ -761,7 +754,7 @@ void SlamToolbox::loadSerializedPoseGraph(
   // create a current laser sensor
   karto::LaserRangeFinder* laser =
     dynamic_cast<karto::LaserRangeFinder*>(dataset_->GetObjects()[0]);
-  karto::Sensor* pSensor = dynamic_cast<karto::Sensor *>(laser);
+  karto::Sensor* pSensor = dynamic_cast<karto::Sensor*>(laser);
   if (pSensor)
   {
     karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
@@ -775,7 +768,8 @@ void SlamToolbox::loadSerializedPoseGraph(
       if (scan)
       {
         ROS_INFO("Got scan!");
-        lasers_[laser_frame_] = laser_assistant_->toLaserMetadata(*scan);
+        lasers_[scan->header.frame_id] =
+          laser_assistant_->toLaserMetadata(*scan);
         break;
       }
     }

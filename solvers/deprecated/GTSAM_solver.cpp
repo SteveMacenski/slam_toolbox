@@ -19,33 +19,44 @@ PLUGINLIB_EXPORT_CLASS(solver_plugins::GTSAMSolver, karto::ScanSolver)
 namespace solver_plugins
 {
 
+/*****************************************************************************/
 GTSAMSolver::GTSAMSolver()
+/*****************************************************************************/
 {
   using namespace gtsam;
 
   // add the prior on the first node which is known
-  noiseModel::Diagonal::shared_ptr priorNoise = noiseModel::Diagonal::Sigmas(Vector3(1e-6, 1e-6, 1e-8));
+  noiseModel::Diagonal::shared_ptr priorNoise = 
+    noiseModel::Diagonal::Sigmas(Vector3(1e-6, 1e-6, 1e-8));
   
   graph_.emplace_shared<PriorFactor<Pose2> >(0, Pose2(0, 0, 0), priorNoise);
 
 }
 
+/*****************************************************************************/
 GTSAMSolver::~GTSAMSolver()
+/*****************************************************************************/
 {
   
 }
 
+/*****************************************************************************/
 void GTSAMSolver::Clear()
+/*****************************************************************************/
 {
   corrections_.clear();
 }
 
+/*****************************************************************************/
 const karto::ScanSolver::IdPoseVector& GTSAMSolver::GetCorrections() const
+/*****************************************************************************/
 {
   return corrections_;
 }
 
+/*****************************************************************************/
 void GTSAMSolver::Compute()
+/*****************************************************************************/
 {
   using namespace gtsam;
 
@@ -73,19 +84,20 @@ void GTSAMSolver::Compute()
   for(const Values::ConstFiltered<Pose2>::KeyValuePair& key_value: viewPose2) 
   {
 
-    karto::Pose2 pose(key_value.value.x(), key_value.value.y(), key_value.value.theta());
+    karto::Pose2 pose(key_value.value.x(), key_value.value.y(),
+      key_value.value.theta());
     
     corrections_.push_back(std::make_pair(key_value.key, pose));
 
-    graphNodes_.push_back(Eigen::Vector2d(key_value.value.x(), key_value.value.y()));
-
+    graphNodes_.push_back(Eigen::Vector2d(key_value.value.x(),
+      key_value.value.y()));
   }
-
 }
 
+/*****************************************************************************/
 void GTSAMSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
+/*****************************************************************************/
 {
-  
   using namespace gtsam;
 
   karto::Pose2 odom = pVertex->GetObject()->GetCorrectedPose();
@@ -99,9 +111,10 @@ void GTSAMSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
 
 }
 
+/*****************************************************************************/
 void GTSAMSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
+/*****************************************************************************/
 {
-  
   using namespace gtsam;
 
   // Set source and target
@@ -135,20 +148,24 @@ void GTSAMSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 
   // Add odometry factors
   // Create odometry (Between) factors between consecutive poses
-  graph_.emplace_shared<BetweenFactor<Pose2> >(sourceID, targetID, Pose2(diff.GetX(), diff.GetY(), diff.GetHeading()), model);
+  graph_.emplace_shared<BetweenFactor<Pose2> >(sourceID, targetID,
+    Pose2(diff.GetX(), diff.GetY(), diff.GetHeading()), model);
   
   // Add the constraint to the optimizer
   ROS_DEBUG("[gtsam] Adding Edge from node %d to node %d.", sourceID, targetID);
   
 }
 
-void GTSAMSolver::getGraph(std::vector<Eigen::Vector2d> &nodes) //std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges)
+/*****************************************************************************/
+void GTSAMSolver::getGraph(std::vector<Eigen::Vector2d>& nodes)
+/*****************************************************************************/
 {
   nodes = graphNodes_;
   // using namespace gtsam;
   // double *data1 = new double[3];
   // double *data2 = new double[3];
-  // for (SparseOptimizer::EdgeSet::iterator it = optimizer_.edges().begin(); it != optimizer_.edges().end(); ++it) 
+  // for (SparseOptimizer::EdgeSet::iterator it = 
+  //    optimizer_.edges().begin(); it != optimizer_.edges().end(); ++it) 
   // {
   //   EdgeSE2* e = dynamic_cast<EdgeSE2*>(*it);
   //   if(e) 

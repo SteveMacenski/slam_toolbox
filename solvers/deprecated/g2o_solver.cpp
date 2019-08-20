@@ -29,19 +29,25 @@ typedef g2o::BlockSolver< g2o::BlockSolverTraits<-1, -1> > SlamBlockSolver;
 typedef g2o::LinearSolverCholmod<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
 //typedef g2o::LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
 
+/*****************************************************************************/
 G2OSolver::G2OSolver()
+/*****************************************************************************/
 {
   // Initialize the SparseOptimizer
   auto linearSolver = g2o::make_unique<SlamLinearSolver>();
   linearSolver->setBlockOrdering(false);
-  auto blockSolver = g2o::make_unique<SlamBlockSolver>(std::move(linearSolver));
-  optimizer_.setAlgorithm(new g2o::OptimizationAlgorithmLevenberg(std::move(blockSolver)));
+  auto blockSolver = g2o::make_unique<SlamBlockSolver>(
+    std::move(linearSolver));
+  optimizer_.setAlgorithm(new g2o::OptimizationAlgorithmLevenberg(
+    std::move(blockSolver)));
 
   latestNodeID_ = 0;
   useRobustKernel_ = true;
 }
 
+/*****************************************************************************/
 G2OSolver::~G2OSolver()
+/*****************************************************************************/
 {
   // destroy all the singletons
   g2o::Factory::destroy();
@@ -49,7 +55,9 @@ G2OSolver::~G2OSolver()
   g2o::HyperGraphActionLibrary::destroy();
 }
 
+/*****************************************************************************/
 void G2OSolver::Clear()
+/*****************************************************************************/
 {
   corrections_.clear();
 }
@@ -59,7 +67,9 @@ const karto::ScanSolver::IdPoseVector& G2OSolver::GetCorrections() const
   return corrections_;
 }
 
+/*****************************************************************************/
 void G2OSolver::Compute()
+/*****************************************************************************/
 {
   corrections_.clear();
 
@@ -78,7 +88,8 @@ void G2OSolver::Compute()
   const ros::Time start_time = ros::Time::now();
   optimizer_.initializeOptimization();
   int iter = optimizer_.optimize(500);
-  ROS_INFO("Loop Closure Solve time: %f seconds", (ros::Time::now() - start_time).toSec());
+  ROS_INFO("Loop Closure Solve time: %f seconds",
+    (ros::Time::now() - start_time).toSec());
 
   if (iter <= 0)
   {
@@ -88,7 +99,8 @@ void G2OSolver::Compute()
   
   // Write the result so it can be used by the mapper
   g2o::SparseOptimizer::VertexContainer nodes = optimizer_.activeVertices();
-  for (g2o::SparseOptimizer::VertexContainer::const_iterator n = nodes.begin(); n != nodes.end(); n++)
+  for (g2o::SparseOptimizer::VertexContainer::const_iterator n =
+    nodes.begin(); n != nodes.end(); n++)
   {
     double estimate[3];
     if((*n)->getEstimateData(estimate))
@@ -103,12 +115,15 @@ void G2OSolver::Compute()
   }
 }
 
+/*****************************************************************************/
 void G2OSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
+/*****************************************************************************/
 {
   
   karto::Pose2 odom = pVertex->GetObject()->GetCorrectedPose();
   g2o::VertexSE2* poseVertex = new g2o::VertexSE2;
-  poseVertex->setEstimate(g2o::SE2(odom.GetX(), odom.GetY(), odom.GetHeading()));
+  poseVertex->setEstimate(g2o::SE2(odom.GetX(), odom.GetY(),
+    odom.GetHeading()));
   poseVertex->setId(pVertex->GetObject()->GetUniqueId());
   optimizer_.addVertex(poseVertex);
   latestNodeID_ = pVertex->GetObject()->GetUniqueId();
@@ -116,7 +131,9 @@ void G2OSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
   ROS_DEBUG("[g2o] Adding node %d.", pVertex->GetObject()->GetUniqueId());
 }
 
+/*****************************************************************************/
 void G2OSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
+/*****************************************************************************/
 {
   // Create a new edge
   g2o::EdgeSE2* odometry = new g2o::EdgeSE2;
@@ -171,10 +188,13 @@ void G2OSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   optimizer_.addEdge(odometry);
 }
 
-void G2OSolver::getGraph(std::vector<Eigen::Vector2d> &nodes) //std::vector<std::pair<Eigen::Vector2d, Eigen::Vector2d> > &edges)
+/*****************************************************************************/
+void G2OSolver::getGraph(std::vector<Eigen::Vector2d>& nodes)
+/*****************************************************************************/
 {
   double *data = new double[3];
-  for (g2o::SparseOptimizer::VertexIDMap::iterator it = optimizer_.vertices().begin(); it != optimizer_.vertices().end(); ++it) 
+  for (g2o::SparseOptimizer::VertexIDMap::iterator it = 
+    optimizer_.vertices().begin(); it != optimizer_.vertices().end(); ++it) 
   {
     g2o::VertexSE2* v = dynamic_cast<g2o::VertexSE2*>(it->second); 
     if(v) 
@@ -192,7 +212,8 @@ void G2OSolver::getGraph(std::vector<Eigen::Vector2d> &nodes) //std::vector<std:
 
   // double *data1 = new double[3];
   // double *data2 = new double[3];
-  // for (SparseOptimizer::EdgeSet::iterator it = optimizer_.edges().begin(); it != optimizer_.edges().end(); ++it) 
+  // for (SparseOptimizer::EdgeSet::iterator it = optimizer_.edges().begin(); 
+  //    it != optimizer_.edges().end(); ++it) 
   // {
   //   EdgeSE2* e = dynamic_cast<EdgeSE2*>(*it);
   //   if(e) 

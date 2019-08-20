@@ -22,7 +22,6 @@ laser_frame: base_laser_link
 mode: mapping #localization
 debug_logging: false
 throttle_scans: 1
-publish_occupancy_map: true
 transform_publish_period: 0.02 #if 0 never publishes odometry
 map_update_interval: 10.0
 resolution: 0.05

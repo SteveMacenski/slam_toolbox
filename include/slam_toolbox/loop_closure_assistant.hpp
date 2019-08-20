@@ -42,11 +42,11 @@ public:
   LoopClosureAssistant(ros::NodeHandle& node, karto::Mapper* mapper, laser_utils::ScanHolder* scan_holder, std::function<void(void)> publishGraph);
 
   void clearMovedNodes();
-  void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback);
+  void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
 private:
-  bool manualLoopClosureCallback(slam_toolbox::LoopClosure::Request  &req, slam_toolbox::LoopClosure::Response &resp);
-  bool clearChangesCallback(slam_toolbox::Clear::Request  &req, slam_toolbox::Clear::Response &resp);
+  bool manualLoopClosureCallback(slam_toolbox::LoopClosure::Request& req, slam_toolbox::LoopClosure::Response& resp);
+  bool clearChangesCallback(slam_toolbox::Clear::Request& req, slam_toolbox::Clear::Response& resp);
   void moveNode(const int& id, const Eigen::Vector3d& pose);
   void addMovedNodes(const int& id, Eigen::Vector3d vec);
 

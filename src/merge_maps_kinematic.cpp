@@ -55,8 +55,8 @@ MergeMapsKinematic::~MergeMapsKinematic()
 
 /*****************************************************************************/
 bool MergeMapsKinematic::addSubmapCallback(
-  slam_toolbox::AddSubmap::Request &req,
-  slam_toolbox::AddSubmap::Response &resp)
+  slam_toolbox::AddSubmap::Request& req,
+  slam_toolbox::AddSubmap::Response& resp)
 /*****************************************************************************/
 {
   std::unique_ptr<karto::Mapper> mapper = std::make_unique<karto::Mapper>();
@@ -92,7 +92,7 @@ bool MergeMapsKinematic::addSubmapCallback(
   try
   {
     kartoToROSOccupancyGrid(scans, map);
-  } catch (const karto::Exception & e)
+  } catch (const karto::Exception& e)
   {
     ROS_WARN("Failed to build grid to add submap, Exception: %s",
       e.GetErrorMessage().c_str());
@@ -119,13 +119,16 @@ bool MergeMapsKinematic::addSubmapCallback(
   msg.header.stamp = ros::Time::now();
   tfB_->sendTransform(msg);
 
-  submap_marker_transform_[num_submaps_]=tf2::Transform(tf2::Quaternion(0.,0.,0.,1.0),
+  submap_marker_transform_[num_submaps_] = 
+    tf2::Transform(tf2::Quaternion(0.,0.,0.,1.0),
     tf2::Vector3(0,0,0)); //no initial correction -- identity mat
-  submap_locations_[num_submaps_] = Eigen::Vector3d(transform.getOrigin().getX(),
+  submap_locations_[num_submaps_] = 
+    Eigen::Vector3d(transform.getOrigin().getX(),
     transform.getOrigin().getY(),0.);
 
   // create an interactive marker for the base of this frame and attach it
-  visualization_msgs::Marker m = vis_utils::toMarker("map", "merge_maps_tool", 2.0);
+  visualization_msgs::Marker m = 
+    vis_utils::toMarker("map", "merge_maps_tool", 2.0);
   m.pose.position.x =  transform.getOrigin().getX();
   m.pose.position.y =  transform.getOrigin().getY();
   m.id = num_submaps_;
@@ -147,14 +150,14 @@ karto::Pose2 MergeMapsKinematic::applyCorrection(const
   const tf2::Transform& submap_correction)
 /*****************************************************************************/
 {
-  tf2::Transform poseTf, poseCorr;
+  tf2::Transform pose_tf, pose_corr;
   tf2::Quaternion q(0.,0.,0.,1.0);
   q.setRPY(0., 0., pose.GetHeading());
-  poseTf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
-  poseTf.setRotation(q);
-  poseCorr = submap_correction * poseTf;
-  return karto::Pose2(poseCorr.getOrigin().x(), poseCorr.getOrigin().y(),
-    tf2::getYaw(poseCorr.getRotation()));
+  pose_tf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
+  pose_tf.setRotation(q);
+  pose_corr = submap_correction * pose_tf;
+  return karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(),
+    tf2::getYaw(pose_corr.getRotation()));
 }
 
 /*****************************************************************************/
@@ -163,86 +166,97 @@ karto::Vector2<kt_double> MergeMapsKinematic::applyCorrection(const
   const tf2::Transform& submap_correction)
 /*****************************************************************************/
 {
-  tf2::Transform poseTf, poseCorr;
-  poseTf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
-  poseTf.setRotation(tf2::Quaternion(0.,0.,0.,1.0));
-  poseCorr = submap_correction * poseTf;
-  return karto::Vector2<kt_double>(poseCorr.getOrigin().x(), poseCorr.getOrigin().y());
+  tf2::Transform pose_tf, pose_corr;
+  pose_tf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
+  pose_tf.setRotation(tf2::Quaternion(0.,0.,0.,1.0));
+  pose_corr = submap_correction * pose_tf;
+  return karto::Vector2<kt_double>(pose_corr.getOrigin().x(),
+    pose_corr.getOrigin().y());
+}
+
+/*****************************************************************************/
+void MergeMapsKinematic::transformScan(LocalizedRangeScansIt iter, tf2::Transform& submap_correction)
+/*****************************************************************************/
+{
+  // TRANSFORM BARYCENTERR POSE
+  const karto::Pose2 bary_center_pose = (*iter)->GetBarycenterPose();
+  auto bary_center_pose_corr = 
+    applyCorrection(bary_center_pose, submap_correction);
+  (*iter)->SetBarycenterPose(bary_center_pose_corr);
+
+  // TRANSFORM BOUNDING BOX POSITIONS
+  karto::BoundingBox2 bbox = (*iter)->GetBoundingBox();
+  const karto::Vector2<kt_double> bbox_min_corr = 
+    applyCorrection(bbox.GetMinimum(), submap_correction);
+  bbox.SetMinimum(bbox_min_corr);
+  const karto::Vector2<kt_double> bbox_max_corr = 
+    applyCorrection(bbox.GetMaximum(), submap_correction);
+  bbox.SetMaximum(bbox_max_corr);
+  (*iter)->SetBoundingBox(bbox);
+
+  // TRANSFORM UNFILTERED POINTS USED
+  karto::PointVectorDouble UPR_vec = (*iter)->GetPointReadings();
+  for(karto::PointVectorDouble::iterator it_upr = UPR_vec.begin();
+    it_upr != UPR_vec.end(); ++it_upr)
+  {
+    const karto::Vector2<kt_double> upr_corr = applyCorrection(
+      *it_upr, submap_correction);
+    it_upr->SetX(upr_corr.GetX());
+    it_upr->SetY(upr_corr.GetY());
+  }
+  (*iter)->SetPointReadings(UPR_vec);
+
+  // TRANSFORM CORRECTED POSE
+  const karto::Pose2 corrected_pose = (*iter)->GetCorrectedPose();
+  karto::Pose2 karto_robot_pose_corr = applyCorrection(
+    corrected_pose, submap_correction);
+  (*iter)->SetCorrectedPose(karto_robot_pose_corr);
+  kt_bool dirty = false;
+  (*iter)->SetIsDirty(dirty);
+
+  // TRANSFORM ODOM POSE
+  karto::Pose2 odom_pose = (*iter)->GetOdometricPose();
+  karto::Pose2 karto_robot_pose_odom = applyCorrection(
+    odom_pose, submap_correction);
+  (*iter)->SetOdometricPose(karto_robot_pose_odom);
 }
 
 /*****************************************************************************/
 bool MergeMapsKinematic::mergeMapCallback(
-  slam_toolbox::MergeMaps::Request &req,
-  slam_toolbox::MergeMaps::Response &resp)
+  slam_toolbox::MergeMaps::Request& req,
+  slam_toolbox::MergeMaps::Response& resp)
 /*****************************************************************************/
 {
   ROS_INFO("Merging maps!");
 
+  // transform all the scans into the new global map coordinates 
   int id = 0;
   karto::LocalizedRangeScanVector transformed_scans;
-  karto::LocalizedRangeScan* pScan;
-
-  for(localized_range_scans_vec_it it_LRV = scans_vec_.begin();
+  for(LocalizedRangeScansVecIt it_LRV = scans_vec_.begin();
     it_LRV != scans_vec_.end(); ++it_LRV)
   {
     id++;
-    for (localized_range_scans_it iter = it_LRV->begin();
+    for (LocalizedRangeScansIt iter = it_LRV->begin();
       iter != it_LRV->end(); ++iter)
     {
-      pScan = *iter;
-      tf2::Transform submapCorrection = submap_marker_transform_[id];
-
-      // TRANSFORM BARYCENTERR POSE
-      const karto::Pose2 baryCenterPose = pScan->GetBarycenterPose();
-      auto baryCenterPoseCorr = applyCorrection(baryCenterPose, submapCorrection);
-      pScan->SetBarycenterPose(baryCenterPoseCorr);
-
-      // TRANSFORM BOUNDING BOX POSITIONS
-      karto::BoundingBox2 bbox = pScan->GetBoundingBox();
-      const karto::Vector2<kt_double> bboxMinCorr = applyCorrection(bbox.GetMinimum(),
-        submapCorrection);
-      bbox.SetMinimum(bboxMinCorr);
-      const karto::Vector2<kt_double> bboxMaxCorr = applyCorrection(bbox.GetMaximum(),
-        submapCorrection);
-      bbox.SetMaximum(bboxMaxCorr);
-      pScan->SetBoundingBox(bbox);
-
-      // TRANSFORM UNFILTERED POINTS USED
-      karto::PointVectorDouble UPRVec = pScan->GetPointReadings();
-      for(karto::PointVectorDouble::iterator itUpr = UPRVec.begin();
-        itUpr != UPRVec.end(); ++itUpr)
-      {
-        const karto::Vector2<kt_double> uprCorr = applyCorrection(*itUpr, submapCorrection);
-        itUpr->SetX(uprCorr.GetX());
-        itUpr->SetY(uprCorr.GetY());
-      }
-      pScan->SetPointReadings(UPRVec);
-
-      // TRANSFORM CORRECTED POSE
-      const karto::Pose2 correctedPose = pScan->GetCorrectedPose();
-      karto::Pose2 kartoRobotPoseCorr = applyCorrection(correctedPose, submapCorrection);
-      pScan->SetCorrectedPose(kartoRobotPoseCorr);
-      kt_bool rIsDirty = false;
-      pScan->SetIsDirty(rIsDirty);
-
-      // TRANSFORM ODOM POSE
-      karto::Pose2 odomPose = pScan->GetOdometricPose();
-      karto::Pose2 kartoRobotPoseOdom = applyCorrection(odomPose, submapCorrection);
-      pScan->SetOdometricPose(kartoRobotPoseOdom);
-      transformed_scans.push_back(pScan);
+      tf2::Transform submap_correction = submap_marker_transform_[id];
+      transformScan(iter, submap_correction);
+      transformed_scans.push_back((*iter));
     }
   }
 
+  // create the map
   nav_msgs::GetMap::Response map;
   try
   {
     kartoToROSOccupancyGrid(transformed_scans, map);
-  } catch (const karto::Exception & e)
+  } catch (const karto::Exception& e)
   {
     ROS_WARN("Failed to build grid to merge maps together, Exception: %s",
       e.GetErrorMessage().c_str());
   }
 
+  // publish
   map.map.header.stamp = ros::Time::now();
   map.map.header.frame_id = "map";
   sstS_[0].publish(map.map);
@@ -276,20 +290,17 @@ void MergeMapsKinematic::processInteractiveFeedback(const
   visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 /*****************************************************************************/
 {
+  const int id = std::stoi(feedback->marker_name,nullptr,10);
+
   if (feedback->event_type ==
       visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP && 
       feedback->mouse_point_valid)
   {
-    // we offset by 1
-    const int id = std::stoi(feedback->marker_name,nullptr,10);
-
-    // get yaw
-    tfScalar yaw, pitch, roll;
+    tfScalar yaw = tf2::getYaw(feedback->pose.orientation);
     tf2::Quaternion quat(0.,0.,0.,1.0);
     tf2::convert(feedback->pose.orientation, quat); // relative
-    tf2::Matrix3x3 mat(quat);
-    mat.getRPY(roll, pitch, yaw);
-    tf2::Transform previous_submap_correction ;
+
+    tf2::Transform previous_submap_correction;
     previous_submap_correction.setIdentity();
     previous_submap_correction.setOrigin(tf2::Vector3(submap_locations_[id](0),
       submap_locations_[id](1), 0.));
@@ -319,14 +330,9 @@ void MergeMapsKinematic::processInteractiveFeedback(const
   if (feedback->event_type ==
     visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
   {
-    const int id = std::stoi(feedback->marker_name,nullptr,10);
-
-    // get yaw
-    tfScalar yaw, pitch, roll;
+    tfScalar yaw = tf2::getYaw(feedback->pose.orientation);
     tf2::Quaternion quat(0.,0.,0.,1.0);
     tf2::convert(feedback->pose.orientation, quat); // relative
-    tf2::Matrix3x3 mat(quat);
-    mat.getRPY(roll, pitch, yaw);
 
     // add the map_N frame there
     tf2::Transform new_submap_location;

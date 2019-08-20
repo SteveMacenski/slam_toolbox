@@ -25,18 +25,25 @@ PLUGINLIB_EXPORT_CLASS(solver_plugins::SpaSolver, karto::ScanSolver)
 
 namespace solver_plugins
 {
+typedef std::vector<sba::Node2d, Eigen::aligned_allocator<sba::Node2d> > NodeVector;
 
+/*****************************************************************************/
 SpaSolver::SpaSolver()
+/*****************************************************************************/
 {
 
 }
 
+/*****************************************************************************/
 SpaSolver::~SpaSolver()
+/*****************************************************************************/
 {
 
 }
 
+/*****************************************************************************/
 void SpaSolver::Clear()
+/*****************************************************************************/
 {
   corrections.clear();
 }
@@ -46,16 +53,16 @@ const karto::ScanSolver::IdPoseVector& SpaSolver::GetCorrections() const
   return corrections;
 }
 
+/*****************************************************************************/
 void SpaSolver::Compute()
+/*****************************************************************************/
 {
   corrections.clear();
 
-  typedef std::vector<sba::Node2d, Eigen::aligned_allocator<sba::Node2d> > NodeVector;
-
-
   const ros::Time start_time = ros::Time::now();
   m_Spa.doSPA(40, 1.0e-4, 1);
-  ROS_INFO("Loop Closure Solve time: %f seconds", (ros::Time::now() - start_time).toSec());
+  ROS_INFO("Loop Closure Solve time: %f seconds",
+    (ros::Time::now() - start_time).toSec());
 
   NodeVector nodes = m_Spa.getNodes();
   forEach(NodeVector, &nodes)
@@ -65,14 +72,18 @@ void SpaSolver::Compute()
   }
 }
 
+/*****************************************************************************/
 void SpaSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
+/*****************************************************************************/
 {
   karto::Pose2 pose = pVertex->GetObject()->GetCorrectedPose();
   Eigen::Vector3d vector(pose.GetX(), pose.GetY(), pose.GetHeading());
   m_Spa.addNode(vector, pVertex->GetObject()->GetUniqueId());
 }
 
+/*****************************************************************************/
 void SpaSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
+/*****************************************************************************/
 {
   karto::LocalizedRangeScan* pSource = pEdge->GetSource()->GetObject();
   karto::LocalizedRangeScan* pTarget = pEdge->GetTarget()->GetObject();
@@ -93,7 +104,9 @@ void SpaSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   m_Spa.addConstraint(pSource->GetUniqueId(), pTarget->GetUniqueId(), mean, m);
 }
 
-void SpaSolver::getGraph(std::vector<Eigen::Vector2d> &g)
+/*****************************************************************************/
+void SpaSolver::getGraph(std::vector<Eigen::Vector2d>& g)
+/*****************************************************************************/
 {
   std::vector<float> raw_graph;
   m_Spa.getGraph(raw_graph);

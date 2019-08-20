@@ -21,25 +21,32 @@
 namespace map_saver
 {
 
+/*****************************************************************************/
 MapSaver::MapSaver(ros::NodeHandle & nh, const std::string& map_name)
 : nh_(nh), map_name_(map_name), received_map_(false)
+/*****************************************************************************/
 {
   server_ = nh_.advertiseService("save_map", &MapSaver::saveMapCallback, this);
   sub_ = nh_.subscribe(map_name_, 1, &MapSaver::mapCallback, this);
 }
 
+/*****************************************************************************/
 void MapSaver::mapCallback(const nav_msgs::OccupancyGrid& msg)
+/*****************************************************************************/
 {
   received_map_ = true;
 }
 
+/*****************************************************************************/
 bool MapSaver::saveMapCallback(
   slam_toolbox::SaveMap::Request& req,
   slam_toolbox::SaveMap::Response& resp)
+/*****************************************************************************/
 {
   if (!received_map_)
   {
-    ROS_WARN("Map Saver: Cannot save map, no map yet received on topic %s.", map_name_.c_str());
+    ROS_WARN("Map Saver: Cannot save map, no map yet received on topic %s.",
+      map_name_.c_str());
     return false;
   }
 

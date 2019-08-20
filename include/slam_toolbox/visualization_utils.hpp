@@ -49,7 +49,7 @@ inline visualization_msgs::Marker toMarker(
 }
 
 inline visualization_msgs::InteractiveMarker toInteractiveMarker(
-  visualization_msgs::Marker & marker,
+  visualization_msgs::Marker& marker,
   const double& scale)
 {
   // marker basics
