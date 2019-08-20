@@ -37,9 +37,9 @@ namespace toolbox_types
 {
 
 // object containing a scan pointer and a position
-struct posedScan
+struct PosedScan
 {
-  posedScan(sensor_msgs::LaserScan::ConstPtr scan_in, karto::Pose2 pose_in) :
+  PosedScan(sensor_msgs::LaserScan::ConstPtr scan_in, karto::Pose2 pose_in) :
              scan(scan_in), pose(pose_in) 
   {
   }
@@ -62,6 +62,32 @@ enum ProcessType
   PROCESS_FIRST_NODE = 1,
   PROCESS_NEAR_REGION = 2,
   PROCESS_LOCALIZATION = 3
+};
+
+// Pause state
+struct PausedState
+{
+  PausedState()
+  {
+    state_map_[NEW_MEASUREMENTS] = false;
+    state_map_[VISUALIZING_GRAPH] = false;
+    state_map_[PROCESSING] = false;
+  };
+
+  void set(const PausedApplication& app, const bool& state)
+  {
+    boost::mutex::scoped_lock lock(pause_mutex_);
+    state_map_[app] = state;
+  };
+
+  bool get(const PausedApplication& app)
+  {
+    boost::mutex::scoped_lock lock(pause_mutex_);
+    return state_map_[app];
+  };
+
+  std::map<PausedApplication, bool> state_map_;
+  boost::mutex pause_mutex_;
 };
 
 typedef std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> VerticeMap;

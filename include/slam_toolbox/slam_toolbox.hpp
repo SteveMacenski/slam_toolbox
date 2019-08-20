@@ -139,9 +139,10 @@ private:
   // Internal state
   std::vector<std::unique_ptr<boost::thread> > threads_;
   tf2::Transform map_to_odom_;
-  bool pause_graph_, pause_processing_, pause_new_measurements_, interactive_mode_, localization_pose_set_;
-  std::queue<posedScan> q_;
-  boost::mutex map_mutex_, pause_mutex_, map_to_odom_mutex_, mapper_mutex_, interactive_mutex_;
+  bool interactive_mode_, localization_pose_set_;
+  std::queue<PosedScan> q_;
+  boost::mutex map_mutex_, map_to_odom_mutex_, mapper_mutex_, interactive_mutex_;
+  PausedState state_;
 
   // visualization
   std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
