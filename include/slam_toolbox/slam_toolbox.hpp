@@ -37,7 +37,6 @@
 #include "slam_toolbox/laser_utils.hpp"
 #include "slam_toolbox/pose_utils.hpp"
 #include "slam_toolbox/map_saver.hpp"
-#include "slam_toolbox/visualization_utils.hpp"
 #include "slam_toolbox/loop_closure_assistant.hpp"
 
 #include <string>
@@ -90,7 +89,6 @@ private:
     karto::Pose2& karto_pose);
   bool addScan(karto::LaserRangeFinder* laser, PosedScan& scanWPose);
   bool updateMap();
-  void publishGraph();
   bool shouldProcessScan(const sensor_msgs::LaserScan::ConstPtr& scan, const karto::Pose2& pose);
   tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2& pose,
     const karto::Pose2& karto_pose, const ros::Time& t, const bool& update_reprocessing_transform);
@@ -99,8 +97,6 @@ private:
   bool isPaused(const PausedApplication& app);
   bool pauseNewMeasurementsCallback(slam_toolbox::Pause::Request& req,
     slam_toolbox::Pause::Response& resp);
-  bool interactiveModeCallback(slam_toolbox::ToggleInteractive::Request& req,
-    slam_toolbox::ToggleInteractive::Response& resp);
 
   // ROS-y-ness
   ros::NodeHandle nh_;
@@ -109,8 +105,8 @@ private:
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   std::unique_ptr<message_filters::Subscriber<sensor_msgs::LaserScan> > scan_filter_sub_;
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::LaserScan> > scan_filter_;
-  ros::Publisher sst_, sstm_, marker_publisher_;
-  ros::ServiceServer ssMap_, ssClear_, ssInteractive_, ssPause_measurements_, ssSerialize_, ssLoadMap_;
+  ros::Publisher sst_, sstm_;
+  ros::ServiceServer ssMap_, ssClear_, ssPause_measurements_, ssSerialize_, ssLoadMap_;
   ros::Subscriber localization_pose_sub_;
 
   // Storage for ROS parameters
@@ -135,17 +131,14 @@ private:
   // Internal state
   std::vector<std::unique_ptr<boost::thread> > threads_;
   tf2::Transform map_to_odom_;
-  bool interactive_mode_, localization_pose_set_;
+  bool localization_pose_set_;
   std::queue<PosedScan> q_;
-  boost::mutex map_to_odom_mutex_, mapper_mutex_, interactive_mutex_;
+  boost::mutex map_to_odom_mutex_, mapper_mutex_;
   PausedState state_;
   nav_msgs::GetMap::Response map_;
   ProcessType processor_type_;
   geometry_msgs::Pose2D process_near_pose_;
   tf2::Transform reprocessing_transform_;
-
-  // visualization
-  std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
 
   // pluginlib
   pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;

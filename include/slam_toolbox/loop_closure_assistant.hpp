@@ -32,33 +32,43 @@
 #include "karto_sdk/Mapper.h"
 #include "slam_toolbox/toolbox_types.hpp"
 #include "slam_toolbox/laser_utils.hpp"
+#include "slam_toolbox/visualization_utils.hpp"
 
 namespace loop_closure_assistant
 {
 
+using namespace ::toolbox_types;
+
 class LoopClosureAssistant
 {
 public:
-  LoopClosureAssistant(ros::NodeHandle& node, karto::Mapper* mapper, laser_utils::ScanHolder* scan_holder, std::function<void(void)> publishGraph);
+  LoopClosureAssistant(ros::NodeHandle& node, karto::Mapper* mapper, laser_utils::ScanHolder* scan_holder, PausedState& state);
 
   void clearMovedNodes();
   void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  void publishGraph();
 
 private:
   bool manualLoopClosureCallback(slam_toolbox::LoopClosure::Request& req, slam_toolbox::LoopClosure::Response& resp);
   bool clearChangesCallback(slam_toolbox::Clear::Request& req, slam_toolbox::Clear::Response& resp);
+  bool interactiveModeCallback(slam_toolbox::ToggleInteractive::Request  &req, slam_toolbox::ToggleInteractive::Response &resp);
   void moveNode(const int& id, const Eigen::Vector3d& pose);
   void addMovedNodes(const int& id, Eigen::Vector3d vec);
 
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
-  std::unique_ptr<laser_utils::ScanHolder> scan_holder_;
-  ros::Publisher scan_publisher_;
-  ros::ServiceServer ssClear_manual_, ssLoopClosure_;
+  laser_utils::ScanHolder* scan_holder_;
+  ros::Publisher scan_publisher_, marker_publisher_;
+  ros::ServiceServer ssClear_manual_, ssLoopClosure_, ssInteractive_;
   boost::mutex moved_nodes_mutex_;
   std::map<int, Eigen::Vector3d> moved_nodes_;
   karto::Mapper* mapper_;
   karto::ScanSolver* solver_;
-  std::function<void(void)> pubGraph_;
+  std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
+  boost::mutex interactive_mutex_;
+  bool interactive_mode_;
+  ros::NodeHandle& nh_;
+  std::string map_frame_;
+  PausedState& state_;
 };
 
 }  // end namespace

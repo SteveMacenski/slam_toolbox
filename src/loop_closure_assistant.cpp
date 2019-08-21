@@ -26,15 +26,29 @@ LoopClosureAssistant::LoopClosureAssistant(
   ros::NodeHandle& node,
   karto::Mapper* mapper,
   laser_utils::ScanHolder* scan_holder,
-  std::function<void(void)> publishGraph)
-: mapper_(mapper), pubGraph_(publishGraph), scan_holder_(scan_holder)
+  PausedState& state)
+: mapper_(mapper), scan_holder_(scan_holder),
+  interactive_mode_(false), nh_(node), state_(state)
 /*****************************************************************************/
 {
+  node.setParam("paused_processing", false);
   tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>();
-  ssClear_manual_ = node.advertiseService("clear_changes", &LoopClosureAssistant::clearChangesCallback, this);
-  ssLoopClosure_ = node.advertiseService("manual_loop_closure", &LoopClosureAssistant::manualLoopClosureCallback, this);
-  scan_publisher_ = node.advertise<sensor_msgs::LaserScan>("karto_scan_visualization",10);
+  ssClear_manual_ = node.advertiseService("clear_changes",
+    &LoopClosureAssistant::clearChangesCallback, this);
+  ssLoopClosure_ = node.advertiseService("manual_loop_closure",
+    &LoopClosureAssistant::manualLoopClosureCallback, this);
+  scan_publisher_ = node.advertise<sensor_msgs::LaserScan>(
+    "karto_scan_visualization",10);
   solver_ = mapper_->getScanSolver();
+  interactive_server_ =
+    std::make_unique<interactive_markers::InteractiveMarkerServer>(
+    "slam_toolbox","",true);
+  ssInteractive_ = node.advertiseService("toggle_interactive_mode",
+    &LoopClosureAssistant::interactiveModeCallback,this);
+  node.setParam("interactive_mode", interactive_mode_);
+  marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>(
+    "karto_graph_visualization",1);
+  node.param("map_frame", map_frame_, std::string("map"));
 }
 
 /*****************************************************************************/
@@ -98,6 +112,56 @@ void LoopClosureAssistant::processInteractiveFeedback(const
 }
 
 /*****************************************************************************/
+void LoopClosureAssistant::publishGraph()
+/*****************************************************************************/
+{
+  interactive_server_->clear();
+  std::unordered_map<int, Eigen::Vector3d>* graph = solver_->getGraph();
+
+  if (graph->size() == 0)
+  {
+    return;
+  }
+
+  ROS_DEBUG("Graph size: %i",(int)graph->size());
+  bool interactive_mode = false;
+  {
+    boost::mutex::scoped_lock lock(interactive_mutex_);
+    interactive_mode = interactive_mode_;
+  }
+
+  visualization_msgs::MarkerArray marray;
+  visualization_msgs::Marker m = vis_utils::toMarker(map_frame_,
+    "slam_toolbox", 0.1);
+
+  for (ConstGraphIterator it = graph->begin(); it != graph->end(); ++it)
+  {
+    m.id = it->first + 1;
+    m.pose.position.x = it->second(0);
+    m.pose.position.y = it->second(1);
+
+    if (interactive_mode)
+    {
+      visualization_msgs::InteractiveMarker int_marker =
+        vis_utils::toInteractiveMarker(m, 0.3);
+      interactive_server_->insert(int_marker,
+        boost::bind(
+        &LoopClosureAssistant::processInteractiveFeedback,
+        this, _1));
+    }
+    else
+    {
+      marray.markers.push_back(m);
+    }
+  }
+
+  // if disabled, clears out old markers
+  interactive_server_->applyChanges();
+  marker_publisher_.publish(marray);
+  return;
+}
+
+/*****************************************************************************/
 bool LoopClosureAssistant::manualLoopClosureCallback(
   slam_toolbox::LoopClosure::Request& req,
   slam_toolbox::LoopClosure::Response& resp)
@@ -127,8 +191,34 @@ bool LoopClosureAssistant::manualLoopClosureCallback(
   mapper_->CorrectPoses();
 
   // update visualization and clear out nodes completed
-  pubGraph_();  
+  publishGraph();  
   clearMovedNodes();
+  return true;
+}
+
+/*****************************************************************************/
+bool LoopClosureAssistant::interactiveModeCallback(
+  slam_toolbox::ToggleInteractive::Request  &req,
+  slam_toolbox::ToggleInteractive::Response &resp)
+/*****************************************************************************/
+{
+  bool interactive_mode;
+  {
+    boost::mutex::scoped_lock lock_i(interactive_mutex_);
+    interactive_mode_ = !interactive_mode_;   
+    interactive_mode = interactive_mode_;
+    nh_.setParam("interactive_mode", interactive_mode_);
+  }
+
+  ROS_INFO("SlamToolbox: Toggling %s interactive mode.", 
+    interactive_mode ? "on" : "off");
+  publishGraph();
+  clearMovedNodes();
+
+  // set state so we don't overwrite changes in rviz while loop closing
+  state_.set(PROCESSING, interactive_mode);
+  state_.set(VISUALIZING_GRAPH, interactive_mode);
+  nh_.setParam("paused_processing", interactive_mode);
   return true;
 }
 
@@ -147,7 +237,7 @@ bool LoopClosureAssistant::clearChangesCallback(
 /*****************************************************************************/
 {
   ROS_INFO("LoopClosureAssistant: Clearing manual loop closure nodes.");
-  pubGraph_();
+  publishGraph();
   clearMovedNodes();
   return true;
 }
