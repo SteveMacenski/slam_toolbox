@@ -739,14 +739,21 @@ void SlamToolbox::loadSerializedPoseGraph(
 
   mapper->SetScanSolver(solver_.get());
 
+
   // move the memory to our working dataset
-  mapper_.reset(dynamic_cast<mapper_utils::SMapper*>(mapper.get()));
-  dataset_.reset();
-  dataset_.swap(dataset);
+  mapper_.reset(static_cast<mapper_utils::SMapper*>(mapper.release()));
+  dataset_.reset(dataset.release());
+
+  if (!mapper_)
+  {
+    ROS_FATAL("loadSerializedPoseGraph: Could not properly load "
+      "a valid mapping object. Did you modify something by hand?");
+    exit(-1);
+  }
 
   if (dataset_->GetObjects().size() < 1)
   {
-    ROS_FATAL("DeserializePoseGraph: Cannot deserialize "
+    ROS_FATAL("loadSerializedPoseGraph: Cannot deserialize "
       "dataset with no laser objects.");
     exit(-1);
   }
