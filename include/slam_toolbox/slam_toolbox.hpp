@@ -121,7 +121,7 @@ private:
   bool first_measurement_, sychronous_;
 
   // Book keeping
-  std::unique_ptr<karto::Mapper> mapper_;
+  std::unique_ptr<mapper_utils::SMapper> mapper_;
   std::unique_ptr<karto::Dataset> dataset_;
   std::map<std::string, laser_utils::LaserMetadata> lasers_;
 

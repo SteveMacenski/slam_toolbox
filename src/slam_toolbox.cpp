@@ -40,7 +40,7 @@ SlamToolbox::SlamToolbox()
     std::make_unique<interactive_markers::InteractiveMarkerServer>(
     "slam_toolbox","",true);
 
-  mapper_ = std::make_unique<karto::Mapper>();
+  mapper_ = std::make_unique<mapper_utils::SMapper>();
   dataset_ = std::make_unique<karto::Dataset>();
 
   setParams(private_nh);
@@ -151,7 +151,7 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh_)
     }
   }
 
-  mapper_utils::setMapperParams(private_nh_, mapper_.get());
+  mapper_->configure(private_nh_);
   minimum_travel_distance_ = mapper_->getParamMinimumTravelDistance();
 
   nh_.setParam("paused_processing", false);
@@ -739,9 +739,8 @@ void SlamToolbox::loadSerializedPoseGraph(
   mapper->SetScanSolver(solver_.get());
 
   // move the memory to our working dataset
-  mapper_.reset();
+  mapper_.reset(dynamic_cast<mapper_utils::SMapper*>(mapper.get()));
   dataset_.reset();
-  mapper_.swap(mapper);
   dataset_.swap(dataset);
 
   if (dataset_->GetObjects().size() < 1)
