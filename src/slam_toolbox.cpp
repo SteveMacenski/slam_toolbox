@@ -28,7 +28,6 @@ namespace slam_toolbox
 /*****************************************************************************/
 SlamToolbox::SlamToolbox()
 : solver_loader_("slam_toolbox", "karto::ScanSolver"),
-  interactive_mode_(false),
   processor_type_(PROCESS),
   localization_pose_set_(false),
   first_measurement_(true)
@@ -36,10 +35,6 @@ SlamToolbox::SlamToolbox()
 {
   ros::NodeHandle private_nh("~");
   nh_ = private_nh;
-
-  interactive_server_ =
-    std::make_unique<interactive_markers::InteractiveMarkerServer>(
-    "slam_toolbox","",true);
 
   mapper_ = std::make_unique<mapper_utils::SMapper>();
   dataset_ = std::make_unique<karto::Dataset>();
@@ -56,8 +51,7 @@ SlamToolbox::SlamToolbox()
   map_saver_ = std::make_unique<map_saver::MapSaver>(nh_, map_name_);
   closure_assistant_ =
     std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
-    nh_, mapper_.get(), scan_holder_.get(),
-    std::bind(&SlamToolbox::publishGraph, this));
+    nh_, mapper_.get(), scan_holder_.get(), state_);
 
   reprocessing_transform_.setIdentity();
 
@@ -120,30 +114,30 @@ void SlamToolbox::setSolver(ros::NodeHandle& private_nh_)
 }
 
 /*****************************************************************************/
-void SlamToolbox::setParams(ros::NodeHandle& private_nh_)
+void SlamToolbox::setParams(ros::NodeHandle& private_nh)
 /*****************************************************************************/
 {
   map_to_odom_.setIdentity();
-  private_nh_.param("sychronous", sychronous_, true);
-  private_nh_.param("odom_frame", odom_frame_, std::string("odom"));
-  private_nh_.param("map_frame", map_frame_, std::string("map"));
-  private_nh_.param("base_frame", base_frame_, std::string("base_footprint"));
-  private_nh_.param("throttle_scans", throttle_scans_, 1);
-  private_nh_.param("resolution", resolution_, 0.05);
-  private_nh_.param("map_name", map_name_, std::string("/map"));
+  private_nh.param("sychronous", sychronous_, true);
+  private_nh.param("odom_frame", odom_frame_, std::string("odom"));
+  private_nh.param("map_frame", map_frame_, std::string("map"));
+  private_nh.param("base_frame", base_frame_, std::string("base_footprint"));
+  private_nh.param("throttle_scans", throttle_scans_, 1);
+  private_nh.param("resolution", resolution_, 0.05);
+  private_nh.param("map_name", map_name_, std::string("/map"));
 
   double tmp_val;
-  private_nh_.param("transform_timeout", tmp_val, 0.2);
+  private_nh.param("transform_timeout", tmp_val, 0.2);
   transform_timeout_ = ros::Duration(tmp_val);
   
-  private_nh_.param("tf_buffer_duration", tmp_val, 30.);
+  private_nh.param("tf_buffer_duration", tmp_val, 30.);
   tf_buffer_dur_ = ros::Duration(tmp_val);
   
-  private_nh_.param("minimum_time_interval", tmp_val, 0.5);
+  private_nh.param("minimum_time_interval", tmp_val, 0.5);
   minimum_time_interval_ = ros::Duration(tmp_val);
 
   bool debug = false;
-  if (private_nh_.getParam("debug_logging", debug) && debug)
+  if (private_nh.getParam("debug_logging", debug) && debug)
   {
     if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
       ros::console::levels::Debug))
@@ -152,12 +146,10 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh_)
     }
   }
 
-  mapper_->configure(private_nh_);
+  mapper_->configure(private_nh);
   minimum_travel_distance_ = mapper_->getParamMinimumTravelDistance();
 
-  nh_.setParam("paused_processing", false);
-  nh_.setParam("paused_new_measurements", false);
-  nh_.setParam("interactive_mode", interactive_mode_);
+  private_nh.setParam("paused_new_measurements", false);
 }
 
 /*****************************************************************************/
@@ -173,13 +165,11 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::mapCallback, this);
   ssClear_ = node.advertiseService("clear_queue", &SlamToolbox::clearQueueCallback, this);
   ssPause_measurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
-  ssInteractive_ = node.advertiseService("toggle_interactive_mode", &SlamToolbox::interactiveModeCallback,this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::serializePoseGraphCallback, this);
   ssLoadMap_ = node.advertiseService("deserialize_map", &SlamToolbox::deserializePoseGraphCallback, this);
   scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, "/scan", 5);
   scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_sub_, *tf_, odom_frame_, 5, node);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::laserCallback, this, _1));
-  marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>("karto_graph_visualization",1);
 }
 
 /*****************************************************************************/
@@ -232,60 +222,10 @@ void SlamToolbox::publishVisualizations()
     updateMap();
     if(!isPaused(VISUALIZING_GRAPH))
     {
-      publishGraph();
+      closure_assistant_->publishGraph();
     }
     r.sleep();
   }
-}
-
-/*****************************************************************************/
-void SlamToolbox::publishGraph()
-/*****************************************************************************/
-{
-  interactive_server_->clear();
-  std::unordered_map<int, Eigen::Vector3d>* graph = solver_->getGraph();
-
-  if (graph->size() == 0)
-  {
-    return;
-  }
-
-  ROS_DEBUG("Graph size: %i",(int)graph->size());
-  bool interactive_mode = false;
-  {
-    boost::mutex::scoped_lock lock(interactive_mutex_);
-    interactive_mode = interactive_mode_;
-  }
-
-  visualization_msgs::MarkerArray marray;
-  visualization_msgs::Marker m = vis_utils::toMarker(map_frame_,
-    "slam_toolbox", 0.1);
-
-  for (ConstGraphIterator it = graph->begin(); it != graph->end(); ++it)
-  {
-    m.id = it->first + 1;
-    m.pose.position.x = it->second(0);
-    m.pose.position.y = it->second(1);
-
-    if (interactive_mode)
-    {
-      visualization_msgs::InteractiveMarker int_marker =
-        vis_utils::toInteractiveMarker(m, 0.3);
-      interactive_server_->insert(int_marker,
-        boost::bind(
-        &loop_closure_assistant::LoopClosureAssistant::processInteractiveFeedback,
-        closure_assistant_.get(), _1));
-    }
-    else
-    {
-      marray.markers.push_back(m);
-    }
-  }
-
-  // if disabled, clears out old markers
-  interactive_server_->applyChanges();
-  marker_publisher_.publish(marray);
-  return;
 }
 
 /*****************************************************************************/
@@ -598,38 +538,12 @@ bool SlamToolbox::mapCallback(
 }
 
 /*****************************************************************************/
-bool SlamToolbox::interactiveModeCallback(
-  slam_toolbox::ToggleInteractive::Request  &req,
-  slam_toolbox::ToggleInteractive::Response &resp)
-/*****************************************************************************/
-{
-  bool interactive_mode;
-  {
-    boost::mutex::scoped_lock lock_i(interactive_mutex_);
-    interactive_mode_ = !interactive_mode_;   
-    interactive_mode = interactive_mode_;
-    nh_.setParam("interactive_mode", interactive_mode_);
-  }
-
-  ROS_INFO("SlamToolbox: Toggling %s interactive mode.", 
-    interactive_mode ? "on" : "off");
-  publishGraph();
-  closure_assistant_->clearMovedNodes();
-
-  // set state so we don't overwrite changes in rviz while loop closing
-  state_.set(PROCESSING, interactive_mode);
-  state_.set(VISUALIZING_GRAPH, interactive_mode);
-  nh_.setParam("paused_processing", interactive_mode);
-  return true;
-}
-
-/*****************************************************************************/
 bool SlamToolbox::pauseNewMeasurementsCallback(
   slam_toolbox::Pause::Request& req,
   slam_toolbox::Pause::Response& resp)
 /*****************************************************************************/
 {
-  bool curr_state = state_.get(NEW_MEASUREMENTS);
+  bool curr_state = isPaused(NEW_MEASUREMENTS);
   state_.set(NEW_MEASUREMENTS, !curr_state);
 
   nh_.setParam("paused_new_measurements", !curr_state);
