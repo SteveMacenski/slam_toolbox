@@ -2,6 +2,7 @@
  * slam_toolbox
  * Copyright (c) 2008, Willow Garage, Inc.
  * Copyright Work Modifications (c) 2018, Simbe Robotics, Inc.
+ * Copyright Work Modifications (c) 2019, Samsung Research America
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
@@ -40,7 +41,7 @@ SlamToolbox::SlamToolbox()
     std::make_unique<interactive_markers::InteractiveMarkerServer>(
     "slam_toolbox","",true);
 
-  mapper_ = std::make_unique<karto::Mapper>();
+  mapper_ = std::make_unique<mapper_utils::SMapper>();
   dataset_ = std::make_unique<karto::Dataset>();
 
   setParams(private_nh);
@@ -151,7 +152,7 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh_)
     }
   }
 
-  mapper_utils::setMapperParams(private_nh_, mapper_.get());
+  mapper_->configure(private_nh_);
   minimum_travel_distance_ = mapper_->getParamMinimumTravelDistance();
 
   nh_.setParam("paused_processing", false);
@@ -738,15 +739,21 @@ void SlamToolbox::loadSerializedPoseGraph(
 
   mapper->SetScanSolver(solver_.get());
 
+
   // move the memory to our working dataset
-  mapper_.reset();
-  dataset_.reset();
-  mapper_.swap(mapper);
-  dataset_.swap(dataset);
+  mapper_.reset(static_cast<mapper_utils::SMapper*>(mapper.release()));
+  dataset_.reset(dataset.release());
+
+  if (!mapper_)
+  {
+    ROS_FATAL("loadSerializedPoseGraph: Could not properly load "
+      "a valid mapping object. Did you modify something by hand?");
+    exit(-1);
+  }
 
   if (dataset_->GetObjects().size() < 1)
   {
-    ROS_FATAL("DeserializePoseGraph: Cannot deserialize "
+    ROS_FATAL("loadSerializedPoseGraph: Cannot deserialize "
       "dataset with no laser objects.");
     exit(-1);
   }
