@@ -20,7 +20,7 @@ This project contains the ability to do most everything any other available SLAM
 
 For running on live production robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
 
-This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 145,000 sq.ft. building in sychronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
+This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 145,000 sq.ft. building in synchronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
 ![map_image](/images/map_image.png?raw=true "Map Image")
 
@@ -104,7 +104,7 @@ Using just kinematic placement of the maps will give you some improvements over 
 
 An rviz plugin is furnished to help with manual loop closures and online / offline mapping. By default interactive mode is off (allowing you to move nodes) as this takes quite a toll on rviz. When you want to move nodes, tick the interactive box, move what you want, and save changes to prompt a manual loop closure. Clear if you made a mistake. When done, exit interactive mode again. 
 
-There's also a tool to help you control online and offline data. You can at any time stop processing new scans or accepting new scans into the queue. This is desirable when you want to allow the package to catch up while the robot sits still (**This option is only meaningful in sychronous mode. In asynchronous mode the robot will never fall behind.**) or you want to stop processing new scans while you do a manual loop closure / manual "help". If there's more in the queue than you want, you may also clear it. 
+There's also a tool to help you control online and offline data. You can at any time stop processing new scans or accepting new scans into the queue. This is desirable when you want to allow the package to catch up while the robot sits still (**This option is only meaningful in synchronous mode. In asynchronous mode the robot will never fall behind.**) or you want to stop processing new scans while you do a manual loop closure / manual "help". If there's more in the queue than you want, you may also clear it. 
 
 Additionally there's exposed buttons for the serialization and deserialization services to load an old pose-graph to update and refine, or continue mapping, then save back to file. The "Start By Dock" checkbox will try to scan match against the first node (assuming you started at your dock) to give you an odometry estimate to start with. Another option is to start using an inputted position in the GUI or by calling the underlying service. Additionally, you can use the current odometric position estimation if you happened to have just paused the robot or not moved much between runs. Finally (and most usefully), you can use the RVIZ tool for **2D Pose Estimation** to tell it where to go in **localization mode** just like AMCL.
 

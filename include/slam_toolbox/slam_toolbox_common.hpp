@@ -18,8 +18,8 @@
 /* Author: Brian Gerkey */
 /* Heavily Modified: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_H_
-#define SLAM_TOOLBOX_SLAM_TOOLBOX_H_
+#ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_COMMON_H_
+#define SLAM_TOOLBOX_SLAM_TOOLBOX_COMMON_H_
 
 #include "ros/ros.h"
 #include "message_filters/subscriber.h"
@@ -56,12 +56,11 @@ using namespace ::toolbox_types;
 class SlamToolbox
 {
 public:
-  SlamToolbox();
+  SlamToolbox(ros::NodeHandle& nh);
   ~SlamToolbox();
 
-private:
+protected:
   // threads
-  void run();
   void publishVisualizations();
   void publishTransformLoop(const double& transform_publish_period);
 
@@ -71,17 +70,14 @@ private:
   void setROSInterfaces(ros::NodeHandle& node);
 
   // callbacks
-  void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan);
+  virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) = 0;
   bool mapCallback(nav_msgs::GetMap::Request& req,
     nav_msgs::GetMap::Response& res);
-  bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req,
-    slam_toolbox::ClearQueue::Response& resp);
   bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request& req,
     slam_toolbox::SerializePoseGraph::Response& resp);
   bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
     slam_toolbox::DeserializePoseGraph::Response& resp);
   void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper>&, std::unique_ptr<karto::Dataset>&);
-  void localizePoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
   // functional bits
   karto::LaserRangeFinder* getLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
@@ -89,7 +85,6 @@ private:
     karto::Pose2& karto_pose);
   bool addScan(karto::LaserRangeFinder* laser, PosedScan& scanWPose);
   bool updateMap();
-  bool shouldProcessScan(const sensor_msgs::LaserScan::ConstPtr& scan, const karto::Pose2& pose);
   tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2& pose,
     const karto::Pose2& karto_pose, const ros::Time& t, const bool& update_reprocessing_transform);
 
@@ -106,15 +101,13 @@ private:
   std::unique_ptr<message_filters::Subscriber<sensor_msgs::LaserScan> > scan_filter_sub_;
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::LaserScan> > scan_filter_;
   ros::Publisher sst_, sstm_;
-  ros::ServiceServer ssMap_, ssClear_, ssPause_measurements_, ssSerialize_, ssLoadMap_;
-  ros::Subscriber localization_pose_sub_;
+  ros::ServiceServer ssMap_, ssPause_measurements_, ssSerialize_, ssLoadMap_;
 
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_;
-  int throttle_scans_;
-  ros::Duration transform_timeout_, tf_buffer_dur_, minimum_time_interval_;
-  double resolution_, minimum_travel_distance_;
-  bool first_measurement_, sychronous_;
+  ros::Duration transform_timeout_, tf_buffer_dur_;
+  double resolution_;
+  bool first_measurement_;
 
   // Book keeping
   std::unique_ptr<mapper_utils::SMapper> mapper_;
@@ -132,7 +125,6 @@ private:
   std::vector<std::unique_ptr<boost::thread> > threads_;
   tf2::Transform map_to_odom_;
   bool localization_pose_set_;
-  std::queue<PosedScan> q_;
   boost::mutex map_to_odom_mutex_, mapper_mutex_;
   PausedState state_;
   nav_msgs::GetMap::Response map_;
@@ -147,4 +139,4 @@ private:
 
 } // end namespace
 
-#endif //SLAM_TOOLBOX_SLAM_TOOLBOX_H_
+#endif //SLAM_TOOLBOX_SLAM_TOOLBOX_COMMON_H_

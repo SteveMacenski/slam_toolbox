@@ -17,14 +17,22 @@
 
 /* Author: Steven Macenski */
 
+
+#ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_NODE_H_
+#define SLAM_TOOLBOX_SLAM_TOOLBOX_NODE_H_
+
 #include <sys/resource.h>
-#include "slam_toolbox/slam_toolbox.hpp"
+#include "slam_toolbox_async.cpp"
+#include "slam_toolbox_sync.cpp"
 
 // program needs a larger stack size to serialize large maps
 #define STACK_SIZE_TO_USE 40000000
 
 int main(int argc, char** argv)
 {
+  ros::init(argc, argv, "slam_toolbox");
+  ros::NodeHandle nh("~");
+
   const rlim_t max_stack_size = STACK_SIZE_TO_USE;
   struct rlimit stack_limit;
   getrlimit(RLIMIT_STACK, &stack_limit);
@@ -34,8 +42,21 @@ int main(int argc, char** argv)
   }
   setrlimit(RLIMIT_STACK, &stack_limit);
 
-  ros::init(argc, argv, "slam_toolbox");
-  slam_toolbox::SlamToolbox kt;
+  bool sync;
+  nh.param("synchronous", sync, true);
+  if (sync)
+  {
+    slam_toolbox::SynchronousSlamToolbox sst(nh);
+  }
+  else
+  {
+    slam_toolbox::AsynchronousSlamToolbox ast(nh);
+  }
+
+  // TODO if localization mode, start with given position, or 0,0,0 with file, or exit no file
+
   ros::spin();
   return 0;
 }
+
+#endif // SLAM_TOOLBOX_SLAM_TOOLBOX_NODE_H_

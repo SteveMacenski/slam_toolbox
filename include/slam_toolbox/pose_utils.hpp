@@ -27,7 +27,7 @@ namespace pose_utils
 {
 
 // convert Karto pose to TF pose
-tf2::Transform kartoPose2TfPose(const karto::Pose2& pose)
+inline tf2::Transform kartoPose2TfPose(const karto::Pose2& pose)
 {
   tf2::Transform new_pose;
   new_pose.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
@@ -38,7 +38,7 @@ tf2::Transform kartoPose2TfPose(const karto::Pose2& pose)
 };
 
 // convert Karto pose to TF pose
-karto::Pose2 tfPose2KartoPose(const tf2::Transform& pose)
+inline karto::Pose2 tfPose2KartoPose(const tf2::Transform& pose)
 {
   karto::Pose2 transformed_pose;
   transformed_pose.SetX(pose.getOrigin().x());
