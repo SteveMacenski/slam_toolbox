@@ -16,8 +16,8 @@
  *
  */
 
-/* Orginal Author for slam_karto: Brian Gerkey */
-/* Heavily Modified for slam_toolbox: Steven Macenski */
+/* Orginal Author for slam_karto the original work was based on: Brian Gerkey */
+/* Author: Steven Macenski */
 
 #include "slam_toolbox/slam_toolbox_common.hpp"
 #include "slam_toolbox/serialization.hpp"
@@ -149,7 +149,7 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::mapCallback, this);
   ssPause_measurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::serializePoseGraphCallback, this);
-  ssLoadMap_ = node.advertiseService("deserialize_map", &SlamToolbox::deserializePoseGraphCallback, this);
+  ssDesserialize_ = node.advertiseService("deserialize_map", &SlamToolbox::deserializePoseGraphCallback, this);
   scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, "/scan", 5);
   scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_sub_, *tf_, odom_frame_, 5, node);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::laserCallback, this, _1));
@@ -428,7 +428,9 @@ bool SlamToolbox::mapCallback(
     return true;
   }
   else
+  {
     return false;
+  }
 }
 
 /*****************************************************************************/

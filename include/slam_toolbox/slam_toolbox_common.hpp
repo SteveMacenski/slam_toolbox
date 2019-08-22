@@ -2,6 +2,7 @@
  * slam_toolbox
  * Copyright (c) 2008, Willow Garage, Inc.
  * Copyright Work Modifications (c) 2018, Simbe Robotics, Inc.
+ * Copyright Work Modifications (c) 2019, Steve Macenski
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
@@ -14,9 +15,6 @@
  * CONDITIONS.
  *
  */
-
-/* Author: Brian Gerkey */
-/* Heavily Modified: Steven Macenski */
 
 #ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_COMMON_H_
 #define SLAM_TOOLBOX_SLAM_TOOLBOX_COMMON_H_
@@ -101,7 +99,7 @@ protected:
   std::unique_ptr<message_filters::Subscriber<sensor_msgs::LaserScan> > scan_filter_sub_;
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::LaserScan> > scan_filter_;
   ros::Publisher sst_, sstm_;
-  ros::ServiceServer ssMap_, ssPause_measurements_, ssSerialize_, ssLoadMap_;
+  ros::ServiceServer ssMap_, ssPause_measurements_, ssSerialize_, ssDesserialize_;
 
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_;
