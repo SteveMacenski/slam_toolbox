@@ -35,6 +35,7 @@
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>tbb</build_depend>
   <build_depend>libblas-dev</build_depend>
+  <build_depend>liblapack-dev</build_depend>
   <run_depend>eigen</run_depend>
   <run_depend>pluginlib</run_depend>
   <run_depend>message_filters</run_depend>
@@ -58,6 +59,7 @@
   <run_depend>tf2_geometry_msgs</run_depend>
   <run_depend>tbb</run_depend>
   <run_depend>libblas-dev</run_depend>
+  <run_depend>liblapack-dev</run_depend>
 
   <export>
     <slam_toolbox plugin="${prefix}/solver_plugins.xml" />
