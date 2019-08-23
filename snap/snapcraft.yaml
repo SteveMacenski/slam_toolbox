@@ -6,7 +6,7 @@ description: |
 
 grade: stable
 confinement: devmode
-
+base: core18
 type: app
 
 apps:
@@ -43,7 +43,8 @@ parts:
     plugin: catkin
     source-space: src
     include-roscore: true
-    rosdistro: kinetic
+    source: .
+    #rosdistro: kinetic
     catkin-ros-master-uri: http://localhost:11311
     catkin-packages: [slam_toolbox] #rviz
     recursive-rosinstall: false
