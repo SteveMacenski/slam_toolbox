@@ -15,7 +15,7 @@ mkdir snap
 cp -r src/slam_toolbox/snap/snapcraft.yaml snap
 
 # build the snap
-snapcraft
+snapcraft --debug
 
 # go back to root
 cd ../
