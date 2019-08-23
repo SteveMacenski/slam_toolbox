@@ -34,7 +34,7 @@ find_package(catkin REQUIRED
 
 find_package(PkgConfig REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(CSparse REQUIRED)
+#find_package(CSparse REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Cholmod REQUIRED)
 find_package(LAPACK REQUIRED)
