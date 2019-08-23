@@ -37,6 +37,8 @@ protected:
   virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override final;
   bool shouldProcessScan(const sensor_msgs::LaserScan::ConstPtr& scan, const karto::Pose2& pose);
   bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req, slam_toolbox::ClearQueue::Response& resp);
+  virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
+    slam_toolbox::DeserializePoseGraph::Response& resp) override final;
 
   std::queue<PosedScan> q_;
   ros::ServiceServer ssClear_;
@@ -187,6 +189,22 @@ bool SynchronousSlamToolbox::clearQueueCallback(
   return true;
 }
 
+// TODO validate this works
+/*****************************************************************************/
+bool SynchronousSlamToolbox::deserializePoseGraphCallback(
+  slam_toolbox::DeserializePoseGraph::Request& req,
+  slam_toolbox::DeserializePoseGraph::Response& resp)
+/*****************************************************************************/
+{
+  if (req.match_type == procType::LOCALIZE_AT_POSE)
+  {
+    ROS_ERROR("Requested a localization deserialization "
+      "in non-localization mode.");
+    return false;
+  }
+  return SlamToolbox::deserializePoseGraphCallback(req, resp);
+}
+
 } // end namespace
 
 // program needs a larger stack size to serialize large maps
@@ -209,9 +227,8 @@ int main(int argc, char** argv)
 
   slam_toolbox::SynchronousSlamToolbox sst(nh);
 
-  // addScan has too much state, and/or break out
-  // processor_type_ simplify or remove?
-  // smapper include dataset unique_ptr
+  // TODO processor_type_ simplify or remove?
+  // TODO smapper include dataset unique_ptr
 
   ros::spin();
   return 0;

@@ -357,6 +357,17 @@ bool SlamToolbox::addScan(
   karto::LocalizedRangeScan* range_scan = getLocalizedRangeScan(
     laser, scan, karto_pose);
 
+  //STEVE TODO 
+
+  // rm localization calls
+
+  // localization Fn processLocalization()
+    // Fn
+    // using its localization_pose_set_ state to do processor then reset to PROCESS_LOCALIZATION
+    // once working, rm  localization_pose_set_ with pointer to the pose to set and check nullptr
+
+  // process_near_pose_ to karto2::Pose and just give directly. After Process() delete ptr
+
   // Add the localized range scan to the smapper
   boost::mutex::scoped_lock lock(smapper_mutex_);
   bool processed = false, update_reprocessing_transform = false;
@@ -625,7 +636,6 @@ bool SlamToolbox::deserializePoseGraphCallback(
       break;
     default:
       ROS_FATAL("Deserialization called without valid processor type set.");
-      exit(-1);
   }
 
   return true;

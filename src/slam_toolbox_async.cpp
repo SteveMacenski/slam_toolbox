@@ -34,6 +34,8 @@ public:
 
 protected:
   virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override final;
+  virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
+    slam_toolbox::DeserializePoseGraph::Response& resp) override final;
 };
 
 /*****************************************************************************/
@@ -66,6 +68,23 @@ void AsynchronousSlamToolbox::laserCallback(const sensor_msgs::LaserScan::ConstP
 
   addScan(laser, scan, pose);
   return;
+}
+
+// TODO validate this works
+/*****************************************************************************/
+bool AsynchronousSlamToolbox::deserializePoseGraphCallback(
+  slam_toolbox::DeserializePoseGraph::Request& req,
+  slam_toolbox::DeserializePoseGraph::Response& resp)
+/*****************************************************************************/
+{
+  if (req.match_type == procType::LOCALIZE_AT_POSE)
+  {
+    ROS_ERROR("Requested a localization deserialization "
+      "in non-localization mode.");
+    return false;
+  }
+  bool state = SlamToolbox::deserializePoseGraphCallback(req, resp);
+  return state;
 }
 
 } // end namespace
