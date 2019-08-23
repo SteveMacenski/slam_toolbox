@@ -175,7 +175,8 @@ karto::Vector2<kt_double> MergeMapsKinematic::applyCorrection(const
 }
 
 /*****************************************************************************/
-void MergeMapsKinematic::transformScan(LocalizedRangeScansIt iter, tf2::Transform& submap_correction)
+void MergeMapsKinematic::transformScan(LocalizedRangeScansIt iter,
+  tf2::Transform& submap_correction)
 /*****************************************************************************/
 {
   // TRANSFORM BARYCENTERR POSE
