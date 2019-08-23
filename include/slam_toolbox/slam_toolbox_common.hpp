@@ -30,10 +30,10 @@
 #include "pluginlib/class_loader.h"
 
 #include "slam_toolbox/toolbox_types.hpp"
-#include "slam_toolbox/mapper_utils.hpp"
+#include "slam_toolbox/slam_mapper.hpp"
 #include "slam_toolbox/snap_utils.hpp"
 #include "slam_toolbox/laser_utils.hpp"
-#include "slam_toolbox/pose_utils.hpp"
+#include "slam_toolbox/get_pose_helper.hpp"
 #include "slam_toolbox/map_saver.hpp"
 #include "slam_toolbox/loop_closure_assistant.hpp"
 

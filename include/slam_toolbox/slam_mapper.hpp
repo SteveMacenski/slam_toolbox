@@ -21,6 +21,7 @@
 
 #include "ros/ros.h"
 #include "karto_sdk/Mapper.h"
+#include "tf2/utils.h"
 
 namespace mapper_utils
 {
@@ -32,11 +33,34 @@ public:
   {
   }
 
+  // get occupancy grid from scans
   karto::OccupancyGrid* getOccupancyGrid(const double& resolution)
   {
     karto::OccupancyGrid* occ_grid = nullptr;
     return karto::OccupancyGrid::CreateFromScans(GetAllProcessedScans(), resolution);
   }
+
+
+  // convert Karto pose to TF pose
+  inline tf2::Transform toTfPose(const karto::Pose2& pose)
+  {
+    tf2::Transform new_pose;
+    new_pose.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
+    tf2::Quaternion q;
+    q.setRPY(0., 0., pose.GetHeading());
+    new_pose.setRotation(q);
+    return new_pose;
+  };
+
+  // convert Karto pose to TF pose
+  inline karto::Pose2 toKartoPose(const tf2::Transform& pose)
+  {
+    karto::Pose2 transformed_pose;
+    transformed_pose.SetX(pose.getOrigin().x());
+    transformed_pose.SetY(pose.getOrigin().y());
+    transformed_pose.SetHeading(tf2::getYaw(pose.getRotation()));
+    return transformed_pose;
+  };
 
   void configure(const ros::NodeHandle& nh)
   {

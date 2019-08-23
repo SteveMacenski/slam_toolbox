@@ -301,8 +301,7 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
     tf2::Quaternion q1(0.,0.,0.,1.0);
     q1.setRPY(0., 0., tf2::getYaw(odom_to_base_serialized.getRotation()));
     odom_to_base_serialized.setRotation(q1);
-    tf2::Transform odom_to_base_current =
-      pose_utils::kartoPose2TfPose(karto_pose);
+    tf2::Transform odom_to_base_current = smapper_->toTfPose(karto_pose);
     reprocessing_transform_ = 
       odom_to_base_serialized * odom_to_base_current.inverse();
   }
@@ -335,10 +334,9 @@ bool SlamToolbox::addScan(
   std::vector<kt_double> readings = laser_utils::scanToReadings(
     *scan, lasers_[scan->header.frame_id].isInverted());
 
-  tf2::Transform pose_original = pose_utils::kartoPose2TfPose(karto_pose);
+  tf2::Transform pose_original = smapper_->toTfPose(karto_pose);
   tf2::Transform tf_pose_transformed = reprocessing_transform_ * pose_original;
-  karto::Pose2 transformed_pose =
-    pose_utils::tfPose2KartoPose(tf_pose_transformed);
+  karto::Pose2 transformed_pose = smapper_->toKartoPose(tf_pose_transformed);
 
   // create localized range scan
   karto::LocalizedRangeScan* range_scan = 
