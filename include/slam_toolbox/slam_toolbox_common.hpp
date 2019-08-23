@@ -89,6 +89,7 @@ protected:
   karto::LocalizedRangeScan* getLocalizedRangeScan(karto::LaserRangeFinder* laser,
     const sensor_msgs::LaserScan::ConstPtr& scan,
     karto::Pose2& karto_pose);
+  bool shouldStartWithPoseGraph(std::string& filename, geometry_msgs::Pose2D& pose, bool& start_at_dock);
 
   // pausing bits
   bool isPaused(const PausedApplication& app);
@@ -113,7 +114,6 @@ protected:
 
   // Book keeping
   std::unique_ptr<mapper_utils::SMapper> smapper_;
-  std::unique_ptr<karto::Dataset> dataset_;
   std::map<std::string, laser_utils::LaserMetadata> lasers_;
 
   // helpers

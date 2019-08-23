@@ -1897,7 +1897,7 @@ namespace karto
      * Resets the mapper.
      * Deallocate memory allocated in Initialize()
      */
-    void Reset();
+    virtual void Reset();
 
     /**
      * Process a localized range scan for incorporation into the map.  The scan must
@@ -2068,8 +2068,6 @@ namespace karto
     ScanSolver* m_pScanOptimizer;
 
     std::vector<MapperListener*> m_Listeners;
-
-    LocalizationScanVertices m_LocalizationScanVertices;
 
     /**
      * When set to true, the mapper will use a scan matching algorithm. In most real-world situations

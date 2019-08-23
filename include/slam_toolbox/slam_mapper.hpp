@@ -33,6 +33,7 @@ class SMapper : public karto::Mapper
 {
 public:
   SMapper();
+  ~SMapper();
 
   // get occupancy grid from scans
   karto::OccupancyGrid* getOccupancyGrid(const double& resolution);
@@ -44,12 +45,20 @@ public:
   karto::Pose2 toKartoPose(const tf2::Transform& pose) const;
 
   void configure(const ros::NodeHandle& nh);
+  virtual void Reset() override final;
 
   // processors
   kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
   kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
   kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
   kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
+
+  karto::Dataset* getDataset();
+  void setDataset(karto::Dataset*);
+
+protected:
+  LocalizationScanVertices m_LocalizationScanVertices;
+  std::unique_ptr<karto::Dataset> dataset_;
 };
 
 } // end namespace

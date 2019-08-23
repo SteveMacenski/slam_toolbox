@@ -35,7 +35,6 @@ SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
 /*****************************************************************************/
 {
   smapper_ = std::make_unique<mapper_utils::SMapper>();
-  dataset_ = std::make_unique<karto::Dataset>();
 
   setParams(nh_);
   setROSInterfaces(nh_);
@@ -72,7 +71,6 @@ SlamToolbox::~SlamToolbox()
   }
 
   smapper_.reset();
-  dataset_.reset();
   closure_assistant_.reset();
   map_saver_.reset();
   pose_helper_.reset();
@@ -212,6 +210,45 @@ void SlamToolbox::publishVisualizations()
 }
 
 /*****************************************************************************/
+bool SlamToolbox::shouldStartWithPoseGraph(std::string& filename,
+  geometry_msgs::Pose2D& pose, bool& start_at_dock)
+/*****************************************************************************/
+  {
+  // if given a map to load at run time, do it.
+  if (nh_.getParam("map_file_name", filename))
+  {
+    std::vector<double> read_pose;
+    if (nh_.getParam("map_start_pose", read_pose))
+    {
+      start_at_dock = false;
+      if (read_pose.size() != 3)
+      {
+        ROS_ERROR("LocalizationSlamToolbox: Incorrect number of "
+          "arguments for map starting pose. Must be in format: "
+          "[x, y, theta]. Starting at the origin");
+        pose.x = 0.;
+        pose.y = 0.;
+        pose.theta = 0.;
+      }
+      else
+      {
+        pose.x = read_pose[0];
+        pose.y = read_pose[1];
+        pose.theta = read_pose[2];
+      }
+    }
+    else
+    {
+      nh_.getParam("map_start_at_dock", start_at_dock);
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+/*****************************************************************************/
 karto::LaserRangeFinder* SlamToolbox::getLaser(const
   sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
@@ -222,7 +259,7 @@ karto::LaserRangeFinder* SlamToolbox::getLaser(const
     try
     {
       lasers_[frame] = laser_assistant_->toLaserMetadata(*scan);
-      dataset_->Add(lasers_[frame].getLaser(), true);
+      smapper_->getDataset()->Add(lasers_[frame].getLaser(), true);
     }
     catch (tf2::TransformException& e)
     {
@@ -400,7 +437,7 @@ bool SlamToolbox::addScan(
     scan_holder_->addScan(*scan);
     setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
       scan->header.stamp, update_reprocessing_transform);
-    dataset_->Add(range_scan);
+    smapper_->getDataset()->Add(range_scan);
   }
   else
   {
@@ -467,7 +504,7 @@ bool SlamToolbox::serializePoseGraphCallback(
   }
 
   boost::mutex::scoped_lock lock(smapper_mutex_);
-  serialization::write(filename, *smapper_, *dataset_);
+  serialization::write(filename, *static_cast<karto::Mapper*>(smapper_.get()), *smapper_->getDataset());
   return true;
 }
 
@@ -505,7 +542,7 @@ void SlamToolbox::loadSerializedPoseGraph(
 
   // move the memory to our working dataset
   smapper_.reset(static_cast<mapper_utils::SMapper*>(mapper.release()));
-  dataset_.reset(dataset.release());
+  smapper_->setDataset(dataset.release());
 
   if (!smapper_)
   {
@@ -514,7 +551,7 @@ void SlamToolbox::loadSerializedPoseGraph(
     exit(-1);
   }
 
-  if (dataset_->GetObjects().size() < 1)
+  if (smapper_->getDataset()->GetObjects().size() < 1)
   {
     ROS_FATAL("loadSerializedPoseGraph: Cannot deserialize "
       "dataset with no laser objects.");
@@ -523,7 +560,8 @@ void SlamToolbox::loadSerializedPoseGraph(
 
   // create a current laser sensor
   karto::LaserRangeFinder* laser =
-    dynamic_cast<karto::LaserRangeFinder*>(dataset_->GetObjects()[0]);
+    dynamic_cast<karto::LaserRangeFinder*>(
+    smapper_->getDataset()->GetObjects()[0]);
   karto::Sensor* pSensor = dynamic_cast<karto::Sensor*>(laser);
   if (pSensor)
   {

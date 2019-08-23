@@ -2494,10 +2494,6 @@ namespace karto
       m_pMapperSensorManager = NULL;
     }
 	  m_Initialized = false;
-    while (!m_LocalizationScanVertices.empty())
-    {
-      m_LocalizationScanVertices.pop();
-    }
   }
 
   kt_bool Mapper::Process(Object*  /*pObject*/)

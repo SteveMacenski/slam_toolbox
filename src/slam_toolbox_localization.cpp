@@ -45,7 +45,7 @@ protected:
     slam_toolbox::DeserializePoseGraph::Request& req,
     slam_toolbox::DeserializePoseGraph::Response& resp) override final;
 
-  virtual addScan(karto::LaserRangeFinder* laser,
+  virtual bool addScan(karto::LaserRangeFinder* laser,
     const sensor_msgs::LaserScan::ConstPtr& scan,
     karto::Pose2& karto_pose) override final;
 
@@ -57,8 +57,33 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
 : SlamToolbox(nh)
 /*****************************************************************************/
 {
-  localization_pose_sub_ = node.subscribe("/initialpose", 1,
-    &SlamToolbox::localizePoseCallback, this);
+  localization_pose_sub_ = nh.subscribe("/initialpose", 1,
+    &LocalizationSlamToolbox::localizePoseCallback, this);
+
+  std::string filename;
+  geometry_msgs::Pose2D pose;
+  bool dock = false;
+  if (shouldStartWithPoseGraph(filename, pose, dock))
+  {
+    slam_toolbox::DeserializePoseGraph::Request req;
+    slam_toolbox::DeserializePoseGraph::Response resp;
+    req.initial_pose = pose;
+    req.filename = filename;
+    if (dock)
+    {
+      req.match_type =
+        slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
+    }
+    else
+    {
+      req.match_type =
+        slam_toolbox::DeserializePoseGraph::Request::LOCALIZE_AT_POSE;      
+    }
+
+    deserializePoseGraphCallback(req, resp);
+  }
+
+  return;
 }
 
 //TODO validate works
@@ -116,7 +141,7 @@ void LocalizationSlamToolbox::laserCallback(
 }
 
 /*****************************************************************************/
-void LocalizationSlamToolbox::addScan(
+bool LocalizationSlamToolbox::addScan(
   karto::LaserRangeFinder* laser,
   const sensor_msgs::LaserScan::ConstPtr& scan, 
   karto::Pose2& karto_pose)
@@ -173,11 +198,11 @@ void LocalizationSlamToolbox::addScan(
     delete range_scan;
   }
 
-  return;
+  return processed;
 }
 
 /*****************************************************************************/
-void SlamToolbox::localizePoseCallback(const
+void LocalizationSlamToolbox::localizePoseCallback(const
   geometry_msgs::PoseWithCovarianceStampedConstPtr& msg)
 /*****************************************************************************/
 {
@@ -218,9 +243,7 @@ int main(int argc, char** argv)
   }
   setrlimit(RLIMIT_STACK, &stack_limit);
 
-  // get initial pose, or set to XYZ and file name TODO
-
-  slam_toolbox::LocalizationSlamToolbox sst(nh, x, y, theta);
+  slam_toolbox::LocalizationSlamToolbox sst(nh);
 
   ros::spin();
   return 0;

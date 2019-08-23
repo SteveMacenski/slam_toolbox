@@ -33,8 +33,10 @@ public:
   ~AsynchronousSlamToolbox() {};
 
 protected:
-  virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override final;
-  virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
+  virtual void laserCallback(
+    const sensor_msgs::LaserScan::ConstPtr& scan) override final;
+  virtual bool deserializePoseGraphCallback(
+    slam_toolbox::DeserializePoseGraph::Request& req,
     slam_toolbox::DeserializePoseGraph::Response& resp) override final;
 };
 
@@ -43,10 +45,32 @@ AsynchronousSlamToolbox::AsynchronousSlamToolbox(ros::NodeHandle& nh)
 : SlamToolbox(nh)
 /*****************************************************************************/
 {
+  std::string filename;
+  geometry_msgs::Pose2D pose;
+  bool dock;
+  if (shouldStartWithPoseGraph(filename, pose, dock))
+  {
+    slam_toolbox::DeserializePoseGraph::Request req;
+    slam_toolbox::DeserializePoseGraph::Response resp;
+    req.initial_pose = pose;
+    req.filename = filename;
+    if (dock)
+    {
+      req.match_type =
+        slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
+    }
+    else
+    {
+      req.match_type =
+        slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;      
+    }
+    deserializePoseGraphCallback(req, resp);
+  }
 }
 
 /*****************************************************************************/
-void AsynchronousSlamToolbox::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
+void AsynchronousSlamToolbox::laserCallback(
+  const sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
 {
   // no odom info
@@ -83,8 +107,8 @@ bool AsynchronousSlamToolbox::deserializePoseGraphCallback(
       "in non-localization mode.");
     return false;
   }
-  bool state = SlamToolbox::deserializePoseGraphCallback(req, resp);
-  return state;
+
+  return SlamToolbox::deserializePoseGraphCallback(req, resp);
 }
 
 } // end namespace

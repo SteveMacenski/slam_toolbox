@@ -62,6 +62,28 @@ SynchronousSlamToolbox::SynchronousSlamToolbox(ros::NodeHandle& nh)
 
   threads_.push_back(std::make_unique<boost::thread>(
     boost::bind(&SynchronousSlamToolbox::run, this)));
+
+  std::string filename;
+  geometry_msgs::Pose2D pose;
+  bool dock;
+  if (shouldStartWithPoseGraph(filename, pose, dock))
+  {
+    slam_toolbox::DeserializePoseGraph::Request req;
+    slam_toolbox::DeserializePoseGraph::Response resp;
+    req.initial_pose = pose;
+    req.filename = filename;
+    if (dock)
+    {
+      req.match_type =
+        slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
+    }
+    else
+    {
+      req.match_type =
+        slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;      
+    }
+    deserializePoseGraphCallback(req, resp);
+  }
 }
 
 /*****************************************************************************/
@@ -226,9 +248,6 @@ int main(int argc, char** argv)
   setrlimit(RLIMIT_STACK, &stack_limit);
 
   slam_toolbox::SynchronousSlamToolbox sst(nh);
-
-  // TODO processor_type_ simplify or remove?
-  // TODO smapper include dataset unique_ptr
 
   ros::spin();
   return 0;

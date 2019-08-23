@@ -22,17 +22,46 @@
 namespace mapper_utils
 {
 
+/*****************************************************************************/
 SMapper::SMapper() : Mapper()
+/*****************************************************************************/
 {
+  dataset_ = std::make_unique<karto::Dataset>();
 }
 
+/*****************************************************************************/
+SMapper::~SMapper()
+/*****************************************************************************/
+{
+  dataset_.reset();
+}
+
+/*****************************************************************************/
+karto::Dataset* SMapper::getDataset()
+/*****************************************************************************/
+{
+  return dataset_.get();
+}
+
+/*****************************************************************************/
+void SMapper::setDataset(karto::Dataset* dataset)
+/*****************************************************************************/
+{
+  dataset_.reset(dataset);
+}
+
+/*****************************************************************************/
 karto::OccupancyGrid* SMapper::getOccupancyGrid(const double& resolution)
+/*****************************************************************************/
 {
   karto::OccupancyGrid* occ_grid = nullptr;
-  return karto::OccupancyGrid::CreateFromScans(GetAllProcessedScans(), resolution);
+  return karto::OccupancyGrid::CreateFromScans(GetAllProcessedScans(),
+    resolution);
 }
 
+/*****************************************************************************/
 tf2::Transform SMapper::toTfPose(const karto::Pose2& pose) const
+/*****************************************************************************/
 {
   tf2::Transform new_pose;
   new_pose.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
@@ -42,7 +71,9 @@ tf2::Transform SMapper::toTfPose(const karto::Pose2& pose) const
   return new_pose;
 };
 
+/*****************************************************************************/
 karto::Pose2 SMapper::toKartoPose(const tf2::Transform& pose) const
+/*****************************************************************************/
 {
   karto::Pose2 transformed_pose;
   transformed_pose.SetX(pose.getOrigin().x());
@@ -84,13 +115,15 @@ void SMapper::configure(const ros::NodeHandle& nh)
   }
 
   double scan_buffer_maximum_scan_distance;
-  if(nh.getParam("scan_buffer_maximum_scan_distance", scan_buffer_maximum_scan_distance))
+  if(nh.getParam("scan_buffer_maximum_scan_distance",
+    scan_buffer_maximum_scan_distance))
   {
     setParamScanBufferMaximumScanDistance(scan_buffer_maximum_scan_distance);
   }
 
   double link_match_minimum_response_fine;
-  if(nh.getParam("link_match_minimum_response_fine", link_match_minimum_response_fine))
+  if(nh.getParam("link_match_minimum_response_fine",
+    link_match_minimum_response_fine))
   {
     setParamLinkMatchMinimumResponseFine(link_match_minimum_response_fine);
   }
@@ -114,46 +147,54 @@ void SMapper::configure(const ros::NodeHandle& nh)
   }
 
   int loop_match_minimum_chain_size;
-  if(nh.getParam("loop_match_minimum_chain_size", loop_match_minimum_chain_size))
+  if(nh.getParam("loop_match_minimum_chain_size",
+    loop_match_minimum_chain_size))
   {
     setParamLoopMatchMinimumChainSize(loop_match_minimum_chain_size);
   }
 
   double loop_match_maximum_variance_coarse;
-  if(nh.getParam("loop_match_maximum_variance_coarse", loop_match_maximum_variance_coarse))
+  if(nh.getParam("loop_match_maximum_variance_coarse",
+    loop_match_maximum_variance_coarse))
   {
     setParamLoopMatchMaximumVarianceCoarse(loop_match_maximum_variance_coarse);
   }
 
   double loop_match_minimum_response_coarse;
-  if(nh.getParam("loop_match_minimum_response_coarse", loop_match_minimum_response_coarse))
+  if(nh.getParam("loop_match_minimum_response_coarse",
+    loop_match_minimum_response_coarse))
   {
     setParamLoopMatchMinimumResponseCoarse(loop_match_minimum_response_coarse);
   }
 
   double loop_match_minimum_response_fine;
-  if(nh.getParam("loop_match_minimum_response_fine", loop_match_minimum_response_fine))
+  if(nh.getParam("loop_match_minimum_response_fine",
+    loop_match_minimum_response_fine))
   {
     setParamLoopMatchMinimumResponseFine(loop_match_minimum_response_fine);
   }
 
   // Setting Correlation Parameters
   double correlation_search_space_dimension;
-  if(nh.getParam("correlation_search_space_dimension", correlation_search_space_dimension))
+  if(nh.getParam("correlation_search_space_dimension",
+    correlation_search_space_dimension))
   {
     setParamCorrelationSearchSpaceDimension(correlation_search_space_dimension);
   }
 
   double correlation_search_space_resolution;
-  if(nh.getParam("correlation_search_space_resolution", correlation_search_space_resolution))
+  if(nh.getParam("correlation_search_space_resolution",
+    correlation_search_space_resolution))
   {
     setParamCorrelationSearchSpaceResolution(correlation_search_space_resolution);
   }
 
   double correlation_search_space_smear_deviation;
-  if(nh.getParam("correlation_search_space_smear_deviation", correlation_search_space_smear_deviation))
+  if(nh.getParam("correlation_search_space_smear_deviation",
+    correlation_search_space_smear_deviation))
   {
-    setParamCorrelationSearchSpaceSmearDeviation(correlation_search_space_smear_deviation);
+    setParamCorrelationSearchSpaceSmearDeviation(
+      correlation_search_space_smear_deviation);
   }
 
   // Setting Correlation Parameters, Loop Closure Parameters
@@ -170,7 +211,8 @@ void SMapper::configure(const ros::NodeHandle& nh)
   }
 
   double loop_search_space_smear_deviation;
-  if(nh.getParam("loop_search_space_smear_deviation", loop_search_space_smear_deviation))
+  if(nh.getParam("loop_search_space_smear_deviation",
+    loop_search_space_smear_deviation))
   {
     setParamLoopSearchSpaceSmearDeviation(loop_search_space_smear_deviation);
   }
@@ -226,20 +268,26 @@ void SMapper::configure(const ros::NodeHandle& nh)
   return;
 }
 
+/*****************************************************************************/
 kt_bool SMapper::ProcessAtDock(LocalizedRangeScan* pScan)
+/*****************************************************************************/
 {
   // Special case of processing against node where node is the starting point
   return ProcessAgainstNode(pScan, 0);
 }
 
-kt_bool SMapper::ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId)
+/*****************************************************************************/
+kt_bool SMapper::ProcessAgainstNode(LocalizedRangeScan* pScan, 
+  const int& nodeId)
+/*****************************************************************************/
 {
   if (pScan != NULL)
   {
     karto::LaserRangeFinder* pLaserRangeFinder = pScan->GetLaserRangeFinder();
 
     // validate scan
-    if (pLaserRangeFinder == NULL || pScan == NULL || pLaserRangeFinder->Validate(pScan) == false)
+    if (pLaserRangeFinder == NULL || pScan == NULL || 
+      pLaserRangeFinder->Validate(pScan) == false)
     {
       return false;
     }
@@ -253,7 +301,8 @@ kt_bool SMapper::ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeI
     // If we're matching against a node from an older mapping session
     // lets get the first scan as the last scan and populate running scans
     // with the first few from that run as well.
-    LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), nodeId);
+    LocalizedRangeScan* pLastScan =
+    m_pMapperSensorManager->GetScan(pScan->GetSensorName(), nodeId);
     m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
     m_pMapperSensorManager->AddRunningScan(pLastScan);
     m_pMapperSensorManager->SetLastScan(pLastScan);
@@ -287,7 +336,8 @@ kt_bool SMapper::ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeI
 
       if (m_pDoLoopClosing->GetValue())
       {
-        std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+        std::vector<Name> deviceNames =
+        m_pMapperSensorManager->GetSensorNames();
         const_forEach(std::vector<Name>, &deviceNames)
         {
           m_pGraph->TryCloseLoop(pScan, *iter);
@@ -303,14 +353,17 @@ kt_bool SMapper::ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeI
   return false;
 }
 
+/*****************************************************************************/
 kt_bool SMapper::ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan)
+/*****************************************************************************/
 {
   if (pScan != NULL)
   {
     karto::LaserRangeFinder* pLaserRangeFinder = pScan->GetLaserRangeFinder();
 
     // validate scan
-    if (pLaserRangeFinder == NULL || pScan == NULL || pLaserRangeFinder->Validate(pScan) == false)
+    if (pLaserRangeFinder == NULL || pScan == NULL ||
+      pLaserRangeFinder->Validate(pScan) == false)
     {
       return false;
     }
@@ -321,11 +374,13 @@ kt_bool SMapper::ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan)
       Initialize(pLaserRangeFinder->GetRangeThreshold());
     }
 
-    Vertex<LocalizedRangeScan>* closetVertex = m_pGraph->FindNearByScan(pScan->GetSensorName(), pScan->GetOdometricPose());
+    Vertex<LocalizedRangeScan>* closetVertex =m_pGraph->FindNearByScan(
+      pScan->GetSensorName(), pScan->GetOdometricPose());
     LocalizedRangeScan* pLastScan = NULL;
     if (closetVertex)
     {
-      pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(), closetVertex->GetObject()->GetUniqueId());
+      pLastScan = m_pMapperSensorManager->GetScan(pScan->GetSensorName(),
+        closetVertex->GetObject()->GetUniqueId());
       m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
       m_pMapperSensorManager->AddRunningScan(pLastScan);
       m_pMapperSensorManager->SetLastScan(pLastScan);
@@ -360,7 +415,8 @@ kt_bool SMapper::ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan)
 
       if (m_pDoLoopClosing->GetValue())
       {
-        std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+        std::vector<Name> deviceNames =
+          m_pMapperSensorManager->GetSensorNames();
         const_forEach(std::vector<Name>, &deviceNames)
         {
           m_pGraph->TryCloseLoop(pScan, *iter);
@@ -376,7 +432,9 @@ kt_bool SMapper::ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan)
   return false;
 }
 
+/*****************************************************************************/
 kt_bool SMapper::ProcessLocalization(LocalizedRangeScan* pScan)
+/*****************************************************************************/
 {
   if (pScan == NULL)
   {
@@ -386,7 +444,8 @@ kt_bool SMapper::ProcessLocalization(LocalizedRangeScan* pScan)
   karto::LaserRangeFinder* pLaserRangeFinder = pScan->GetLaserRangeFinder();
 
   // validate scan
-  if (pLaserRangeFinder == NULL || pScan == NULL || pLaserRangeFinder->Validate(pScan) == false)
+  if (pLaserRangeFinder == NULL || pScan == NULL ||
+    pLaserRangeFinder->Validate(pScan) == false)
   {
     return false;
   }
@@ -398,16 +457,20 @@ kt_bool SMapper::ProcessLocalization(LocalizedRangeScan* pScan)
   }
 
   // get last scan
-  LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetLastScan(pScan->GetSensorName());
+  LocalizedRangeScan* pLastScan = m_pMapperSensorManager->GetLastScan(
+    pScan->GetSensorName());
 
   // update scans corrected pose based on last correction
   if (pLastScan != NULL)
   {
-    Transform lastTransform(pLastScan->GetOdometricPose(), pLastScan->GetCorrectedPose());
-    pScan->SetCorrectedPose(lastTransform.TransformPose(pScan->GetOdometricPose()));
+    Transform lastTransform(pLastScan->GetOdometricPose(),
+      pLastScan->GetCorrectedPose());
+    pScan->SetCorrectedPose(lastTransform.TransformPose(
+      pScan->GetOdometricPose()));
   }
 
-  // test if scan is outside minimum boundary or if heading is larger then minimum heading
+  // test if scan is outside minimum boundary 
+  // or if heading is larger then minimum heading
   if (!HasMovedEnough(pScan, pLastScan))
   {
     return false;
@@ -457,20 +520,24 @@ kt_bool SMapper::ProcessLocalization(LocalizedRangeScan* pScan)
     LocalizationScanVertex& oldLSV = m_LocalizationScanVertices.front();
 
     // 1) delete edges in adjacent vertices, graph, and optimizer
-    std::vector<Vertex<LocalizedRangeScan>*> adjVerts = oldLSV.vertex->GetAdjacentVertices();
+    std::vector<Vertex<LocalizedRangeScan>*> adjVerts =
+      oldLSV.vertex->GetAdjacentVertices();
     for (int i = 0; i != adjVerts.size(); i++)
     {
       std::vector<Edge<LocalizedRangeScan>*> adjEdges = adjVerts[i]->GetEdges();
       bool found = false;
       for (int j=0; j!=adjEdges.size(); j++)
       {
-        if (adjEdges[j]->GetTarget() == oldLSV.vertex || adjEdges[j]->GetSource() == oldLSV.vertex)
+        if (adjEdges[j]->GetTarget() == oldLSV.vertex ||
+          adjEdges[j]->GetSource() == oldLSV.vertex)
         {
-          adjVerts[i]->RemoveEdge(j); //remove from other vertices
-
-          m_pScanOptimizer->RemoveConstraint(adjEdges[j]->GetSource()->GetObject()->GetUniqueId(), adjEdges[j]->GetTarget()->GetObject()->GetUniqueId()); // remove from optimization
+          adjVerts[i]->RemoveEdge(j);
+          m_pScanOptimizer->RemoveConstraint(
+            adjEdges[j]->GetSource()->GetObject()->GetUniqueId(),
+            adjEdges[j]->GetTarget()->GetObject()->GetUniqueId()); 
           std::vector<Edge<LocalizedRangeScan>*> edges = m_pGraph->GetEdges();
-          std::vector<Edge<LocalizedRangeScan>*>::iterator edgeGraphIt = std::find(edges.begin(), edges.end(), adjEdges[j]);
+          std::vector<Edge<LocalizedRangeScan>*>::iterator edgeGraphIt =
+            std::find(edges.begin(), edges.end(), adjEdges[j]);
 
           if (edgeGraphIt == edges.end())
           {
@@ -487,22 +554,28 @@ kt_bool SMapper::ProcessLocalization(LocalizedRangeScan* pScan)
       }
       if (!found)
       {
-        std::cout << "Failed to find any edge in adj. vertex with a matching vertex to current!" << std::endl;
+        std::cout << "Failed to find any edge in adj. vertex" <<
+          " with a matching vertex to current!" << std::endl;
       }
     }
 
     // 2) delete vertex from optimizer
-    m_pScanOptimizer->RemoveNode(oldLSV.vertex->GetObject()->GetUniqueId()); // remove from optimizer
+    m_pScanOptimizer->RemoveNode(oldLSV.vertex->GetObject()->GetUniqueId());
 
     // 3) delete from vertex map
-    std::map<Name, std::vector<Vertex<LocalizedRangeScan>*> > vertexMap = m_pGraph->GetVertices();
-    std::vector<Vertex<LocalizedRangeScan>*> graphVertices = vertexMap[pScan->GetSensorName()];
-    std::vector<Vertex<LocalizedRangeScan>*>::iterator vertexGraphIt = std::find(graphVertices.begin(), graphVertices.end(), oldLSV.vertex);
+    std::map<Name, std::vector<Vertex<LocalizedRangeScan>*> > 
+      vertexMap = m_pGraph->GetVertices();
+    std::vector<Vertex<LocalizedRangeScan>*> graphVertices =
+      vertexMap[pScan->GetSensorName()];
+    std::vector<Vertex<LocalizedRangeScan>*>::iterator
+      vertexGraphIt = std::find(graphVertices.begin(),
+      graphVertices.end(), oldLSV.vertex);
     if (vertexGraphIt != graphVertices.end())
     {
-      // right now just sets to NULL, vector map will scale in size but just contain a bunch of null pointers
+      // right now just sets to NULL, vector map will 
+      // scale in size but just contain a bunch of null pointers
       int posVert = vertexGraphIt - graphVertices.begin();
-      m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert); // remove from graph
+      m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert);
     }
     else
     {
@@ -534,6 +607,18 @@ kt_bool SMapper::ProcessLocalization(LocalizedRangeScan* pScan)
   m_LocalizationScanVertices.push(lsv);
 
   return true;
+}
+
+/*****************************************************************************/
+void SMapper::Reset()
+/*****************************************************************************/
+{
+  Mapper::Reset();
+  while (!m_LocalizationScanVertices.empty())
+  {
+    m_LocalizationScanVertices.pop();
+  }
+  return;
 }
 
 } // end namespace
