@@ -86,6 +86,9 @@ protected:
   bool updateMap();
   tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2& pose,
     const karto::Pose2& karto_pose, const ros::Time& t, const bool& update_reprocessing_transform);
+  karto::LocalizedRangeScan* getLocalizedRangeScan(karto::LaserRangeFinder* laser,
+    const sensor_msgs::LaserScan::ConstPtr& scan,
+    karto::Pose2& karto_pose);
 
   // pausing bits
   bool isPaused(const PausedApplication& app);
@@ -124,11 +127,11 @@ protected:
   std::vector<std::unique_ptr<boost::thread> > threads_;
   tf2::Transform map_to_odom_;
   bool localization_pose_set_;
-  boost::mutex map_to_odom_mutex_, mapper_mutex_;
+  boost::mutex map_to_odom_mutex_, smapper_mutex_;
   PausedState state_;
   nav_msgs::GetMap::Response map_;
   ProcessType processor_type_;
-  geometry_msgs::Pose2D process_near_pose_;
+  karto::Pose2 process_near_pose_;
   tf2::Transform reprocessing_transform_;
 
   // pluginlib
