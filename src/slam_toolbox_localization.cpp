@@ -33,13 +33,21 @@ public:
   ~LocalizationSlamToolbox() {};
 
 protected:
-  virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override final;
-  void localizePoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
+  virtual void laserCallback(
+    const sensor_msgs::LaserScan::ConstPtr& scan) override final;
+  void localizePoseCallback(
+    const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
-  virtual bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request& req,
+  virtual bool serializePoseGraphCallback(
+    slam_toolbox::SerializePoseGraph::Request& req,
     slam_toolbox::SerializePoseGraph::Response& resp) override final;
-  virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
+  virtual bool deserializePoseGraphCallback(
+    slam_toolbox::DeserializePoseGraph::Request& req,
     slam_toolbox::DeserializePoseGraph::Response& resp) override final;
+
+  virtual addScan(karto::LaserRangeFinder* laser,
+    const sensor_msgs::LaserScan::ConstPtr& scan,
+    karto::Pose2& karto_pose) override final;
 
   ros::Subscriber localization_pose_sub_;
 };
@@ -104,6 +112,67 @@ void LocalizationSlamToolbox::laserCallback(
   }
 
   addScan(laser, scan, pose);
+  return;
+}
+
+/*****************************************************************************/
+void LocalizationSlamToolbox::addScan(
+  karto::LaserRangeFinder* laser,
+  const sensor_msgs::LaserScan::ConstPtr& scan, 
+  karto::Pose2& karto_pose)
+/*****************************************************************************/
+{
+  if (PROCESS_LOCALIZATION && process_near_pose_)
+  {
+    processor_type_ = PROCESS_NEAR_REGION;
+  }
+
+  karto::LocalizedRangeScan* range_scan = getLocalizedRangeScan(
+    laser, scan, karto_pose);
+
+  // Add the localized range scan to the smapper
+  boost::mutex::scoped_lock lock(smapper_mutex_);
+  bool processed = false;
+  if (processor_type_ == PROCESS_NEAR_REGION)
+  {
+    if (!process_near_pose_)
+    {
+      ROS_ERROR("Process near region called without a "
+        "valid region request. Ignoring scan.");
+      return false;
+    }
+
+    // set our position to the requested pose and process
+    range_scan->SetOdometricPose(*process_near_pose_);
+    range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
+    process_near_pose_.reset(nullptr);
+    processed = smapper_->ProcessAgainstNodesNearBy(range_scan);
+
+    // compute our new transform and reset to localization mode
+    setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
+      scan->header.stamp, true);
+    processor_type_ = PROCESS_LOCALIZATION;
+  }
+  else if (processor_type_ == PROCESS_LOCALIZATION)
+  {
+    processed = smapper_->ProcessLocalization(range_scan);
+  }
+  else
+  {
+    ROS_FATAL("No valid processor type set! Exiting.");
+    exit(-1);
+  }
+
+  // if successfully processed, create odom to map transformation
+  if(processed)
+  {
+    scan_holder_->addScan(*scan);
+  }
+  else
+  {
+    delete range_scan;
+  }
+
   return;
 }
 

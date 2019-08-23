@@ -80,7 +80,7 @@ protected:
 
   // functional bits
   karto::LaserRangeFinder* getLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
-  bool addScan(karto::LaserRangeFinder* laser, const sensor_msgs::LaserScan::ConstPtr& scan,
+  virtual bool addScan(karto::LaserRangeFinder* laser, const sensor_msgs::LaserScan::ConstPtr& scan,
     karto::Pose2& karto_pose);
   bool addScan(karto::LaserRangeFinder* laser, PosedScan& scanWPose);
   bool updateMap();
