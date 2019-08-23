@@ -331,6 +331,20 @@ bool SlamToolbox::addScan(
   karto::Pose2& karto_pose)
 /*****************************************************************************/
 {  
+  //STEVE
+
+  // add before mutex as another Fn: range_scan = Fn (*scan, laser, karto_pose)
+
+  // rm localization calls
+
+  // localization Fn processLocalization()
+    // Fn
+    // using its localization_pose_set_ state to do processor then reset to PROCESS_LOCALIZATION
+    // once working, rm  localization_pose_set_ with pointer to the pose to set and check nullptr
+
+  // process_near_pose_ to karto2::Pose and just give directly. After Process() delete ptr
+
+
   // Create a vector of doubles for karto
   std::vector<kt_double> readings = laser_utils::scanToReadings(
     *scan, lasers_[scan->header.frame_id].isInverted());
@@ -614,7 +628,6 @@ bool SlamToolbox::deserializePoseGraphCallback(
       break;
     default:
       ROS_FATAL("Deserialization called without valid processor type set.");
-      exit(-1);
   }
 
   return true;

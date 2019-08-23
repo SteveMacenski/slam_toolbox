@@ -79,8 +79,7 @@ bool LocalizationSlamToolbox::deserializePoseGraphCallback(
       "in localization mode.");
     return false;
   }
-  bool state = SlamToolbox::deserializePoseGraphCallback(req, resp);
-  return state;
+  return SlamToolbox::deserializePoseGraphCallback(req, resp);
 }
 
 /*****************************************************************************/
@@ -156,8 +155,6 @@ int main(int argc, char** argv)
   // get initial pose, or set to XYZ and file name TODO
 
   slam_toolbox::LocalizationSlamToolbox sst(nh, x, y, theta);
-
-  // localization_pose_set_ to process_near_pose_ NULL and localization mode
 
   ros::spin();
   return 0;

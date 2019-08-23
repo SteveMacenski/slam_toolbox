@@ -37,6 +37,8 @@ protected:
   virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override final;
   bool shouldProcessScan(const sensor_msgs::LaserScan::ConstPtr& scan, const karto::Pose2& pose);
   bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req, slam_toolbox::ClearQueue::Response& resp);
+  virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
+    slam_toolbox::DeserializePoseGraph::Response& resp) override final;
 
   std::queue<PosedScan> q_;
   ros::ServiceServer ssClear_;
@@ -185,6 +187,22 @@ bool SynchronousSlamToolbox::clearQueueCallback(
   }
   resp.status = true;
   return true;
+}
+
+// TODO validate this works
+/*****************************************************************************/
+bool SynchronousSlamToolbox::deserializePoseGraphCallback(
+  slam_toolbox::DeserializePoseGraph::Request& req,
+  slam_toolbox::DeserializePoseGraph::Response& resp)
+/*****************************************************************************/
+{
+  if (req.match_type == procType::LOCALIZE_AT_POSE)
+  {
+    ROS_ERROR("Requested a localization deserialization "
+      "in non-localization mode.");
+    return false;
+  }
+  return SlamToolbox::deserializePoseGraphCallback(req, resp);
 }
 
 } // end namespace
