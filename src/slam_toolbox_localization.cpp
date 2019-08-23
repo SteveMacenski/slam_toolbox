@@ -38,7 +38,6 @@ protected:
 
   virtual bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request& req,
     slam_toolbox::SerializePoseGraph::Response& resp) override final;
-
   virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
     slam_toolbox::DeserializePoseGraph::Response& resp) override final;
 
@@ -120,15 +119,13 @@ void SlamToolbox::localizePoseCallback(const
     return;
   }
 
-  process_near_pose_.x = msg->pose.pose.position.x;
-  process_near_pose_.y = msg->pose.pose.position.y;
-  process_near_pose_.theta = tf2::getYaw(msg->pose.pose.orientation);
-  localization_pose_set_ = false;
+  process_near_pose_ = std::make_unique<karto::Pose2>(msg->pose.pose.position.x, 
+        msg->pose.pose.position.x, tf2::getYaw(msg->pose.pose.orientation));
   first_measurement_ = true;
 
   ROS_INFO("LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
-    process_near_pose_.x, process_near_pose_.y,
-    process_near_pose_.theta);
+    msg->pose.pose.position.x, msg->pose.pose.position.y,
+    tf2::getYaw(msg->pose.pose.orientation));
   return;
 }
 

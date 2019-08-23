@@ -135,9 +135,9 @@ add_dependencies(SlamToolboxPlugin ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES}  ${catkin_LIBRARIES} )
 
 #### Tool lib for mapping
-add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp)
+add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)
 add_dependencies(toolbox_common ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(toolbox_common ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 #### Mapping executibles
 add_executable(async_slam_toolbox_node src/slam_toolbox_async.cpp )

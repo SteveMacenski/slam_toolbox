@@ -29,9 +29,9 @@ namespace slam_toolbox
 SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
 : solver_loader_("slam_toolbox", "karto::ScanSolver"),
   processor_type_(PROCESS),
-  localization_pose_set_(false),
   first_measurement_(true),
-  nh_(nh)
+  nh_(nh),
+  process_near_pose_(nullptr)
 /*****************************************************************************/
 {
   smapper_ = std::make_unique<mapper_utils::SMapper>();
@@ -364,14 +364,11 @@ bool SlamToolbox::addScan(
   // localization Fn processLocalization()
     // Fn
     // using its localization_pose_set_ state to do processor then reset to PROCESS_LOCALIZATION
-    // once working, rm  localization_pose_set_ with pointer to the pose to set and check nullptr
-
-  // process_near_pose_ to karto2::Pose and just give directly. After Process() delete ptr
 
   // Add the localized range scan to the smapper
   boost::mutex::scoped_lock lock(smapper_mutex_);
   bool processed = false, update_reprocessing_transform = false;
-  bool localize_first_match = PROCESS_LOCALIZATION && !localization_pose_set_;
+  bool localize_first_match = PROCESS_LOCALIZATION && process_near_pose_;
 
   if (processor_type_ == PROCESS)
   {
@@ -385,13 +382,19 @@ bool SlamToolbox::addScan(
   }
   else if (processor_type_ == PROCESS_NEAR_REGION || localize_first_match)
   {
-    range_scan->SetOdometricPose(process_near_pose_);
-    range_scan->SetCorrectedPose(process_near_pose_);
+    if (!process_near_pose_)
+    {
+      ROS_ERROR("Process near region called without a "
+        "valid region request. Ignoring scan.");
+      return false;
+    }
+    range_scan->SetOdometricPose(*process_near_pose_);
+    range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
+    process_near_pose_.reset(nullptr);
     processed = smapper_->ProcessAgainstNodesNearBy(range_scan);
     update_reprocessing_transform = true;
     if (processor_type_ == PROCESS_LOCALIZATION)
     {
-      localization_pose_set_ = true;
       processor_type_ = PROCESS_LOCALIZATION;
     }
     else
@@ -623,16 +626,13 @@ bool SlamToolbox::deserializePoseGraphCallback(
       break;
     case procType::START_AT_GIVEN_POSE:
       processor_type_ = PROCESS_NEAR_REGION;
-      process_near_pose_.SetX(req.initial_pose.x);
-      process_near_pose_.SetY(req.initial_pose.y);
-      process_near_pose_.SetHeading(req.initial_pose.theta);
+      process_near_pose_ = std::make_unique<karto::Pose2>(req.initial_pose.x, 
+        req.initial_pose.y, req.initial_pose.theta);
       break;
     case procType::LOCALIZE_AT_POSE: 
       processor_type_ = PROCESS_LOCALIZATION;
-      process_near_pose_.SetX(req.initial_pose.x);
-      process_near_pose_.SetY(req.initial_pose.y);
-      process_near_pose_.SetHeading(req.initial_pose.theta);
-      localization_pose_set_ = false;
+      process_near_pose_ = std::make_unique<karto::Pose2>(req.initial_pose.x, 
+        req.initial_pose.y, req.initial_pose.theta);
       break;
     default:
       ROS_FATAL("Deserialization called without valid processor type set.");

@@ -1563,7 +1563,7 @@ namespace karto
      * Sets the last scan of device of given scan
      * @param pScan
      */
-    inline void SetLastScan(LocalizedRangeScan* pScan);
+    void SetLastScan(LocalizedRangeScan* pScan);
 
     /**
      * Gets the scan with the given unique id
@@ -1917,62 +1917,6 @@ namespace karto
      */
     virtual kt_bool Process(Object* pObject);
 
-
-    /**
-     * Process a localized range scan for incorporation into the map.  The scan must
-     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
-     * localized scan will be updated to the correct pose as determined by the mapper.
-     *
-     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
-     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
-     * information in the scan object of nearby and not necessarily contiguous
-     *
-     * @return true if the scan was added successfully, false otherwise
-     */
-    virtual kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
-
-
-    /**
-     * Process a localized range scan for incorporation into the map.  The scan must
-     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
-     * localized scan will be updated to the correct pose as determined by the mapper.
-     *
-     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
-     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
-     * information in the scan object based on matching against nodeId
-
-     * @param nodeId A unique node ID to match against
-     *
-     * @return true if the scan was added successfully, false otherwise
-     */
-    virtual kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
-
-    /**
-     * Process a localized range scan for incorporation into the map.  The scan must
-     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
-     * localized scan will be updated to the correct pose as determined by the mapper.
-     *
-     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
-     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
-     * information in the scan object based on matching against starting point (nodeId = 0)
-     *
-     * @return true if the scan was added successfully, false otherwise
-     */
-    virtual kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
-
-    /**
-     * Process a localized range scan for localization inside a map.  The scan must
-     * be identified with a range finder device.  Once added to a map, the corrected pose information in the
-     * localized scan will be updated to the correct pose as determined by the mapper.
-     *
-     * @param pScan A localized range scan that has pose information associated directly with the scan data.  The pose
-     * is that of the range device originating the scan.  Note that the mapper will set corrected pose
-     * information in the scan object based on matching against starting point (nodeId = 0)
-     *
-     * @return true if the scan was processed successfully, false otherwise
-     */
-    virtual kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
-
     /**
      * Returns all processed scans added to the mapper.
      * NOTE: The returned scans have their corrected pose updated.
@@ -2047,7 +1991,7 @@ namespace karto
       m_pGraph->CorrectPoses();
     }
 
-  private:
+  protected:
     void InitializeParameters();
 
     /**
@@ -2113,7 +2057,7 @@ namespace karto
   public:
     void SetUseScanMatching(kt_bool val) { m_pUseScanMatching->SetValue(val); }
 
-  private:
+  protected:
     kt_bool m_Initialized;
 
     ScanMatcher* m_pSequentialScanMatcher;

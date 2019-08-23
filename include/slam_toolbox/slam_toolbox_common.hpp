@@ -126,12 +126,11 @@ protected:
   // Internal state
   std::vector<std::unique_ptr<boost::thread> > threads_;
   tf2::Transform map_to_odom_;
-  bool localization_pose_set_;
   boost::mutex map_to_odom_mutex_, smapper_mutex_;
   PausedState state_;
   nav_msgs::GetMap::Response map_;
   ProcessType processor_type_;
-  karto::Pose2 process_near_pose_;
+  std::unique_ptr<karto::Pose2> process_near_pose_;
   tf2::Transform reprocessing_transform_;
 
   // pluginlib
