@@ -44,6 +44,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <boost/thread.hpp>
+#include <sys/resource.h>
 
 namespace slam_toolbox
 {
@@ -71,9 +72,9 @@ protected:
   virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) = 0;
   bool mapCallback(nav_msgs::GetMap::Request& req,
     nav_msgs::GetMap::Response& res);
-  bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request& req,
+  virtual bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request& req,
     slam_toolbox::SerializePoseGraph::Response& resp);
-  bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
+  virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
     slam_toolbox::DeserializePoseGraph::Response& resp);
   void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper>&, std::unique_ptr<karto::Dataset>&);
 
@@ -99,7 +100,7 @@ protected:
   std::unique_ptr<message_filters::Subscriber<sensor_msgs::LaserScan> > scan_filter_sub_;
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::LaserScan> > scan_filter_;
   ros::Publisher sst_, sstm_;
-  ros::ServiceServer ssMap_, ssPause_measurements_, ssSerialize_, ssDesserialize_;
+  ros::ServiceServer ssMap_, ssPauseMeasurements_, ssSerialize_, ssDesserialize_;
 
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_;
@@ -108,7 +109,7 @@ protected:
   bool first_measurement_;
 
   // Book keeping
-  std::unique_ptr<mapper_utils::SMapper> mapper_;
+  std::unique_ptr<mapper_utils::SMapper> smapper_;
   std::unique_ptr<karto::Dataset> dataset_;
   std::map<std::string, laser_utils::LaserMetadata> lasers_;
 

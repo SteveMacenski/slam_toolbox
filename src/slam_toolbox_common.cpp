@@ -34,7 +34,7 @@ SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
   nh_(nh)
 /*****************************************************************************/
 {
-  mapper_ = std::make_unique<mapper_utils::SMapper>();
+  smapper_ = std::make_unique<mapper_utils::SMapper>();
   dataset_ = std::make_unique<karto::Dataset>();
 
   setParams(nh_);
@@ -49,7 +49,7 @@ SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
   map_saver_ = std::make_unique<map_saver::MapSaver>(nh_, map_name_);
   closure_assistant_ =
     std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
-    nh_, mapper_.get(), scan_holder_.get(), state_);
+    nh_, smapper_.get(), scan_holder_.get(), state_);
 
   reprocessing_transform_.setIdentity();
 
@@ -71,7 +71,7 @@ SlamToolbox::~SlamToolbox()
     threads_[i]->join();
   }
 
-  mapper_.reset();
+  smapper_.reset();
   dataset_.reset();
   closure_assistant_.reset();
   map_saver_.reset();
@@ -102,7 +102,7 @@ void SlamToolbox::setSolver(ros::NodeHandle& private_nh_)
       solver_plugin.c_str(), ex.what());
     exit(1);
   }
-  mapper_->SetScanSolver(solver_.get());
+  smapper_->SetScanSolver(solver_.get());
 }
 
 /*****************************************************************************/
@@ -133,7 +133,7 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh)
     }
   }
 
-  mapper_->configure(private_nh);
+  smapper_->configure(private_nh);
   private_nh.setParam("paused_new_measurements", false);
 }
 
@@ -147,7 +147,7 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   sst_ = node.advertise<nav_msgs::OccupancyGrid>(map_name_, 1, true);
   sstm_ = node.advertise<nav_msgs::MapMetaData>(map_name_ + "_metadata", 1, true);
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::mapCallback, this);
-  ssPause_measurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
+  ssPauseMeasurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::serializePoseGraphCallback, this);
   ssDesserialize_ = node.advertiseService("deserialize_map", &SlamToolbox::deserializePoseGraphCallback, this);
   scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, "/scan", 5);
@@ -245,10 +245,7 @@ bool SlamToolbox::updateMap()
   }
   boost::mutex::scoped_lock lock(mapper_mutex_);
 
-  karto::OccupancyGrid* occ_grid = nullptr;
-  occ_grid = karto::OccupancyGrid::CreateFromScans(
-    mapper_->GetAllProcessedScans(), resolution_);
-  
+  karto::OccupancyGrid* occ_grid = smapper_->getOccupancyGrid(resolution_);
   if(!occ_grid)
   {
     return false;
@@ -356,11 +353,11 @@ bool SlamToolbox::addScan(
 
   if (processor_type_ == PROCESS)
   {
-    processed = mapper_->Process(range_scan);
+    processed = smapper_->Process(range_scan);
   }
   else if (processor_type_ == PROCESS_FIRST_NODE)
   {
-    processed = mapper_->ProcessAtDock(range_scan);
+    processed = smapper_->ProcessAtDock(range_scan);
     processor_type_ = PROCESS;
     update_reprocessing_transform = true;
   }
@@ -372,7 +369,7 @@ bool SlamToolbox::addScan(
     estimated_starting_pose.SetHeading(process_near_pose_.theta);
     range_scan->SetOdometricPose(estimated_starting_pose);
     range_scan->SetCorrectedPose(estimated_starting_pose);
-    processed = mapper_->ProcessAgainstNodesNearBy(range_scan);
+    processed = smapper_->ProcessAgainstNodesNearBy(range_scan);
     update_reprocessing_transform = true;
     if (processor_type_ == PROCESS_LOCALIZATION)
     {
@@ -386,7 +383,7 @@ bool SlamToolbox::addScan(
   }
   else if (processor_type_ == PROCESS_LOCALIZATION)
   {
-    processed = mapper_->ProcessLocalization(range_scan);
+    processed = smapper_->ProcessLocalization(range_scan);
   }
   else
   {
@@ -472,7 +469,7 @@ bool SlamToolbox::serializePoseGraphCallback(
   }
 
   boost::mutex::scoped_lock lock(mapper_mutex_);
-  serialization::write(filename, *mapper_, *dataset_);
+  serialization::write(filename, *smapper_, *dataset_);
   return true;
 }
 
@@ -509,10 +506,10 @@ void SlamToolbox::loadSerializedPoseGraph(
 
 
   // move the memory to our working dataset
-  mapper_.reset(static_cast<mapper_utils::SMapper*>(mapper.release()));
+  smapper_.reset(static_cast<mapper_utils::SMapper*>(mapper.release()));
   dataset_.reset(dataset.release());
 
-  if (!mapper_)
+  if (!smapper_)
   {
     ROS_FATAL("loadSerializedPoseGraph: Could not properly load "
       "a valid mapping object. Did you modify something by hand?");

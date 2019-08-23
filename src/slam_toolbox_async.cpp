@@ -22,7 +22,6 @@
 #define SLAM_TOOLBOX_SLAM_TOOLBOX_ASYNC_H_
 
 #include "slam_toolbox/slam_toolbox_common.hpp"
-#include "slam_toolbox/pose_utils.hpp"
 
 namespace slam_toolbox
 {
@@ -34,7 +33,7 @@ public:
   ~AsynchronousSlamToolbox() {};
 
 protected:
-  void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override;
+  virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override final;
 };
 
 /*****************************************************************************/
@@ -70,5 +69,29 @@ void AsynchronousSlamToolbox::laserCallback(const sensor_msgs::LaserScan::ConstP
 }
 
 } // end namespace
+
+// program needs a larger stack size to serialize large maps
+#define STACK_SIZE_TO_USE 40000000
+
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "slam_toolbox");
+  ros::NodeHandle nh("~");
+  ros::spinOnce();
+
+  const rlim_t max_stack_size = STACK_SIZE_TO_USE;
+  struct rlimit stack_limit;
+  getrlimit(RLIMIT_STACK, &stack_limit);
+  if (stack_limit.rlim_cur < STACK_SIZE_TO_USE)
+  {
+    stack_limit.rlim_cur = STACK_SIZE_TO_USE;
+  }
+  setrlimit(RLIMIT_STACK, &stack_limit);
+
+  slam_toolbox::AsynchronousSlamToolbox sst(nh);
+
+  ros::spin();
+  return 0;
+}
 
 #endif //SLAM_TOOLBOX_SLAM_TOOLBOX_ASYNC_NODE_H_

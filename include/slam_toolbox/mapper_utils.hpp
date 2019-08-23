@@ -32,6 +32,12 @@ public:
   {
   }
 
+  karto::OccupancyGrid* getOccupancyGrid(const double& resolution)
+  {
+    karto::OccupancyGrid* occ_grid = nullptr;
+    return karto::OccupancyGrid::CreateFromScans(GetAllProcessedScans(), resolution);
+  }
+
   void configure(const ros::NodeHandle& nh)
   {
     bool use_scan_matching;

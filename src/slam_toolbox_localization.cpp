@@ -30,26 +30,37 @@ class LocalizationSlamToolbox : public SlamToolbox
 {
 public:
   LocalizationSlamToolbox(ros::NodeHandle& nh);
-  ~LocalizationSlamToolbox();
+  ~LocalizationSlamToolbox() {};
 
 protected:
-  void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override;
+  virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override final;
 
-  void localizePoseCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
-  ros::Subscriber localization_pose_sub_;
-
+  virtual bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request& req,
+    slam_toolbox::SerializePoseGraph::Response& resp) override final;
 };
+
+//TODO validate works
+/*****************************************************************************/
+bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request& req,
+  slam_toolbox::SerializePoseGraph::Response& resp)
+/*****************************************************************************/
+{
+  ROS_FATAL("LocalizationSlamToolbox: Cannot call serialize map "
+    "in localization mode!");
+  return false;
+}
+
 
 /*****************************************************************************/
 LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
 : SlamToolbox(nh)
 /*****************************************************************************/
 {
-  localization_pose_sub_ = node.subscribe("/initialpose", 2, &LocalizationSlamToolbox::localizePoseCallback, this);
 }
 
 /*****************************************************************************/
-void LocalizationSlamToolbox::laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
+void LocalizationSlamToolbox::laserCallback(
+  const sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
 {
   // no odom info
@@ -64,8 +75,8 @@ void LocalizationSlamToolbox::laserCallback(const sensor_msgs::LaserScan::ConstP
 
   if(!laser)
   {
-    ROS_WARN_THROTTLE(5., "Failed to create laser device for"
-      " %s; discarding scan", scan->header.frame_id.c_str());
+    ROS_WARN_THROTTLE(5., "SynchronousSlamToolbox: Failed to create laser"
+      " device for %s; discarding scan", scan->header.frame_id.c_str());
     return;
   }
 
@@ -73,30 +84,34 @@ void LocalizationSlamToolbox::laserCallback(const sensor_msgs::LaserScan::ConstP
   return;
 }
 
-/*****************************************************************************/
-void LocalizationSlamToolbox::localizePoseCallback(const
-  geometry_msgs::PoseWithCovarianceStampedConstPtr& msg)
-/*****************************************************************************/
-{
-  if (processor_type_ != PROCESS_LOCALIZATION)
-  {
-    ROS_ERROR("LocalizePoseCallback: Cannot process localization command "
-      "if not in localization mode.");
-    return;
-  }
-
-  process_near_pose_.x = msg->pose.pose.position.x;
-  process_near_pose_.y = msg->pose.pose.position.y;
-  process_near_pose_.theta = tf2::getYaw(msg->pose.pose.orientation);
-  localization_pose_set_ = false;
-  first_measurement_ = true;
-
-  ROS_INFO("LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
-    process_near_pose_.x, process_near_pose_.y,
-    process_near_pose_.theta);
-  return;
-}
-
 } // end namespace
+
+// program needs a larger stack size to serialize large maps
+#define STACK_SIZE_TO_USE 40000000
+
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "slam_toolbox");
+  ros::NodeHandle nh("~");
+  ros::spinOnce();
+
+  const rlim_t max_stack_size = STACK_SIZE_TO_USE;
+  struct rlimit stack_limit;
+  getrlimit(RLIMIT_STACK, &stack_limit);
+  if (stack_limit.rlim_cur < STACK_SIZE_TO_USE)
+  {
+    stack_limit.rlim_cur = STACK_SIZE_TO_USE;
+  }
+  setrlimit(RLIMIT_STACK, &stack_limit);
+
+  // get initial pose, or set to XYZ and file name TODO
+
+  slam_toolbox::LocalizationSlamToolbox sst(nh, x, y, theta);
+
+  // localization_pose_set_ to process_near_pose_ NULL and localization mode
+
+  ros::spin();
+  return 0;
+}
 
 #endif //SLAM_TOOLBOX_SLAM_TOOLBOX_LOCALIZATION_H_

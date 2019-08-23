@@ -22,7 +22,6 @@
 #define SLAM_TOOLBOX_SLAM_TOOLBOX_SYNC_H_
 
 #include "slam_toolbox/slam_toolbox_common.hpp"
-#include "slam_toolbox/pose_utils.hpp"
 
 namespace slam_toolbox
 {
@@ -35,7 +34,7 @@ public:
   void run();
 
 protected:
-  void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override;
+  virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override final;
   bool shouldProcessScan(const sensor_msgs::LaserScan::ConstPtr& scan, const karto::Pose2& pose);
   bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req, slam_toolbox::ClearQueue::Response& resp);
 
@@ -57,7 +56,7 @@ SynchronousSlamToolbox::SynchronousSlamToolbox(ros::NodeHandle& nh)
   nh.param("throttle_scans", throttle_scans_, 1);
   nh.param("minimum_time_interval", tmp_val, 0.5);
   minimum_time_interval_ = ros::Duration(tmp_val);
-  minimum_travel_distance_ = mapper_->getParamMinimumTravelDistance();
+  minimum_travel_distance_ = smapper_->getParamMinimumTravelDistance();
 
   threads_.push_back(std::make_unique<boost::thread>(
     boost::bind(&SynchronousSlamToolbox::run, this)));
@@ -189,5 +188,33 @@ bool SynchronousSlamToolbox::clearQueueCallback(
 }
 
 } // end namespace
+
+// program needs a larger stack size to serialize large maps
+#define STACK_SIZE_TO_USE 40000000
+
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "slam_toolbox");
+  ros::NodeHandle nh("~");
+  ros::spinOnce();
+
+  const rlim_t max_stack_size = STACK_SIZE_TO_USE;
+  struct rlimit stack_limit;
+  getrlimit(RLIMIT_STACK, &stack_limit);
+  if (stack_limit.rlim_cur < STACK_SIZE_TO_USE)
+  {
+    stack_limit.rlim_cur = STACK_SIZE_TO_USE;
+  }
+  setrlimit(RLIMIT_STACK, &stack_limit);
+
+  slam_toolbox::SynchronousSlamToolbox sst(nh);
+
+  // addScan has too much state, and/or break out
+  // processor_type_ simplify or remove?
+  // smapper include dataset unique_ptr
+
+  ros::spin();
+  return 0;
+}
 
 #endif //SLAM_TOOLBOX_SLAM_TOOLBOX_SYNC_NODE_H_
