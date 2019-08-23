@@ -331,7 +331,7 @@ bool SlamToolbox::addScan(
   karto::Pose2& karto_pose)
 /*****************************************************************************/
 {  
-  //STEVE
+  //STEVE TODO 
 
   // add before mutex as another Fn: range_scan = Fn (*scan, laser, karto_pose)
 

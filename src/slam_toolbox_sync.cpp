@@ -227,9 +227,8 @@ int main(int argc, char** argv)
 
   slam_toolbox::SynchronousSlamToolbox sst(nh);
 
-  // addScan has too much state, and/or break out
-  // processor_type_ simplify or remove?
-  // smapper include dataset unique_ptr
+  // TODO processor_type_ simplify or remove?
+  // TODO smapper include dataset unique_ptr
 
   ros::spin();
   return 0;
