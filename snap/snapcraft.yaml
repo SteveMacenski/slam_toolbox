@@ -40,7 +40,7 @@ apps:
 
 parts:
   workspace:
-    build-packages: [libqt5core5a, libqt5widgets5]
+    build-packages: [qt5-default]
     plugin: catkin
     source-space: src
     include-roscore: true
