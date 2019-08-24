@@ -54,12 +54,12 @@ bool MapSaver::saveMapCallback(
   if (name != "")
   {
     ROS_INFO("SlamToolbox: Saving map as %s.", name.c_str());
-    system(("rosrun map_server map_saver -f " + name).c_str());
+    int rc = system(("rosrun map_server map_saver -f " + name).c_str());
   }
   else
   {
     ROS_INFO("SlamToolbox: Saving map in current directory.");
-    system("rosrun map_server map_saver");
+    int rc = system("rosrun map_server map_saver");
   }
   ros::Duration(1.0).sleep();
   return true;
