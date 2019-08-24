@@ -40,6 +40,7 @@ apps:
 
 parts:
   workspace:
+    build-packages: [liblapack-dev, libblas-dev] 
     plugin: catkin
     source-space: src
     include-roscore: true
