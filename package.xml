@@ -37,6 +37,8 @@
   <build_depend>libblas-dev</build_depend>
   <build_depend>liblapack-dev</build_depend>
   <build_depend>libgoogle-glog-dev</build_depend>
+  <build_depend>libqt5-core</build_depend>
+  <build_depend>libqt5-widgets</build_depend>
   <run_depend>eigen</run_depend>
   <run_depend>pluginlib</run_depend>
   <run_depend>message_filters</run_depend>
@@ -62,6 +64,8 @@
   <run_depend>libblas-dev</run_depend>
   <run_depend>liblapack-dev</run_depend>
   <run_depend>libgoogle-glog-dev</run_depend>
+  <run_depend>libqt5-core</run_depend>
+  <run_depend>libqt5-widgets</run_depend>
 
   <export>
     <slam_toolbox plugin="${prefix}/solver_plugins.xml" />

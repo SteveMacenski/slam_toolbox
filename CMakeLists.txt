@@ -40,26 +40,26 @@ find_package(Cholmod REQUIRED)
 #find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
-#set(CMAKE_AUTOMOC ON)
-#if(rviz_QT_VERSION VERSION_LESS "5")
-#  find_package(Qt4 ${rviz_QT_VERSION} REQUIRED QtCore QtGui)
-#  include(${QT_USE_FILE})
-#  macro(qt_wrap_ui)
-#    qt4_wrap_ui(${ARGN})
-#  endmacro()
-#  macro(qt_wrap_cpp)
-#    qt4_wrap_cpp(${ARGN})
-#  endmacro()
-#else()
-#  find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
-#  set(QT_LIBRARIES Qt5::Widgets)
-#  macro(qt_wrap_ui)
-#    qt5_wrap_ui(${ARGN})
-#  endmacro()
-#  macro(qt_wrap_cpp)
-#    qt5_wrap_cpp(${ARGN})
-#  endmacro()
-#endif()
+set(CMAKE_AUTOMOC ON)
+if(rviz_QT_VERSION VERSION_LESS "5")
+  find_package(Qt4 ${rviz_QT_VERSION} REQUIRED QtCore QtGui)
+  include(${QT_USE_FILE})
+  macro(qt_wrap_ui)
+    qt4_wrap_ui(${ARGN})
+  endmacro()
+  macro(qt_wrap_cpp)
+    qt4_wrap_cpp(${ARGN})
+  endmacro()
+else()
+  find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
+  set(QT_LIBRARIES Qt5::Widgets)
+  macro(qt_wrap_ui)
+    qt5_wrap_ui(${ARGN})
+  endmacro()
+  macro(qt_wrap_cpp)
+    qt5_wrap_cpp(${ARGN})
+  endmacro()
+endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_definitions(-DQT_NO_KEYWORDS)
@@ -126,12 +126,12 @@ target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES}
 )
 
 #### rviz Plugin
-#qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
-#set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
-#set(HEADER_FILES rviz_plugin/slam_toolbox_rviz_plugin.h )
-#add_library(slam_toolbox_rviz_plugin ${SOURCE_FILES} ${HEADER_FILES})
-#add_dependencies(slam_toolbox_rviz_plugin ${PROJECT_NAME}_generate_messages_cpp)
-#target_link_libraries(slam_toolbox_rviz_plugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES}  ${catkin_LIBRARIES} )
+qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
+set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
+set(HEADER_FILES rviz_plugin/slam_toolbox_rviz_plugin.h )
+add_library(slam_toolbox_rviz_plugin ${SOURCE_FILES} ${HEADER_FILES})
+add_dependencies(slam_toolbox_rviz_plugin ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(slam_toolbox_rviz_plugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
 #### Main lib for mapping
 add_library(toolbox_lib src/slam_toolbox.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp)
@@ -150,7 +150,7 @@ target_link_libraries(merge_maps_kinematic toolbox_lib ${catkin_LIBRARIES} ${Boo
 install(TARGETS toolbox_lib 
                 slam_toolbox
                 ceres_solver_plugin
-                #slam_toolbox_rviz_plugin
+                slam_toolbox_rviz_plugin
                 merge_maps_kinematic
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
