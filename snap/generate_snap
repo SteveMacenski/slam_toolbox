@@ -7,7 +7,6 @@ cd src
 
 # add all the necessary things to it
 git clone -b snapping2 https://github.com/SteveMacenski/slam_toolbox.git
-#git clone -b kinetic-devel https://github.com/ros-visualization/rviz.git
 cd ../
 
 # move snap and hooks to right place

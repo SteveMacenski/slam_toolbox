@@ -40,31 +40,6 @@ find_package(Cholmod REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
-catkin_package(
-    INCLUDE_DIRS include
-    LIBRARIES
-      ceres_solver_plugin
-      toolbox_lib
-      slam_toolbox_rviz_plugin
-    CATKIN_DEPENDS
-      message_filters
-      nav_msgs
-      rosconsole
-      roscpp
-      sparse_bundle_adjustment
-      sensor_msgs
-      rviz
-      tf2
-      tf2_ros
-      visualization_msgs
-      pluginlib
-      message_runtime
-      std_srvs
-      std_msgs
-      tf2_geometry_msgs
-      interactive_markers
-)
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_definitions(-DQT_NO_KEYWORDS)
 find_package(Boost REQUIRED system serialization filesystem thread)
@@ -96,6 +71,31 @@ generate_messages(
   std_srvs
   std_msgs
   geometry_msgs
+)
+
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES
+      ceres_solver_plugin
+      toolbox_lib
+      slam_toolbox_rviz_plugin
+    CATKIN_DEPENDS
+      message_filters
+      nav_msgs
+      rosconsole
+      roscpp
+      sparse_bundle_adjustment
+      sensor_msgs
+      rviz
+      tf2
+      tf2_ros
+      visualization_msgs
+      pluginlib
+      message_runtime
+      std_srvs
+      std_msgs
+      tf2_geometry_msgs
+      interactive_markers
 )
 
 #### Ceres Plugin
