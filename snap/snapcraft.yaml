@@ -40,7 +40,7 @@ apps:
 
 parts:
   workspace:
-    #build-packages: [liblapack-dev, libblas-dev, libgoogle-glog-dev]
+    build-packages: [libqt5-core, libqt5-widgets]
     plugin: catkin
     source-space: src
     include-roscore: true

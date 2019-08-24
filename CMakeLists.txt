@@ -68,8 +68,6 @@ find_package(Boost REQUIRED system serialization filesystem thread)
 include_directories(include ${catkin_INCLUDE_DIRS} 
                             ${EIGEN3_INCLUDE_DIRS} 
                             ${CHOLMOD_INCLUDE_DIR}
-                            #${MKL_INCLUDE_DIR}
-                            #${GTSAM_INCLUDE_DIRS}
                             ${Boost_INCLUDE_DIR}
 )
 
@@ -98,7 +96,10 @@ generate_messages(
 
 catkin_package(
     INCLUDE_DIRS include
-    LIBRARIES ceres_solver_plugin toolbox_lib #slam_toolbox_rviz_plugin
+    LIBRARIES
+      ceres_solver_plugin
+      toolbox_lib
+      slam_toolbox_rviz_plugin
     CATKIN_DEPENDS
       message_filters
       nav_msgs
