@@ -1,6 +1,5 @@
 /*
  * slam_toolbox
- * Copyright (c) 2008, Willow Garage, Inc.
  * Copyright Work Modifications (c) 2018, Simbe Robotics, Inc.
  * Copyright Work Modifications (c) 2019, Samsung Research America
  *

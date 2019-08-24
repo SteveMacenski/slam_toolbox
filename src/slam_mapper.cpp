@@ -1,5 +1,6 @@
 /*
  * slam_mapper
+ * Copyright (c) 2018, Simbe Robotics
  * Copyright (c) 2018, Steve Macenski
  * Copyright (c) 2019, Samsung Research America
  *
