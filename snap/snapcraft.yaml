@@ -40,7 +40,7 @@ apps:
 
 parts:
   workspace:
-    #build-packages: [qt5-default]
+    build-packages: [qt5-default, libgoogle-glog-dev]
     plugin: catkin
     source-space: src
     include-roscore: true
@@ -48,4 +48,4 @@ parts:
     catkin-ros-master-uri: http://localhost:11311
     catkin-packages: [slam_toolbox] #rviz
     recursive-rosinstall: false
-    after: [desktop-qt5]
+    #after: [desktop-qt5]
