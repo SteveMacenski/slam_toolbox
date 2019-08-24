@@ -28,23 +28,13 @@ apps:
       LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/lapack:$SNAP/usr/lib/libblas
     plugs: [network, network-bind]
 
-  # rviz:
-  #   command: desktop-launch $SNAP/opt/ros/kinetic/lib/rviz/rviz -d $ROS_PACKAGE_PATH/slam_toolbox/config/slam_toolbox_default.rviz
-  #   environment:
-  #     LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/x86_64-linux-gnu/OGRE-1.9.0 # rviz plugin (ogre)
-  #   plugs: [network, network-bind, home, x11, opengl]
-
-  roscore:
-    command: roscore
-    plugs: [network, network-bind]
-
 parts:
   workspace:
-    build-packages: [qt5-default, libgoogle-glog-dev] # liblapack-dev, libblas-dev
+    build-packages: [qt5-default, libgoogle-glog-dev, liblapack-dev, libblas-dev] 
     plugin: catkin
     source-space: src
     include-roscore: true
     source: .
     catkin-ros-master-uri: http://localhost:11311
-    catkin-packages: [slam_toolbox] #rviz
+    catkin-packages: [slam_toolbox]
     recursive-rosinstall: false

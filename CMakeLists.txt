@@ -37,29 +37,33 @@ find_package(Eigen3 REQUIRED)
 #find_package(CSparse REQUIRED)
 find_package(G2O REQUIRED)
 find_package(Cholmod REQUIRED)
-#find_package(LAPACK REQUIRED)
+find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
-set(CMAKE_AUTOMOC ON)
-if(rviz_QT_VERSION VERSION_LESS "5")
-  find_package(Qt4 ${rviz_QT_VERSION} REQUIRED QtCore QtGui)
-  include(${QT_USE_FILE})
-  macro(qt_wrap_ui)
-    qt4_wrap_ui(${ARGN})
-  endmacro()
-  macro(qt_wrap_cpp)
-    qt4_wrap_cpp(${ARGN})
-  endmacro()
-else()
-  find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
-  set(QT_LIBRARIES Qt5::Widgets)
-  macro(qt_wrap_ui)
-    qt5_wrap_ui(${ARGN})
-  endmacro()
-  macro(qt_wrap_cpp)
-    qt5_wrap_cpp(${ARGN})
-  endmacro()
-endif()
+catkin_package(
+    INCLUDE_DIRS include
+    LIBRARIES
+      ceres_solver_plugin
+      toolbox_lib
+      slam_toolbox_rviz_plugin
+    CATKIN_DEPENDS
+      message_filters
+      nav_msgs
+      rosconsole
+      roscpp
+      sparse_bundle_adjustment
+      sensor_msgs
+      rviz
+      tf2
+      tf2_ros
+      visualization_msgs
+      pluginlib
+      message_runtime
+      std_srvs
+      std_msgs
+      tf2_geometry_msgs
+      interactive_markers
+)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_definitions(-DQT_NO_KEYWORDS)
@@ -94,31 +98,6 @@ generate_messages(
   geometry_msgs
 )
 
-catkin_package(
-    INCLUDE_DIRS include
-    LIBRARIES
-      ceres_solver_plugin
-      toolbox_lib
-      slam_toolbox_rviz_plugin
-    CATKIN_DEPENDS
-      message_filters
-      nav_msgs
-      rosconsole
-      roscpp
-      sparse_bundle_adjustment
-      sensor_msgs
-      rviz
-      tf2
-      tf2_ros
-      visualization_msgs
-      pluginlib
-      message_runtime
-      std_srvs
-      std_msgs
-      tf2_geometry_msgs
-      interactive_markers
-)
-
 #### Ceres Plugin
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
 target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES} 
@@ -127,6 +106,26 @@ target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES}
 )
 
 #### rviz Plugin
+set(CMAKE_AUTOMOC ON)
+if(rviz_QT_VERSION VERSION_LESS "5")
+  find_package(Qt4 ${rviz_QT_VERSION} REQUIRED QtCore QtGui)
+  include(${QT_USE_FILE})
+  macro(qt_wrap_ui)
+    qt4_wrap_ui(${ARGN})
+  endmacro()
+  macro(qt_wrap_cpp)
+    qt4_wrap_cpp(${ARGN})
+  endmacro()
+else()
+  find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
+  set(QT_LIBRARIES Qt5::Widgets)
+  macro(qt_wrap_ui)
+    qt5_wrap_ui(${ARGN})
+  endmacro()
+  macro(qt_wrap_cpp)
+    qt5_wrap_cpp(${ARGN})
+  endmacro()
+endif()
 qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
 set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
 set(HEADER_FILES rviz_plugin/slam_toolbox_rviz_plugin.h )
@@ -151,8 +150,8 @@ target_link_libraries(merge_maps_kinematic toolbox_lib ${catkin_LIBRARIES} ${Boo
 install(TARGETS toolbox_lib 
                 slam_toolbox
                 ceres_solver_plugin
-                slam_toolbox_rviz_plugin
                 merge_maps_kinematic
+                slam_toolbox_rviz_plugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
