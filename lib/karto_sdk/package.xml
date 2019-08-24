@@ -12,8 +12,12 @@
 
   <build_depend>boost</build_depend>
   <build_depend>tbb</build_depend>
+  <build_depend>libblas-dev</build_depend>
+  <build_depend>liblapack-dev</build_depend>
 
   <run_depend>boost</run_depend>
   <run_depend>tbb</run_depend>
+  <run_depend>libblas-dev</run_depend>
+  <run_depend>liblapack-dev</run_depend>
 
 </package>
