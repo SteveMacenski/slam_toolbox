@@ -1,6 +1,6 @@
 name: slam-toolbox
 version: '0.5.1'
-summary: Slam Toolbox based on Karto's SDK.
+summary: Slam Toolbox
 description: |
   A toolbox for building high quality maps of large spaces with a LIDAR.
 
@@ -40,12 +40,11 @@ apps:
 
 parts:
   workspace:
-    build-packages: [liblapack-dev, libblas-dev, libgoogle-glog-dev]
+    #build-packages: [liblapack-dev, libblas-dev, libgoogle-glog-dev]
     plugin: catkin
     source-space: src
     include-roscore: true
     source: .
-    #rosdistro: kinetic
     catkin-ros-master-uri: http://localhost:11311
     catkin-packages: [slam_toolbox] #rviz
     recursive-rosinstall: false
