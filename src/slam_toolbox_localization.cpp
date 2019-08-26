@@ -130,7 +130,11 @@ void LocalizationSlamToolbox::laserCallback(
     return;
   }
 
-  addScan(laser, scan, pose);
+  if (shouldProcessScan(scan, pose))
+  {
+    addScan(laser, scan, pose);
+  }
+  
   return;
 }
 
@@ -141,6 +145,8 @@ bool LocalizationSlamToolbox::addScan(
   karto::Pose2& karto_pose)
 /*****************************************************************************/
 {
+  boost::mutex::scoped_lock l(pose_mutex_);
+
   if (PROCESS_LOCALIZATION && process_near_pose_)
   {
     processor_type_ = PROCESS_NEAR_REGION;
@@ -208,6 +214,7 @@ void LocalizationSlamToolbox::localizePoseCallback(const
     return;
   }
 
+  boost::mutex::scoped_lock l(pose_mutex_);
   process_near_pose_ = std::make_unique<karto::Pose2>(msg->pose.pose.position.x, 
         msg->pose.pose.position.x, tf2::getYaw(msg->pose.pose.orientation));
   first_measurement_ = true;

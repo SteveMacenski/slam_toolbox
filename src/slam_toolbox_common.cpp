@@ -114,14 +114,16 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh)
   private_nh.param("base_frame", base_frame_, std::string("base_footprint"));
   private_nh.param("resolution", resolution_, 0.05);
   private_nh.param("map_name", map_name_, std::string("/map"));
+  private_nh.param("throttle_scans", throttle_scans_, 1);
 
   double tmp_val;
   private_nh.param("transform_timeout", tmp_val, 0.2);
   transform_timeout_ = ros::Duration(tmp_val);
-  
   private_nh.param("tf_buffer_duration", tmp_val, 30.);
   tf_buffer_dur_ = ros::Duration(tmp_val);
-  
+  private_nh.param("minimum_time_interval", tmp_val, 0.5);
+  minimum_time_interval_ = ros::Duration(tmp_val);
+
   bool debug = false;
   if (private_nh.getParam("debug_logging", debug) && debug)
   {
@@ -376,6 +378,61 @@ karto::LocalizedRangeScan* SlamToolbox::getLocalizedRangeScan(
 }
 
 /*****************************************************************************/
+bool SlamToolbox::shouldProcessScan(
+  const sensor_msgs::LaserScan::ConstPtr& scan,
+  const karto::Pose2& pose)
+/*****************************************************************************/
+{
+  static karto::Pose2 last_pose;
+  static ros::Time last_scan_time = ros::Time(0.);
+  static double min_dist2 =
+    smapper_->getMapper()->getParamMinimumTravelDistance() *
+    smapper_->getMapper()->getParamMinimumTravelDistance();
+
+  // we give it a pass on the first measurement to get the ball rolling
+  if (first_measurement_)
+  {
+    last_scan_time = scan->header.stamp;
+    last_pose = pose;
+    first_measurement_ = false;
+    return true;
+  }
+
+  // we are in a paused mode, reject incomming information
+  if(isPaused(NEW_MEASUREMENTS))
+  {
+    return false;
+  }
+
+  // throttled out
+  if ((scan->header.seq % throttle_scans_) != 0)
+  {
+    return false;
+  }
+
+  // not enough time
+  if (scan->header.stamp - last_scan_time < minimum_time_interval_)
+  {
+    return false;
+  }
+
+  // check moved enough, within 10% for correction error
+  const double dist2 = fabs((last_pose.GetX() - pose.GetX())*(last_pose.GetX() - 
+    pose.GetX()) + (last_pose.GetY() - pose.GetY())*
+    (last_pose.GetX() - pose.GetY()));
+  if(dist2 < 0.8 * min_dist2 || scan->header.seq < 5)
+  {
+    return false;
+  }
+
+  last_pose = pose;
+  last_scan_time = scan->header.stamp; 
+
+  return true;
+}
+
+
+/*****************************************************************************/
 bool SlamToolbox::addScan(
   karto::LaserRangeFinder* laser,
   PosedScan& scan_w_pose)
@@ -411,6 +468,7 @@ bool SlamToolbox::addScan(
   }
   else if (processor_type_ == PROCESS_NEAR_REGION)
   {
+    boost::mutex::scoped_lock l(pose_mutex_);
     if (!process_near_pose_)
     {
       ROS_ERROR("Process near region called without a "
@@ -634,6 +692,7 @@ bool SlamToolbox::deserializePoseGraphCallback(
   updateMap();
 
   first_measurement_ = true;
+  boost::mutex::scoped_lock l(pose_mutex_);
   switch (req.match_type)
   {
     case procType::START_AT_FIRST_NODE:

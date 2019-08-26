@@ -90,6 +90,7 @@ protected:
     const sensor_msgs::LaserScan::ConstPtr& scan,
     karto::Pose2& karto_pose);
   bool shouldStartWithPoseGraph(std::string& filename, geometry_msgs::Pose2D& pose, bool& start_at_dock);
+  bool shouldProcessScan(const sensor_msgs::LaserScan::ConstPtr& scan, const karto::Pose2& pose);
 
   // pausing bits
   bool isPaused(const PausedApplication& app);
@@ -108,7 +109,9 @@ protected:
 
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_;
-  ros::Duration transform_timeout_, tf_buffer_dur_;
+  ros::Duration transform_timeout_, tf_buffer_dur_, minimum_time_interval_;
+  int throttle_scans_;
+
   double resolution_;
   bool first_measurement_;
 
@@ -127,7 +130,7 @@ protected:
   // Internal state
   std::vector<std::unique_ptr<boost::thread> > threads_;
   tf2::Transform map_to_odom_;
-  boost::mutex map_to_odom_mutex_, smapper_mutex_;
+  boost::mutex map_to_odom_mutex_, smapper_mutex_, pose_mutex_;
   PausedState state_;
   nav_msgs::GetMap::Response map_;
   ProcessType processor_type_;
