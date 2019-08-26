@@ -93,7 +93,6 @@ void AsynchronousSlamToolbox::laserCallback(
   return;
 }
 
-// TODO validate this works
 /*****************************************************************************/
 bool AsynchronousSlamToolbox::deserializePoseGraphCallback(
   slam_toolbox::DeserializePoseGraph::Request& req,

@@ -211,7 +211,6 @@ bool SynchronousSlamToolbox::clearQueueCallback(
   return true;
 }
 
-// TODO validate this works
 /*****************************************************************************/
 bool SynchronousSlamToolbox::deserializePoseGraphCallback(
   slam_toolbox::DeserializePoseGraph::Request& req,

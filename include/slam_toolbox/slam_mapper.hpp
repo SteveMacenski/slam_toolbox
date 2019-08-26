@@ -58,7 +58,7 @@ public:
 
 protected:
   LocalizationScanVertices m_LocalizationScanVertices;
-  std::unique_ptr<karto::Dataset> dataset_;
+  std::unique_ptr<karto::Dataset> m_Dataset;
 };
 
 } // end namespace

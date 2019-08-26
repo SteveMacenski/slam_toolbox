@@ -68,6 +68,8 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
     slam_toolbox::DeserializePoseGraph::Response resp;
     req.initial_pose = pose;
     req.filename = filename;
+    req.match_type = 
+      slam_toolbox::DeserializePoseGraph::Request::LOCALIZE_AT_POSE;
     if (dock)
     {
       ROS_ERROR("LocalizationSlamToolbox: Starting localization "
@@ -80,7 +82,6 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
   return;
 }
 
-//TODO validate works
 /*****************************************************************************/
 bool LocalizationSlamToolbox::serializePoseGraphCallback(
   slam_toolbox::SerializePoseGraph::Request& req,
@@ -92,7 +93,6 @@ bool LocalizationSlamToolbox::serializePoseGraphCallback(
   return false;
 }
 
-// TODO validate this works
 /*****************************************************************************/
 bool LocalizationSlamToolbox::deserializePoseGraphCallback(
   slam_toolbox::DeserializePoseGraph::Request& req,
