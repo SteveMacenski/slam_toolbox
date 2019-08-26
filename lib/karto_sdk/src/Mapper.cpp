@@ -36,6 +36,7 @@ BOOST_CLASS_EXPORT(karto::LinkInfo);
 BOOST_CLASS_EXPORT(karto::Edge<karto::LocalizedRangeScan>);
 BOOST_CLASS_EXPORT(karto::Vertex<karto::LocalizedRangeScan>);
 BOOST_CLASS_EXPORT(karto::MapperSensorManager)
+BOOST_CLASS_EXPORT(karto::Mapper)
 namespace karto
 {
 
