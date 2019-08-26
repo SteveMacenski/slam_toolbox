@@ -1,6 +1,5 @@
 /*
  * slam_toolbox
- * Copyright (c) 2008, Willow Garage, Inc.
  * Copyright Work Modifications (c) 2018, Simbe Robotics, Inc.
  * Copyright Work Modifications (c) 2019, Samsung Research America
  *
@@ -504,7 +503,9 @@ bool SlamToolbox::serializePoseGraphCallback(
   }
 
   boost::mutex::scoped_lock lock(smapper_mutex_);
-  serialization::write(filename, *static_cast<karto::Mapper*>(smapper_.get()), *smapper_->getDataset());
+  serialization::write(filename,
+    *static_cast<karto::Mapper*>(smapper_.get()),
+    *smapper_->getDataset());
   return true;
 }
 
