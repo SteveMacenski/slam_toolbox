@@ -165,7 +165,7 @@ bool LocalizationSlamToolbox::addScan(
     range_scan->SetOdometricPose(*process_near_pose_);
     range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
     process_near_pose_.reset(nullptr);
-    processed = smapper_->ProcessAgainstNodesNearBy(range_scan);
+    processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan);
 
     // compute our new transform and reset to localization mode
     setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
@@ -174,7 +174,7 @@ bool LocalizationSlamToolbox::addScan(
   }
   else if (processor_type_ == PROCESS_LOCALIZATION)
   {
-    processed = smapper_->ProcessLocalization(range_scan);
+    processed = smapper_->getMapper()->ProcessLocalization(range_scan);
   }
   else
   {

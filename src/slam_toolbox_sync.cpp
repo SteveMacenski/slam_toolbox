@@ -58,7 +58,8 @@ SynchronousSlamToolbox::SynchronousSlamToolbox(ros::NodeHandle& nh)
   nh.param("throttle_scans", throttle_scans_, 1);
   nh.param("minimum_time_interval", tmp_val, 0.5);
   minimum_time_interval_ = ros::Duration(tmp_val);
-  minimum_travel_distance_ = smapper_->getParamMinimumTravelDistance();
+  minimum_travel_distance_ =
+    smapper_->getMapper()->getParamMinimumTravelDistance();
 
   threads_.push_back(std::make_unique<boost::thread>(
     boost::bind(&SynchronousSlamToolbox::run, this)));

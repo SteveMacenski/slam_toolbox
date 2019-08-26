@@ -29,7 +29,7 @@ namespace mapper_utils
 
 using namespace ::karto;
 
-class SMapper : public karto::Mapper
+class SMapper
 {
 public:
   SMapper();
@@ -45,7 +45,7 @@ public:
   karto::Pose2 toKartoPose(const tf2::Transform& pose) const;
 
   void configure(const ros::NodeHandle& nh);
-  virtual void Reset() override final;
+  void Reset();
 
   // // processors
   // kt_bool ProcessAtDock(LocalizedRangeScan* pScan);

@@ -405,7 +405,7 @@ bool SlamToolbox::addScan(
   }
   else if (processor_type_ == PROCESS_FIRST_NODE)
   {
-    processed = smapper_->ProcessAtDock(range_scan);
+    processed = smapper_->getMapper()->ProcessAtDock(range_scan);
     processor_type_ = PROCESS;
     update_reprocessing_transform = true;
   }
@@ -420,7 +420,7 @@ bool SlamToolbox::addScan(
     range_scan->SetOdometricPose(*process_near_pose_);
     range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
     process_near_pose_.reset(nullptr);
-    processed = smapper_->ProcessAgainstNodesNearBy(range_scan);
+    processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan);
     update_reprocessing_transform = true;
     processor_type_ = PROCESS;
   }
