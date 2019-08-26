@@ -62,8 +62,13 @@ bool MergeMapsKinematic::addSubmapCallback(
   std::unique_ptr<karto::Mapper> mapper = std::make_unique<karto::Mapper>();
   std::unique_ptr<karto::Dataset> dataset = std::make_unique<karto::Dataset>();
 
-  serialization::read(req.filename, *mapper, *dataset);
-
+  if (!serialization::read(req.filename, *mapper, *dataset))
+  {
+    ROS_ERROR("addSubmapCallback: Failed to read "
+      "file: %s.", req.filename.c_str());
+    return true;
+  }
+  
   // we know the position because we put it there before any scans
   karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(
     dataset->GetObjects()[0]);
