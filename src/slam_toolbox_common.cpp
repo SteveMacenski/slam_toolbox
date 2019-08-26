@@ -425,7 +425,7 @@ bool SlamToolbox::addScan(
   }
   else
   {
-    ROS_FATAL("No valid processor type set! Exiting.");
+    ROS_FATAL("SlamToolbox: No valid processor type set! Exiting.");
     exit(-1);
   }
 

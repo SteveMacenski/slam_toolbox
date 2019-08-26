@@ -55,6 +55,7 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
 : SlamToolbox(nh)
 /*****************************************************************************/
 {
+  processor_type_ = PROCESS_LOCALIZATION;
   localization_pose_sub_ = nh.subscribe("/initialpose", 1,
     &LocalizationSlamToolbox::localizePoseCallback, this);
 
@@ -182,7 +183,8 @@ bool LocalizationSlamToolbox::addScan(
   }
   else
   {
-    ROS_FATAL("No valid processor type set! Exiting.");
+    ROS_FATAL("LocalizationSlamToolbox: "
+      "No valid processor type set! Exiting.");
     exit(-1);
   }
 

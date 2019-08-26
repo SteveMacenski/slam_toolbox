@@ -23,9 +23,9 @@ mode: mapping #localization
 
 # if you'd like to start localizing on bringup in a map and pose
 # if pose is given, it will use pose over dock boolean
-map_file_name: test_steve
-map_start_pose: [0.0 0.0 0.0]
-map_start_at_dock: False
+# map_file_name: test_steve
+# map_start_pose: [0.0 0.0 0.0]
+# map_start_at_dock: False
 
 debug_logging: false
 throttle_scans: 1
