@@ -42,9 +42,7 @@ inline void write(const std::string& filename,
   try
   {
     mapper.SaveToFile(filename + std::string(".posegraph"));
-    std::ofstream ofs((filename + std::string(".data")).c_str());
-    boost::archive::binary_oarchive oa(ofs, boost::archive::no_codecvt);
-    oa << BOOST_SERIALIZATION_NVP(dataset);
+    dataset.SaveToFile(filename + std::string(".data"));
   }
   catch (boost::archive::archive_exception e)
   {
@@ -66,9 +64,7 @@ inline bool read(const std::string& filename,
   try
   {
     mapper.LoadFromFile(filename + std::string(".posegraph"));
-    std::ifstream ifs((filename + std::string(".data")).c_str());
-    boost::archive::binary_iarchive ia(ifs);
-    ia >> BOOST_SERIALIZATION_NVP(dataset);
+    dataset.LoadFromFile(filename + std::string(".data"));
     return true;
   }
   catch (boost::archive::archive_exception e)

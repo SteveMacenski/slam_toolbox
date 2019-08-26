@@ -6504,6 +6504,30 @@ namespace karto
       Clear();
     }
 
+    /**
+     * Save dataset to file
+     * @param filename
+     */
+    void SaveToFile(const std::string& filename)
+    {
+      printf("Save To File\n");
+      std::ofstream ofs(filename.c_str());
+      boost::archive::binary_oarchive oa(ofs, boost::archive::no_codecvt);
+      oa << BOOST_SERIALIZATION_NVP(*this);
+    }
+
+    /**
+     * Load dataset from file
+     * @param filename
+     */
+    void LoadFromFile(const std::string& filename)
+    {
+      printf("Load From File\n");
+      std::ifstream ifs(filename.c_str());
+      boost::archive::binary_iarchive ia(ifs, boost::archive::no_codecvt); //no second arg?
+      ia >> BOOST_SERIALIZATION_NVP(*this);
+    }
+
   public:
     /**
      * Adds object to this dataset

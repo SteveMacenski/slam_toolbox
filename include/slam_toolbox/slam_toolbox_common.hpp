@@ -114,6 +114,7 @@ protected:
 
   // Book keeping
   std::unique_ptr<mapper_utils::SMapper> smapper_;
+  std::unique_ptr<karto::Dataset> dataset_;
   std::map<std::string, laser_utils::LaserMetadata> lasers_;
 
   // helpers

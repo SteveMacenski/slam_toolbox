@@ -1917,6 +1917,12 @@ namespace karto
      */
     virtual kt_bool Process(Object* pObject);
 
+    // processors
+    kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
+    kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
+    kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
+    kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
+
     /**
      * Returns all processed scans added to the mapper.
      * NOTE: The returned scans have their corrected pose updated.
@@ -2066,6 +2072,8 @@ namespace karto
 
     MapperGraph* m_pGraph;
     ScanSolver* m_pScanOptimizer;
+    LocalizationScanVertices m_LocalizationScanVertices;
+
 
     std::vector<MapperListener*> m_Listeners;
 

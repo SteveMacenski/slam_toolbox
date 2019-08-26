@@ -47,18 +47,17 @@ public:
   void configure(const ros::NodeHandle& nh);
   virtual void Reset() override final;
 
-  // processors
-  kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
-  kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
-  kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
-  kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
+  // // processors
+  // kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
+  // kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
+  // kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
+  // kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
 
-  karto::Dataset* getDataset();
-  void setDataset(karto::Dataset*);
+  void setMapper(karto::Mapper* mapper);
+  karto::Mapper* getMapper();
 
 protected:
-  LocalizationScanVertices m_LocalizationScanVertices;
-  std::unique_ptr<karto::Dataset> m_Dataset;
+  std::unique_ptr<karto::Mapper> mapper_;
 };
 
 } // end namespace
