@@ -503,7 +503,9 @@ bool SlamToolbox::serializePoseGraphCallback(
   }
 
   boost::mutex::scoped_lock lock(smapper_mutex_);
-  serialization::write(filename, *static_cast<karto::Mapper*>(smapper_.get()), *smapper_->getDataset());
+  serialization::write(filename,
+    *static_cast<karto::Mapper*>(smapper_.get()),
+    *smapper_->getDataset());
   return true;
 }
 
