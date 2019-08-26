@@ -29,6 +29,7 @@ max_laser_range: 20.0 #for rastering images
 minimum_time_interval: 0.5
 transform_timeout: 0.2
 tf_buffer_duration: 14400.
+stack_size_to_use: 40000000 #// program needs a larger stack size to serialize large maps
 
 # General Parameters
 use_scan_matching: true

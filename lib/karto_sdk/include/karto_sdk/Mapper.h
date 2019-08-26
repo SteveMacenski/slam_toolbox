@@ -299,6 +299,11 @@ namespace karto
      */
     inline T* GetObject() const
     {
+      if (!m_pObject)
+      {
+        return nullptr;
+      }
+
       return m_pObject;
     }
 

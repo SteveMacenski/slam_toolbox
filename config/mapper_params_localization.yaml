@@ -22,8 +22,8 @@ laser_frame: base_laser_link
 mode: mapping #localization
 
 # if you'd like to start localizing on bringup in a map and pose
-map_file_name: test_steve
-map_start_pose: [0.0, 0.0, 0.0]
+#map_file_name: test_steve
+#map_start_pose: [5.0, 1.0, 0.0]
 
 debug_logging: false
 throttle_scans: 1
@@ -34,6 +34,7 @@ max_laser_range: 20.0 #for rastering images
 minimum_time_interval: 0.5
 transform_timeout: 0.2
 tf_buffer_duration: 10.
+stack_size_to_use: 40000000 #// program needs a larger stack size to serialize large maps
 
 # General Parameters
 use_scan_matching: true
