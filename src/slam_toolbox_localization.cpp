@@ -70,13 +70,8 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
     req.filename = filename;
     if (dock)
     {
-      req.match_type =
-        slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
-    }
-    else
-    {
-      req.match_type =
-        slam_toolbox::DeserializePoseGraph::Request::LOCALIZE_AT_POSE;      
+      ROS_ERROR("LocalizationSlamToolbox: Starting localization "
+        "at first node (dock) is correctly not supported.");
     }
 
     deserializePoseGraphCallback(req, resp);

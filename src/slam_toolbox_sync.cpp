@@ -65,7 +65,7 @@ SynchronousSlamToolbox::SynchronousSlamToolbox(ros::NodeHandle& nh)
 
   std::string filename;
   geometry_msgs::Pose2D pose;
-  bool dock;
+  bool dock = false;
   if (shouldStartWithPoseGraph(filename, pose, dock))
   {
     slam_toolbox::DeserializePoseGraph::Request req;

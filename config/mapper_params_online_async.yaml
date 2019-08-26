@@ -25,7 +25,7 @@ mode: mapping #localization
 # or at the dock, but they are mutually exclusive, if pose is given
 # will use pose
 #map_file_name: test_steve
-#map_start_pose: [0.0 0.0 0.0]
+# map_start_pose: [0.0, 0.0, 0.0]
 #map_start_at_dock: true
 
 debug_logging: false
