@@ -216,7 +216,7 @@ void LocalizationSlamToolbox::localizePoseCallback(const
 
   boost::mutex::scoped_lock l(pose_mutex_);
   process_near_pose_ = std::make_unique<karto::Pose2>(msg->pose.pose.position.x, 
-        msg->pose.pose.position.x, tf2::getYaw(msg->pose.pose.orientation));
+        msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation));
   first_measurement_ = true;
 
   ROS_INFO("LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
