@@ -17,27 +17,10 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_ASYNC_H_
-#define SLAM_TOOLBOX_SLAM_TOOLBOX_ASYNC_H_
-
-#include "slam_toolbox/slam_toolbox_common.hpp"
+#include "slam_toolbox/slam_toolbox_async.hpp"
 
 namespace slam_toolbox
 {
-
-class AsynchronousSlamToolbox : public SlamToolbox
-{
-public:
-  AsynchronousSlamToolbox(ros::NodeHandle& nh);
-  ~AsynchronousSlamToolbox() {};
-
-protected:
-  virtual void laserCallback(
-    const sensor_msgs::LaserScan::ConstPtr& scan) override final;
-  virtual bool deserializePoseGraphCallback(
-    slam_toolbox::DeserializePoseGraph::Request& req,
-    slam_toolbox::DeserializePoseGraph::Response& resp) override final;
-};
 
 /*****************************************************************************/
 AsynchronousSlamToolbox::AsynchronousSlamToolbox(ros::NodeHandle& nh)
@@ -136,5 +119,3 @@ int main(int argc, char** argv)
   ros::spin();
   return 0;
 }
-
-#endif //SLAM_TOOLBOX_SLAM_TOOLBOX_ASYNC_NODE_H_

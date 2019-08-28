@@ -1,6 +1,5 @@
 /*
  * slam_toolbox
- * Copyright (c) 2008, Willow Garage, Inc.
  * Copyright Work Modifications (c) 2018, Simbe Robotics, Inc.
  * Copyright Work Modifications (c) 2019, Steve Macenski
  *
@@ -18,30 +17,10 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_SYNC_H_
-#define SLAM_TOOLBOX_SLAM_TOOLBOX_SYNC_H_
-
-#include "slam_toolbox/slam_toolbox_common.hpp"
+#include "slam_toolbox/slam_toolbox_sync.hpp"
 
 namespace slam_toolbox
 {
-
-class SynchronousSlamToolbox : public SlamToolbox
-{
-public:
-  SynchronousSlamToolbox(ros::NodeHandle& nh);
-  ~SynchronousSlamToolbox() {};
-  void run();
-
-protected:
-  virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override final;
-  bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req, slam_toolbox::ClearQueue::Response& resp);
-  virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
-    slam_toolbox::DeserializePoseGraph::Response& resp) override final;
-
-  std::queue<PosedScan> q_;
-  ros::ServiceServer ssClear_;
-};
 
 /*****************************************************************************/
 SynchronousSlamToolbox::SynchronousSlamToolbox(ros::NodeHandle& nh)
@@ -192,5 +171,3 @@ int main(int argc, char** argv)
   ros::spin();
   return 0;
 }
-
-#endif //SLAM_TOOLBOX_SLAM_TOOLBOX_SYNC_NODE_H_
