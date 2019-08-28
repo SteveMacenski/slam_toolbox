@@ -4,13 +4,16 @@
 
 # Introduction
 
-Slam Toolbox is a set of tools and capabilities for 2D planar SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/) and in his free time. 
+<!--  map of huge space here -->
+
+Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/) and in his free time. 
 
 This project contains the ability to do most everything any other available SLAM library, both free and paid, and more. This includes:
-- Ordinary point-and-shoot 2D SLAM mobile robotics folks expect (start, map, save pgm file)
-- life-long mapping (start, serialize, wait any time, restart anywhere, continue refining)
-- an optimization-based localization mode (start, serialize, restart anywhere in Localization mode, optimization based localizer)
-- synchronous and asynchronous modes
+- Ordinary point-and-shoot 2D SLAM mobile robotics folks expect (start, map, save pgm file) with some nice built in utilities like saving maps
+- Continuing to refine, remap, or continue mapping a saved (serialized) pose-graph at any time
+- life-long mapping: load a saved pose-graph continue mapping in a space while also removing extraneous information from newly added scans
+- an optimization-based localization mode built on the pose-graph. Optionally run localization mode without a prior map for "lidar odometry" mode with local loop closures
+- synchronous and asynchronous modes of mapping
 - kinematic map merging (with an elastic graph manipulation merging technique in the works)
 - plugin-based optimization solvers with a new optimized Google Ceres based plugin
 - RVIZ plugin for interating with the tools
@@ -20,51 +23,49 @@ This project contains the ability to do most everything any other available SLAM
 
 For running on live production robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
 
-This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 145,000 sq.ft. building in synchronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
+This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 200,000 sq.ft. building in synchronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
 ![map_image](/images/map_image.png?raw=true "Map Image")
 
 # LifeLong Mapping
 
-<!--  MEDIA Gif here-->
+<!--  Continuing mapping Gif here-->
 
 LifeLong mapping is the concept of being able to map a space, completely or partially, and over time, refine and update that map as you continue to interact with the space. Our approach implements this and also takes care to allow for the application of operating in the cloud, as well as mapping with many robots in a shared space (cloud distributed mapping). While Slam Toolbox can also just be used for a point-and-shoot mapping of a space and saving that map as a .pgm file as maps are traditionally stored in, it also allows you to save the pose-graph and metadata losslessly to reload later with the same or different robot and continue to map the space. 
 
 Our lifelong mapping consists of a few key steps
 - Serialization and Deserialization to store and reload map information
 - KD-Tree search matching to locate the robot in its position on reinitalization
-- pose-graph optimizition based SLAM with 2D scan matching (Karto) abstraction 
+- pose-graph optimizition based SLAM with 2D scan matching abstraction 
 
 This will allow the user to create and update existing maps, then serialize the data for use in other mapping sessions, something sorely lacking from most SLAM implementations and nearly all planar SLAM implementations. Other good libraries that do this include RTab-Map and Cartoprapher, though they themselves have their own quirks that make them (in my opinion) unusable for production robotics applications. This library provides the mechanics to save not only the data, but the pose graph, and associated metadata to work with. This has been used to create maps by merging techniques (taking 2 or more serialized objects and creating 1 globally consistent one) as well as continuous mapping techniques (updating 1, same, serialized map object over time and refining it). The major benefit of this over RTab-Map or Cartoprapher is the maturity of the underlying (but heavily modified) `open_karto` library the project is based on. The scan matcher of Karto is well known as an extremely good matcher for 2D laser scans and modified versions of Karto can be found in companies across the world. 
 
 Slam Toolbox supports all the major modes:
 - Starting from a predefined dock (assuming to be near start region)
-- Starting from where you left off
 - Starting at any particular node - select a node ID to start near
 - Starting in any particular area - indicate current pose in the map frame to start at, like AMCL 
 
 In the RVIZ interface (see section below) you'll be able to re-localize in a map or continue mapping graphically or programatically using ROS services. 
 
-On time of writing: the LifeLong mapping implementation has no established method for removing nodes over time when not in localization mode. As a result its recommended to run LifeLong mapping mode in the cloud for the increased computational burdens. However a real and desperately needed application of this is to have multi-session mapping to update just a section of the map or map half an area at a time to create a full (and then static) map for AMCL or Slam Toolbox AMCL mode, which this will handle in spades. The immediate plan is to create a mode within LifeLong mapping to decay old nodes to bound the computation and allow it to run on the edge, but for now that is not recommended except for demonstrations or small spaces. To clarity- lifelong mapping works, but the number of nodes will grow unbounded if you never switch to localization mode. Continuing mapping should be used to build a complete map then switch to the pose-graph deformation localization mode until node decay is implemented, and **you should not see any substantial performance impacts**. 
+On time of writing: the LifeLong mapping implementation does not curently support the method for removing nodes over time when not in localization mode. Its recommended to run LifeLong mapping mode in the cloud for the increased computational burdens. However a real and desperately needed application of this is to have multi-session mapping to update just a section of the map or map half an area at a time to create a full (and then static) map for AMCL or Slam Toolbox localization mode, which this will handle in spades. The immediate plan is to create a mode within LifeLong mapping to decay old nodes to bound the computation and allow it to run on the edge. To clarity- lifelong mapping works, but the number of nodes will grow unbounded if you never switch to localization mode. Continuing mapping should be used to build a complete map then switch to the pose-graph deformation localization mode until node decay is implemented, and **you should not see any substantial performance impacts**. 
 
 
 # Localization
 
-<!-- MEDIA Gif here-->
+<!-- map refind local area localization Gif here-->
 
 Localization mode consists of 3 things:
 - Loads existing serialized map into the node
 - Maintains a rolling buffer of recent scans in the pose-graph
 - After expiring from the buffer scans are removed and the underlying map is not affected
 
-It is comparable to Cartographer's pure-localization mode. To enable, set `mode: localization` in the configuration file to allow for the Ceres plugin to set itself correctly to be able to quickly add *and remove* nodes and constraints from the pose graph. Also, on run, send the service request to Slam Toolbox to enter localization mode and the location to start at. The localization mode will automatically load you map, take the first scan and match it against the local area to further refine your estimated position, and start localizing. 
+Localization methods on image map files has been around for years and works relatively well. There has not been a great deal of work in academia to refine these algorithms to a degree that satesfies me. However SLAM is a rich and well benchmarked topic. The inspiration of this work was the concept of "Can we make localization, SLAM again?" such that we can take advantage of all the nice things about SLAM for localization, but remove the unbounded computational increase. 
+
+To enable, set `mode: localization` in the configuration file to allow for the Ceres plugin to set itself correctly to be able to quickly add *and remove* nodes and constraints from the pose graph, but isn't strictly required, but a performance optimization. The localization mode will automatically load your pose graph, take the first scan and match it against the local area to further refine your estimated position, and start localizing. 
 
 To minimize the amount of changes required for moving to this mode over AMCL, we also expose a subscriber to the `/initial_pose` topic used by AMCL to relocalize to a position, which also hooks up to the `2D Pose Estimation` tool in RVIZ. This way you can enter localization mode with our approach but continue to use the same API as you expect from AMCL for ease of integration.
 
 In summary, this approach I dub `elastic pose-graph localization` is where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using the scan matcher, but not update the underlaying map long-term should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The lifelong mapping/continuous slam mode above will do better if you'd like to modify the underlying graph while moving.
-
-Note: Be sure to **not** serialize the graph in localization mode, you will corrupt it!
-
 
 ## Tools 
 
@@ -138,6 +139,8 @@ You can get away without a loss function if your odometry is good (ie likelihood
 
 The following settings and options are exposed to you. My default configuration is given in `config` directory.
 
+## Solver Params
+
 `solver_plugin` - The type of nonlinear solver to utilize for karto's scan solver. Options: `solver_plugins::CeresSolver`, `solver_plugins::SpaSolver`, `solver_plugins::G2oSolver`. Default: `solver_plugins::CeresSolver`.
 
 `ceres_linear_solver` - The linear solver for Ceres to use. Options: `SPARSE_NORMAL_CHOLESKY`, `SPARSE_SCHUR`, `ITERATIVE_SCHUR`, `CGNR`. Defaults to `SPARSE_NORMAL_CHOLESKY`.
@@ -150,13 +153,99 @@ The following settings and options are exposed to you. My default configuration 
 
 `ceres_loss_function` - The type of loss function to reject outlier measurements. None is equatable to a squared loss. Options: `None`, `HuberLoss`, `CauchyLoss`. Default: `None`.
 
----
+`mode` - "mapping" or "localization" mode for performance optimizations in the Ceres problem creation
 
-`minimum_time_interval` - Minimum time between scans to add to scan queue. Default 0.5 seconds.
+## Toolbox Params
 
-`map_update_interval` - Interval to update the map topic and pose graph visualizations. Default 10 seconds.
+`odom_frame` - Odometry frame
 
-All other parameters, see SlamKarto documentation. They're all just the inputs to OpenKarto so that documentation would be identical as well. 
+`map_frame` - Map frame
+
+`base_frame` - Base frame
+
+`map_file_name` - Name of the pose-graph file to load on startup if available
+
+`map_start_pose` - Pose to start pose-graph mapping/localization in, if available
+
+`map_start_at_dock` - Starting pose-graph loading at the dock (first node), if available. If both pose and dock are set, it will use pose
+
+`debug_logging` - Change logger to debug
+
+`throttle_scans` - Number of scans to throttle in synchronous mode
+
+`transform_publish_period` - The map to odom transform publish period. 0 will not publish transforms
+
+`map_update_interval` - Interval to update the 2D occupancy map for other applications / visualization
+
+`resolution` - Resolution of the 2D occupancy map to generate
+
+`max_laser_range` - Maximum laser range to use for 2D occupancy map rastering
+
+`minimum_time_interval` - The minimum duration of time between scans to be processed in synchronous mode
+
+`transform_timeout` - TF timeout for looking up transforms
+
+`tf_buffer_duration` - Duration to store TF messages for lookup. Set high if running offline at multiple times speed in synchronous mode. 
+
+`stack_size_to_use` - The number of bytes to reset the stack size to, to enable serialization/deserialization of files. A liberal default is 40000000, but less is fine.
+
+`minimum_travel_distance` - Minimum distance of travel before processing a new scan
+
+## Matcher Params
+
+`use_scan_matching` - whether to use scan matching to refine odometric pose (uh, why would you not?)
+
+`use_scan_barycenter` - Whether to use the barycenter or scan pose
+
+`minimum_travel_heading` - Minimum changing in heading to justify an update
+
+`scan_buffer_size` - The number of scans to buffer into a chain, also used as the number of scans in the circular buffer of localization mode
+
+`scan_buffer_maximum_scan_distance` - Maximum distance of a scan from the pose before removing the scan from the buffer
+
+`link_match_minimum_response_fine` - The threshold link matching algorithm response for fine resolution to pass 
+
+`link_scan_maximum_distance` - Maximum distance between linked scans to be valid
+
+`loop_search_maximum_distance` - Maximum threshold of distance for scans to be considered for loop closure 
+
+`do_loop_closing` - Whether to do loop closure (if you're not sure, the answer is "true")
+
+`loop_match_minimum_chain_size` - The minimum chain length of scans to look for loop closure
+
+`loop_match_maximum_variance_coarse` - The threshold variance in coarse search to pass to refine
+
+`loop_match_minimum_response_coarse` - The threshold response of the loop closure algorithm in coarse search to pass to refine
+
+`loop_match_minimum_response_fine` - The threshold response of the loop closure algorithm in fine search to pass to refine
+
+`correlation_search_space_dimension` - Search grid size to do scan correlation over
+
+`correlation_search_space_resolution` - Search grid resolution to do scan correlation over
+
+`correlation_search_space_smear_deviation` - Amount of multimodal smearing to smooth out responses
+
+`loop_search_space_dimension` - Size of the search grid over the loop closure algorith
+
+`loop_search_space_resolution` - Search grid resolution to do loop closure over
+
+`loop_search_space_smear_deviation` - Amount of multimodal smearing to smooth out responses
+
+`distance_variance_penalty` - A penalty to apply to a matched scan as it differs from the odometric pose
+
+`angle_variance_penalty` - A penalty to apply to a matched scan as it differs from the odometric pose
+
+`fine_search_angle_offset` - Range of angles to test for fine scan matching
+
+`coarse_search_angle_offset` - Range of angles to test for coarse scan matching
+
+`coarse_angle_resolution` - Resolution of angles over the Offset range to test in scan matching
+
+`minimum_angle_penalty` - Smallest penalty an angle can have to ensure the size doesn't blow up
+
+`minimum_distance_penalty` - Smallest penalty a scan can have to ensure the size doesn't blow up
+
+`use_response_expansion` - Whether to automatically increase the search grid size if no viable match is found
 
 # Install
 
@@ -200,9 +289,3 @@ sudo ln -s /home/steve/maps/serialized_map/ /var/snap/slam-toolbox/common
 ```
 
 and then all you have to do when you specify a map to use is set the filename to `slam-toolbox/map_name` and it should work no matter if you're running in a snap, docker, or on bare metal. The `-s` makes a symbol link so rather than `/var/snap/slam-toolbox/common/*` containing the maps, `/var/snap/slam-toolbox/common/serialized_map/*` will. By default on bare metal, the maps will be saved in `.ros`
-
-## Notes for documentation to fill in later
-
-- Dock starting, mapping, continuing example
-- Cloud mapping example
-- Mapping from an estimated starting pose example (via amcl)

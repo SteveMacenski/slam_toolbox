@@ -18,7 +18,6 @@ ceres_loss_function: None
 odom_frame: odom
 map_frame: map
 base_frame: base_link
-laser_frame: base_laser_link
 mode: mapping #localization
 debug_logging: false
 throttle_scans: 1
