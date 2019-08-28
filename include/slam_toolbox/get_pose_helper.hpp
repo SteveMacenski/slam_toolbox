@@ -26,27 +26,6 @@
 namespace pose_utils
 {
 
-// convert Karto pose to TF pose
-tf2::Transform kartoPose2TfPose(const karto::Pose2& pose)
-{
-  tf2::Transform new_pose;
-  new_pose.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
-  tf2::Quaternion q;
-  q.setRPY(0., 0., pose.GetHeading());
-  new_pose.setRotation(q);
-  return new_pose;
-};
-
-// convert Karto pose to TF pose
-karto::Pose2 tfPose2KartoPose(const tf2::Transform& pose)
-{
-  karto::Pose2 transformed_pose;
-  transformed_pose.SetX(pose.getOrigin().x());
-  transformed_pose.SetY(pose.getOrigin().y());
-  transformed_pose.SetHeading(tf2::getYaw(pose.getRotation()));
-  return transformed_pose;
-};
-
 // helper to get the robots position
 class GetPoseHelper
 {

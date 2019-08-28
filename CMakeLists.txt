@@ -129,29 +129,37 @@ endif()
 qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
 set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
 set(HEADER_FILES rviz_plugin/slam_toolbox_rviz_plugin.h )
-add_library(slam_toolbox_rviz_plugin ${SOURCE_FILES} ${HEADER_FILES})
-add_dependencies(slam_toolbox_rviz_plugin ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(slam_toolbox_rviz_plugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES} ${catkin_LIBRARIES})
+add_library(SlamToolboxPlugin ${SOURCE_FILES} ${HEADER_FILES})
+add_dependencies(SlamToolboxPlugin ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES} ${catkin_LIBRARIES})
 
-#### Main lib for mapping
-add_library(toolbox_lib src/slam_toolbox.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp)
-add_dependencies(toolbox_lib ${PROJECT_NAME}_generate_messages_cpp)
-target_link_libraries(toolbox_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+#### Tool lib for mapping
+add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)
+add_dependencies(toolbox_common ${PROJECT_NAME}_generate_messages_cpp)
+target_link_libraries(toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
-#### Main tools for mapping
-add_executable(slam_toolbox src/slam_toolbox_node.cpp )
-target_link_libraries(slam_toolbox toolbox_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+#### Mapping executibles
+add_executable(async_slam_toolbox_node src/slam_toolbox_async.cpp )
+target_link_libraries(async_slam_toolbox_node toolbox_common)
+
+add_executable(sync_slam_toolbox_node src/slam_toolbox_sync.cpp )
+target_link_libraries(sync_slam_toolbox_node toolbox_common)
+
+add_executable(localization_slam_toolbox_node src/slam_toolbox_localization.cpp )
+target_link_libraries(localization_slam_toolbox_node toolbox_common)
 
 #### Merging maps tool
 add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
-target_link_libraries(merge_maps_kinematic toolbox_lib ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(merge_maps_kinematic toolbox_common)
 
 #### Install
-install(TARGETS toolbox_lib 
-                slam_toolbox
+install(TARGETS toolbox_common
+                async_slam_toolbox_node
+                sync_slam_toolbox_node
+                localization_slam_toolbox_node
                 ceres_solver_plugin
                 merge_maps_kinematic
-                slam_toolbox_rviz_plugin
+                SlamToolboxPlugin
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

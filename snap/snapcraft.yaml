@@ -28,6 +28,12 @@ apps:
       LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/lapack:$SNAP/usr/lib/libblas
     plugs: [network, network-bind]
 
+  slam-toolbox-localization:
+    command: roslaunch --wait slam_toolbox localization.launch
+    environment: 
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/lapack:$SNAP/usr/lib/libblas
+    plugs: [network, network-bind]
+
 parts:
   workspace:
     build-packages: [qt5-default, libgoogle-glog-dev, liblapack-dev, libblas-dev] 
