@@ -50,4 +50,6 @@ protected:
   ros::Subscriber localization_pose_sub_;
 };
 
+}
+
 #endif //SLAM_TOOLBOX_SLAM_TOOLBOX_LOCALIZATION_H_
