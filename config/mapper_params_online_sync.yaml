@@ -19,6 +19,7 @@ odom_frame: odom
 map_frame: map
 base_frame: base_footprint
 mode: mapping #localization
+laser_topics: ["/scan"]
 
 # if you'd like to immediately start continuing a map at a given pose
 # or at the dock, but they are mutually exclusive, if pose is given

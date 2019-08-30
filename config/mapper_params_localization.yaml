@@ -19,6 +19,7 @@ odom_frame: odom
 map_frame: map
 base_frame: base_footprint
 mode: mapping #localization
+laser_topics: ["/scan"]
 
 # if you'd like to start localizing on bringup in a map and pose
 #map_file_name: test_steve

@@ -91,9 +91,10 @@ LaserMetadata LaserAssistant::toLaserMetadata(sensor_msgs::LaserScan scan)
 
 karto::LaserRangeFinder* LaserAssistant::makeLaser(const double& mountingYaw)
 {
+  const std::string name = "Custom Described Lidar " + scan_.header.frame_id;
   karto::LaserRangeFinder* laser = 
     karto::LaserRangeFinder::CreateLaserRangeFinder(
-    karto::LaserRangeFinder_Custom, karto::Name("Custom Described Lidar"));
+    karto::LaserRangeFinder_Custom, karto::Name(name.c_str()));
   laser->SetOffsetPose(karto::Pose2(laser_pose_.transform.translation.x,
     laser_pose_.transform.translation.y, mountingYaw));
   laser->SetMinimumRange(scan_.range_min);

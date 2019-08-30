@@ -114,6 +114,9 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh)
   private_nh.param("base_frame", base_frame_, std::string("base_footprint"));
   private_nh.param("resolution", resolution_, 0.05);
   private_nh.param("map_name", map_name_, std::string("/map"));
+  laser_topics_.push_back("/scan_front");
+  laser_topics_.push_back("/scan_rear"); //TODO
+  private_nh.param("laser_topics", laser_topics_);
   private_nh.param("throttle_scans", throttle_scans_, 1);
 
   double tmp_val;
@@ -151,9 +154,15 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   ssPauseMeasurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::serializePoseGraphCallback, this);
   ssDesserialize_ = node.advertiseService("deserialize_map", &SlamToolbox::deserializePoseGraphCallback, this);
-  scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, "/scan", 5);
-  scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_sub_, *tf_, odom_frame_, 5, node);
-  scan_filter_->registerCallback(boost::bind(&SlamToolbox::laserCallback, this, _1));
+  
+  std::vector<std::string>::const_iterator it; 
+  for (it = laser_topics_.begin(); it != laser_topics_.end(); ++it)
+  {
+    ROS_INFO("Subscribing to scan: %s", it->c_str());
+    scan_filter_subs_.push_back(std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, *it, 5));
+    scan_filters_.push_back(std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_subs_.back(), *tf_, odom_frame_, 5, node));
+    scan_filters_.back()->registerCallback(boost::bind(&SlamToolbox::laserCallback, this, _1));
+  }
 }
 
 /*****************************************************************************/
@@ -383,52 +392,57 @@ bool SlamToolbox::shouldProcessScan(
   const karto::Pose2& pose)
 /*****************************************************************************/
 {
-  static karto::Pose2 last_pose;
-  static ros::Time last_scan_time = ros::Time(0.);
-  static double min_dist2 =
-    smapper_->getMapper()->getParamMinimumTravelDistance() *
-    smapper_->getMapper()->getParamMinimumTravelDistance();
-
-  // we give it a pass on the first measurement to get the ball rolling
-  if (first_measurement_)
-  {
-    last_scan_time = scan->header.stamp;
-    last_pose = pose;
-    first_measurement_ = false;
-    return true;
-  }
-
-  // we are in a paused mode, reject incomming information
-  if(isPaused(NEW_MEASUREMENTS))
-  {
-    return false;
-  }
-
-  // throttled out
-  if ((scan->header.seq % throttle_scans_) != 0)
-  {
-    return false;
-  }
-
-  // not enough time
-  if (scan->header.stamp - last_scan_time < minimum_time_interval_)
-  {
-    return false;
-  }
-
-  // check moved enough, within 10% for correction error
-  const double dist2 = fabs((last_pose.GetX() - pose.GetX())*(last_pose.GetX() - 
-    pose.GetX()) + (last_pose.GetY() - pose.GetY())*
-    (last_pose.GetX() - pose.GetY()));
-  if(dist2 < 0.8 * min_dist2 || scan->header.seq < 5)
-  {
-    return false;
-  }
-
-  last_pose = pose;
-  last_scan_time = scan->header.stamp; 
-
   return true;
+
+  // need to do on a per-scanner basis TODO
+
+
+  // static karto::Pose2 last_pose;
+  // static ros::Time last_scan_time = ros::Time(0.);
+  // static double min_dist2 =
+  //   smapper_->getMapper()->getParamMinimumTravelDistance() *
+  //   smapper_->getMapper()->getParamMinimumTravelDistance();
+
+  // // we give it a pass on the first measurement to get the ball rolling
+  // if (first_measurement_)
+  // {
+  //   last_scan_time = scan->header.stamp;
+  //   last_pose = pose;
+  //   first_measurement_ = false;
+  //   return true;
+  // }
+
+  // // we are in a paused mode, reject incomming information
+  // if(isPaused(NEW_MEASUREMENTS))
+  // {
+  //   return false;
+  // }
+
+  // // throttled out
+  // if ((scan->header.seq % throttle_scans_) != 0)
+  // {
+  //   return false;
+  // }
+
+  // // not enough time
+  // if (scan->header.stamp - last_scan_time < minimum_time_interval_)
+  // {
+  //   return false;
+  // }
+
+  // // check moved enough, within 10% for correction error
+  // const double dist2 = fabs((last_pose.GetX() - pose.GetX())*(last_pose.GetX() - 
+  //   pose.GetX()) + (last_pose.GetY() - pose.GetY())*
+  //   (last_pose.GetX() - pose.GetY()));
+  // if(dist2 < 0.8 * min_dist2 || scan->header.seq < 5)
+  // {
+  //   return false;
+  // }
+
+  // last_pose = pose;
+  // last_scan_time = scan->header.stamp; 
+
+  // return true;
 }
 
 
