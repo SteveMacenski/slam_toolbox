@@ -25,7 +25,7 @@ For running on live production robots, I recommend using the snap: slam-toolbox,
 
 This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 200,000 sq.ft. building in synchronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
-![map_image](/images/map_image.png?raw=true "Map Image")
+![map_image](/images/mapping_steves_apartment.gif?raw=true "Map Image")
 
 # LifeLong Mapping
 
