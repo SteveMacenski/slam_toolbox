@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5)
 project(slam_toolbox)
 
 add_compile_options(-std=c++17)
@@ -48,6 +48,8 @@ include_directories(include ${catkin_INCLUDE_DIRS}
                             ${EIGEN3_INCLUDE_DIRS} 
                             ${CHOLMOD_INCLUDE_DIR}
                             ${Boost_INCLUDE_DIR}
+                            ${BOOST_INCLUDE_DIRS}
+                            ${TBB_INCLUDE_DIRS}
 )
 
 add_definitions(${EIGEN3_DEFINITIONS})
@@ -74,7 +76,11 @@ generate_messages(
 )
 
 catkin_package(
-    INCLUDE_DIRS include
+    INCLUDE_DIRS
+      include
+      ${BOOST_INCLUDE_DIRS}
+      ${EIGEN3_INCLUDE_DIRS}
+      ${TBB_INCLUDE_DIRS}
     LIBRARIES
       ceres_solver_plugin
       toolbox_lib
@@ -96,16 +102,11 @@ catkin_package(
       std_msgs
       tf2_geometry_msgs
       interactive_markers
+    DEPENDS
+      EIGEN3
+      Boost
 )
 
-#### Ceres Plugin
-add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
-target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES} 
-                                          ${CERES_INCLUDE_DIRS}
-                                          ${CERES_LIBRARIES}
-)
-
-#### rviz Plugin
 set(CMAKE_AUTOMOC ON)
 if(rviz_QT_VERSION VERSION_LESS "5")
   find_package(Qt4 ${rviz_QT_VERSION} REQUIRED QtCore QtGui)
@@ -126,6 +127,17 @@ else()
     qt5_wrap_cpp(${ARGN})
   endmacro()
 endif()
+
+#### Ceres Plugin
+add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
+target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES} 
+                                          ${CERES_INCLUDE_DIRS}
+                                          ${CERES_LIBRARIES}
+                                          ${Boost_LIBRARIES}
+                                          ${TBB_LIBRARIES}
+)
+
+#### rviz Plugin
 qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
 set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
 set(HEADER_FILES rviz_plugin/slam_toolbox_rviz_plugin.h )
