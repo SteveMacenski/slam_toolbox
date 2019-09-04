@@ -96,6 +96,10 @@ catkin_package(
       std_msgs
       tf2_geometry_msgs
       interactive_markers
+    DEPENDS
+      TBB
+      EIGEN3
+      Boost
 )
 
 #### Ceres Plugin
