@@ -48,6 +48,8 @@ include_directories(include ${catkin_INCLUDE_DIRS}
                             ${EIGEN3_INCLUDE_DIRS} 
                             ${CHOLMOD_INCLUDE_DIR}
                             ${Boost_INCLUDE_DIR}
+                            ${BOOST_INCLUDE_DIRS}
+                            ${TBB_INCLUDE_DIRS}
 )
 
 add_definitions(${EIGEN3_DEFINITIONS})
@@ -74,7 +76,11 @@ generate_messages(
 )
 
 catkin_package(
-    INCLUDE_DIRS include
+    INCLUDE_DIRS
+      include
+      ${BOOST_INCLUDE_DIRS}
+      ${EIGEN3_INCLUDE_DIRS}
+      ${TBB_INCLUDE_DIRS}
     LIBRARIES
       ceres_solver_plugin
       toolbox_lib
@@ -107,6 +113,8 @@ add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
 target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES} 
                                           ${CERES_INCLUDE_DIRS}
                                           ${CERES_LIBRARIES}
+                                          ${Boost_LIBRARIES}
+                                          ${TBB_LIBRARIES}
 )
 
 #### rviz Plugin
