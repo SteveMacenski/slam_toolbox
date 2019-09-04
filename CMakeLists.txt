@@ -103,10 +103,8 @@ catkin_package(
       tf2_geometry_msgs
       interactive_markers
     DEPENDS
-      TBB
       EIGEN3
       Boost
-      Qt5
 )
 
 set(CMAKE_AUTOMOC ON)
