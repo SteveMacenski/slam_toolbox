@@ -6,7 +6,7 @@ cd snap_ws && catkin_init_workspace
 cd src
 
 # add all the necessary things to it
-git clone -b snapping2 https://github.com/SteveMacenski/slam_toolbox.git
+git clone -b melodic-devel https://github.com/SteveMacenski/slam_toolbox.git
 cd ../
 
 # move snap and hooks to right place
@@ -14,6 +14,7 @@ mkdir snap
 cp -r src/slam_toolbox/snap/snapcraft.yaml snap
 
 # build the snap
+export SNAPCRAFT_BUILD_ENVIRONMENT_MEMORY=4g
 snapcraft
 
 # go back to root
