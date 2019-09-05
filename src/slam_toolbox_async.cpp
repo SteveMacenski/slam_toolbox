@@ -27,7 +27,7 @@ AsynchronousSlamToolbox::AsynchronousSlamToolbox(ros::NodeHandle& nh)
 : SlamToolbox(nh)
 /*****************************************************************************/
 {
-  loadPoseGraphByParams();
+  loadPoseGraphByParams(nh);
 }
 
 /*****************************************************************************/
