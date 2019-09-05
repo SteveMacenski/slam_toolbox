@@ -48,7 +48,7 @@ SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
   map_saver_ = std::make_unique<map_saver::MapSaver>(nh_, map_name_);
   closure_assistant_ =
     std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
-    nh_, smapper_->getMapper(), scan_holder_.get(), state_);
+    nh_, smapper_->getMapper(), scan_holder_.get(), state_, processor_type_);
 
   reprocessing_transform_.setIdentity();
 

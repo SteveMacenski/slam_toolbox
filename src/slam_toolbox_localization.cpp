@@ -161,11 +161,7 @@ bool LocalizationSlamToolbox::addScan(
   }
 
   // if successfully processed, create odom to map transformation
-  if(processed)
-  {
-    scan_holder_->addScan(*scan);
-  }
-  else
+  if(!processed)
   {
     delete range_scan;
   }

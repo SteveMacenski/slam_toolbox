@@ -26,9 +26,10 @@ LoopClosureAssistant::LoopClosureAssistant(
   ros::NodeHandle& node,
   karto::Mapper* mapper,
   laser_utils::ScanHolder* scan_holder,
-  PausedState& state)
+  PausedState& state, ProcessType & processor_type)
 : mapper_(mapper), scan_holder_(scan_holder),
-  interactive_mode_(false), nh_(node), state_(state)
+  interactive_mode_(false), nh_(node), state_(state),
+  processor_type_(processor_type)
 /*****************************************************************************/
 {
   node.setParam("paused_processing", false);
@@ -56,6 +57,13 @@ void LoopClosureAssistant::processInteractiveFeedback(const
   visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 /*****************************************************************************/
 {
+  if (processor_type_ != PROCESS)
+  {
+    ROS_ERROR_THROTTLE(5.,
+      "Interactive mode is invalid outside processing mode.");
+    return;
+  }
+
   const int id = std::stoi(feedback->marker_name, nullptr, 10) - 1;
 
   // was depressed, something moved, and now released
