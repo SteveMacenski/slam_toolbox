@@ -27,27 +27,7 @@ AsynchronousSlamToolbox::AsynchronousSlamToolbox(ros::NodeHandle& nh)
 : SlamToolbox(nh)
 /*****************************************************************************/
 {
-  std::string filename;
-  geometry_msgs::Pose2D pose;
-  bool dock = false;
-  if (shouldStartWithPoseGraph(filename, pose, dock))
-  {
-    slam_toolbox::DeserializePoseGraph::Request req;
-    slam_toolbox::DeserializePoseGraph::Response resp;
-    req.initial_pose = pose;
-    req.filename = filename;
-    if (dock)
-    {
-      req.match_type =
-        slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
-    }
-    else
-    {
-      req.match_type =
-        slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;      
-    }
-    deserializePoseGraphCallback(req, resp);
-  }
+  loadPoseGraphByParams();
 }
 
 /*****************************************************************************/
