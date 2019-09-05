@@ -114,6 +114,8 @@ void LifelongSlamToolbox::evaluateNodeDepreciation()
 
   // how cache tree over multiple runs? move that stuff in here?
 
+  // run in another thread or as part of the laser callback?????
+
   // the current_scans_ is a copy on the data stored by the dataset, can we hijack to not duplicate?
   // we keep increasing the vetor of nodes/scans/constraints even though freeing the memory
   ros::Rate r(20);
