@@ -1,6 +1,6 @@
 ## Slam Toolbox
 
-[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/slam-toolbox)
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/slam-toolbox-melodic)
 
 # Introduction
 
@@ -258,7 +258,9 @@ rosdep install -q -y -r --from-paths src --ignore-src
 I also have a Snap built for this that's super easy to install if you know snaps, named `slam-toolbox`.
 
 ```
-sudo snap install slam-toolbox --beta --devmode
+sudo snap install slam-toolbox-melodic --beta --devmode # get the latest and greatest
+
+sudo snap install slam-toolbox-melodic # get the stablist and infrequently updated
 ```
 
 Run your catkin build procedure of choice.
