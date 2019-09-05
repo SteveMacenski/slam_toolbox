@@ -1,5 +1,5 @@
-name: slam-toolbox
-version: '0.5.1'
+name: slam-toolbox-melodic
+version: '1.1.1'
 summary: Slam Toolbox
 description: |
   A toolbox for building high quality maps of large spaces with a LIDAR.
