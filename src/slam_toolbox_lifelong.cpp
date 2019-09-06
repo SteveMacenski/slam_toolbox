@@ -21,6 +21,11 @@
 namespace slam_toolbox
 {
 
+// the current_scans_ is a copy on the data stored by the dataset, can we hijack to not duplicate?
+// or add a parameter to disable interactive mode & not add to the scan holder/disable interactive mode cb
+
+// we keep increasing the vector of nodes/scans/constraints even though freeing the memory
+
 using namespace ::karto;
 
 /*****************************************************************************/
@@ -29,6 +34,7 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
 /*****************************************************************************/
 {
   loadPoseGraphByParams(nh);
+  nh.param("lifelong_search_use_tree", use_tree, false);
 }
 
 /*****************************************************************************/
@@ -53,6 +59,11 @@ void LifelongSlamToolbox::laserCallback(
     return;
   }
 
+    // additional bounded node increase parameter (rate, or total for run or at all?)
+    // pseudo-localization mode. If want to add a scan, but not deleting a scan, add to local buffer?
+    // if (eval() && dont_add_more_scans) {addScan()} else {localization_add_scan()}
+    // if (eval() && ctr / total < add_rate_scans) {addScan()} else {localization_add_scan()}
+
   if (addScan(laser, scan, pose))
   {
     evaluateNodeDepreciation(getLocalizedRangeScan(laser, scan, pose));  
@@ -70,25 +81,17 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
   {
     boost::mutex::scoped_lock lock(smapper_mutex_);
 
-    // additional bounded node increase parameter (rate, or total for run or at all?)
-      // pseudo-localization mode. If want to add a scan, but not deleting a scan, add to local buffer?
-
-    // the current_scans_ is a copy on the data stored by the dataset, can we hijack to not duplicate?
-    // or add a parameter to disable interactive mode & not add to the scan holder/disable interactive mode cb
-
-    // we keep increasing the vetor of nodes/scans/constraints even though freeing the memory
-
     const BoundingBox2& bb = range_scan->GetBoundingBox();
     const Size2<double> bb_size = bb.GetSize();
     double radius = sqrt(bb_size.GetWidth()*bb_size.GetWidth() +
       bb_size.GetHeight()*bb_size.GetHeight());
-    std::map<double, ScanedVertex> near_scans = 
+    std::map<double, Vertex<T>*> near_scan_vertices = 
       FindScansWithinRadius(range_scan, radius);
 
-    computeScores(near_scans, range_scan);
+    computeScores(near_scan_vertices, range_scan);
 
-    std::map<double, ScanedVertex>::iterator it;
-    for (it = near_scans.begin(); it != near_scans.end(); ++it)
+    std::map<double, Vertex<T>*>::iterator it;
+    for (it = near_scan_vertices.begin(); it != near_scan_vertices.end(); ++it)
     {
       if (it->first < 0.1)
       {
@@ -107,25 +110,36 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
 }
 
 /*****************************************************************************/
-std::map<double, ScanedVertex> LifelongSlamToolbox::FindScansWithinRadius(
+std::map<double, Vertex<T>*> LifelongSlamToolbox::FindScansWithinRadius(
   LocalizedRangeScan* scan, const double& radius)
 /*****************************************************************************/
 {
-  // get neighbors:
-
-  // search by radius by BB centers (new nanoflann adaptor) // FindNearLinkedScans(scan, radius)
-
-  // search by graph or search by tree (fn to make easy swap):  Do we want to only prune based on connections?
-  // set all scores to 1
+  std::vector<Vertex<T>*> vertices;
+  std::map<double, Vertex<T>*> vertices_labeled;
 
   // return with vertex pointer. new  Traverse function to return struct of object & vertex ptr
+  if (use_tree)
+  {
+    // nanoflann adaptor: VertexVectorScanCenterNanoFlannAdaptor version of FindNearByScan -> FindNearByVertices
+  }
+  else
+  {
+    std::vector<Vertex<LocalizedRangeScan>*> vertices =
+      FindNearLinkedVertices(scan, radius);
+  }
 
-  return std::map<double, ScanedVertex>();
+  std::vector<Vertex<T>*>::iterator it;
+  for (it = vertices.begin(); it != vertices.end(); ++it)
+  {
+    vertices_labeled.insert(std::pair<double, Vertex<T>*>(1.0, *it));
+  }
+
+  return vertices_labeled;
 }
 
 /*****************************************************************************/
 void LifelongSlamToolbox::computeScores(
-  std::map<double, ScanedVertex>& near_scans,
+  std::map<double, Vertex<T>*>& near_scans,
   LocalizedRangeScan* range_scan)
 /*****************************************************************************/
 {
@@ -142,10 +156,10 @@ void LifelongSlamToolbox::computeScores(
 }
 
 /*****************************************************************************/
-void LifelongSlamToolbox::removeFromSlamGraph(ScanedVertex& scanned_vertex)
+void LifelongSlamToolbox::removeFromSlamGraph(Vertex<T>*& vertex)
 /*****************************************************************************/
 {
-  // must have LocalizedRangeScan* & vertex object
+  // must have LocalizedRangeScan* & vertex object, vertex->GetObject() gives you scan ptr
     // then I can refactor out the localization deletion code to use here
 
   // what do we do about the contraints that node had about it?Nothing?Transfer?
@@ -153,7 +167,7 @@ void LifelongSlamToolbox::removeFromSlamGraph(ScanedVertex& scanned_vertex)
 
 /*****************************************************************************/
 void LifelongSlamToolbox::updateScoresSlamGraph(const double& score, 
-  ScanedVertex& scanned_vertex)
+  Vertex<T>*& vertex)
 /*****************************************************************************/
 {
   // update the vertex with its score

@@ -33,7 +33,7 @@
 
 #include <karto_sdk/Karto.h>
 
-#include "nanoflann.hpp"
+#include "nanoflann_adaptors.h"
 
 namespace karto
 {
@@ -360,43 +360,6 @@ namespace karto
       ar & BOOST_SERIALIZATION_NVP(m_Edges);
     }
   };  // Vertex<T>
-
-
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-
-  // And this is the "dataset to kd-tree" adaptor class:
-  template <typename Derived>
-  struct VertexVectorNanoFlannAdaptor
-  {
-    const Derived &obj; //!< A const ref to the data set origin
-
-    /// The constructor that sets the data set source
-    VertexVectorNanoFlannAdaptor(const Derived &obj_) : obj(obj_) { }
-
-    /// CRTP helper method
-    inline const Derived& derived() const { return obj; }
-
-    // Must return the number of data points
-    inline size_t kdtree_get_point_count() const { return derived().size(); }
-
-    // Returns the dim'th component of the idx'th point in the class:
-    // Since this is inlined and the "dim" argument is typically an immediate value, the
-    //  "if/else's" are actually solved at compile time.
-    inline double kdtree_get_pt(const size_t idx, const size_t dim) const
-    {
-      if (dim == 0) return derived()[idx]->GetObject()->GetCorrectedPose().GetX();
-      else return derived()[idx]->GetObject()->GetCorrectedPose().GetY();
-    }
-
-    // Optional bounding-box computation: return false to default to a standard bbox computation loop.
-    //   Return true if the BBOX was already computed by the class and returned in "bb" so it can be avoided to redo it again.
-    //   Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
-    template <class BBOX>
-    bool kdtree_get_bbox(BBOX& /*bb*/) const { return false; }
-
-}; // end of VertexVectorNanoFlannAdaptor
 
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -784,6 +747,13 @@ namespace karto
      * @param maxDistance
      */
     LocalizedRangeScanVector FindNearLinkedScans(LocalizedRangeScan* pScan, kt_double maxDistance);
+
+    /**
+     * Find "nearby" (no further than given distance away) vertices through graph links
+     * @param pScan
+     * @param maxDistance
+     */
+    std::vector<Vertex<LocalizedRangeScan>*> FindNearLinkedVertices(LocalizedRangeScan* pScan, kt_double maxDistance);
 
     /**
      * Find "nearby" (no further than given distance away) scans through graph links

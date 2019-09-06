@@ -1712,10 +1712,19 @@ namespace karto
   LocalizedRangeScanVector MapperGraph::FindNearLinkedScans(LocalizedRangeScan* pScan, kt_double maxDistance)
   {
     NearScanVisitor* pVisitor = new NearScanVisitor(pScan, maxDistance, m_pMapper->m_pUseScanBarycenter->GetValue());
-    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->Traverse(GetVertex(pScan), pVisitor);
+    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->TraverseForScans(GetVertex(pScan), pVisitor);
     delete pVisitor;
 
     return nearLinkedScans;
+  }
+
+  std::vector<Vertex<LocalizedRangeScan>*> MapperGraph::FindNearLinkedVertices(LocalizedRangeScan* pScan, kt_double maxDistance)
+  {
+    NearScanVisitor* pVisitor = new NearScanVisitor(pScan, maxDistance, m_pMapper->m_pUseScanBarycenter->GetValue());
+    std::vector<Vertex<LocalizedRangeScan>*> nearLinkedVertices = m_pTraversal->TraverseForVertices(GetVertex(pScan), pVisitor);
+    delete pVisitor;
+
+    return nearLinkedVertices;
   }
 
   LocalizedRangeScanVector MapperGraph::FindNearByScans(Name name, const Pose2 refPose, kt_double maxDistance)
@@ -1724,7 +1733,7 @@ namespace karto
 
     Vertex<LocalizedRangeScan>* closestVertex = FindNearByScan(name, refPose);
 
-    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->Traverse(closestVertex, pVisitor);
+    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->TraverseForScans(closestVertex, pVisitor);
     delete pVisitor;
 
     return nearLinkedScans;
@@ -1738,7 +1747,7 @@ namespace karto
     size_t num_results = 1;
     const size_t dim = 2;
 
-    typedef VertexVectorNanoFlannAdaptor<std::vector<Vertex<LocalizedRangeScan>* > > P2KD;
+    typedef VertexVectorPoseNanoFlannAdaptor<std::vector<Vertex<LocalizedRangeScan>* > > P2KD;
     const P2KD p2kd(vertices);
 
     typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, P2KD > , P2KD, dim> my_kd_tree_t;
