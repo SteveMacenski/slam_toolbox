@@ -47,6 +47,17 @@ struct PosedScan
   karto::Pose2 pose;
 };
 
+// object with localized range scan and vertex information from search
+struct ScanedVertex
+{
+  ScanedVertex(karto::LocalizedRangeScan* scan, karto::Vertex<karto::LocalizedRangeScan>* vertex) :
+             scan_(scan), vertex_(vertex) 
+  {
+  }
+  karto::LocalizedRangeScan* scan_;
+  karto::Vertex<karto::LocalizedRangeScan>* vertex_;
+};
+
 // types of pause functionality available
 enum PausedApplication
 {

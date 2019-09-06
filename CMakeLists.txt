@@ -160,6 +160,9 @@ target_link_libraries(sync_slam_toolbox_node toolbox_common)
 add_executable(localization_slam_toolbox_node src/slam_toolbox_localization.cpp )
 target_link_libraries(localization_slam_toolbox_node toolbox_common)
 
+add_executable(lifelong_slam_toolbox_node src/slam_toolbox_lifelong.cpp )
+target_link_libraries(lifelong_slam_toolbox_node toolbox_common)
+
 #### Merging maps tool
 add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 target_link_libraries(merge_maps_kinematic toolbox_common)
@@ -169,6 +172,7 @@ install(TARGETS toolbox_common
                 async_slam_toolbox_node
                 sync_slam_toolbox_node
                 localization_slam_toolbox_node
+                lifelong_slam_toolbox_node
                 ceres_solver_plugin
                 merge_maps_kinematic
                 SlamToolboxPlugin

@@ -36,6 +36,12 @@ protected:
   virtual bool deserializePoseGraphCallback(
     slam_toolbox::DeserializePoseGraph::Request& req,
     slam_toolbox::DeserializePoseGraph::Response& resp) override final;
+
+  void evaluateNodeDepreciation(karto::LocalizedRangeScan* range_scan);
+  void removeFromSlamGraph(ScanedVertex& scanned_vertex);
+  void computeScores(std::map<double, ScanedVertex>& near_scans, karto::LocalizedRangeScan* range_scan);
+  std::map<double, ScanedVertex> FindScansWithinRadius(karto::LocalizedRangeScan* scan, const double& radius);
+  void updateScoresSlamGraph(const double& score, ScanedVertex& scanned_vertex);
 };
 
 }

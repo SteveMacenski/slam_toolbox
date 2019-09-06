@@ -1,7 +1,6 @@
 /*
  * slam_toolbox
- * Copyright Work Modifications (c) 2018, Simbe Robotics, Inc.
- * Copyright Work Modifications (c) 2019, Steve Macenski
+ * Copyright Work Modifications (c) 2019, Samsung Research America
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
@@ -22,14 +21,14 @@
 namespace slam_toolbox
 {
 
+using namespace ::karto;
+
 /*****************************************************************************/
 LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
 : SlamToolbox(nh)
 /*****************************************************************************/
 {
   loadPoseGraphByParams(nh);
-  threads_.push_back(std::make_unique<boost::thread>(
-    boost::bind(&LifelongSlamToolbox::evaluateNodeDepreciation, this)));
 }
 
 /*****************************************************************************/
@@ -38,7 +37,7 @@ void LifelongSlamToolbox::laserCallback(
 /*****************************************************************************/
 {
   // no odom info
-  karto::Pose2 pose;
+  Pose2 pose;
   if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
   {
     return;
@@ -54,13 +53,62 @@ void LifelongSlamToolbox::laserCallback(
     return;
   }
 
-  addScan(laser, scan, pose);
+  if (addScan(laser, scan, pose))
+  {
+    evaluateNodeDepreciation(getLocalizedRangeScan(laser, scan, pose));  
+  }
+
   return;
 }
 
 /*****************************************************************************/
-std::map<double, LocalizedRangeScan*> LifelongSlamToolbox::FindScansWithinRadius(
-  karto::LocalizedRangeScan* scan, const double& radius)
+void LifelongSlamToolbox::evaluateNodeDepreciation(
+  LocalizedRangeScan* range_scan)
+/*****************************************************************************/
+{
+  if (range_scan)
+  {
+    boost::mutex::scoped_lock lock(smapper_mutex_);
+
+    // additional bounded node increase parameter (rate, or total for run or at all?)
+      // pseudo-localization mode. If want to add a scan, but not deleting a scan, add to local buffer?
+
+    // the current_scans_ is a copy on the data stored by the dataset, can we hijack to not duplicate?
+    // or add a parameter to disable interactive mode & not add to the scan holder/disable interactive mode cb
+
+    // we keep increasing the vetor of nodes/scans/constraints even though freeing the memory
+
+    const BoundingBox2& bb = range_scan->GetBoundingBox();
+    const Size2<double> bb_size = bb.GetSize();
+    double radius = sqrt(bb_size.GetWidth()*bb_size.GetWidth() +
+      bb_size.GetHeight()*bb_size.GetHeight());
+    std::map<double, ScanedVertex> near_scans = 
+      FindScansWithinRadius(range_scan, radius);
+
+    computeScores(near_scans, range_scan);
+
+    std::map<double, ScanedVertex>::iterator it;
+    for (it = near_scans.begin(); it != near_scans.end(); ++it)
+    {
+      if (it->first < 0.1)
+      {
+        removeFromSlamGraph(it->second);
+      }
+      else
+      {
+        updateScoresSlamGraph(it->first, it->second);
+      }
+    }
+
+    delete range_scan;
+  }
+
+  return;
+}
+
+/*****************************************************************************/
+std::map<double, ScanedVertex> LifelongSlamToolbox::FindScansWithinRadius(
+  LocalizedRangeScan* scan, const double& radius)
 /*****************************************************************************/
 {
   // get neighbors:
@@ -70,12 +118,14 @@ std::map<double, LocalizedRangeScan*> LifelongSlamToolbox::FindScansWithinRadius
   // search by graph or search by tree (fn to make easy swap):  Do we want to only prune based on connections?
   // set all scores to 1
 
-  return std::map<double, LocalizedRangeScan*>;
+  // return with vertex pointer. new  Traverse function to return struct of object & vertex ptr
+
+  return std::map<double, ScanedVertex>();
 }
 
 /*****************************************************************************/
 void LifelongSlamToolbox::computeScores(
-  std::map<double, LocalizedRangeScan*>& near_scans,
+  std::map<double, ScanedVertex>& near_scans,
   LocalizedRangeScan* range_scan)
 /*****************************************************************************/
 {
@@ -92,71 +142,22 @@ void LifelongSlamToolbox::computeScores(
 }
 
 /*****************************************************************************/
-void removeFromSlamGraph(karto::LocalizedRangeScan* range_scan)
+void LifelongSlamToolbox::removeFromSlamGraph(ScanedVertex& scanned_vertex)
 /*****************************************************************************/
 {
-  // get scan, delete
-
-  // get node, delete
-
-  // get all constraints, delete
-
-  // get optimizer, delete constraints and nodes
+  // must have LocalizedRangeScan* & vertex object
+    // then I can refactor out the localization deletion code to use here
 
   // what do we do about the contraints that node had about it?Nothing?Transfer?
 }
 
 /*****************************************************************************/
-void LifelongSlamToolbox::evaluateNodeDepreciation()
+void LifelongSlamToolbox::updateScoresSlamGraph(const double& score, 
+  ScanedVertex& scanned_vertex)
 /*****************************************************************************/
 {
-  // additional bounded node increase parameter (rate, or total for run?)
-
-  // how cache tree over multiple runs? move that stuff in here?
-
-  // run in another thread or as part of the laser callback?????
-
-  // the current_scans_ is a copy on the data stored by the dataset, can we hijack to not duplicate?
-  // we keep increasing the vetor of nodes/scans/constraints even though freeing the memory
-  ros::Rate r(20);
-
-  while (ros::ok())
-  {
-    if (!scans_to_evaluate.empty()) // scans_to_evaluate prority queue by IDX so we're not lagging. If lag: warn, drop, ?
-    {
-      boost::mutex::scoped_lock lock(smapper_mutex_);
-      using namespace karto;
-
-      // get a list of scans since the last time we ran
-      LocalizedRangeScan* range_scan = scans_to_evaluate.front();
-      scans_to_evaluate.pop();
-
-      const BoundingBox2& bb = range_scan->GetBoundingBox();
-      const std::vector<double> bb_size = bb.GetSize();
-      double radius = sqrt(bb_size[0]*bb_size[0] + bb_size[1]*bb_size[1]);
-      std::map<double, LocalizedRangeScan*> near_scans = 
-        FindScansWithinRadius(range_scan, radius);
-
-      computeScores(near_scans, range_scan);
-
-      std::map<double, LocalizedRangeScan*>::iterator it;
-      for (it = near_scans.begin(); it != near_scans.end(); ++it)
-      {
-        if (it->first < 0.1)
-        {
-          removeFromSlamGraph(it->second);
-        }
-        else
-        {
-          // update score -- where do we store this? doesit persist between sessions?
-          // local window only, within recent N scans to not have a global map of scores?
-        }
-      }
-      continue;
-    }
-
-    r.sleep();
-  }
+  // update the vertex with its score
+  // inputted graph itself, serialize -- persists between sessions and runs
 }
 
 /*****************************************************************************/
@@ -197,7 +198,7 @@ int main(int argc, char** argv)
     setrlimit(RLIMIT_STACK, &stack_limit);
   }
 
-  slam_toolbox::LifelongSlamToolbox sst(nh);
+  slam_toolbox::LifelongSlamToolbox llst(nh);
 
   ros::spin();
   return 0;

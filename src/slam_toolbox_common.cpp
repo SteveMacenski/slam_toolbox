@@ -458,7 +458,6 @@ bool SlamToolbox::shouldProcessScan(
   return true;
 }
 
-
 /*****************************************************************************/
 bool SlamToolbox::addScan(
   karto::LaserRangeFinder* laser,
