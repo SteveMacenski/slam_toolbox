@@ -26,8 +26,6 @@ namespace slam_toolbox
 
 // we keep increasing the vector of nodes/scans/constraints even though freeing the memory
 
-using namespace ::karto;
-
 /*****************************************************************************/
 LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
 : SlamToolbox(nh)
@@ -50,7 +48,7 @@ void LifelongSlamToolbox::laserCallback(
   }
 
   // ensure the laser can be used
-  karto::LaserRangeFinder* laser = getLaser(scan);
+  LaserRangeFinder* laser = getLaser(scan);
 
   if(!laser)
   {
@@ -85,12 +83,12 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
     const Size2<double> bb_size = bb.GetSize();
     double radius = sqrt(bb_size.GetWidth()*bb_size.GetWidth() +
       bb_size.GetHeight()*bb_size.GetHeight());
-    std::map<double, Vertex<T>*> near_scan_vertices = 
+    std::map<double, Vertex<LocalizedRangeScan>*> near_scan_vertices = 
       FindScansWithinRadius(range_scan, radius);
 
     computeScores(near_scan_vertices, range_scan);
 
-    std::map<double, Vertex<T>*>::iterator it;
+    std::map<double, Vertex<LocalizedRangeScan>*>::iterator it;
     for (it = near_scan_vertices.begin(); it != near_scan_vertices.end(); ++it)
     {
       if (it->first < 0.1)
@@ -110,12 +108,13 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
 }
 
 /*****************************************************************************/
-std::map<double, Vertex<T>*> LifelongSlamToolbox::FindScansWithinRadius(
+std::map<double, Vertex<LocalizedRangeScan>*>
+LifelongSlamToolbox::FindScansWithinRadius(
   LocalizedRangeScan* scan, const double& radius)
 /*****************************************************************************/
 {
-  std::vector<Vertex<T>*> vertices;
-  std::map<double, Vertex<T>*> vertices_labeled;
+  std::vector<Vertex<LocalizedRangeScan>*> vertices;
+  std::map<double, Vertex<LocalizedRangeScan>*> vertices_labeled;
 
   // return with vertex pointer. new  Traverse function to return struct of object & vertex ptr
   if (use_tree)
@@ -125,13 +124,14 @@ std::map<double, Vertex<T>*> LifelongSlamToolbox::FindScansWithinRadius(
   else
   {
     std::vector<Vertex<LocalizedRangeScan>*> vertices =
-      FindNearLinkedVertices(scan, radius);
+      smapper_->getMapper()->FindNearLinkedVertices(scan, radius);
   }
 
-  std::vector<Vertex<T>*>::iterator it;
+  std::vector<Vertex<LocalizedRangeScan>*>::iterator it;
   for (it = vertices.begin(); it != vertices.end(); ++it)
   {
-    vertices_labeled.insert(std::pair<double, Vertex<T>*>(1.0, *it));
+    vertices_labeled.insert(
+      std::pair<double, Vertex<LocalizedRangeScan>*>(1.0, *it));
   }
 
   return vertices_labeled;
@@ -139,7 +139,7 @@ std::map<double, Vertex<T>*> LifelongSlamToolbox::FindScansWithinRadius(
 
 /*****************************************************************************/
 void LifelongSlamToolbox::computeScores(
-  std::map<double, Vertex<T>*>& near_scans,
+  std::map<double, Vertex<LocalizedRangeScan>*>& near_scans,
   LocalizedRangeScan* range_scan)
 /*****************************************************************************/
 {
@@ -156,7 +156,8 @@ void LifelongSlamToolbox::computeScores(
 }
 
 /*****************************************************************************/
-void LifelongSlamToolbox::removeFromSlamGraph(Vertex<T>*& vertex)
+void LifelongSlamToolbox::removeFromSlamGraph(
+  Vertex<LocalizedRangeScan>*& vertex)
 /*****************************************************************************/
 {
   // must have LocalizedRangeScan* & vertex object, vertex->GetObject() gives you scan ptr
@@ -167,7 +168,7 @@ void LifelongSlamToolbox::removeFromSlamGraph(Vertex<T>*& vertex)
 
 /*****************************************************************************/
 void LifelongSlamToolbox::updateScoresSlamGraph(const double& score, 
-  Vertex<T>*& vertex)
+  Vertex<LocalizedRangeScan>*& vertex)
 /*****************************************************************************/
 {
   // update the vertex with its score
