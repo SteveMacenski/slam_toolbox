@@ -1141,80 +1141,93 @@ namespace karto
   class BreadthFirstTraversal : public GraphTraversal<T>
   {
   public:
-    /**
-     * Constructs a breadth-first traverser for the given graph
-     */
-    BreadthFirstTraversal()
-    {
-    }
-    BreadthFirstTraversal(Graph<T>* pGraph)
-    : GraphTraversal<T>(pGraph)
-    {
-    }
+  /**
+   * Constructs a breadth-first traverser for the given graph
+   */
+  BreadthFirstTraversal()
+  {
+  }
+  BreadthFirstTraversal(Graph<T>* pGraph)
+  : GraphTraversal<T>(pGraph)
+  {
+  }
 
-    /**
-     * Destructor
-     */
-    virtual ~BreadthFirstTraversal()
-    {
-    }
+  /**
+   * Destructor
+   */
+  virtual ~BreadthFirstTraversal()
+  {
+  }
 
   public:
-    /**
-     * Traverse the graph starting with the given vertex; applies the visitor to visited nodes
-     * @param pStartVertex
-     * @param pVisitor
-     * @return visited vertice scans
-     */
-    virtual std::vector<T*> Traverse(Vertex<T>* pStartVertex, Visitor<T>* pVisitor)
+  /**
+   * Traverse the graph starting with the given vertex; applies the visitor to visited nodes
+   * @param pStartVertex
+   * @param pVisitor
+   * @return visited vertice scans
+   */
+  virtual std::vector<T*> TraverseForScans(Vertex<T>* pStartVertex, Visitor<T>* pVisitor)
+  {
+    std::vector<Vertex<T>*> validVertices = TraverseForVertices(pStartVertex, pVisitor);
+
+    std::vector<T*> objects;
+    forEach(typename std::vector<Vertex<T>*>, &validVertices)
     {
-      std::queue<Vertex<T>*> toVisit;
-      std::set<Vertex<T>*> seenVertices;
-      std::vector<Vertex<T>*> validVertices;
+      objects.push_back((*iter)->GetObject());
+    }
 
-      toVisit.push(pStartVertex);
-      seenVertices.insert(pStartVertex);
+    return objects;
+  }
 
-      do
+  /**
+   * Traverse the graph starting with the given vertex; applies the visitor to visited nodes
+   * @param pStartVertex
+   * @param pVisitor
+   * @return visited vertices
+   */
+  virtual std::vector<Vertex<T>*> TraverseForVertices(Vertex<T>* pStartVertex, Visitor<T>* pVisitor)
+  {
+    std::queue<Vertex<T>*> toVisit;
+    std::set<Vertex<T>*> seenVertices;
+    std::vector<Vertex<T>*> validVertices;
+
+    toVisit.push(pStartVertex);
+    seenVertices.insert(pStartVertex);
+
+    do
+    {
+      Vertex<T>* pNext = toVisit.front();
+      toVisit.pop();
+
+      if (pNext != NULL && pVisitor->Visit(pNext))
       {
-        Vertex<T>* pNext = toVisit.front();
-        toVisit.pop();
+        // vertex is valid, explore neighbors
+        validVertices.push_back(pNext);
 
-        if (pNext != NULL && pVisitor->Visit(pNext))
+        std::vector<Vertex<T>*> adjacentVertices = pNext->GetAdjacentVertices();
+        forEach(typename std::vector<Vertex<T>*>, &adjacentVertices)
         {
-          // vertex is valid, explore neighbors
-          validVertices.push_back(pNext);
+          Vertex<T>* pAdjacent = *iter;
 
-          std::vector<Vertex<T>*> adjacentVertices = pNext->GetAdjacentVertices();
-          forEach(typename std::vector<Vertex<T>*>, &adjacentVertices)
+          // adjacent vertex has not yet been seen, add to queue for processing
+          if (seenVertices.find(pAdjacent) == seenVertices.end())
           {
-            Vertex<T>* pAdjacent = *iter;
-
-            // adjacent vertex has not yet been seen, add to queue for processing
-            if (seenVertices.find(pAdjacent) == seenVertices.end())
-            {
-              toVisit.push(pAdjacent);
-              seenVertices.insert(pAdjacent);
-            }
+            toVisit.push(pAdjacent);
+            seenVertices.insert(pAdjacent);
           }
         }
-      } while (toVisit.empty() == false);
-
-      std::vector<T*> objects;
-      forEach(typename std::vector<Vertex<T>*>, &validVertices)
-      {
-        objects.push_back((*iter)->GetObject());
       }
+    } while (toVisit.empty() == false);
 
-      return objects;
-    }
+    return validVertices;
+  }
 
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GraphTraversal<T>);
-    }
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GraphTraversal<T>);
+  }
   };  // class BreadthFirstTraversal
 
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -1224,84 +1237,89 @@ namespace karto
   class NearScanVisitor : public Visitor<LocalizedRangeScan>
   {
   public:
-    NearScanVisitor(LocalizedRangeScan* pScan, kt_double maxDistance, kt_bool useScanBarycenter)
-      : m_MaxDistanceSquared(math::Square(maxDistance))
-      , m_UseScanBarycenter(useScanBarycenter)
-    {
-      m_CenterPose = pScan->GetReferencePose(m_UseScanBarycenter);
-    }
-
-    virtual kt_bool Visit(Vertex<LocalizedRangeScan>* pVertex)
-    {
-      try
-      {
-        LocalizedRangeScan* pScan = pVertex->GetObject();
-
-        Pose2 pose = pScan->GetReferencePose(m_UseScanBarycenter);
-        kt_double squaredDistance = pose.GetPosition().SquaredDistance(m_CenterPose.GetPosition());
-        return (squaredDistance <= m_MaxDistanceSquared - KT_TOLERANCE);
-      }
-      catch(...)
-      {
-        // relocalization vertex elements missing
-        std::cout << "Unable to visit valid vertex elements!" << std::endl;
-        return false;
-      }
-    }
-
-  protected:
-    Pose2 m_CenterPose;
-    kt_double m_MaxDistanceSquared;
-    kt_bool m_UseScanBarycenter;
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Visitor<LocalizedRangeScan>);
-      ar & BOOST_SERIALIZATION_NVP(m_CenterPose);
-      ar & BOOST_SERIALIZATION_NVP(m_MaxDistanceSquared);
-      ar & BOOST_SERIALIZATION_NVP(m_UseScanBarycenter);
-    }
-  };  // NearScanVisitor
-
-  class NearPoseVisitor : public Visitor<LocalizedRangeScan>
+  NearScanVisitor(LocalizedRangeScan* pScan, kt_double maxDistance, kt_bool useScanBarycenter)
+    : m_MaxDistanceSquared(math::Square(maxDistance))
+    , m_UseScanBarycenter(useScanBarycenter)
   {
-  public:
-    NearPoseVisitor(Pose2 refPose, kt_double maxDistance, kt_bool useScanBarycenter)
-      : m_MaxDistanceSquared(math::Square(maxDistance))
-      , m_UseScanBarycenter(useScanBarycenter)
-    {
-      m_CenterPose = refPose;
-    }
+    m_CenterPose = pScan->GetReferencePose(m_UseScanBarycenter);
+  }
 
-    virtual kt_bool Visit(Vertex<LocalizedRangeScan>* pVertex)
+  virtual kt_bool Visit(Vertex<LocalizedRangeScan>* pVertex)
+  {
+    try
     {
       LocalizedRangeScan* pScan = pVertex->GetObject();
 
       Pose2 pose = pScan->GetReferencePose(m_UseScanBarycenter);
-
       kt_double squaredDistance = pose.GetPosition().SquaredDistance(m_CenterPose.GetPosition());
       return (squaredDistance <= m_MaxDistanceSquared - KT_TOLERANCE);
     }
+    catch(...)
+    {
+      // relocalization vertex elements missing
+      std::cout << "Unable to visit valid vertex elements!" << std::endl;
+      return false;
+    }
+  }
 
   protected:
-    Pose2 m_CenterPose;
-    kt_double m_MaxDistanceSquared;
-    kt_bool m_UseScanBarycenter;
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Visitor<LocalizedRangeScan>);
-      ar & BOOST_SERIALIZATION_NVP(m_CenterPose);
-      ar & BOOST_SERIALIZATION_NVP(m_MaxDistanceSquared);
-      ar & BOOST_SERIALIZATION_NVP(m_UseScanBarycenter);
-    }
+  Pose2 m_CenterPose;
+  kt_double m_MaxDistanceSquared;
+  kt_bool m_UseScanBarycenter;
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Visitor<LocalizedRangeScan>);
+    ar & BOOST_SERIALIZATION_NVP(m_CenterPose);
+    ar & BOOST_SERIALIZATION_NVP(m_MaxDistanceSquared);
+    ar & BOOST_SERIALIZATION_NVP(m_UseScanBarycenter);
+  }
+  };  // NearScanVisitor
+
+  ////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////
+
+  class NearPoseVisitor : public Visitor<LocalizedRangeScan>
+  {
+  public:
+  NearPoseVisitor(Pose2 refPose, kt_double maxDistance, kt_bool useScanBarycenter)
+    : m_MaxDistanceSquared(math::Square(maxDistance))
+    , m_UseScanBarycenter(useScanBarycenter)
+  {
+    m_CenterPose = refPose;
+  }
+
+  virtual kt_bool Visit(Vertex<LocalizedRangeScan>* pVertex)
+  {
+    LocalizedRangeScan* pScan = pVertex->GetObject();
+
+    Pose2 pose = pScan->GetReferencePose(m_UseScanBarycenter);
+
+    kt_double squaredDistance = pose.GetPosition().SquaredDistance(m_CenterPose.GetPosition());
+    return (squaredDistance <= m_MaxDistanceSquared - KT_TOLERANCE);
+  }
+
+  protected:
+  Pose2 m_CenterPose;
+  kt_double m_MaxDistanceSquared;
+  kt_bool m_UseScanBarycenter;
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Visitor<LocalizedRangeScan>);
+    ar & BOOST_SERIALIZATION_NVP(m_CenterPose);
+    ar & BOOST_SERIALIZATION_NVP(m_MaxDistanceSquared);
+    ar & BOOST_SERIALIZATION_NVP(m_UseScanBarycenter);
+  }
   };  // NearPoseVisitor
 
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
+
 
   MapperGraph::MapperGraph(Mapper* pMapper, kt_double rangeThreshold)
     : m_pMapper(pMapper)

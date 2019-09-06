@@ -491,16 +491,12 @@ namespace karto
   class Graph;
 
   /**
-   * Graph traversal algorithm
-   */
+  * Graph traversal algorithm
+  */
   template<typename T>
   class GraphTraversal
   {
   public:
-    /**
-     * Constructs a traverser for the given graph
-     * @param pGraph
-     */
     GraphTraversal()
     {
     }
@@ -509,25 +505,16 @@ namespace karto
     {
     }
 
-    /**
-     * Destructor
-     */
     virtual ~GraphTraversal()
     {
     }
 
   public:
-    /**
-     * Traverse the graph starting at the given vertex and applying the visitor to all visited nodes
-     * @param pStartVertex
-     * @param pVisitor
-     */
-    virtual std::vector<T*> Traverse(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
+
+    virtual std::vector<T*> TraverseForScans(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
+    virtual std::vector<Vertex<T>*> TraverseForVertices(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
 
   protected:
-    /**
-     * Graph being traversed
-     */
     Graph<T>* m_pGraph;
 
     friend class boost::serialization::access;
