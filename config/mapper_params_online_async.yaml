@@ -35,7 +35,7 @@ resolution: 0.05
 max_laser_range: 20.0 #for rastering images
 minimum_time_interval: 0.5
 transform_timeout: 0.2
-tf_buffer_duration: 10.
+tf_buffer_duration: 30.
 stack_size_to_use: 40000000 #// program needs a larger stack size to serialize large maps
 
 # General Parameters
