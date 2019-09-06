@@ -3,6 +3,9 @@ FROM ros:melodic-ros-base-bionic
 # USE BASH
 SHELL ["/bin/bash", "-c"]
 
+# RUN LINE BELOW TO REMOVE debconf ERRORS (MUST RUN BEFORE ANY apt-get CALLS)
+RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends apt-utils
 
 # slam_toolbox
