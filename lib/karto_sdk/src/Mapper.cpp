@@ -1757,6 +1757,35 @@ namespace karto
     return nearLinkedScans;
   }
 
+  std::vector<Vertex<LocalizedRangeScan>*> MapperGraph::FindNearByVertices(Name name, const Pose2 refPose, kt_double maxDistance)
+  {
+    VertexMap vertexMap = GetVertices();
+    std::vector<Vertex<LocalizedRangeScan>*>& vertices = vertexMap[name];
+
+    const size_t dim = 2;
+
+    typedef VertexVectorPoseNanoFlannAdaptor<std::vector<Vertex<LocalizedRangeScan>* > > P2KD;
+    const P2KD p2kd(vertices);
+
+    typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, P2KD > , P2KD, dim> my_kd_tree_t;
+
+    my_kd_tree_t index(dim, p2kd, nanoflann::KDTreeSingleIndexAdaptorParams(10) );
+    index.buildIndex();
+
+    std::vector<std::pair<size_t,double> > ret_matches;
+    const double query_pt[2] = {refPose.GetX(), refPose.GetY()};
+    nanoflann::SearchParams params;
+    const size_t num_results = index.radiusSearch(&query_pt[0], maxDistance, ret_matches, params);
+
+    std::vector<Vertex<LocalizedRangeScan>*> rtn_vertices;
+    rtn_vertices.reserve(ret_matches.size());
+    for (uint i = 0; i != ret_matches.size(); i++)
+    {
+      rtn_vertices.push_back(vertices[ret_matches[i].first]);
+    }
+    return rtn_vertices;
+  }
+
   Vertex<LocalizedRangeScan>* MapperGraph::FindNearByScan(Name name, const Pose2 refPose)
   {
     VertexMap vertexMap = GetVertices();

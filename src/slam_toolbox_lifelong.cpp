@@ -82,7 +82,7 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
     const BoundingBox2& bb = range_scan->GetBoundingBox();
     const Size2<double> bb_size = bb.GetSize();
     double radius = sqrt(bb_size.GetWidth()*bb_size.GetWidth() +
-      bb_size.GetHeight()*bb_size.GetHeight());
+      bb_size.GetHeight()*bb_size.GetHeight()) / 2.0;
     std::map<double, Vertex<LocalizedRangeScan>*> near_scan_vertices = 
       FindScansWithinRadius(range_scan, radius);
 
@@ -116,15 +116,15 @@ LifelongSlamToolbox::FindScansWithinRadius(
   std::vector<Vertex<LocalizedRangeScan>*> vertices;
   std::map<double, Vertex<LocalizedRangeScan>*> vertices_labeled;
 
-  // return with vertex pointer. new  Traverse function to return struct of object & vertex ptr
   if (use_tree)
   {
-    // nanoflann adaptor: VertexVectorScanCenterNanoFlannAdaptor version of FindNearByScan -> FindNearByVertices
+    vertices = 
+      smapper_->getMapper()->GetGraph()->FindNearByVertices(scan->GetSensorName(), scan->GetBarycenterPose(), radius);
   }
   else
   {
-    std::vector<Vertex<LocalizedRangeScan>*> vertices =
-      smapper_->getMapper()->FindNearLinkedVertices(scan, radius);
+    vertices = 
+      smapper_->getMapper()->GetGraph()->FindNearLinkedVertices(scan, radius);
   }
 
   std::vector<Vertex<LocalizedRangeScan>*>::iterator it;
@@ -153,6 +153,7 @@ void LifelongSlamToolbox::computeScores(
       //      score 0->1 given current score to scale/subtract
       //        number of area/total area overlapping decay score
       //        any scale store for intersect or only union?
+      //      combine with existing score
 }
 
 /*****************************************************************************/

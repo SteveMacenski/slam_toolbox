@@ -750,6 +750,13 @@ namespace karto
     LocalizedRangeScanVector FindNearByScans(Name name, const Pose2 refPose, kt_double maxDistance);
 
     /**
+     * Find "nearby" (no further than given distance away) vertices through KD-tree
+     * @param pScan
+     * @param maxDistance
+     */
+    std::vector<Vertex<LocalizedRangeScan>*> FindNearByVertices(Name name, const Pose2 refPose, kt_double maxDistance);
+
+    /**
      * Find closest scan to pose
      * @param pScan
      */
