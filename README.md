@@ -4,7 +4,6 @@
 
 # Introduction
 
-<!--  map of huge space here -->
 
 Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/) and in his free time. 
 
@@ -25,7 +24,10 @@ For running on live production robots, I recommend using the snap: slam-toolbox,
 
 This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 200,000 sq.ft. building in synchronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
-![map_image](/images/mapping_steves_apartment.gif?raw=true "Map Image")
+The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/) in Oakland, California. Thanks to [Silicon Valley Robotics](https://svrobo.org/) & Circuit Launch for being a testbed for some of this work.
+
+![map_image](/images/circuit_launch.gif?raw=true "Map Image")
+
 
 # LifeLong Mapping
 
@@ -81,9 +83,9 @@ GTSAM/G2O/SPA is currently "unsupported" although all the code is there. They do
 
 #### Kinematic
 
-<!-- MEDIA Gif here -->
-
 This uses RVIZ and the plugin to load any number of posegraphs that will show up in RVIZ under `map_N` and a set of interactive markers to allow you to move them around. Once you have them all positioned relative to each other in the way you like, you can merge the submaps into a global `map` which can be downloaded with your map server implementation of choice. 
+
+It's more of a demonstration of other things you can do once you have the raw data to work with, but I don't suspect many people will get much use out of it unless you're used to stitching maps by hand.
 
 More information in the RVIZ Plugin section below.
 
@@ -291,3 +293,10 @@ sudo ln -s /home/steve/maps/serialized_map/ /var/snap/slam-toolbox/common
 ```
 
 and then all you have to do when you specify a map to use is set the filename to `slam-toolbox/map_name` and it should work no matter if you're running in a snap, docker, or on bare metal. The `-s` makes a symbol link so rather than `/var/snap/slam-toolbox/common/*` containing the maps, `/var/snap/slam-toolbox/common/serialized_map/*` will. By default on bare metal, the maps will be saved in `.ros`
+
+
+## More Gifs!
+
+![map_image](/images/mapping_steves_apartment.gif?raw=true "Map Image")
+
+If someone from iRobot can use this to tell me my Roomba serial number by correlating to its maps, I'll buy them lunch and probably try to hire them.
