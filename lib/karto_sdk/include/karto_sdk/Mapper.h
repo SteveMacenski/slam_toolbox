@@ -307,6 +307,15 @@ namespace karto
       return m_pObject;
     }
 
+    inline void DeleteObject()
+    {
+      if (m_pObject)
+      {
+        delete m_pObject;
+        m_pObject = NULL;
+      }
+    }
+
     /**
      * Gets a vector of the vertices adjacent to this vertex
      * @return adjacent vertices

@@ -635,7 +635,7 @@ void SlamToolbox::loadSerializedPoseGraph(
     exit(-1);
   }
 
-  if (dataset_->GetObjects().size() < 1)
+  if (dataset_->GetLasers().size() < 1)
   {
     ROS_FATAL("loadSerializedPoseGraph: Cannot deserialize "
       "dataset with no laser objects.");
@@ -645,7 +645,7 @@ void SlamToolbox::loadSerializedPoseGraph(
   // create a current laser sensor
   karto::LaserRangeFinder* laser =
     dynamic_cast<karto::LaserRangeFinder*>(
-    dataset_->GetObjects()[0]);
+    dataset_->GetLasers()[0]);
   karto::Sensor* pSensor = dynamic_cast<karto::Sensor*>(laser);
   if (pSensor)
   {

@@ -71,7 +71,7 @@ bool MergeMapsKinematic::addSubmapCallback(
   
   // we know the position because we put it there before any scans
   karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(
-    dataset->GetObjects()[0]);
+    dataset->GetLasers()[0]);
   dataset->Add(laser, true);
   dataset_vec_.push_back(std::move(dataset));
 

@@ -6546,12 +6546,12 @@ namespace karto
             karto::SensorManager::GetInstance()->RegisterSensor(pSensor, overrideSensorName);
           }
 
-          m_Objects.push_back(pObject);
+          m_Lasers.push_back(pObject);
         }
         else if (dynamic_cast<SensorData*>(pObject))
         {
           SensorData* pSensorData = dynamic_cast<SensorData*>(pObject);
-          m_Objects.push_back(pSensorData);
+          m_Data.push_back(pSensorData);
         }
         else if (dynamic_cast<DatasetInfo*>(pObject))
         {
@@ -6559,7 +6559,7 @@ namespace karto
         }
         else
         {
-          m_Objects.push_back(pObject);
+          std::cout << "Did not save object of non-data and non-sensor type" << std::endl;
         }
       }
     }
@@ -6568,9 +6568,53 @@ namespace karto
      * Get sensor states
      * @return sensor state
      */
-    inline const ObjectVector& GetObjects() const
+    inline const ObjectVector& GetLasers() const
     {
-      return m_Objects;
+      return m_Lasers;
+    }
+
+    /**
+     * Get data states
+     * @return data state
+     */
+    inline const ObjectVector& GetData() const
+    {
+      return m_Data;
+    }
+
+    /**
+     * Remove data
+     * @param index to remove
+     */
+    inline void RemoveData(const uint& idx)
+    {
+      if (m_Data[idx])
+      {
+        delete m_Data[idx];
+        m_Data[idx] = nullptr;
+      }
+
+      m_Data.erase(m_Data.begin() + idx);
+    }
+
+    /**
+     * Remove data
+     * @param index to remove
+     */
+    inline void RemoveData(LocalizedRangeScan* scan)
+    {
+      auto iterator = std::find(m_Data.begin(), m_Data.end(), dynamic_cast<SensorData*>(scan));
+      if (iterator != m_Data.end())
+      {
+        delete *iterator;
+        (*iterator) = nullptr;
+        m_Data.erase(iterator);
+      }
+      else
+      {
+        std::cout << "Failed to remove data. Pointer to LocalizedRangeScan could not be found in dataset. Most likely different pointer address but same object TODO STEVE." << std::endl;
+      }
+
     }
 
     /**
@@ -6592,7 +6636,7 @@ namespace karto
         karto::SensorManager::GetInstance()->UnregisterSensor(iter->second);
       }
 
-      forEach(ObjectVector, &m_Objects)
+      forEach(ObjectVector, &m_Lasers)
       {
         if(*iter)
         {
@@ -6601,7 +6645,17 @@ namespace karto
         }
       }
 
-      m_Objects.clear();
+      forEach(ObjectVector, &m_Data)
+      {
+        if(*iter)
+        {
+          delete *iter;
+          *iter = NULL;
+        }
+      }
+
+      m_Lasers.clear();
+      m_Data.clear();
 
       if (m_pDatasetInfo != NULL)
       {
@@ -6612,7 +6666,8 @@ namespace karto
 
   private:
 	std::map<Name, Sensor*> m_SensorNameLookup;
-	ObjectVector m_Objects;
+  ObjectVector m_Lasers;
+  ObjectVector m_Data;
 	DatasetInfo* m_pDatasetInfo;
   /**
    * Serialization: class Dataset
@@ -6624,8 +6679,10 @@ namespace karto
     std::cout<<"**Serializing Dataset**\n";
     std::cout<<"Dataset <- m_SensorNameLookup\n";
     ar & BOOST_SERIALIZATION_NVP(m_SensorNameLookup);
-    std::cout<<"Dataset <- m_Objects\n";
-    ar & BOOST_SERIALIZATION_NVP(m_Objects);
+    std::cout<<"Dataset <- m_Data\n";
+    ar & BOOST_SERIALIZATION_NVP(m_Data);
+    std::cout<<"Dataset <- m_Lasers\n";
+    ar & BOOST_SERIALIZATION_NVP(m_Lasers);
     std::cout<<"Dataset <- m_pDatasetInfo\n";
     ar & BOOST_SERIALIZATION_NVP(m_pDatasetInfo);
     std::cout<<"**Finished serializing Dataset**\n";
