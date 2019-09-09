@@ -2800,79 +2800,12 @@ namespace karto
     if (m_LocalizationScanVertices.size() > getParamScanBufferSize())
     {
       LocalizationScanVertex& oldLSV = m_LocalizationScanVertices.front();
+      RemoveNodeFromGraph(oldLSV.vertex);
 
-      // 1) delete edges in adjacent vertices, graph, and optimizer
-      std::vector<Vertex<LocalizedRangeScan>*> adjVerts =
-        oldLSV.vertex->GetAdjacentVertices();
-      for (int i = 0; i != adjVerts.size(); i++)
-      {
-        std::vector<Edge<LocalizedRangeScan>*> adjEdges = adjVerts[i]->GetEdges();
-        bool found = false;
-        for (int j=0; j!=adjEdges.size(); j++)
-        {
-          if (adjEdges[j]->GetTarget() == oldLSV.vertex ||
-            adjEdges[j]->GetSource() == oldLSV.vertex)
-          {
-            adjVerts[i]->RemoveEdge(j);
-            m_pScanOptimizer->RemoveConstraint(
-              adjEdges[j]->GetSource()->GetObject()->GetUniqueId(),
-              adjEdges[j]->GetTarget()->GetObject()->GetUniqueId()); 
-            std::vector<Edge<LocalizedRangeScan>*> edges = m_pGraph->GetEdges();
-            std::vector<Edge<LocalizedRangeScan>*>::iterator edgeGraphIt =
-              std::find(edges.begin(), edges.end(), adjEdges[j]);
-
-            if (edgeGraphIt == edges.end())
-            {
-              std::cout << "Edge not found in graph to remove!" << std::endl;
-              continue;
-            }
-
-            int posEdge = edgeGraphIt - edges.begin();
-            m_pGraph->RemoveEdge(posEdge); // remove from graph
-            delete *edgeGraphIt; // free hat!
-            *edgeGraphIt = NULL;
-            found = true;
-          }
-        }
-        if (!found)
-        {
-          std::cout << "Failed to find any edge in adj. vertex" <<
-            " with a matching vertex to current!" << std::endl;
-        }
-      }
-
-      // 2) delete vertex from optimizer
-      m_pScanOptimizer->RemoveNode(oldLSV.vertex->GetObject()->GetUniqueId());
-
-      // 3) delete from vertex map
-      std::map<Name, std::vector<Vertex<LocalizedRangeScan>*> > 
-        vertexMap = m_pGraph->GetVertices();
-      std::vector<Vertex<LocalizedRangeScan>*> graphVertices =
-        vertexMap[pScan->GetSensorName()];
-      std::vector<Vertex<LocalizedRangeScan>*>::iterator
-        vertexGraphIt = std::find(graphVertices.begin(),
-        graphVertices.end(), oldLSV.vertex);
-      if (vertexGraphIt != graphVertices.end())
-      {
-        // right now just sets to NULL, vector map will 
-        // scale in size but just contain a bunch of null pointers
-        int posVert = vertexGraphIt - graphVertices.begin();
-        m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert);
-      }
-      else
-      {
-        std::cout << "Vertex not found in graph to remove!" << std::endl;
-      }
-
-      // 4) delete node and scans
+      // delete node and scans
       // free hat!
       // No need to delete from m_scans as those pointers will be freed memory
-      if (oldLSV.vertex)
-      {
-        delete oldLSV.vertex;
-        oldLSV.vertex = NULL;
-      }
-      
+      oldLSV.vertex->DeleteObject();
       m_pMapperSensorManager->RemoveScan(oldLSV.scan);
       if (oldLSV.scan)
       {
@@ -2887,6 +2820,75 @@ namespace karto
     lsv.scan = pScan;
     lsv.vertex = scan_vertex;
     m_LocalizationScanVertices.push(lsv);
+
+    return true;
+  }
+
+  kt_bool Mapper::RemoveNodeFromGraph(Vertex<LocalizedRangeScan>* vertex_to_remove)
+  {
+    // 1) delete edges in adjacent vertices, graph, and optimizer
+    std::vector<Vertex<LocalizedRangeScan>*> adjVerts =
+      vertex_to_remove->GetAdjacentVertices();
+    for (int i = 0; i != adjVerts.size(); i++)
+    {
+      std::vector<Edge<LocalizedRangeScan>*> adjEdges = adjVerts[i]->GetEdges();
+      bool found = false;
+      for (int j=0; j!=adjEdges.size(); j++)
+      {
+        if (adjEdges[j]->GetTarget() == vertex_to_remove ||
+          adjEdges[j]->GetSource() == vertex_to_remove)
+        {
+          adjVerts[i]->RemoveEdge(j);
+          m_pScanOptimizer->RemoveConstraint(
+            adjEdges[j]->GetSource()->GetObject()->GetUniqueId(),
+            adjEdges[j]->GetTarget()->GetObject()->GetUniqueId()); 
+          std::vector<Edge<LocalizedRangeScan>*> edges = m_pGraph->GetEdges();
+          std::vector<Edge<LocalizedRangeScan>*>::iterator edgeGraphIt =
+            std::find(edges.begin(), edges.end(), adjEdges[j]);
+
+          if (edgeGraphIt == edges.end())
+          {
+            std::cout << "Edge not found in graph to remove!" << std::endl;
+            continue;
+          }
+
+          int posEdge = edgeGraphIt - edges.begin();
+          m_pGraph->RemoveEdge(posEdge); // remove from graph
+          delete *edgeGraphIt; // free hat!
+          *edgeGraphIt = NULL;
+          found = true;
+        }
+      }
+      if (!found)
+      {
+        std::cout << "Failed to find any edge in adj. vertex" <<
+          " with a matching vertex to current!" << std::endl;
+      }
+    }
+
+    // 2) delete vertex from optimizer
+    m_pScanOptimizer->RemoveNode(vertex_to_remove->GetObject()->GetUniqueId());
+
+    // 3) delete from vertex map
+    std::map<Name, std::vector<Vertex<LocalizedRangeScan>*> > 
+      vertexMap = m_pGraph->GetVertices();
+    std::vector<Vertex<LocalizedRangeScan>*> graphVertices =
+      vertexMap[vertex_to_remove->GetObject()->GetSensorName()];
+    std::vector<Vertex<LocalizedRangeScan>*>::iterator
+      vertexGraphIt = std::find(graphVertices.begin(),
+      graphVertices.end(), vertex_to_remove);
+    if (vertexGraphIt != graphVertices.end())
+    {
+      // right now just sets to NULL, vector map will 
+      // scale in size but just contain a bunch of null pointers
+      int posVert = vertexGraphIt - graphVertices.begin();
+      m_pGraph->RemoveVertex(vertex_to_remove->GetObject()->GetSensorName(), posVert);
+    }
+    else
+    {
+      std::cout << "Vertex not found in graph to remove!" << std::endl;
+      return false;
+    }
 
     return true;
   }

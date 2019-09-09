@@ -119,7 +119,8 @@ LifelongSlamToolbox::FindScansWithinRadius(
   if (use_tree)
   {
     vertices = 
-      smapper_->getMapper()->GetGraph()->FindNearByVertices(scan->GetSensorName(), scan->GetBarycenterPose(), radius);
+      smapper_->getMapper()->GetGraph()->FindNearByVertices(
+      scan->GetSensorName(), scan->GetBarycenterPose(), radius);
   }
   else
   {
@@ -161,9 +162,13 @@ void LifelongSlamToolbox::removeFromSlamGraph(
   Vertex<LocalizedRangeScan>*& vertex)
 /*****************************************************************************/
 {
-  // must have LocalizedRangeScan* & vertex object, vertex->GetObject() gives you scan ptr
-    // then I can refactor out the localization deletion code to use here
-
+  dataset_->RemoveData(vertex->GetObject());
+  smapper_->getMapper()->RemoveNodeFromGraph(vertex);
+  smapper_->getMapper()->GetMapperSensorManager()->RemoveScan(
+    vertex->GetObject());
+  vertex->DeleteObject();
+  delete vertex;
+  vertex = nullptr;
   // what do we do about the contraints that node had about it?Nothing?Transfer?
 }
 

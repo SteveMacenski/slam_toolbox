@@ -1900,6 +1900,7 @@ namespace karto
     kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
     kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
     kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
+    kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan>*);
 
     /**
      * Returns all processed scans added to the mapper.
