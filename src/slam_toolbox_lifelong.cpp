@@ -56,10 +56,10 @@ void LifelongSlamToolbox::laserCallback(
     return;
   }
 
-    // LTS additional bounded node increase parameter (rate, or total for run or at all?)
-    // LTS pseudo-localization mode. If want to add a scan, but not deleting a scan, add to local buffer?
-    // LTS if (eval() && dont_add_more_scans) {addScan()} else {localization_add_scan()}
-    // LTS if (eval() && ctr / total < add_rate_scans) {addScan()} else {localization_add_scan()}
+  // LTS additional bounded node increase parameter (rate, or total for run or at all?)
+  // LTS pseudo-localization mode. If want to add a scan, but not deleting a scan, add to local buffer?
+  // LTS if (eval() && dont_add_more_scans) {addScan()} else {localization_add_scan()}
+  // LTS if (eval() && ctr / total < add_rate_scans) {addScan()} else {localization_add_scan()}
 
   if (addScan(laser, scan, pose))
   {
@@ -82,21 +82,21 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
     const Size2<double> bb_size = bb.GetSize();
     double radius = sqrt(bb_size.GetWidth()*bb_size.GetWidth() +
       bb_size.GetHeight()*bb_size.GetHeight()) / 2.0;
-    std::map<double, Vertex<LocalizedRangeScan>*> near_scan_vertices = 
-      FindScansWithinRadius(range_scan, radius);
+    Vertices near_scan_vertices = FindScansWithinRadius(range_scan, radius);
 
-    computeScores(near_scan_vertices, range_scan);
+    ScoredVertices scored_verices =
+      computeScores(near_scan_vertices, range_scan);
 
-    std::map<double, Vertex<LocalizedRangeScan>*>::iterator it;
-    for (it = near_scan_vertices.begin(); it != near_scan_vertices.end(); ++it)
+    ScoredVertices::iterator it;
+    for (it = scored_verices.begin(); it != scored_verices.end(); ++it)
     {
-      if (it->first < 0.1)
+      if (it->GetVertex()->GetScore() < 0.1)
       {
-        removeFromSlamGraph(it->second);
+        removeFromSlamGraph(it->GetVertex());
       }
       else
       {
-        updateScoresSlamGraph(it->first, it->second);
+        updateScoresSlamGraph(it->GetVertex()->GetScore(), it->GetVertex());
       }
     }
 
@@ -107,46 +107,35 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
 }
 
 /*****************************************************************************/
-std::map<double, Vertex<LocalizedRangeScan>*>
-LifelongSlamToolbox::FindScansWithinRadius(
+Vertices LifelongSlamToolbox::FindScansWithinRadius(
   LocalizedRangeScan* scan, const double& radius)
 /*****************************************************************************/
 {
-  std::vector<Vertex<LocalizedRangeScan>*> vertices;
-  std::map<double, Vertex<LocalizedRangeScan>*> vertices_labeled;
+  Vertices vertices;
 
   if (use_tree)
   {
-    vertices = 
+    return
       smapper_->getMapper()->GetGraph()->FindNearByVertices(
       scan->GetSensorName(), scan->GetBarycenterPose(), radius);
   }
   else
   {
-    vertices = 
+    return 
       smapper_->getMapper()->GetGraph()->FindNearLinkedVertices(scan, radius);
   }
-
-  std::vector<Vertex<LocalizedRangeScan>*>::iterator it;
-  for (it = vertices.begin(); it != vertices.end(); ++it)
-  {
-    vertices_labeled.insert(
-      std::pair<double, Vertex<LocalizedRangeScan>*>(it->GetScore(), *it));
-  }
-
-  return vertices_labeled;
 }
 
 /*****************************************************************************/
 double LifelongSlamToolbox::computeScore(
   LocalizedRangeScan* reference_scan,
-  Vertex<LocalizedRangeScan>*>& candidate,
+  Vertex<LocalizedRangeScan>* candidate,
   const double& initial_score)
 /*****************************************************************************/
 {
   double new_score;
 
-  if () // must have some minimum overlap % before any score applied
+  if (false) // must have some minimum overlap % before any score applied
   {
     return initial_score;
   }
@@ -162,21 +151,30 @@ double LifelongSlamToolbox::computeScore(
 }
 
 /*****************************************************************************/
-void LifelongSlamToolbox::computeScores(
-  std::map<double, Vertex<LocalizedRangeScan>*>& near_scans,
+ScoredVertices
+LifelongSlamToolbox::computeScores(
+  Vertices& near_scans,
   LocalizedRangeScan* range_scan)
 /*****************************************************************************/
 {
-  std::map<double, Vertex<LocalizedRangeScan>*>::iterator it;
-  for (it = near_scans.begin(); it != near_scans.end(); ++it)
+  ScoredVertices scored_vertices;
+  scored_vertices.reserve(near_scans.size());
+
+  ScanVector::iterator candidate_scan_it;
+  for (candidate_scan_it = near_scans.begin();
+    candidate_scan_it != near_scans.end(); ++candidate_scan_it)
   {
-    it->first = computeScore(range_scan, *it, it->GetScore());
+    ScoredVertex scored_vertex(*candidate_scan_it,
+      computeScore(range_scan, *candidate_scan_it,
+        (*candidate_scan_it)->GetScore()));
+    scored_vertices.push_back(scored_vertex);
   }
+  return scored_vertices;
 }
 
 /*****************************************************************************/
 void LifelongSlamToolbox::removeFromSlamGraph(
-  Vertex<LocalizedRangeScan>*& vertex)
+  Vertex<LocalizedRangeScan>* vertex)
 /*****************************************************************************/
 {
   dataset_->RemoveData(vertex->GetObject());
@@ -191,7 +189,7 @@ void LifelongSlamToolbox::removeFromSlamGraph(
 
 /*****************************************************************************/
 void LifelongSlamToolbox::updateScoresSlamGraph(const double& score, 
-  Vertex<LocalizedRangeScan>*& vertex)
+  Vertex<LocalizedRangeScan>* vertex)
 /*****************************************************************************/
 {
   // Saved in graph so it persists between sessions and runs

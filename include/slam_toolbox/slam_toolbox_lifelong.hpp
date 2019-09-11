@@ -40,11 +40,11 @@ protected:
     slam_toolbox::DeserializePoseGraph::Response& resp) override final;
 
   void evaluateNodeDepreciation(LocalizedRangeScan* range_scan);
-  void removeFromSlamGraph(Vertex<LocalizedRangeScan>*& vertex);
-  double computeScore(LocalizedRangeScan* reference_scan, Vertex<LocalizedRangeScan>*>& candidate, const double& initial_score);
-  void computeScores(std::map<double, Vertex<LocalizedRangeScan>*>& near_scans, LocalizedRangeScan* range_scan);
-  std::map<double, Vertex<LocalizedRangeScan>*> FindScansWithinRadius(LocalizedRangeScan* scan, const double& radius);
-  void updateScoresSlamGraph(const double& score, Vertex<LocalizedRangeScan>*& vertex);
+  void removeFromSlamGraph(Vertex<LocalizedRangeScan>* vertex);
+  double computeScore(LocalizedRangeScan* reference_scan, Vertex<LocalizedRangeScan>* candidate, const double& initial_score);
+  ScoredVertices computeScores(Vertices& near_scans, LocalizedRangeScan* range_scan);
+  Vertices FindScansWithinRadius(LocalizedRangeScan* scan, const double& radius);
+  void updateScoresSlamGraph(const double& score, Vertex<LocalizedRangeScan>* vertex);
 
   bool use_tree;
 };

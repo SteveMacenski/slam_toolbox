@@ -47,6 +47,30 @@ struct PosedScan
   karto::Pose2 pose;
 };
 
+// object containing a vertex pointer and an updated score
+struct ScoredVertex
+{
+  ScoredVertex(karto::Vertex<karto::LocalizedRangeScan>* vertex, double score)
+  : vertex_(vertex), score_(score)
+  {
+  }
+
+  double GetScore()
+  {
+    return score_;
+  }
+
+  karto::Vertex<karto::LocalizedRangeScan>* GetVertex()
+  {
+    return vertex_;
+  }
+
+  karto::Vertex<karto::LocalizedRangeScan>* vertex_;
+  double score_;
+};
+
+typedef std::vector<ScoredVertex> ScoredVertices;
+typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> Vertices;
 
 // types of pause functionality available
 enum PausedApplication
