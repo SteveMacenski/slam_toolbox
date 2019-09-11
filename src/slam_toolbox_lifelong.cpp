@@ -177,8 +177,8 @@ void LifelongSlamToolbox::updateScoresSlamGraph(const double& score,
   Vertex<LocalizedRangeScan>*& vertex)
 /*****************************************************************************/
 {
-  // update the vertex with its score
-  // inputted graph itself, serialize -- persists between sessions and runs
+  // Saved in graph so it persists between sessions and runs
+  vertex->SetScore(score);
 }
 
 /*****************************************************************************/

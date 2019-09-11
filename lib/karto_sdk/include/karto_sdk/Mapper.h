@@ -260,7 +260,7 @@ namespace karto
      * @param pObject
      */
     Vertex()
-      : m_pObject(NULL)
+      : m_pObject(NULL), m_Score(1.0)
     {
     }
     Vertex(T* pObject)
@@ -290,6 +290,25 @@ namespace karto
     inline void RemoveEdge(const int& idx)
     {
       m_Edges.erase(m_Edges.begin() + idx);
+      return;
+    }
+
+    /**
+     * Gets score for vertex
+     * @return score
+     */
+    inline const double& GetScore()
+    {
+      return m_Score;
+    }
+
+    /**
+     * Sets score for vertex
+     * @return adjacent edges
+     */
+    inline void SetScore(const double& score)
+    {
+      m_Score = score;
       return;
     }
 
@@ -360,6 +379,7 @@ namespace karto
 
     T* m_pObject;
     std::vector<Edge<T>*> m_Edges;
+    kt_double m_Score;
 
     friend class boost::serialization::access;
     template<class Archive>
@@ -367,6 +387,7 @@ namespace karto
     {
       ar & BOOST_SERIALIZATION_NVP(m_pObject);
       ar & BOOST_SERIALIZATION_NVP(m_Edges);
+      ar & BOOST_SERIALIZATION_NVP(m_Score);
     }
   };  // Vertex<T>
 
