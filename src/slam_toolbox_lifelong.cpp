@@ -21,10 +21,9 @@
 namespace slam_toolbox
 {
 
-// the current_scans_ is a copy on the data stored by the dataset, can we hijack to not duplicate?
-// or add a parameter to disable interactive mode & not add to the scan holder/disable interactive mode cb
-
-// we keep increasing the vector of nodes/scans/constraints even though freeing the memory
+// LTS the current_scans_ is a copy on the data stored by the dataset, can we hijack to not duplicate?
+// LTS or add a parameter to disable interactive mode & not add to the scan holder/disable interactive mode cb
+// LTS we keep increasing the vector of nodes/scans/constraints even though freeing the memory
 
 /*****************************************************************************/
 LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
@@ -57,10 +56,10 @@ void LifelongSlamToolbox::laserCallback(
     return;
   }
 
-    // additional bounded node increase parameter (rate, or total for run or at all?)
-    // pseudo-localization mode. If want to add a scan, but not deleting a scan, add to local buffer?
-    // if (eval() && dont_add_more_scans) {addScan()} else {localization_add_scan()}
-    // if (eval() && ctr / total < add_rate_scans) {addScan()} else {localization_add_scan()}
+    // LTS additional bounded node increase parameter (rate, or total for run or at all?)
+    // LTS pseudo-localization mode. If want to add a scan, but not deleting a scan, add to local buffer?
+    // LTS if (eval() && dont_add_more_scans) {addScan()} else {localization_add_scan()}
+    // LTS if (eval() && ctr / total < add_rate_scans) {addScan()} else {localization_add_scan()}
 
   if (addScan(laser, scan, pose))
   {
@@ -132,10 +131,34 @@ LifelongSlamToolbox::FindScansWithinRadius(
   for (it = vertices.begin(); it != vertices.end(); ++it)
   {
     vertices_labeled.insert(
-      std::pair<double, Vertex<LocalizedRangeScan>*>(1.0, *it));
+      std::pair<double, Vertex<LocalizedRangeScan>*>(it->GetScore(), *it));
   }
 
   return vertices_labeled;
+}
+
+/*****************************************************************************/
+double LifelongSlamToolbox::computeScore(
+  LocalizedRangeScan* reference_scan,
+  Vertex<LocalizedRangeScan>*>& candidate,
+  const double& initial_score)
+/*****************************************************************************/
+{
+  double new_score;
+
+  if () // must have some minimum overlap % before any score applied
+  {
+    return initial_score;
+  }
+
+  //    compute metric (probablistic, intersect over union, compute information loss)
+  //      intersect over union on the 2 BB size/positions, % overlap of one to decay
+
+
+  //      score 0->1 given current score to scale/subtract
+  //        any scale store for intersect or only union?
+  //      combine with existing score
+  return new_score;
 }
 
 /*****************************************************************************/
@@ -144,17 +167,11 @@ void LifelongSlamToolbox::computeScores(
   LocalizedRangeScan* range_scan)
 /*****************************************************************************/
 {
-  // for each
-
-  // must have some minimum overlap % before any score applied
-
-      //    compute metric (probablistic, intersect over union, compute information loss)
-      //      intersect over union on the 2 BB size/positions
-      //      what about over multiple scans rather than a 1:1 mapping? -- decay so a series will remove
-      //      score 0->1 given current score to scale/subtract
-      //        number of area/total area overlapping decay score
-      //        any scale store for intersect or only union?
-      //      combine with existing score
+  std::map<double, Vertex<LocalizedRangeScan>*>::iterator it;
+  for (it = near_scans.begin(); it != near_scans.end(); ++it)
+  {
+    it->first = computeScore(range_scan, *it, it->GetScore());
+  }
 }
 
 /*****************************************************************************/
@@ -169,7 +186,7 @@ void LifelongSlamToolbox::removeFromSlamGraph(
   vertex->DeleteObject();
   delete vertex;
   vertex = nullptr;
-  // what do we do about the contraints that node had about it?Nothing?Transfer?
+  // LTS what do we do about the contraints that node had about it?Nothing?Transfer?
 }
 
 /*****************************************************************************/
