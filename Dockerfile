@@ -21,5 +21,6 @@ RUN source /opt/ros/melodic/setup.bash \
     && cd catkin_ws/src \
     && catkin_init_workspace \
     && cd .. \
-    && catkin build
+    && catkin config --install \
+    && catkin build -DCMAKE_BUILD_TYPE=Release
 
