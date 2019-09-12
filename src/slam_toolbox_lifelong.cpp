@@ -33,6 +33,7 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
   loadPoseGraphByParams(nh);
   nh.param("lifelong_search_use_tree", use_tree_, false);
   nh.param("lifelong_minimum_score", iou_thresh_, 0.10);
+  nh.param("lifelong_node_removal_score", removal_score_, 0.10);
 }
 
 /*****************************************************************************/
@@ -91,7 +92,7 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
     ScoredVertices::iterator it;
     for (it = scored_verices.begin(); it != scored_verices.end(); ++it)
     {
-      if (it->GetVertex()->GetScore() < 0.1)
+      if (it->GetVertex()->GetScore() < removal_score_)
       {
         removeFromSlamGraph(it->GetVertex());
       }
@@ -112,7 +113,10 @@ Vertices LifelongSlamToolbox::FindScansWithinRadius(
   LocalizedRangeScan* scan, const double& radius)
 /*****************************************************************************/
 {
-  Vertices vertices;
+  // Using the tree will create a Kd-tree and find all neighbors in graph
+  // around the reference scan. Otherwise it will use the graph and
+  // access scans within radius that are connected with constraints to this
+  // node.
 
   if (use_tree_)
   {
@@ -128,7 +132,7 @@ Vertices LifelongSlamToolbox::FindScansWithinRadius(
 }
 
 /*****************************************************************************/
-double LifelongSlamToolbox::computeIntersectOverUnion(LocalizedRangeScan* s1, 
+double LifelongSlamToolbox::computeIntersect(LocalizedRangeScan* s1, 
   LocalizedRangeScan* s2) const
 /*****************************************************************************/
 {
@@ -154,15 +158,48 @@ double LifelongSlamToolbox::computeIntersectOverUnion(LocalizedRangeScan* s1,
 
   const double intersect = (y_u - y_l) * (x_u - x_l);
 
+  return intersect;
+}
+
+/*****************************************************************************/
+double LifelongSlamToolbox::computeIntersectOverUnion(LocalizedRangeScan* s1, 
+  LocalizedRangeScan* s2) const
+/*****************************************************************************/
+{
+  // this is a common metric in machine learning used to determine
+  // the fitment of a set of bounding boxes. Its response sharply
+  // drops by box matches.
+
+  const double intersect = computeIntersect(s1, s2);
+
   if (intersect < 0.0)
   {
     return 0.0;
   }
 
+  Size2<double> bb1 = s1->GetBoundingBox().GetSize();
+  Size2<double> bb2 = s2->GetBoundingBox().GetSize();
   const double uni = (bb1.GetWidth() * bb1.GetHeight()) +
     (bb2.GetWidth() * bb2.GetHeight()) - intersect;
 
   return intersect / uni;
+}
+
+/*****************************************************************************/
+double LifelongSlamToolbox::computeOverlapRatio(LocalizedRangeScan* ref_scan, 
+  LocalizedRangeScan* candidate_scan) const
+/*****************************************************************************/
+{
+  // ref scan is new scan, candidate scan is potential for decay
+  // so we want to find the ratio of space of the candidate scan 
+  // the reference scan takes up
+
+  double overlap_area = computeIntersect(ref_scan, candidate_scan);
+  Size2<double> bb_candidate = candidate_scan->GetBoundingBox().GetSize();
+  const double candidate_area = 
+    bb_candidate.GetHeight() * bb_candidate.GetWidth();
+
+  return overlap_area / candidate_area;
 }
 
 /*****************************************************************************/
@@ -172,26 +209,12 @@ double LifelongSlamToolbox::computeScore(
   const double& initial_score)
 /*****************************************************************************/
 {
-  // LTS choice of scorer?
-  {
-    // metric options
-      // iou
-      // % regional overlap of reference scan
-      // % regional overlap of candidate scan
-      // % scan return overlap of candidate scan
-      // % scan return overlap of reference scan
-      // some weighted sum of above
-
-      // scan match response?
-      // pose difference (position and orientation)
-      // number of contraints
-      // if any constraints are a loop closure "key frame"
-  }
-
   LocalizedRangeScan* candidate_scan = candidate->GetObject();
   double iou = computeIntersectOverUnion(reference_scan, candidate_scan);
 
-  // must have some minimum overlap % / IoU
+  // must have some minimum metric to utilize
+  // IOU will drop sharply with fitment, I'd advise not setting this value
+  // any higher than 0.15.
   if (iou < iou_thresh_)
   {
     return initial_score;
@@ -199,11 +222,14 @@ double LifelongSlamToolbox::computeScore(
 
   double new_score = initial_score;
 
-  // compute metric (probablistic, intersect over union, compute information loss)
+  // compute metric an information loss normalized metric
+  double overlap = computeOverlapRatio(reference_scan, candidate_scan);
 
+  // TODO some equation: 
+  //F(iou, overlap, % pts in ref scan overlap in candidate scan, scan match response, 
+    //initial_score, tunable param, pose difference (position/orientation), 
+    // bool for key frame (loop closure/lots of constraints)) = score
 
-  // score 0->1 given current score to scale/subtract
-  //   combine with existing score
   return new_score;
 }
 
