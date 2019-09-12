@@ -31,7 +31,8 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
 /*****************************************************************************/
 {
   loadPoseGraphByParams(nh);
-  nh.param("lifelong_search_use_tree", use_tree, false);
+  nh.param("lifelong_search_use_tree", use_tree_, false);
+  nh.param("lifelong_minimum_score", iou_thresh_, 0.10);
 }
 
 /*****************************************************************************/
@@ -113,7 +114,7 @@ Vertices LifelongSlamToolbox::FindScansWithinRadius(
 {
   Vertices vertices;
 
-  if (use_tree)
+  if (use_tree_)
   {
     return
       smapper_->getMapper()->GetGraph()->FindNearByVertices(
@@ -127,26 +128,82 @@ Vertices LifelongSlamToolbox::FindScansWithinRadius(
 }
 
 /*****************************************************************************/
+double LifelongSlamToolbox::computeIntersectOverUnion(LocalizedRangeScan* s1, 
+  LocalizedRangeScan* s2) const
+/*****************************************************************************/
+{
+  Size2<double> bb1 = s1->GetBoundingBox().GetSize();
+  Size2<double> bb2 = s2->GetBoundingBox().GetSize();
+  Pose2 pose1 = s1->GetBarycenterPose();
+  Pose2 pose2 = s2->GetBarycenterPose();
+
+  const double s1_upper_x = pose1.GetX() + (bb1.GetWidth()  / 2.0);
+  const double s1_upper_y = pose1.GetY() + (bb1.GetHeight() / 2.0);
+  const double s1_lower_x = pose1.GetX() - (bb1.GetWidth()  / 2.0);
+  const double s1_lower_y = pose1.GetY() - (bb1.GetHeight() / 2.0);
+
+  const double s2_upper_x = pose2.GetX() + (bb2.GetWidth()  / 2.0);
+  const double s2_upper_y = pose2.GetY() + (bb2.GetHeight() / 2.0);
+  const double s2_lower_x = pose2.GetX() - (bb2.GetWidth()  / 2.0);
+  const double s2_lower_y = pose2.GetY() - (bb2.GetHeight() / 2.0);
+
+  const double x_u = std::min(s1_upper_x, s2_upper_x);
+  const double y_u = std::min(s1_upper_y, s2_upper_y);
+  const double x_l = std::max(s1_lower_x, s2_lower_x);
+  const double y_l = std::max(s1_lower_y, s2_lower_y);
+
+  const double intersect = (y_u - y_l) * (x_u - x_l);
+
+  if (intersect < 0.0)
+  {
+    return 0.0;
+  }
+
+  const double uni = (bb1.GetWidth() * bb1.GetHeight()) +
+    (bb2.GetWidth() * bb2.GetHeight()) - intersect;
+
+  return intersect / uni;
+}
+
+/*****************************************************************************/
 double LifelongSlamToolbox::computeScore(
   LocalizedRangeScan* reference_scan,
   Vertex<LocalizedRangeScan>* candidate,
   const double& initial_score)
 /*****************************************************************************/
 {
-  double new_score;
+  // LTS choice of scorer?
+  {
+    // metric options
+      // iou
+      // % regional overlap of reference scan
+      // % regional overlap of candidate scan
+      // % scan return overlap of candidate scan
+      // % scan return overlap of reference scan
+      // some weighted sum of above
 
-  if (false) // must have some minimum overlap % before any score applied
+      // scan match response?
+      // pose difference (position and orientation)
+      // number of contraints
+      // if any constraints are a loop closure "key frame"
+  }
+
+  LocalizedRangeScan* candidate_scan = candidate->GetObject();
+  double iou = computeIntersectOverUnion(reference_scan, candidate_scan);
+
+  // must have some minimum overlap % / IoU
+  if (iou < iou_thresh_)
   {
     return initial_score;
   }
 
-  //    compute metric (probablistic, intersect over union, compute information loss)
-  //      intersect over union on the 2 BB size/positions, % overlap of one to decay
+  double new_score = initial_score;
+
+  // compute metric (probablistic, intersect over union, compute information loss)
 
 
-  //      score 0->1 given current score to scale/subtract
-  //        any scale store for intersect or only union?
-  //      combine with existing score
+  // score 0->1 given current score to scale/subtract
+  //   combine with existing score
   return new_score;
 }
 

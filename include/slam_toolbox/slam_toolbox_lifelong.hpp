@@ -45,8 +45,9 @@ protected:
   ScoredVertices computeScores(Vertices& near_scans, LocalizedRangeScan* range_scan);
   Vertices FindScansWithinRadius(LocalizedRangeScan* scan, const double& radius);
   void updateScoresSlamGraph(const double& score, Vertex<LocalizedRangeScan>* vertex);
-
-  bool use_tree;
+  double computeIntersectOverUnion(LocalizedRangeScan* s1, LocalizedRangeScan* s2) const;
+  bool use_tree_;
+  double iou_thresh_;
 };
 
 }
