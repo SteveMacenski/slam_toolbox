@@ -1,6 +1,6 @@
 /*
  * slam_toolbox
- * Copyright Work Modifications (c) 2019, Samsung Research America
+ * Copyright (c) 2019, Samsung Research America
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
@@ -49,8 +49,11 @@ protected:
   // computation metrics
   double computeIntersect(LocalizedRangeScan* s1, LocalizedRangeScan* s2) const;
   double computeIntersectOverUnion(LocalizedRangeScan* s1, LocalizedRangeScan* s2) const;
-  double computeOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan) const;
-  
+  double computeAreaOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan) const;
+  double computeReadingOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan) const;
+  double computeObjectiveScore(const double& intersect_over_union, const double& area_overlap, const double& reading_overlap, const double& constraints, const double& initial_score);
+  void computeIntersectBounds(LocalizedRangeScan* s1, LocalizedRangeScan* s2, double& x_l, double& x_u, double& y_l, double& y_u) const;
+
   bool use_tree_;
   double iou_thresh_;
   double removal_score_;

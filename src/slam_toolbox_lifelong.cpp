@@ -1,6 +1,6 @@
 /*
  * slam_toolbox
- * Copyright Work Modifications (c) 2019, Samsung Research America
+ * Copyright (c) 2019, Samsung Research America
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
@@ -34,6 +34,14 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
   nh.param("lifelong_search_use_tree", use_tree_, false);
   nh.param("lifelong_minimum_score", iou_thresh_, 0.10);
   nh.param("lifelong_node_removal_score", removal_score_, 0.10);
+
+  if (iou_thresh_ < 0.0 || iou_thresh_ > 1.0 ||
+    removal_score_ < 0.0 || removal_score_ > 1.0)
+  {
+    ROS_FATAL("lifelong_minimum_score and lifelong_node_removal_score "
+      "must be in range [0, 1].");
+    exit(-1);
+  }
 }
 
 /*****************************************************************************/
@@ -132,74 +140,18 @@ Vertices LifelongSlamToolbox::FindScansWithinRadius(
 }
 
 /*****************************************************************************/
-double LifelongSlamToolbox::computeIntersect(LocalizedRangeScan* s1, 
-  LocalizedRangeScan* s2) const
+double LifelongSlamToolbox::computeObjectiveScore(
+  const double& intersect_over_union,
+  const double& area_overlap,
+  const double& reading_overlap,
+  const double& constraints,
+  const double& initial_score)
 /*****************************************************************************/
 {
-  Size2<double> bb1 = s1->GetBoundingBox().GetSize();
-  Size2<double> bb2 = s2->GetBoundingBox().GetSize();
-  Pose2 pose1 = s1->GetBarycenterPose();
-  Pose2 pose2 = s2->GetBarycenterPose();
+  double score = 1.0;
 
-  const double s1_upper_x = pose1.GetX() + (bb1.GetWidth()  / 2.0);
-  const double s1_upper_y = pose1.GetY() + (bb1.GetHeight() / 2.0);
-  const double s1_lower_x = pose1.GetX() - (bb1.GetWidth()  / 2.0);
-  const double s1_lower_y = pose1.GetY() - (bb1.GetHeight() / 2.0);
 
-  const double s2_upper_x = pose2.GetX() + (bb2.GetWidth()  / 2.0);
-  const double s2_upper_y = pose2.GetY() + (bb2.GetHeight() / 2.0);
-  const double s2_lower_x = pose2.GetX() - (bb2.GetWidth()  / 2.0);
-  const double s2_lower_y = pose2.GetY() - (bb2.GetHeight() / 2.0);
-
-  const double x_u = std::min(s1_upper_x, s2_upper_x);
-  const double y_u = std::min(s1_upper_y, s2_upper_y);
-  const double x_l = std::max(s1_lower_x, s2_lower_x);
-  const double y_l = std::max(s1_lower_y, s2_lower_y);
-
-  const double intersect = (y_u - y_l) * (x_u - x_l);
-
-  return intersect;
-}
-
-/*****************************************************************************/
-double LifelongSlamToolbox::computeIntersectOverUnion(LocalizedRangeScan* s1, 
-  LocalizedRangeScan* s2) const
-/*****************************************************************************/
-{
-  // this is a common metric in machine learning used to determine
-  // the fitment of a set of bounding boxes. Its response sharply
-  // drops by box matches.
-
-  const double intersect = computeIntersect(s1, s2);
-
-  if (intersect < 0.0)
-  {
-    return 0.0;
-  }
-
-  Size2<double> bb1 = s1->GetBoundingBox().GetSize();
-  Size2<double> bb2 = s2->GetBoundingBox().GetSize();
-  const double uni = (bb1.GetWidth() * bb1.GetHeight()) +
-    (bb2.GetWidth() * bb2.GetHeight()) - intersect;
-
-  return intersect / uni;
-}
-
-/*****************************************************************************/
-double LifelongSlamToolbox::computeOverlapRatio(LocalizedRangeScan* ref_scan, 
-  LocalizedRangeScan* candidate_scan) const
-/*****************************************************************************/
-{
-  // ref scan is new scan, candidate scan is potential for decay
-  // so we want to find the ratio of space of the candidate scan 
-  // the reference scan takes up
-
-  double overlap_area = computeIntersect(ref_scan, candidate_scan);
-  Size2<double> bb_candidate = candidate_scan->GetBoundingBox().GetSize();
-  const double candidate_area = 
-    bb_candidate.GetHeight() * bb_candidate.GetWidth();
-
-  return overlap_area / candidate_area;
+  return score;
 }
 
 /*****************************************************************************/
@@ -223,14 +175,16 @@ double LifelongSlamToolbox::computeScore(
   double new_score = initial_score;
 
   // compute metric an information loss normalized metric
-  double overlap = computeOverlapRatio(reference_scan, candidate_scan);
+  double area_overlap = computeAreaOverlapRatio(reference_scan, candidate_scan);
+  double num_constraints = candidate->GetEdges().size();
+  double reading_overlap = computeReadingOverlapRatio(reference_scan, candidate_scan);
+  //double match_response = smapper_->getMapper()->GetSequentialScanMatcher()->MatchScan();
 
-  // TODO some equation: 
-  //F(iou, overlap, % pts in ref scan overlap in candidate scan, scan match response, 
-    //initial_score, tunable param, pose difference (position/orientation), 
-    // bool for key frame (loop closure/lots of constraints)) = score
-
-  return new_score;
+  return computeObjectiveScore(iou,
+                               area_overlap,
+                               reading_overlap,
+                               num_constraints,
+                               initial_score);
 }
 
 /*****************************************************************************/
@@ -293,6 +247,115 @@ bool LifelongSlamToolbox::deserializePoseGraphCallback(
   }
 
   return SlamToolbox::deserializePoseGraphCallback(req, resp);
+}
+
+/*****************************************************************************/
+void LifelongSlamToolbox::computeIntersectBounds(
+  LocalizedRangeScan* s1, LocalizedRangeScan* s2,
+  double& x_l, double& x_u, double& y_l, double& y_u) const
+/*****************************************************************************/
+{
+  Size2<double> bb1 = s1->GetBoundingBox().GetSize();
+  Size2<double> bb2 = s2->GetBoundingBox().GetSize();
+  Pose2 pose1 = s1->GetBarycenterPose();
+  Pose2 pose2 = s2->GetBarycenterPose();
+
+  const double s1_upper_x = pose1.GetX() + (bb1.GetWidth()  / 2.0);
+  const double s1_upper_y = pose1.GetY() + (bb1.GetHeight() / 2.0);
+  const double s1_lower_x = pose1.GetX() - (bb1.GetWidth()  / 2.0);
+  const double s1_lower_y = pose1.GetY() - (bb1.GetHeight() / 2.0);
+
+  const double s2_upper_x = pose2.GetX() + (bb2.GetWidth()  / 2.0);
+  const double s2_upper_y = pose2.GetY() + (bb2.GetHeight() / 2.0);
+  const double s2_lower_x = pose2.GetX() - (bb2.GetWidth()  / 2.0);
+  const double s2_lower_y = pose2.GetY() - (bb2.GetHeight() / 2.0);
+
+  x_u = std::min(s1_upper_x, s2_upper_x);
+  y_u = std::min(s1_upper_y, s2_upper_y);
+  x_l = std::max(s1_lower_x, s2_lower_x);
+  y_l = std::max(s1_lower_y, s2_lower_y);
+  return;
+}
+
+/*****************************************************************************/
+double LifelongSlamToolbox::computeIntersect(LocalizedRangeScan* s1, 
+  LocalizedRangeScan* s2) const
+/*****************************************************************************/
+{
+  double x_l, x_u, y_l, y_u;
+  computeIntersectBounds(s1, s2, x_l, x_u, y_l, y_u);
+  const double intersect = (y_u - y_l) * (x_u - x_l);
+
+  if (intersect < 0.0)
+  {
+    return 0.0;
+  }
+
+  return intersect;
+}
+
+/*****************************************************************************/
+double LifelongSlamToolbox::computeIntersectOverUnion(LocalizedRangeScan* s1, 
+  LocalizedRangeScan* s2) const
+/*****************************************************************************/
+{
+  // this is a common metric in machine learning used to determine
+  // the fitment of a set of bounding boxes. Its response sharply
+  // drops by box matches.
+
+  const double intersect = computeIntersect(s1, s2);
+
+  Size2<double> bb1 = s1->GetBoundingBox().GetSize();
+  Size2<double> bb2 = s2->GetBoundingBox().GetSize();
+  const double uni = (bb1.GetWidth() * bb1.GetHeight()) +
+    (bb2.GetWidth() * bb2.GetHeight()) - intersect;
+
+  return intersect / uni;
+}
+
+/*****************************************************************************/
+double LifelongSlamToolbox::computeAreaOverlapRatio(
+  LocalizedRangeScan* ref_scan, 
+  LocalizedRangeScan* candidate_scan) const
+/*****************************************************************************/
+{
+  // ref scan is new scan, candidate scan is potential for decay
+  // so we want to find the ratio of space of the candidate scan 
+  // the reference scan takes up
+
+  double overlap_area = computeIntersect(ref_scan, candidate_scan);
+  Size2<double> bb_candidate = candidate_scan->GetBoundingBox().GetSize();
+  const double candidate_area = 
+    bb_candidate.GetHeight() * bb_candidate.GetWidth();
+
+  return overlap_area / candidate_area;
+}
+
+/*****************************************************************************/
+double LifelongSlamToolbox::computeReadingOverlapRatio(
+  LocalizedRangeScan* ref_scan, 
+  LocalizedRangeScan* candidate_scan) const
+/*****************************************************************************/
+{
+  const PointVectorDouble& pts = candidate_scan->GetPointReadings(true);
+  const int num_pts = pts.size();
+
+  // get the bounds of the intersect area
+  double x_l, x_u, y_l, y_u;
+  computeIntersectBounds(ref_scan, candidate_scan, x_l, x_u, y_l, y_u);
+
+  PointVectorDouble::const_iterator pt_it;
+  int inner_pts = 0;
+  for (pt_it = pts.begin(); pt_it != pts.end(); ++pt_it)
+  {
+    if (pt_it->GetX() < x_u && pt_it->GetX() > x_l &&
+        pt_it->GetY() < y_u && pt_it->GetY() > y_l)
+    {
+      inner_pts++;
+    }
+  }
+
+  return double(inner_pts) / double(num_pts);
 }
 
 } // end namespace
