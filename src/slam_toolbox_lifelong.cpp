@@ -48,6 +48,7 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
   nh.param("lifelong_node_removal_score", removal_score_, 0.10);
   nh.param("lifelong_overlap_score_scale", overlap_scale_, 0.5);
   nh.param("lifelong_constraint_multiplier", constraint_scale_, 0.05);
+  nh.param("lifelong_nearby_penalty", nearby_penalty_, 0.001);
 
   checkIsNotNormalized(iou_thresh_);
   checkIsNotNormalized(constraint_scale_);
@@ -114,6 +115,7 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
     {
       if (it->GetVertex()->GetScore() < removal_score_)
       {
+        ROS_INFO("STEVE REMOVING NODE FROM GRAPH");
         removeFromSlamGraph(it->GetVertex());
       }
       else
@@ -171,19 +173,19 @@ double LifelongSlamToolbox::computeObjectiveScore(
 
   double score = 1.0;
 
-  // to be conservative, lets say the overlap is the lesser of the
-  // area and proportion of laser returns in the intersecting region.
-  const double overlap = overlap_scale_ * std::min(area_overlap, reading_overlap);
-
-  // if the num_constraints are high we want to stave off the decay
-  // TODO this should always go DOWN
-  const double contraint_scale_factor = std::min(1.0, std::max(0., constraint_scale_ * (num_constraints - 2)));
-
   // this is a really good fit and not from a loop closure, lets just decay
   if (intersect_over_union > iou_match_ && num_constraints < 3)
   {
     return 0.0;
   }
+
+  // to be conservative, lets say the overlap is the lesser of the
+  // area and proportion of laser returns in the intersecting region.
+  const double overlap = overlap_scale_ * std::min(area_overlap, reading_overlap);
+
+  // if the num_constraints are high we want to stave off the decay, but not override it
+  double contraint_scale_factor = std::min(1.0, std::max(0., constraint_scale_ * (num_constraints - 2)));
+  contraint_scale_factor = std::min(contraint_scale_factor, overlap);
 
   const double unscaled_score = std::max(0., initial_score - overlap);
   if (unscaled_score > 1.0)
@@ -203,12 +205,8 @@ double LifelongSlamToolbox::computeObjectiveScore(
     return unscaled_score;
   }
 
-  if (unscaled_score + contraint_scale_factor > 1.0) //TODO this should always go DOWN
-  {
-    return 1.0;
-  }
-
-  score = contraint_scale_factor + unscaled_score; //TODO this should always go DOWN
+  // Constraint help keep - new score - a small penalty for even being nearby
+  score = std::min(1.0, unscaled_score * (1.0 + contraint_scale_factor) - nearby_penalty_);
   return score;
 }
 

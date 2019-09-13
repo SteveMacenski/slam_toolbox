@@ -61,6 +61,7 @@ protected:
   double overlap_scale_;
   double constraint_scale_;
   double iou_match_;
+  double nearby_penalty_;
 };
 
 }

@@ -107,6 +107,7 @@ def plotData(data):
 	plt.legend()
 	plt.xlabel("time (s)")
 	plt.ylabel("Node count")
+	#plt.yscale("log")
 	plt.show()
 
 if __name__ == "__main__":

@@ -31,6 +31,7 @@ CeresSolver::CeresSolver() :
   nh.getParam("ceres_trust_strategy", trust_strategy);
   nh.getParam("ceres_loss_function", loss_fn);
   nh.getParam("mode", mode);
+  nh.getParam("debug_logging", debug_logging_);
 
   corrections_.clear();
   first_node_ = nodes_->end();
@@ -191,7 +192,10 @@ void CeresSolver::Compute()
   const ros::Time start_time = ros::Time::now();
   ceres::Solver::Summary summary;
   ceres::Solve(options_, problem_, &summary);
-  std::cout << summary.FullReport() << '\n';
+  if (debug_logging_)
+  {
+    std::cout << summary.FullReport() << '\n';
+  }
 
   if (!summary.IsSolutionUsable())
   {

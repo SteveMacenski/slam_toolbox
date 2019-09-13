@@ -58,7 +58,7 @@ private:
   ceres::LossFunction* loss_function_;
   ceres::Problem* problem_;
   ceres::LocalParameterization* angle_local_parameterization_;
-  bool was_constant_set_;
+  bool was_constant_set_, debug_logging_;
 
   // graph
   std::unordered_map<int, Eigen::Vector3d>* nodes_;
