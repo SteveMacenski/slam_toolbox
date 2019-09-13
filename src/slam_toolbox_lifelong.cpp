@@ -97,6 +97,7 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
   LocalizedRangeScan* range_scan)
 /*****************************************************************************/
 {
+  ROS_FATAL("Eval node");
   if (range_scan)
   {
     boost::mutex::scoped_lock lock(smapper_mutex_);
@@ -115,7 +116,7 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
     {
       if (it->GetVertex()->GetScore() < removal_score_)
       {
-        ROS_INFO("STEVE REMOVING NODE FROM GRAPH");
+        ROS_INFO("STEVE REMOVING NODE FROM GRAPH %f", it->GetVertex()->GetScore());
         removeFromSlamGraph(it->GetVertex());
       }
       else
@@ -188,6 +189,7 @@ double LifelongSlamToolbox::computeObjectiveScore(
   contraint_scale_factor = std::min(contraint_scale_factor, overlap);
 
   const double unscaled_score = std::max(0., initial_score - overlap);
+  std::cout << "unscaled score: " << unscaled_score << std::endl; 
   if (unscaled_score > 1.0)
   {
     ROS_ERROR("Objective function calculated for vertex score greater than "
@@ -200,14 +202,28 @@ double LifelongSlamToolbox::computeObjectiveScore(
       "zero! Thresholding to 0.");
     return 0.0;
   }
-  else
+  else if (unscaled_score == 0.0)
   {
     return unscaled_score;
   }
+  else
+  {
+    // Constraint help keep - new score - a small penalty for even being nearby
+    score = std::min(1.0, unscaled_score * (1.0 + contraint_scale_factor) - nearby_penalty_);
+    std::cout << "score: " << score << std::endl; 
+    return score;
 
-  // Constraint help keep - new score - a small penalty for even being nearby
-  score = std::min(1.0, unscaled_score * (1.0 + contraint_scale_factor) - nearby_penalty_);
-  return score;
+
+// metrics:
+// IOU 0.359621
+// area 1
+// Num COn 3
+// readings 0.951271
+// unscaled score: 0.524364
+// score: 0.549583
+    // rising because we're multiplusing unscaled by num > 1, always more. Need to 
+    // instead multiply on initial score 
+  }
 }
 
 /*****************************************************************************/
@@ -234,8 +250,12 @@ double LifelongSlamToolbox::computeScore(
   double area_overlap = computeAreaOverlapRatio(reference_scan, candidate_scan);
   double num_constraints = candidate->GetEdges().size();
   double reading_overlap = computeReadingOverlapRatio(reference_scan, candidate_scan);
-  //double match_response = smapper_->getMapper()->GetSequentialScanMatcher()->MatchScan();
 
+  std::cout << "metrics:" << std::endl;
+  std::cout << "IOU " << iou << std::endl;
+    std::cout << "area " << area_overlap << std::endl;
+      std::cout << "Num COn " << num_constraints << std::endl;
+        std::cout << "readings " << reading_overlap << std::endl;
   return computeObjectiveScore(iou,
                                area_overlap,
                                reading_overlap,

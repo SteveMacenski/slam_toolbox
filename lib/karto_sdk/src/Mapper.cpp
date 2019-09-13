@@ -1248,8 +1248,7 @@ namespace karto
   {
     try
     {
-      LocalizedRangeScan* pScan = pVertex->GetObject();
-
+      LocalizedRangeScan* pScan = pVertex->GetObject(); //TODO STEVE why is failing in lifelong mode?
       Pose2 pose = pScan->GetReferencePose(m_UseScanBarycenter);
       kt_double squaredDistance = pose.GetPosition().SquaredDistance(m_CenterPose.GetPosition());
       return (squaredDistance <= m_MaxDistanceSquared - KT_TOLERANCE);

@@ -264,7 +264,7 @@ namespace karto
     {
     }
     Vertex(T* pObject)
-      : m_pObject(pObject)
+      : m_pObject(pObject), m_Score(1.0)
     {
     }
 
