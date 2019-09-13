@@ -26,6 +26,17 @@ namespace slam_toolbox
 // LTS we keep increasing the vector of nodes/scans/constraints even though freeing the memory
 
 /*****************************************************************************/
+void LifelongSlamToolbox::checkIsNotNormalized(const double& value)
+/*****************************************************************************/
+{
+  if (value < 0.0 || value > 1.0)
+  {
+    ROS_FATAL("All stores and scales must be in range [0, 1].");
+    exit(-1);
+  }
+}
+
+/*****************************************************************************/
 LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
 : SlamToolbox(nh)
 /*****************************************************************************/
@@ -33,15 +44,16 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
   loadPoseGraphByParams(nh);
   nh.param("lifelong_search_use_tree", use_tree_, false);
   nh.param("lifelong_minimum_score", iou_thresh_, 0.10);
+  nh.param("lifelong_iou_match", iou_match_, 0.75);
   nh.param("lifelong_node_removal_score", removal_score_, 0.10);
+  nh.param("lifelong_overlap_score_scale", overlap_scale_, 0.5);
+  nh.param("lifelong_constraint_multiplier", constraint_scale_, 0.05);
 
-  if (iou_thresh_ < 0.0 || iou_thresh_ > 1.0 ||
-    removal_score_ < 0.0 || removal_score_ > 1.0)
-  {
-    ROS_FATAL("lifelong_minimum_score and lifelong_node_removal_score "
-      "must be in range [0, 1].");
-    exit(-1);
-  }
+  checkIsNotNormalized(iou_thresh_);
+  checkIsNotNormalized(constraint_scale_);
+  checkIsNotNormalized(removal_score_);
+  checkIsNotNormalized(overlap_scale_);
+  checkIsNotNormalized(iou_match_);
 }
 
 /*****************************************************************************/
@@ -144,13 +156,59 @@ double LifelongSlamToolbox::computeObjectiveScore(
   const double& intersect_over_union,
   const double& area_overlap,
   const double& reading_overlap,
-  const double& constraints,
+  const double& num_constraints,
   const double& initial_score)
 /*****************************************************************************/
 {
+  // LTS how to make sure sees enough unique area and not just the same 30% 3 times?
+
+  // We have some useful metrics. lets make a new score
+  // intersect_over_union: The higher this score, the better aligned in scope these scans are
+  // area_overlap: The higher, the more area they share normalized by candidate size
+  // reading_overlap: The higher, the more readings of the new scan the candidate contains
+  // num_constraints: The lower, the less other nodes may rely on this candidate
+  // initial_score: Last score of this vertex before update
+
   double score = 1.0;
 
+  // to be conservative, lets say the overlap is the lesser of the
+  // area and proportion of laser returns in the intersecting region.
+  const double overlap = overlap_scale_ * std::min(area_overlap, reading_overlap);
 
+  // if the num_constraints are high we want to stave off the decay
+  // TODO this should always go DOWN
+  const double contraint_scale_factor = std::min(1.0, std::max(0., constraint_scale_ * (num_constraints - 2)));
+
+  // this is a really good fit and not from a loop closure, lets just decay
+  if (intersect_over_union > iou_match_ && num_constraints < 3)
+  {
+    return 0.0;
+  }
+
+  const double unscaled_score = std::max(0., initial_score - overlap);
+  if (unscaled_score > 1.0)
+  {
+    ROS_ERROR("Objective function calculated for vertex score greater than "
+      "one! Thresholding to 1.");
+    return 1.0;
+  }
+  else if (unscaled_score < 0.0)
+  {
+    ROS_ERROR("Objective function calculated for vertex score less than "
+      "zero! Thresholding to 0.");
+    return 0.0;
+  }
+  else
+  {
+    return unscaled_score;
+  }
+
+  if (unscaled_score + contraint_scale_factor > 1.0) //TODO this should always go DOWN
+  {
+    return 1.0;
+  }
+
+  score = contraint_scale_factor + unscaled_score; //TODO this should always go DOWN
   return score;
 }
 

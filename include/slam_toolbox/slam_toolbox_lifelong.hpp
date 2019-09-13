@@ -45,18 +45,22 @@ protected:
   ScoredVertices computeScores(Vertices& near_scans, LocalizedRangeScan* range_scan);
   Vertices FindScansWithinRadius(LocalizedRangeScan* scan, const double& radius);
   void updateScoresSlamGraph(const double& score, Vertex<LocalizedRangeScan>* vertex);
+  void checkIsNotNormalized(const double& value);
 
   // computation metrics
   double computeIntersect(LocalizedRangeScan* s1, LocalizedRangeScan* s2) const;
   double computeIntersectOverUnion(LocalizedRangeScan* s1, LocalizedRangeScan* s2) const;
   double computeAreaOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan) const;
   double computeReadingOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan) const;
-  double computeObjectiveScore(const double& intersect_over_union, const double& area_overlap, const double& reading_overlap, const double& constraints, const double& initial_score);
+  double computeObjectiveScore(const double& intersect_over_union, const double& area_overlap, const double& reading_overlap, const double& num_constraints, const double& initial_score);
   void computeIntersectBounds(LocalizedRangeScan* s1, LocalizedRangeScan* s2, double& x_l, double& x_u, double& y_l, double& y_u) const;
 
   bool use_tree_;
   double iou_thresh_;
   double removal_score_;
+  double overlap_scale_;
+  double constraint_scale_;
+  double iou_match_;
 };
 
 }
