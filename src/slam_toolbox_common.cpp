@@ -88,7 +88,7 @@ void SlamToolbox::setSolver(ros::NodeHandle& private_nh_)
   if(!private_nh_.getParam("solver_plugin", solver_plugin))
   {
     ROS_WARN("unable to find requested solver plugin, defaulting to SPA");
-    solver_plugin = "solver_plugins::SpaSolver";
+    solver_plugin = "solver_plugins::CeresSolver";
   }
   try 
   {

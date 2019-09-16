@@ -39,6 +39,7 @@ find_package(G2O REQUIRED)
 find_package(Cholmod REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
+find_package(rostest REQUIRED)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_definitions(-DQT_NO_KEYWORDS)
@@ -151,21 +152,36 @@ add_dependencies(toolbox_common ${PROJECT_NAME}_generate_messages_cpp)
 target_link_libraries(toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 #### Mapping executibles
-add_executable(async_slam_toolbox_node src/slam_toolbox_async.cpp )
-target_link_libraries(async_slam_toolbox_node toolbox_common)
+add_library(async_slam_toolbox src/slam_toolbox_async.cpp)
+target_link_libraries(async_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_executable(async_slam_toolbox_node src/slam_toolbox_async_node.cpp )
+target_link_libraries(async_slam_toolbox_node async_slam_toolbox)
 
-add_executable(sync_slam_toolbox_node src/slam_toolbox_sync.cpp )
-target_link_libraries(sync_slam_toolbox_node toolbox_common)
+add_library(sync_slam_toolbox src/slam_toolbox_sync.cpp)
+target_link_libraries(sync_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_executable(sync_slam_toolbox_node src/slam_toolbox_sync_node.cpp )
+target_link_libraries(sync_slam_toolbox_node sync_slam_toolbox)
 
-add_executable(localization_slam_toolbox_node src/slam_toolbox_localization.cpp )
-target_link_libraries(localization_slam_toolbox_node toolbox_common)
+add_library(localization_slam_toolbox src/slam_toolbox_localization.cpp)
+target_link_libraries(localization_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_executable(localization_slam_toolbox_node src/slam_toolbox_localization_node.cpp )
+target_link_libraries(localization_slam_toolbox_node localization_slam_toolbox)
 
-add_executable(lifelong_slam_toolbox_node src/slam_toolbox_lifelong.cpp )
-target_link_libraries(lifelong_slam_toolbox_node toolbox_common)
+add_library(lifelong_slam_toolbox src/slam_toolbox_lifelong.cpp)
+target_link_libraries(lifelong_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+add_executable(lifelong_slam_toolbox_node src/slam_toolbox_lifelong_node.cpp )
+target_link_libraries(lifelong_slam_toolbox_node lifelong_slam_toolbox)
 
 #### Merging maps tool
 add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 target_link_libraries(merge_maps_kinematic toolbox_common)
+
+#### testing
+if(CATKIN_ENABLE_TESTING)
+  include_directories(test)
+  catkin_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
+  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
+endif()
 
 #### Install
 install(TARGETS toolbox_common

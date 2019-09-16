@@ -32,6 +32,14 @@ public:
   LifelongSlamToolbox(ros::NodeHandle& nh);
   ~LifelongSlamToolbox() {};
 
+  // computation metrics
+  double computeObjectiveScore(const double& intersect_over_union, const double& area_overlap, const double& reading_overlap, const double& num_constraints, const double& initial_score) const;
+  static double computeIntersect(LocalizedRangeScan* s1, LocalizedRangeScan* s2);
+  static double computeIntersectOverUnion(LocalizedRangeScan* s1, LocalizedRangeScan* s2);
+  static double computeAreaOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan);
+  static double computeReadingOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan);
+  static void computeIntersectBounds(LocalizedRangeScan* s1, LocalizedRangeScan* s2, double& x_l, double& x_u, double& y_l, double& y_u);
+
 protected:
   virtual void laserCallback(
     const sensor_msgs::LaserScan::ConstPtr& scan) override final;
@@ -46,14 +54,6 @@ protected:
   Vertices FindScansWithinRadius(LocalizedRangeScan* scan, const double& radius);
   void updateScoresSlamGraph(const double& score, Vertex<LocalizedRangeScan>* vertex);
   void checkIsNotNormalized(const double& value);
-
-  // computation metrics
-  double computeIntersect(LocalizedRangeScan* s1, LocalizedRangeScan* s2) const;
-  double computeIntersectOverUnion(LocalizedRangeScan* s1, LocalizedRangeScan* s2) const;
-  double computeAreaOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan) const;
-  double computeReadingOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan) const;
-  double computeObjectiveScore(const double& intersect_over_union, const double& area_overlap, const double& reading_overlap, const double& num_constraints, const double& initial_score);
-  void computeIntersectBounds(LocalizedRangeScan* s1, LocalizedRangeScan* s2, double& x_l, double& x_u, double& y_l, double& y_u) const;
 
   bool use_tree_;
   double iou_thresh_;

@@ -160,7 +160,7 @@ double LifelongSlamToolbox::computeObjectiveScore(
   const double& area_overlap,
   const double& reading_overlap,
   const double& num_constraints,
-  const double& initial_score)
+  const double& initial_score) const
 /*****************************************************************************/
 {
   // LTS how to make sure sees enough unique area and not just the same 30% 3 times?
@@ -328,7 +328,7 @@ bool LifelongSlamToolbox::deserializePoseGraphCallback(
 /*****************************************************************************/
 void LifelongSlamToolbox::computeIntersectBounds(
   LocalizedRangeScan* s1, LocalizedRangeScan* s2,
-  double& x_l, double& x_u, double& y_l, double& y_u) const
+  double& x_l, double& x_u, double& y_l, double& y_u)
 /*****************************************************************************/
 {
   Size2<double> bb1 = s1->GetBoundingBox().GetSize();
@@ -355,7 +355,7 @@ void LifelongSlamToolbox::computeIntersectBounds(
 
 /*****************************************************************************/
 double LifelongSlamToolbox::computeIntersect(LocalizedRangeScan* s1, 
-  LocalizedRangeScan* s2) const
+  LocalizedRangeScan* s2)
 /*****************************************************************************/
 {
   double x_l, x_u, y_l, y_u;
@@ -372,7 +372,7 @@ double LifelongSlamToolbox::computeIntersect(LocalizedRangeScan* s1,
 
 /*****************************************************************************/
 double LifelongSlamToolbox::computeIntersectOverUnion(LocalizedRangeScan* s1, 
-  LocalizedRangeScan* s2) const
+  LocalizedRangeScan* s2)
 /*****************************************************************************/
 {
   // this is a common metric in machine learning used to determine
@@ -392,7 +392,7 @@ double LifelongSlamToolbox::computeIntersectOverUnion(LocalizedRangeScan* s1,
 /*****************************************************************************/
 double LifelongSlamToolbox::computeAreaOverlapRatio(
   LocalizedRangeScan* ref_scan, 
-  LocalizedRangeScan* candidate_scan) const
+  LocalizedRangeScan* candidate_scan)
 /*****************************************************************************/
 {
   // ref scan is new scan, candidate scan is potential for decay
@@ -410,7 +410,7 @@ double LifelongSlamToolbox::computeAreaOverlapRatio(
 /*****************************************************************************/
 double LifelongSlamToolbox::computeReadingOverlapRatio(
   LocalizedRangeScan* ref_scan, 
-  LocalizedRangeScan* candidate_scan) const
+  LocalizedRangeScan* candidate_scan)
 /*****************************************************************************/
 {
   const PointVectorDouble& pts = candidate_scan->GetPointReadings(true);
@@ -435,29 +435,3 @@ double LifelongSlamToolbox::computeReadingOverlapRatio(
 }
 
 } // end namespace
-
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "slam_toolbox");
-  ros::NodeHandle nh("~");
-  ros::spinOnce();
-
-  int stack_size;
-  if (nh.getParam("stack_size_to_use", stack_size))
-  {
-    ROS_INFO("Node using stack size %i", (int)stack_size);
-    const rlim_t max_stack_size = stack_size;
-    struct rlimit stack_limit;
-    getrlimit(RLIMIT_STACK, &stack_limit);
-    if (stack_limit.rlim_cur < stack_size)
-    {
-      stack_limit.rlim_cur = stack_size;
-    }
-    setrlimit(RLIMIT_STACK, &stack_limit);
-  }
-
-  slam_toolbox::LifelongSlamToolbox llst(nh);
-
-  ros::spin();
-  return 0;
-}
