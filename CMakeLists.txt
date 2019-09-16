@@ -185,9 +185,13 @@ endif()
 
 #### Install
 install(TARGETS toolbox_common
+                async_slam_toolbox
                 async_slam_toolbox_node
+                sync_slam_toolbox
                 sync_slam_toolbox_node
+                localization_slam_toolbox
                 localization_slam_toolbox_node
+                lifelong_slam_toolbox
                 lifelong_slam_toolbox_node
                 ceres_solver_plugin
                 merge_maps_kinematic

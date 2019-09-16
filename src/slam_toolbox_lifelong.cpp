@@ -44,7 +44,7 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
   loadPoseGraphByParams(nh);
   nh.param("lifelong_search_use_tree", use_tree_, false);
   nh.param("lifelong_minimum_score", iou_thresh_, 0.10);
-  nh.param("lifelong_iou_match", iou_match_, 0.75);
+  nh.param("lifelong_iou_match", iou_match_, 0.85);
   nh.param("lifelong_node_removal_score", removal_score_, 0.10);
   nh.param("lifelong_overlap_score_scale", overlap_scale_, 0.5);
   nh.param("lifelong_constraint_multiplier", constraint_scale_, 0.05);
@@ -114,14 +114,15 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
     ScoredVertices::iterator it;
     for (it = scored_verices.begin(); it != scored_verices.end(); ++it)
     {
-      if (it->GetVertex()->GetScore() < removal_score_)
+      if (it->GetScore() < removal_score_)
       {
-        ROS_INFO("STEVE REMOVING NODE FROM GRAPH %f", it->GetVertex()->GetScore());
+        ROS_DEBUG("Removing node from graph with new score: %f and "
+          "old score: %f.",  it->GetScore(), it->GetVertex()->GetScore());
         removeFromSlamGraph(it->GetVertex());
       }
       else
       {
-        updateScoresSlamGraph(it->GetVertex()->GetScore(), it->GetVertex());
+        updateScoresSlamGraph(it->GetScore(), it->GetVertex());
       }
     }
 
@@ -172,58 +173,37 @@ double LifelongSlamToolbox::computeObjectiveScore(
   // num_constraints: The lower, the less other nodes may rely on this candidate
   // initial_score: Last score of this vertex before update
 
-  double score = 1.0;
-
   // this is a really good fit and not from a loop closure, lets just decay
   if (intersect_over_union > iou_match_ && num_constraints < 3)
   {
-    return 0.0;
+    return -1.0;
   }
 
   // to be conservative, lets say the overlap is the lesser of the
   // area and proportion of laser returns in the intersecting region.
-  const double overlap = overlap_scale_ * std::min(area_overlap, reading_overlap);
+  double overlap = overlap_scale_ * std::min(area_overlap, reading_overlap);
 
   // if the num_constraints are high we want to stave off the decay, but not override it
-  double contraint_scale_factor = std::min(1.0, std::max(0., constraint_scale_ * (num_constraints - 2)));
+  double contraint_scale_factor = std::min(1.0,
+    std::max(0., constraint_scale_ * (num_constraints - 2)));
   contraint_scale_factor = std::min(contraint_scale_factor, overlap);
 
-  const double unscaled_score = std::max(0., initial_score - overlap);
-  std::cout << "unscaled score: " << unscaled_score << std::endl; 
-  if (unscaled_score > 1.0)
+  // Give the initial score a boost proportional to the number of constraints
+  // Subtract the overlap amount and apply a penalty for just being nearby
+  const double score =
+    initial_score * (1.0 + contraint_scale_factor)
+    - overlap - nearby_penalty_;
+  
+  std::cout << "init score: " << initial_score << " STEVE score: " << score << std::endl; 
+  
+  if (score > 1.0)
   {
-    ROS_ERROR("Objective function calculated for vertex score greater than "
-      "one! Thresholding to 1.");
+    ROS_ERROR("Objective function calculated for vertex score (%0.4f)"
+      " greater than one! Thresholding to 1.0", score);
     return 1.0;
   }
-  else if (unscaled_score < 0.0)
-  {
-    ROS_ERROR("Objective function calculated for vertex score less than "
-      "zero! Thresholding to 0.");
-    return 0.0;
-  }
-  else if (unscaled_score == 0.0)
-  {
-    return unscaled_score;
-  }
-  else
-  {
-    // Constraint help keep - new score - a small penalty for even being nearby
-    score = std::min(1.0, unscaled_score * (1.0 + contraint_scale_factor) - nearby_penalty_);
-    std::cout << "score: " << score << std::endl; 
-    return score;
 
-
-// metrics:
-// IOU 0.359621
-// area 1
-// Num COn 3
-// readings 0.951271
-// unscaled score: 0.524364
-// score: 0.549583
-    // rising because we're multiplusing unscaled by num > 1, always more. Need to 
-    // instead multiply on initial score 
-  }
+  return score;
 }
 
 /*****************************************************************************/
@@ -233,23 +213,22 @@ double LifelongSlamToolbox::computeScore(
   const double& initial_score)
 /*****************************************************************************/
 {
-  LocalizedRangeScan* candidate_scan = candidate->GetObject();
-  double iou = computeIntersectOverUnion(reference_scan, candidate_scan);
-
-  // must have some minimum metric to utilize
-  // IOU will drop sharply with fitment, I'd advise not setting this value
-  // any higher than 0.15.
-  if (iou < iou_thresh_)
-  {
-    return initial_score;
-  }
-
   double new_score = initial_score;
+  LocalizedRangeScan* candidate_scan = candidate->GetObject();
 
-  // compute metric an information loss normalized metric
+  // compute metrics for information loss normalized
+  double iou = computeIntersectOverUnion(reference_scan, candidate_scan);
   double area_overlap = computeAreaOverlapRatio(reference_scan, candidate_scan);
   double num_constraints = candidate->GetEdges().size();
   double reading_overlap = computeReadingOverlapRatio(reference_scan, candidate_scan);
+
+  // must have some minimum metric to utilize
+  // IOU will drop sharply with fitment, I'd advise not setting this value
+  // any higher than 0.15. Also check this is a linked constraint
+  if (iou < iou_thresh_ || num_constraints < 2)
+  {
+    return initial_score;
+  }
 
   std::cout << "metrics:" << std::endl;
   std::cout << "IOU " << iou << std::endl;

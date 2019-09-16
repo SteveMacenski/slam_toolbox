@@ -18,14 +18,14 @@ ceres_loss_function: None
 odom_frame: odom
 map_frame: map
 base_frame: base_footprint
-mode: mapping #localization
+mode: mapping
 
 # lifelong params
 lifelong_search_use_tree: true
 lifelong_minimum_score: 0.1
-lifelong_iou_match: 0.75
+lifelong_iou_match: 0.85
 lifelong_node_removal_score: 0.1
-lifelong_overlap_score_scale: 0.5
+lifelong_overlap_score_scale: 0.3
 lifelong_constraint_multiplier: 0.05
 lifelong_nearby_penalty: 0.001
 

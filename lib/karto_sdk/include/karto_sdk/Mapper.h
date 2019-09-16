@@ -297,7 +297,7 @@ namespace karto
      * Gets score for vertex
      * @return score
      */
-    inline const double& GetScore()
+    inline const double GetScore()
     {
       return m_Score;
     }
@@ -306,7 +306,7 @@ namespace karto
      * Sets score for vertex
      * @return adjacent edges
      */
-    inline void SetScore(const double& score)
+    inline void SetScore(const double score)
     {
       m_Score = score;
       return;
