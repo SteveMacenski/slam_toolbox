@@ -21,10 +21,6 @@
 namespace slam_toolbox
 {
 
-// LTS the current_scans_ is a copy on the data stored by the dataset, can we hijack to not duplicate?
-// LTS or add a parameter to disable interactive mode & not add to the scan holder/disable interactive mode cb
-// LTS we keep increasing the vector of nodes/scans/constraints even though freeing the memory
-
 /*****************************************************************************/
 void LifelongSlamToolbox::checkIsNotNormalized(const double& value)
 /*****************************************************************************/
@@ -55,6 +51,11 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
   checkIsNotNormalized(removal_score_);
   checkIsNotNormalized(overlap_scale_);
   checkIsNotNormalized(iou_match_);
+
+  ROS_WARN("Lifelong mapping mode in SLAM Toolbox is considered "
+    "experimental and should be understood before proceeding. Please visit: "
+    "https://github.com/SteveMacenski/slam_toolbox/wiki/"
+    "Experimental-Lifelong-Mapping-Node for more information.");
 }
 
 /*****************************************************************************/
@@ -84,11 +85,7 @@ void LifelongSlamToolbox::laserCallback(
   // LTS if (eval() && dont_add_more_scans) {addScan()} else {localization_add_scan()}
   // LTS if (eval() && ctr / total < add_rate_scans) {addScan()} else {localization_add_scan()}
   karto::LocalizedRangeScan* range_scan = addScan(laser, scan, pose);
-  if (range_scan != nullptr)
-  {
-    evaluateNodeDepreciation(range_scan);
-  }
-
+  evaluateNodeDepreciation(range_scan);
   return;
 }
 
@@ -115,8 +112,9 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
     {
       if (it->GetScore() < removal_score_)
       {
-        ROS_DEBUG("Removing node from graph with new score: %f and "
-          "old score: %f.",  it->GetScore(), it->GetVertex()->GetScore());
+        ROS_DEBUG("Removing node %i from graph with score: %f and "
+          "old score: %f.", it->GetVertex()->GetObject()->GetUniqueId(),
+          it->GetScore(), it->GetVertex()->GetScore());
         removeFromSlamGraph(it->GetVertex());
       }
       else
@@ -161,8 +159,6 @@ double LifelongSlamToolbox::computeObjectiveScore(
   const double& initial_score) const
 /*****************************************************************************/
 {
-  // LTS how to make sure sees enough unique area and not just the same 30% 3 times?
-
   // We have some useful metrics. lets make a new score
   // intersect_over_union: The higher this score, the better aligned in scope these scans are
   // area_overlap: The higher, the more area they share normalized by candidate size
@@ -226,7 +222,8 @@ double LifelongSlamToolbox::computeScore(
   }
 
   int id_diff = reference_scan->GetUniqueId() - candidate_scan->GetUniqueId();
-  if (id_diff < smapper_->getMapper()->getParamScanBufferSize())
+  if (id_diff < smapper_->getMapper()->getParamScanBufferSize() ||
+    candidate_scan->GetUniqueId() == 0)
   {
     return initial_score;
   }
