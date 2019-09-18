@@ -318,11 +318,6 @@ namespace karto
      */
     inline T* GetObject() const
     {
-      if (!m_pObject)
-      {
-        return nullptr;
-      }
-
       return m_pObject;
     }
 
@@ -331,11 +326,7 @@ namespace karto
      */
     inline void DeleteObject()
     {
-      if (m_pObject)
-      {
-        delete m_pObject;
-        m_pObject = NULL;
-      }
+      m_pObject = NULL;
     }
 
     /**

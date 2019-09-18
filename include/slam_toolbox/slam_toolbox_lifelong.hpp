@@ -33,7 +33,7 @@ public:
   ~LifelongSlamToolbox() {};
 
   // computation metrics
-  double computeObjectiveScore(const double& intersect_over_union, const double& area_overlap, const double& reading_overlap, const double& num_constraints, const double& initial_score) const;
+  double computeObjectiveScore(const double& intersect_over_union, const double& area_overlap, const double& reading_overlap, const int& num_constraints, const double& initial_score) const;
   static double computeIntersect(LocalizedRangeScan* s1, LocalizedRangeScan* s2);
   static double computeIntersectOverUnion(LocalizedRangeScan* s1, LocalizedRangeScan* s2);
   static double computeAreaOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan);

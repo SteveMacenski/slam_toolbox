@@ -97,7 +97,6 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
   LocalizedRangeScan* range_scan)
 /*****************************************************************************/
 {
-  ROS_FATAL("Eval node");
   if (range_scan)
   {
     boost::mutex::scoped_lock lock(smapper_mutex_);
@@ -158,7 +157,7 @@ double LifelongSlamToolbox::computeObjectiveScore(
   const double& intersect_over_union,
   const double& area_overlap,
   const double& reading_overlap,
-  const double& num_constraints,
+  const int& num_constraints,
   const double& initial_score) const
 /*****************************************************************************/
 {
@@ -192,8 +191,6 @@ double LifelongSlamToolbox::computeObjectiveScore(
     initial_score * (1.0 + contraint_scale_factor)
     - overlap - nearby_penalty_;
   
-  std::cout << "init score: " << initial_score << " STEVE score: " << score << std::endl; 
-  
   if (score > 1.0)
   {
     ROS_ERROR("Objective function calculated for vertex score (%0.4f)"
@@ -217,7 +214,7 @@ double LifelongSlamToolbox::computeScore(
   // compute metrics for information loss normalized
   double iou = computeIntersectOverUnion(reference_scan, candidate_scan);
   double area_overlap = computeAreaOverlapRatio(reference_scan, candidate_scan);
-  double num_constraints = candidate->GetEdges().size();
+  int num_constraints = candidate->GetEdges().size();
   double reading_overlap = computeReadingOverlapRatio(reference_scan, candidate_scan);
 
   // must have some minimum metric to utilize
@@ -228,16 +225,22 @@ double LifelongSlamToolbox::computeScore(
     return initial_score;
   }
 
-  std::cout << "metrics:" << std::endl;
-  std::cout << "IOU " << iou << std::endl;
-    std::cout << "area " << area_overlap << std::endl;
-      std::cout << "Num COn " << num_constraints << std::endl;
-        std::cout << "readings " << reading_overlap << std::endl;
-  return computeObjectiveScore(iou,
+  int id_diff = reference_scan->GetUniqueId() - candidate_scan->GetUniqueId();
+  if (id_diff < smapper_->getMapper()->getParamScanBufferSize())
+  {
+    return initial_score;
+  }
+
+  double score = computeObjectiveScore(iou,
                                area_overlap,
                                reading_overlap,
                                num_constraints,
                                initial_score);
+
+  ROS_DEBUG("Metric Scores: Initial: %f, IOU: %f,"
+    " Area: %f, Num Con: %i, Reading: %f, outcome score: %f.",
+    initial_score, iou, area_overlap, num_constraints, reading_overlap, score);
+  return score;
 }
 
 /*****************************************************************************/
@@ -267,10 +270,10 @@ void LifelongSlamToolbox::removeFromSlamGraph(
   Vertex<LocalizedRangeScan>* vertex)
 /*****************************************************************************/
 {
-  dataset_->RemoveData(vertex->GetObject());
   smapper_->getMapper()->RemoveNodeFromGraph(vertex);
   smapper_->getMapper()->GetMapperSensorManager()->RemoveScan(
     vertex->GetObject());
+  dataset_->RemoveData(vertex->GetObject());
   vertex->DeleteObject();
   delete vertex;
   vertex = nullptr;
