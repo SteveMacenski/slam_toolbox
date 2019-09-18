@@ -459,7 +459,7 @@ bool SlamToolbox::shouldProcessScan(
 }
 
 /*****************************************************************************/
-bool SlamToolbox::addScan(
+karto::LocalizedRangeScan* SlamToolbox::addScan(
   karto::LaserRangeFinder* laser,
   PosedScan& scan_w_pose)
 /*****************************************************************************/
@@ -468,7 +468,7 @@ bool SlamToolbox::addScan(
 }
 
 /*****************************************************************************/
-bool SlamToolbox::addScan(
+karto::LocalizedRangeScan* SlamToolbox::addScan(
   karto::LaserRangeFinder* laser,
   const sensor_msgs::LaserScan::ConstPtr& scan, 
   karto::Pose2& karto_pose)
@@ -499,7 +499,7 @@ bool SlamToolbox::addScan(
     {
       ROS_ERROR("Process near region called without a "
         "valid region request. Ignoring scan.");
-      return false;
+      return nullptr;
     }
     range_scan->SetOdometricPose(*process_near_pose_);
     range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
@@ -526,9 +526,10 @@ bool SlamToolbox::addScan(
   else
   {
     delete range_scan;
+    range_scan = nullptr;
   }
 
-  return processed;
+  return range_scan;
 }
 
 /*****************************************************************************/

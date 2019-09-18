@@ -326,6 +326,9 @@ namespace karto
       return m_pObject;
     }
 
+    /**
+     * Deletes the object held by this vertex
+     */
     inline void DeleteObject()
     {
       if (m_pObject)

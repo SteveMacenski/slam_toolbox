@@ -85,14 +85,14 @@ void LocalizationSlamToolbox::laserCallback(
 /*****************************************************************************/
 {
   // no odom info
-  karto::Pose2 pose;
+  Pose2 pose;
   if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
   {
     return;
   }
 
   // ensure the laser can be used
-  karto::LaserRangeFinder* laser = getLaser(scan);
+  LaserRangeFinder* laser = getLaser(scan);
 
   if(!laser)
   {
@@ -110,10 +110,10 @@ void LocalizationSlamToolbox::laserCallback(
 }
 
 /*****************************************************************************/
-bool LocalizationSlamToolbox::addScan(
-  karto::LaserRangeFinder* laser,
+LocalizedRangeScan* LocalizationSlamToolbox::addScan(
+  LaserRangeFinder* laser,
   const sensor_msgs::LaserScan::ConstPtr& scan, 
-  karto::Pose2& karto_pose)
+  Pose2& karto_pose)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock l(pose_mutex_);
@@ -123,7 +123,7 @@ bool LocalizationSlamToolbox::addScan(
     processor_type_ = PROCESS_NEAR_REGION;
   }
 
-  karto::LocalizedRangeScan* range_scan = getLocalizedRangeScan(
+  LocalizedRangeScan* range_scan = getLocalizedRangeScan(
     laser, scan, karto_pose);
 
   // Add the localized range scan to the smapper
@@ -135,7 +135,7 @@ bool LocalizationSlamToolbox::addScan(
     {
       ROS_ERROR("Process near region called without a "
         "valid region request. Ignoring scan.");
-      return false;
+      return nullptr;
     }
 
     // set our position to the requested pose and process
@@ -164,9 +164,10 @@ bool LocalizationSlamToolbox::addScan(
   if(!processed)
   {
     delete range_scan;
+    range_scan = nullptr;
   }
 
-  return processed;
+  return range_scan;
 }
 
 /*****************************************************************************/
@@ -184,12 +185,12 @@ void LocalizationSlamToolbox::localizePoseCallback(const
   boost::mutex::scoped_lock l(pose_mutex_);
   if (process_near_pose_)
   {
-    process_near_pose_.reset(new karto::Pose2(msg->pose.pose.position.x, 
+    process_near_pose_.reset(new Pose2(msg->pose.pose.position.x, 
       msg->pose.pose.position.x, tf2::getYaw(msg->pose.pose.orientation)));
   }
   else
   {
-    process_near_pose_ = std::make_unique<karto::Pose2>(msg->pose.pose.position.x, 
+    process_near_pose_ = std::make_unique<Pose2>(msg->pose.pose.position.x, 
       msg->pose.pose.position.x, tf2::getYaw(msg->pose.pose.orientation));    
   }
 
