@@ -154,6 +154,7 @@ The following are the services/topics that are exposed for use. See the rviz plu
 ## Published topics
 
 | map  | `nav_msgs/OccupancyGridn` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
+|-----|----|----|
 
 ## Exposed Services
 
