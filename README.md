@@ -153,22 +153,18 @@ The following are the services/topics that are exposed for use. See the rviz plu
 
 ## Published topics
 
-`/map` will expose the occupancy grid representation of the pose-graph at `map_update_interval` frequency.
+| map  | `nav_msgs/OccupancyGridn` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
 
 ## Exposed Services
 
+| Topic  | Type | Description | 
+|-----|----|----|
 | `/slam_toolbox/clear_changes`  | `slam_toolbox/Clear` | Clear all manual pose-graph manipulation changes pending | 
-|-----|----|----|
 | `/slam_toolbox/deserialize_map`  | `nav_msgs/DeserializePoseGraph` | Load a saved serialized pose-graph files from disk | 
-|-----|----|----|
 | `/slam_toolbox/dynamic_map`  | `nav_msgs/OccupancyGrid` | Request the current state of the pose-graph as an occupancy grid | 
-|-----|----|----|
 | `/slam_toolbox/manual_loop_closure`  | `slam_toolbox/LoopClosure` | Request the manual changes to the pose-graph pending to be processed | 
-|-----|----|----|
 | `/slam_toolbox/pause_new_measurements`  | `slam_toolbox/Pause` | Pause processing of new incoming laser scans by the toolbox | 
-|-----|----|----|
 | `/slam_toolbox/save_map`  | `slam_toolbox/SaveMap` | Save the map image file of the pose-graph that is useable for display or AMCL localization. It is a simple wrapper on `map_server/map_saver` but is useful. | 
-|-----|----|----|
 | `/slam_toolbox/serialize_map`  | `slam_toolbox/SerializePoseGraph` | Save the map pose-graph and datathat is useable for continued mapping, slam_toolbox localization, offline manipulation, and more | 
 | `/slam_toolbox/toggle_interactive_mode`  | `slam_toolbox/ToggleInteractive` | Toggling in and out of interactive mode, publishing interactive markers of the nodes and their positions to be updated in an application | 
 
