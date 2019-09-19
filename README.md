@@ -141,6 +141,37 @@ It can map _very_ large spaces with reasonable CPU and memory consumption. My de
 
 You can get away without a loss function if your odometry is good (ie likelihood for outliers is extremely low). If you have an abnormal application or expect wheel slippage, I might recommend a `HuberLoss` function, which is a really good catch-all loss function if you're looking for a place to start. All these options and more are available from the ROS parameter server.
 
+# API
+
+The following are the services/topics that are exposed for use. See the rviz plugin for an implementation of their use. 
+
+## Subscribed topics
+
+| scan  | `sensor_msgs/LaserScan` | the input scan from your laser to utilize | 
+|-----|----|----|
+| **tf** | N/A | a valid transform from your configured odom_frame to base_frame |
+
+## Published topics
+
+`/map` will expose the occupancy grid representation of the pose-graph at `map_update_interval` frequency.
+
+## Exposed Services
+
+| `/slam_toolbox/clear_changes`  | `slam_toolbox/Clear` | Clear all manual pose-graph manipulation changes pending | 
+|-----|----|----|
+| `/slam_toolbox/deserialize_map`  | `nav_msgs/DeserializePoseGraph` | Load a saved serialized pose-graph files from disk | 
+|-----|----|----|
+| `/slam_toolbox/dynamic_map`  | `nav_msgs/OccupancyGrid` | Request the current state of the pose-graph as an occupancy grid | 
+|-----|----|----|
+| `/slam_toolbox/manual_loop_closure`  | `slam_toolbox/LoopClosure` | Request the manual changes to the pose-graph pending to be processed | 
+|-----|----|----|
+| `/slam_toolbox/pause_new_measurements`  | `slam_toolbox/Pause` | Pause processing of new incoming laser scans by the toolbox | 
+|-----|----|----|
+| `/slam_toolbox/save_map`  | `slam_toolbox/SaveMap` | Save the map image file of the pose-graph that is useable for display or AMCL localization. It is a simple wrapper on `map_server/map_saver` but is useful. | 
+|-----|----|----|
+| `/slam_toolbox/serialize_map`  | `slam_toolbox/SerializePoseGraph` | Save the map pose-graph and datathat is useable for continued mapping, slam_toolbox localization, offline manipulation, and more | 
+| `/slam_toolbox/toggle_interactive_mode`  | `slam_toolbox/ToggleInteractive` | Toggling in and out of interactive mode, publishing interactive markers of the nodes and their positions to be updated in an application | 
+
 # Configuration
 
 The following settings and options are exposed to you. My default configuration is given in `config` directory.
