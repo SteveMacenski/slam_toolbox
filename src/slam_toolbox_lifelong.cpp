@@ -221,9 +221,11 @@ double LifelongSlamToolbox::computeScore(
     return initial_score;
   }
 
+  bool critical_lynchpoint = candidate_scan->GetUniqueId() == 0 ||
+    candidate_scan->GetUniqueId() == 1;
   int id_diff = reference_scan->GetUniqueId() - candidate_scan->GetUniqueId();
   if (id_diff < smapper_->getMapper()->getParamScanBufferSize() ||
-    candidate_scan->GetUniqueId() == 0)
+    critical_lynchpoint)
   {
     return initial_score;
   }
@@ -271,7 +273,7 @@ void LifelongSlamToolbox::removeFromSlamGraph(
   smapper_->getMapper()->GetMapperSensorManager()->RemoveScan(
     vertex->GetObject());
   dataset_->RemoveData(vertex->GetObject());
-  vertex->DeleteObject();
+  vertex->RemoveObject();
   delete vertex;
   vertex = nullptr;
   // LTS what do we do about the contraints that node had about it?Nothing?Transfer?

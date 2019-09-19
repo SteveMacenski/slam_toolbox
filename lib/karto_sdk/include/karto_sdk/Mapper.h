@@ -285,10 +285,11 @@ namespace karto
     }
 
     /**
-     * Deletes an edge at a position
+     * Removes an edge at a position
      */
     inline void RemoveEdge(const int& idx)
     {
+      m_Edges[idx] = NULL;
       m_Edges.erase(m_Edges.begin() + idx);
       return;
     }
@@ -323,7 +324,7 @@ namespace karto
     /**
      * Deletes the object held by this vertex
      */
-    inline void DeleteObject()
+    inline void RemoveObject()
     {
       m_pObject = NULL;
     }

@@ -730,6 +730,7 @@ namespace karto
    * Type declaration of Object vector
    */
   typedef std::vector<Object*> ObjectVector;
+  typedef std::map<kt_int32s, Object*> DataMap;
 
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -6551,7 +6552,7 @@ namespace karto
         else if (dynamic_cast<SensorData*>(pObject))
         {
           SensorData* pSensorData = dynamic_cast<SensorData*>(pObject);
-          m_Data.push_back(pSensorData);
+          m_Data.insert({pSensorData->GetUniqueId(), pSensorData});
         }
         else if (dynamic_cast<DatasetInfo*>(pObject))
         {
@@ -6577,7 +6578,7 @@ namespace karto
      * Get data states
      * @return data state
      */
-    inline const ObjectVector& GetData() const
+    inline const DataMap& GetData() const
     {
       return m_Data;
     }
@@ -6586,35 +6587,20 @@ namespace karto
      * Remove data
      * @param index to remove
      */
-    inline void RemoveData(const uint& idx)
-    {
-      if (m_Data[idx])
-      {
-        delete m_Data[idx];
-        m_Data[idx] = nullptr;
-      }
-
-      m_Data.erase(m_Data.begin() + idx);
-    }
-
-    /**
-     * Remove data
-     * @param index to remove
-     */
     inline void RemoveData(LocalizedRangeScan* scan)
     {
-      auto iterator = std::find(m_Data.begin(), m_Data.end(), dynamic_cast<SensorData*>(scan));
+      auto iterator = m_Data.find(scan->GetUniqueId());
       if (iterator != m_Data.end())
       {
-        delete *iterator;
-        (*iterator) = nullptr;
+        delete iterator->second;
+        iterator->second = nullptr;
         m_Data.erase(iterator);
       }
       else
       {
-        std::cout << "Failed to remove data. Pointer to LocalizedRangeScan could not be found in dataset. Most likely different pointer address but same object TODO STEVE." << std::endl;
+        std::cout << "Failed to remove data. Pointer to LocalizedRangeScan could not be found in dataset. "
+          << "Most likely different pointer address but same object TODO STEVE." << std::endl;
       }
-
     }
 
     /**
@@ -6645,12 +6631,12 @@ namespace karto
         }
       }
 
-      forEach(ObjectVector, &m_Data)
+      for (auto iter = m_Data.begin(); iter != m_Data.end(); ++iter)
       {
-        if(*iter)
+        if(iter->second)
         {
-          delete *iter;
-          *iter = NULL;
+          delete iter->second;
+          iter->second = NULL;
         }
       }
 
@@ -6667,7 +6653,7 @@ namespace karto
   private:
 	std::map<Name, Sensor*> m_SensorNameLookup;
   ObjectVector m_Lasers;
-  ObjectVector m_Data;
+  DataMap m_Data;
 	DatasetInfo* m_pDatasetInfo;
   /**
    * Serialization: class Dataset

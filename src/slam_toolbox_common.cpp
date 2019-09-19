@@ -611,7 +611,10 @@ void SlamToolbox::loadSerializedPoseGraph(
     ScanVector::iterator vertex_it = vertex_map_it->second.begin();
     for(vertex_map_it; vertex_it != vertex_map_it->second.end(); ++vertex_it)
     {
-      solver_->AddNode(*vertex_it);
+      if (*vertex_it != nullptr)
+      {
+        solver_->AddNode(*vertex_it);
+      }
     }
   }
 
@@ -619,11 +622,13 @@ void SlamToolbox::loadSerializedPoseGraph(
   EdgeVector::iterator edges_it = mapper_edges.begin();
   for( edges_it; edges_it != mapper_edges.end(); ++edges_it)
   {
-    solver_->AddConstraint(*edges_it);
+    if (*edges_it != nullptr)
+    {
+      solver_->AddConstraint(*edges_it);  
+    }
   }
 
   mapper->SetScanSolver(solver_.get());
-
 
   // move the memory to our working dataset
   smapper_->setMapper(mapper.release());
@@ -652,7 +657,7 @@ void SlamToolbox::loadSerializedPoseGraph(
   {
     karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
 
-    while (true)
+    while (ros::ok())
     {
       ROS_INFO("Waiting for incoming scan to get metadata...");
       boost::shared_ptr<sensor_msgs::LaserScan const> scan =
@@ -661,9 +666,18 @@ void SlamToolbox::loadSerializedPoseGraph(
       if (scan)
       {
         ROS_INFO("Got scan!");
-        lasers_[scan->header.frame_id] =
-          laser_assistant_->toLaserMetadata(*scan);
-        break;
+        try
+        {
+          lasers_[scan->header.frame_id] =
+            laser_assistant_->toLaserMetadata(*scan);
+          break;
+        }
+        catch (tf2::TransformException& e)
+        {
+          ROS_ERROR("Failed to compute laser pose, aborting continue mapping (%s)",
+            e.what());
+          exit(-1);
+        }
       }
     }
   }

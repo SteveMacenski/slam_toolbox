@@ -2804,7 +2804,7 @@ namespace karto
       // delete node and scans
       // free hat!
       // No need to delete from m_scans as those pointers will be freed memory
-      oldLSV.vertex->DeleteObject();
+      oldLSV.vertex->RemoveObject();
       m_pMapperSensorManager->RemoveScan(oldLSV.scan);
       if (oldLSV.scan)
       {

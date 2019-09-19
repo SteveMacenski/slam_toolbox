@@ -182,7 +182,9 @@ void CeresSolver::Compute()
   // populate contraint for static initial pose
   if (!was_constant_set_ && first_node_ != nodes_->end())
   {
-    ROS_DEBUG("CeresSolver: Setting first node as a constant pose.");
+    ROS_DEBUG("CeresSolver: Setting first node as a constant pose:"
+      "%0.2f, %0.2f, %0.2f.", first_node_->second(0),
+      first_node_->second(1), first_node_->second(2));
     problem_->SetParameterBlockConstant(&first_node_->second(0));
     problem_->SetParameterBlockConstant(&first_node_->second(1));
     problem_->SetParameterBlockConstant(&first_node_->second(2));
@@ -263,7 +265,7 @@ void CeresSolver::Reset()
 
   nodes_ = new std::unordered_map<int, Eigen::Vector3d>();
   blocks_ = new std::unordered_map<std::size_t, ceres::ResidualBlockId>();
-  problem_ = new ceres::Problem();
+  problem_ = new ceres::Problem(options_problem_);
   first_node_ = nodes_->end();
 
   angle_local_parameterization_ = AngleLocalParameterization::Create();

@@ -21,12 +21,12 @@ base_frame: base_footprint
 mode: mapping
 
 # lifelong params
-lifelong_search_use_tree: true
+lifelong_search_use_tree: false
 lifelong_minimum_score: 0.1
 lifelong_iou_match: 0.85
-lifelong_node_removal_score: 0.1
-lifelong_overlap_score_scale: 0.3
-lifelong_constraint_multiplier: 0.05
+lifelong_node_removal_score: 0.04
+lifelong_overlap_score_scale: 0.06
+lifelong_constraint_multiplier: 0.08
 lifelong_nearby_penalty: 0.001
 
 # if you'd like to immediately start continuing a map at a given pose
