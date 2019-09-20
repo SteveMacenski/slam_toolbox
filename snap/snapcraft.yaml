@@ -1,11 +1,11 @@
 name: slam-toolbox-melodic
-version: '1.1.1'
+version: '1.1.2'
 summary: Slam Toolbox
 description: |
   A toolbox for building high quality maps of large spaces with a LIDAR.
 
 grade: stable
-confinement: devmode
+confinement: classic
 base: core18
 type: app
 
@@ -13,7 +13,7 @@ apps:
   slam-toolbox-online-sync:
     command: roslaunch --wait slam_toolbox online_sync.launch
     environment: 
-      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/lapack:$SNAP/usr/lib/libblas  # pluginlib (lapack, blas)
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/x86_64-linux-gnu  # pluginlib (lapack, blas)
     plugs: [network, network-bind]
 
   slam-toolbox-online-async:
