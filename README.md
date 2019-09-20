@@ -83,7 +83,7 @@ Then I generated plugins for a few different solvers that people might be intere
 
 GTSAM/G2O/SPA is currently "unsupported" although all the code is there. They don't outperform Ceres settings I describe below so I stopped compiling them to save on build time, but they're there and work if you would like to use them. PRs to implement other optimizer plugins are welcome.
 
-### Map Merging
+### Map Merging - Example uses of serialized raw data & posegraphs
 
 #### Kinematic
 
@@ -100,12 +100,6 @@ This is under development.
 This is to solve the problem of merging many maps together with an initial guess of location in an elastic sense. This is something you just can't get if you don't have the full pose-graph and raw data to work with -- which we have from our continuous mapping work.
 
 Hint: This is also really good for multi-robot map updating as well :)  
-
-#### Optimization based
-
-This uses RVIZ and the plugin to load any number of posegraphs that will show up in RVIZ under `map_N` and a set of interactive markers to allow you to move them around. Once you have them all positioned relative to each other in the way you like, it will use these relative transforms to offset the pose-graphs into a common frame and minimize the constraint error between them using the Ceres optimizer.  You can merge the submaps into a global `map` which can be downloaded with your map server implementation of choice. Think of this like populating N mappers into 1 global mapper.
-
-Using just kinematic placement of the maps will give you some improvements over an image stiching/editing software since you have sub-pixel accuracy, but you're still a little screwed if your submaps aren't globally consistent and unwarped - this is an intermediate to help with that until the pose-graph merging tool is complete.
 
 ### RVIZ Plugin
 
@@ -153,7 +147,7 @@ The following are the services/topics that are exposed for use. See the rviz plu
 
 ## Published topics
 
-| map  | `nav_msgs/OccupancyGridn` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
+| map  | `nav_msgs/OccupancyGrid` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
 |-----|----|----|
 
 ## Exposed Services
@@ -161,7 +155,7 @@ The following are the services/topics that are exposed for use. See the rviz plu
 | Topic  | Type | Description | 
 |-----|----|----|
 | `/slam_toolbox/clear_changes`  | `slam_toolbox/Clear` | Clear all manual pose-graph manipulation changes pending | 
-| `/slam_toolbox/deserialize_map`  | `nav_msgs/DeserializePoseGraph` | Load a saved serialized pose-graph files from disk | 
+| `/slam_toolbox/deserialize_map`  | `slam_toolbox/DeserializePoseGraph` | Load a saved serialized pose-graph files from disk | 
 | `/slam_toolbox/dynamic_map`  | `nav_msgs/OccupancyGrid` | Request the current state of the pose-graph as an occupancy grid | 
 | `/slam_toolbox/manual_loop_closure`  | `slam_toolbox/LoopClosure` | Request the manual changes to the pose-graph pending to be processed | 
 | `/slam_toolbox/pause_new_measurements`  | `slam_toolbox/Pause` | Pause processing of new incoming laser scans by the toolbox | 
