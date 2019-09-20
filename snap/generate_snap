@@ -6,7 +6,7 @@ cd snap_ws && catkin_init_workspace
 cd src
 
 # add all the necessary things to it
-git clone -b lapack https://github.com/SteveMacenski/slam_toolbox.git
+git clone -b lapack2 https://github.com/SteveMacenski/slam_toolbox.git
 cd ../
 
 # move snap and hooks to right place
