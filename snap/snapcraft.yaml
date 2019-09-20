@@ -37,6 +37,7 @@ apps:
 parts:
   workspace:
     build-packages: [qt5-default, libgoogle-glog-dev, liblapack-dev, libblas-dev, libpthread-stubs0-dev] 
+    stage-packages: [qt5-default, libgoogle-glog-dev, liblapack-dev, libblas-dev, libpthread-stubs0-dev] 
     plugin: catkin
     source-space: src
     include-roscore: true
