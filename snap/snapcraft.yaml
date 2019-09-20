@@ -5,7 +5,7 @@ description: |
   A toolbox for building high quality maps of large spaces with a LIDAR.
 
 grade: stable
-confinement: strict
+confinement: classic
 base: core18
 type: app
 
