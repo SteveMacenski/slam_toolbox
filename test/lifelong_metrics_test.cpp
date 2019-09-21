@@ -20,7 +20,7 @@
 #define SLAM_TOOLBOX_SLAM_TOOLBOX_LIFELONG_TEST_H_
 
 #include <gtest/gtest.h>
-#include "slam_toolbox/slam_toolbox_lifelong.hpp"
+#include "slam_toolbox/experimental/slam_toolbox_lifelong.hpp"
 
 using namespace karto;
 

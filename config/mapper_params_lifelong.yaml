@@ -28,6 +28,7 @@ lifelong_node_removal_score: 0.04
 lifelong_overlap_score_scale: 0.06
 lifelong_constraint_multiplier: 0.08
 lifelong_nearby_penalty: 0.001
+lifelong_candidates_scale: 0.03
 
 # if you'd like to immediately start continuing a map at a given pose
 # or at the dock, but they are mutually exclusive, if pose is given

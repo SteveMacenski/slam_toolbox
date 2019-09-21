@@ -33,7 +33,7 @@ public:
   ~LifelongSlamToolbox() {};
 
   // computation metrics
-  double computeObjectiveScore(const double& intersect_over_union, const double& area_overlap, const double& reading_overlap, const int& num_constraints, const double& initial_score) const;
+  double computeObjectiveScore(const double& intersect_over_union, const double& area_overlap, const double& reading_overlap, const int& num_constraints, const double& initial_score, const int& num_candidates) const;
   static double computeIntersect(LocalizedRangeScan* s1, LocalizedRangeScan* s2);
   static double computeIntersectOverUnion(LocalizedRangeScan* s1, LocalizedRangeScan* s2);
   static double computeAreaOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan);
@@ -49,7 +49,7 @@ protected:
 
   void evaluateNodeDepreciation(LocalizedRangeScan* range_scan);
   void removeFromSlamGraph(Vertex<LocalizedRangeScan>* vertex);
-  double computeScore(LocalizedRangeScan* reference_scan, Vertex<LocalizedRangeScan>* candidate, const double& initial_score);
+  double computeScore(LocalizedRangeScan* reference_scan, Vertex<LocalizedRangeScan>* candidate, const double& initial_score, const int& num_candidates);
   ScoredVertices computeScores(Vertices& near_scans, LocalizedRangeScan* range_scan);
   Vertices FindScansWithinRadius(LocalizedRangeScan* scan, const double& radius);
   void updateScoresSlamGraph(const double& score, Vertex<LocalizedRangeScan>* vertex);
@@ -60,6 +60,7 @@ protected:
   double removal_score_;
   double overlap_scale_;
   double constraint_scale_;
+  double candidates_scale_;
   double iou_match_;
   double nearby_penalty_;
 };

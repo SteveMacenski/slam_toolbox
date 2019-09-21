@@ -16,7 +16,7 @@
 
 /* Author: Steven Macenski */
 
-#include "slam_toolbox/slam_toolbox_lifelong.hpp"
+#include "slam_toolbox/experimental/slam_toolbox_lifelong.hpp"
 
 namespace slam_toolbox
 {
@@ -45,12 +45,15 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
   nh.param("lifelong_overlap_score_scale", overlap_scale_, 0.5);
   nh.param("lifelong_constraint_multiplier", constraint_scale_, 0.05);
   nh.param("lifelong_nearby_penalty", nearby_penalty_, 0.001);
+  nh.param("lifelong_candidates_scale", candidates_scale_, 0.03);
 
   checkIsNotNormalized(iou_thresh_);
   checkIsNotNormalized(constraint_scale_);
   checkIsNotNormalized(removal_score_);
   checkIsNotNormalized(overlap_scale_);
   checkIsNotNormalized(iou_match_);
+  checkIsNotNormalized(nearby_penalty_);
+  checkIsNotNormalized(candidates_scale_);
 
   ROS_WARN("Lifelong mapping mode in SLAM Toolbox is considered "
     "experimental and should be understood before proceeding. Please visit: "
@@ -112,7 +115,7 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
     {
       if (it->GetScore() < removal_score_)
       {
-        ROS_DEBUG("Removing node %i from graph with score: %f and "
+        ROS_INFO("Removing node %i from graph with score: %f and "
           "old score: %f.", it->GetVertex()->GetObject()->GetUniqueId(),
           it->GetScore(), it->GetVertex()->GetScore());
         removeFromSlamGraph(it->GetVertex());
@@ -156,7 +159,8 @@ double LifelongSlamToolbox::computeObjectiveScore(
   const double& area_overlap,
   const double& reading_overlap,
   const int& num_constraints,
-  const double& initial_score) const
+  const double& initial_score,
+  const int& num_candidates) const
 /*****************************************************************************/
 {
   // We have some useful metrics. lets make a new score
@@ -182,10 +186,11 @@ double LifelongSlamToolbox::computeObjectiveScore(
   contraint_scale_factor = std::min(contraint_scale_factor, overlap);
 
   // Give the initial score a boost proportional to the number of constraints
-  // Subtract the overlap amount and apply a penalty for just being nearby
+  // Subtract the overlap amount, apply a penalty for just being nearby
+  // and scale the entire additional score by the number of candidates
   const double score =
     initial_score * (1.0 + contraint_scale_factor)
-    - overlap - nearby_penalty_;
+    - overlap - nearby_penalty_;// + num_candidates * candidates_scale_;
   
   if (score > 1.0)
   {
@@ -201,7 +206,7 @@ double LifelongSlamToolbox::computeObjectiveScore(
 double LifelongSlamToolbox::computeScore(
   LocalizedRangeScan* reference_scan,
   Vertex<LocalizedRangeScan>* candidate,
-  const double& initial_score)
+  const double& initial_score, const int& num_candidates)
 /*****************************************************************************/
 {
   double new_score = initial_score;
@@ -212,14 +217,6 @@ double LifelongSlamToolbox::computeScore(
   double area_overlap = computeAreaOverlapRatio(reference_scan, candidate_scan);
   int num_constraints = candidate->GetEdges().size();
   double reading_overlap = computeReadingOverlapRatio(reference_scan, candidate_scan);
-
-  // must have some minimum metric to utilize
-  // IOU will drop sharply with fitment, I'd advise not setting this value
-  // any higher than 0.15. Also check this is a linked constraint
-  if (iou < iou_thresh_ || num_constraints < 2)
-  {
-    return initial_score;
-  }
 
   bool critical_lynchpoint = candidate_scan->GetUniqueId() == 0 ||
     candidate_scan->GetUniqueId() == 1;
@@ -234,9 +231,10 @@ double LifelongSlamToolbox::computeScore(
                                area_overlap,
                                reading_overlap,
                                num_constraints,
-                               initial_score);
+                               initial_score,
+                               num_candidates);
 
-  ROS_DEBUG("Metric Scores: Initial: %f, IOU: %f,"
+  ROS_INFO("Metric Scores: Initial: %f, IOU: %f,"
     " Area: %f, Num Con: %i, Reading: %f, outcome score: %f.",
     initial_score, iou, area_overlap, num_constraints, reading_overlap, score);
   return score;
@@ -252,13 +250,33 @@ LifelongSlamToolbox::computeScores(
   ScoredVertices scored_vertices;
   scored_vertices.reserve(near_scans.size());
 
+  // must have some minimum metric to utilize
+  // IOU will drop sharply with fitment, I'd advise not setting this value
+  // any higher than 0.15. Also check this is a linked constraint
+  // We want to do this early to get a better estimate of local candidates
   ScanVector::iterator candidate_scan_it;
+  double iou = 0.0;
+  for (candidate_scan_it = near_scans.begin();
+    candidate_scan_it != near_scans.end(); )
+  {
+    iou = computeIntersectOverUnion(range_scan,
+      (*candidate_scan_it)->GetObject());
+    if (iou < iou_thresh_ || (*candidate_scan_it)->GetEdges().size() < 2)
+    {
+      candidate_scan_it = near_scans.erase(candidate_scan_it);
+    }
+    else
+    {
+      ++candidate_scan_it;
+    }
+  }
+
   for (candidate_scan_it = near_scans.begin();
     candidate_scan_it != near_scans.end(); ++candidate_scan_it)
   {
     ScoredVertex scored_vertex(*candidate_scan_it,
       computeScore(range_scan, *candidate_scan_it,
-        (*candidate_scan_it)->GetScore()));
+        (*candidate_scan_it)->GetScore(), near_scans.size()));
     scored_vertices.push_back(scored_vertex);
   }
   return scored_vertices;
