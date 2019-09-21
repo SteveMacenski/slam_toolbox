@@ -185,12 +185,19 @@ double LifelongSlamToolbox::computeObjectiveScore(
     std::max(0., constraint_scale_ * (num_constraints - 2)));
   contraint_scale_factor = std::min(contraint_scale_factor, overlap);
 
+  //
+  double candidates = num_candidates - 1;
+  double candidate_scale_factor = candidates_scale_ * candidates;
+
   // Give the initial score a boost proportional to the number of constraints
   // Subtract the overlap amount, apply a penalty for just being nearby
   // and scale the entire additional score by the number of candidates
-  const double score =
+  double score =
     initial_score * (1.0 + contraint_scale_factor)
-    - overlap - nearby_penalty_;// + num_candidates * candidates_scale_;
+    - overlap
+    - nearby_penalty_;
+
+  score += (initial_score - score) * candidate_scale_factor; 
   
   if (score > 1.0)
   {
