@@ -197,7 +197,7 @@ double LifelongSlamToolbox::computeObjectiveScore(
     - overlap
     - nearby_penalty_;
 
-  score += (initial_score - score) * candidate_scale_factor; 
+  //score += (initial_score - score) * candidate_scale_factor; 
   
   if (score > 1.0)
   {
