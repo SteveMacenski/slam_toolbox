@@ -50,6 +50,8 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
     deserializePoseGraphCallback(req, resp);
   }
 
+  // in localization mode, we cannot allow for interactive mode
+  enable_interactive_mode_ = false;
   return;
 }
 

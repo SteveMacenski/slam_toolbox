@@ -65,7 +65,7 @@ private:
   karto::ScanSolver* solver_;
   std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
   boost::mutex interactive_mutex_;
-  bool interactive_mode_;
+  bool interactive_mode_, enable_interactive_mode_;
   ros::NodeHandle& nh_;
   std::string map_frame_;
   PausedState& state_;

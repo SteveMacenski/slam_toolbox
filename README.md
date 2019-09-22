@@ -205,6 +205,8 @@ The following settings and options are exposed to you. My default configuration 
 
 `map_update_interval` - Interval to update the 2D occupancy map for other applications / visualization
 
+`enable_interactive_mode` - Whether or not to allow for interactive mode to be enabled. Interactive mode will retain a cache of laser scans mapped to their ID for visualization in interactive mode. As a result the memory for the process will increase. This is manually disabled in localization and lifelong modes since they would increase the memory utilization over time. Valid for either mapping or continued mapping modes.
+
 `resolution` - Resolution of the 2D occupancy map to generate
 
 `max_laser_range` - Maximum laser range to use for 2D occupancy map rastering

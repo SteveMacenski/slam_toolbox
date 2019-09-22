@@ -115,6 +115,7 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh)
   private_nh.param("resolution", resolution_, 0.05);
   private_nh.param("map_name", map_name_, std::string("/map"));
   private_nh.param("throttle_scans", throttle_scans_, 1);
+  private_nh.param("enable_interactive_mode", enable_interactive_mode_, false);
 
   double tmp_val;
   private_nh.param("transform_timeout", tmp_val, 0.2);
@@ -518,7 +519,11 @@ karto::LocalizedRangeScan* SlamToolbox::addScan(
   // and add our scan to storage
   if(processed)
   {
-    scan_holder_->addScan(*scan);
+    if (enable_interactive_mode_)
+    {
+      scan_holder_->addScan(*scan);
+    }
+
     setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
       scan->header.stamp, update_reprocessing_transform);
     dataset_->Add(range_scan);

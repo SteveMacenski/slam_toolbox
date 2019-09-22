@@ -59,6 +59,9 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
     "experimental and should be understood before proceeding. Please visit: "
     "https://github.com/SteveMacenski/slam_toolbox/wiki/"
     "Experimental-Lifelong-Mapping-Node for more information.");
+
+  // in lifelong mode, we cannot have interactive mode enabled
+  enable_interactive_mode_ = false;
 }
 
 /*****************************************************************************/
