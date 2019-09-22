@@ -188,12 +188,12 @@ void LocalizationSlamToolbox::localizePoseCallback(const
   if (process_near_pose_)
   {
     process_near_pose_.reset(new Pose2(msg->pose.pose.position.x, 
-      msg->pose.pose.position.x, tf2::getYaw(msg->pose.pose.orientation)));
+      msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation)));
   }
   else
   {
     process_near_pose_ = std::make_unique<Pose2>(msg->pose.pose.position.x, 
-      msg->pose.pose.position.x, tf2::getYaw(msg->pose.pose.orientation));    
+      msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation));    
   }
 
   first_measurement_ = true;
