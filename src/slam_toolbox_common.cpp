@@ -613,12 +613,12 @@ void SlamToolbox::loadSerializedPoseGraph(
   VerticeMap::iterator vertex_map_it = mapper_vertices.begin();
   for(vertex_map_it; vertex_map_it != mapper_vertices.end(); ++vertex_map_it)
   {
-    ScanVector::iterator vertex_it = vertex_map_it->second.begin();
-    for(vertex_map_it; vertex_it != vertex_map_it->second.end(); ++vertex_it)
+    ScanMap::iterator vertex_it = vertex_map_it->second.begin();
+    for(vertex_it; vertex_it != vertex_map_it->second.end(); ++vertex_it)
     {
-      if (*vertex_it != nullptr)
+      if (vertex_it->second != nullptr)
       {
-        solver_->AddNode(*vertex_it);
+        solver_->AddNode(vertex_it->second);
       }
     }
   }

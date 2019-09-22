@@ -115,8 +115,9 @@ struct PausedState
   boost::mutex pause_mutex_;
 };
 
-typedef std::map<karto::Name, std::vector<karto::Vertex<karto::LocalizedRangeScan>*>> VerticeMap;
+typedef std::map<karto::Name, std::map<int, karto::Vertex<karto::LocalizedRangeScan>*>> VerticeMap;
 typedef std::vector<karto::Edge<karto::LocalizedRangeScan>*> EdgeVector;
+typedef std::map<int, karto::Vertex<karto::LocalizedRangeScan>*> ScanMap;
 typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> ScanVector;
 typedef slam_toolbox::DeserializePoseGraph::Request procType;
 
