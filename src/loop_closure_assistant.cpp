@@ -26,9 +26,10 @@ LoopClosureAssistant::LoopClosureAssistant(
   ros::NodeHandle& node,
   karto::Mapper* mapper,
   laser_utils::ScanHolder* scan_holder,
-  PausedState& state)
+  PausedState& state, ProcessType & processor_type)
 : mapper_(mapper), scan_holder_(scan_holder),
-  interactive_mode_(false), nh_(node), state_(state)
+  interactive_mode_(false), nh_(node), state_(state),
+  processor_type_(processor_type)
 /*****************************************************************************/
 {
   node.setParam("paused_processing", false);
@@ -49,6 +50,7 @@ LoopClosureAssistant::LoopClosureAssistant(
   marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>(
     "karto_graph_visualization",1);
   node.param("map_frame", map_frame_, std::string("map"));
+  node.param("enable_interactive_mode", enable_interactive_mode_, false);
 }
 
 /*****************************************************************************/
@@ -56,6 +58,13 @@ void LoopClosureAssistant::processInteractiveFeedback(const
   visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 /*****************************************************************************/
 {
+  if (processor_type_ != PROCESS)
+  {
+    ROS_ERROR_THROTTLE(5.,
+      "Interactive mode is invalid outside processing mode.");
+    return;
+  }
+
   const int id = std::stoi(feedback->marker_name, nullptr, 10) - 1;
 
   // was depressed, something moved, and now released
@@ -140,7 +149,7 @@ void LoopClosureAssistant::publishGraph()
     m.pose.position.x = it->second(0);
     m.pose.position.y = it->second(1);
 
-    if (interactive_mode)
+    if (interactive_mode && enable_interactive_mode_)
     {
       visualization_msgs::InteractiveMarker int_marker =
         vis_utils::toInteractiveMarker(m, 0.3);
@@ -167,6 +176,13 @@ bool LoopClosureAssistant::manualLoopClosureCallback(
   slam_toolbox::LoopClosure::Response& resp)
 /*****************************************************************************/
 {
+  if(!enable_interactive_mode_)
+  {
+    ROS_WARN("Called manual loop closure"
+      " with interactive mode disabled. Ignoring.");
+    return false;
+  }
+
   {
     boost::mutex::scoped_lock lock(moved_nodes_mutex_);
 
@@ -202,6 +218,13 @@ bool LoopClosureAssistant::interactiveModeCallback(
   slam_toolbox::ToggleInteractive::Response &resp)
 /*****************************************************************************/
 {
+  if(!enable_interactive_mode_)
+  {
+    ROS_WARN("Called toggle interactive mode with "
+      "interactive mode disabled. Ignoring.");
+    return false;
+  }
+
   bool interactive_mode;
   {
     boost::mutex::scoped_lock lock_i(interactive_mutex_);
@@ -236,6 +259,12 @@ bool LoopClosureAssistant::clearChangesCallback(
   slam_toolbox::Clear::Response& resp)
 /*****************************************************************************/
 {
+  if(!enable_interactive_mode_)
+  {
+    ROS_WARN("Called Clear changes with interactive mode disabled. Ignoring.");
+    return false;
+  }
+
   ROS_INFO("LoopClosureAssistant: Clearing manual loop closure nodes.");
   publishGraph();
   clearMovedNodes();

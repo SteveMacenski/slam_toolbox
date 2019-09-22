@@ -48,7 +48,7 @@ SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
   map_saver_ = std::make_unique<map_saver::MapSaver>(nh_, map_name_);
   closure_assistant_ =
     std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
-    nh_, smapper_->getMapper(), scan_holder_.get(), state_);
+    nh_, smapper_->getMapper(), scan_holder_.get(), state_, processor_type_);
 
   reprocessing_transform_.setIdentity();
 
@@ -88,7 +88,7 @@ void SlamToolbox::setSolver(ros::NodeHandle& private_nh_)
   if(!private_nh_.getParam("solver_plugin", solver_plugin))
   {
     ROS_WARN("unable to find requested solver plugin, defaulting to SPA");
-    solver_plugin = "solver_plugins::SpaSolver";
+    solver_plugin = "solver_plugins::CeresSolver";
   }
   try 
   {
@@ -115,6 +115,7 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh)
   private_nh.param("resolution", resolution_, 0.05);
   private_nh.param("map_name", map_name_, std::string("/map"));
   private_nh.param("throttle_scans", throttle_scans_, 1);
+  private_nh.param("enable_interactive_mode", enable_interactive_mode_, false);
 
   double tmp_val;
   private_nh.param("transform_timeout", tmp_val, 0.2);
@@ -209,6 +210,33 @@ void SlamToolbox::publishVisualizations()
       closure_assistant_->publishGraph();
     }
     r.sleep();
+  }
+}
+
+/*****************************************************************************/
+void SlamToolbox::loadPoseGraphByParams(ros::NodeHandle& nh)
+/*****************************************************************************/
+{
+  std::string filename;
+  geometry_msgs::Pose2D pose;
+  bool dock = false;
+  if (shouldStartWithPoseGraph(filename, pose, dock))
+  {
+    slam_toolbox::DeserializePoseGraph::Request req;
+    slam_toolbox::DeserializePoseGraph::Response resp;
+    req.initial_pose = pose;
+    req.filename = filename;
+    if (dock)
+    {
+      req.match_type =
+        slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
+    }
+    else
+    {
+      req.match_type =
+        slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;      
+    }
+    deserializePoseGraphCallback(req, resp);
   }
 }
 
@@ -431,9 +459,8 @@ bool SlamToolbox::shouldProcessScan(
   return true;
 }
 
-
 /*****************************************************************************/
-bool SlamToolbox::addScan(
+karto::LocalizedRangeScan* SlamToolbox::addScan(
   karto::LaserRangeFinder* laser,
   PosedScan& scan_w_pose)
 /*****************************************************************************/
@@ -442,7 +469,7 @@ bool SlamToolbox::addScan(
 }
 
 /*****************************************************************************/
-bool SlamToolbox::addScan(
+karto::LocalizedRangeScan* SlamToolbox::addScan(
   karto::LaserRangeFinder* laser,
   const sensor_msgs::LaserScan::ConstPtr& scan, 
   karto::Pose2& karto_pose)
@@ -473,7 +500,7 @@ bool SlamToolbox::addScan(
     {
       ROS_ERROR("Process near region called without a "
         "valid region request. Ignoring scan.");
-      return false;
+      return nullptr;
     }
     range_scan->SetOdometricPose(*process_near_pose_);
     range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
@@ -492,7 +519,11 @@ bool SlamToolbox::addScan(
   // and add our scan to storage
   if(processed)
   {
-    scan_holder_->addScan(*scan);
+    if (enable_interactive_mode_)
+    {
+      scan_holder_->addScan(*scan);
+    }
+
     setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
       scan->header.stamp, update_reprocessing_transform);
     dataset_->Add(range_scan);
@@ -500,9 +531,10 @@ bool SlamToolbox::addScan(
   else
   {
     delete range_scan;
+    range_scan = nullptr;
   }
 
-  return processed;
+  return range_scan;
 }
 
 /*****************************************************************************/
@@ -584,7 +616,10 @@ void SlamToolbox::loadSerializedPoseGraph(
     ScanVector::iterator vertex_it = vertex_map_it->second.begin();
     for(vertex_map_it; vertex_it != vertex_map_it->second.end(); ++vertex_it)
     {
-      solver_->AddNode(*vertex_it);
+      if (*vertex_it != nullptr)
+      {
+        solver_->AddNode(*vertex_it);
+      }
     }
   }
 
@@ -592,11 +627,13 @@ void SlamToolbox::loadSerializedPoseGraph(
   EdgeVector::iterator edges_it = mapper_edges.begin();
   for( edges_it; edges_it != mapper_edges.end(); ++edges_it)
   {
-    solver_->AddConstraint(*edges_it);
+    if (*edges_it != nullptr)
+    {
+      solver_->AddConstraint(*edges_it);  
+    }
   }
 
   mapper->SetScanSolver(solver_.get());
-
 
   // move the memory to our working dataset
   smapper_->setMapper(mapper.release());
@@ -609,7 +646,7 @@ void SlamToolbox::loadSerializedPoseGraph(
     exit(-1);
   }
 
-  if (dataset_->GetObjects().size() < 1)
+  if (dataset_->GetLasers().size() < 1)
   {
     ROS_FATAL("loadSerializedPoseGraph: Cannot deserialize "
       "dataset with no laser objects.");
@@ -619,13 +656,13 @@ void SlamToolbox::loadSerializedPoseGraph(
   // create a current laser sensor
   karto::LaserRangeFinder* laser =
     dynamic_cast<karto::LaserRangeFinder*>(
-    dataset_->GetObjects()[0]);
+    dataset_->GetLasers()[0]);
   karto::Sensor* pSensor = dynamic_cast<karto::Sensor*>(laser);
   if (pSensor)
   {
     karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
 
-    while (true)
+    while (ros::ok())
     {
       ROS_INFO("Waiting for incoming scan to get metadata...");
       boost::shared_ptr<sensor_msgs::LaserScan const> scan =
@@ -634,9 +671,18 @@ void SlamToolbox::loadSerializedPoseGraph(
       if (scan)
       {
         ROS_INFO("Got scan!");
-        lasers_[scan->header.frame_id] =
-          laser_assistant_->toLaserMetadata(*scan);
-        break;
+        try
+        {
+          lasers_[scan->header.frame_id] =
+            laser_assistant_->toLaserMetadata(*scan);
+          break;
+        }
+        catch (tf2::TransformException& e)
+        {
+          ROS_ERROR("Failed to compute laser pose, aborting continue mapping (%s)",
+            e.what());
+          exit(-1);
+        }
       }
     }
   }
@@ -644,6 +690,8 @@ void SlamToolbox::loadSerializedPoseGraph(
   {
     ROS_ERROR("Invalid sensor pointer in dataset. Unable to register sensor.");
   }
+
+  solver_->Compute();
 
   return;
 }
@@ -687,8 +735,6 @@ bool SlamToolbox::deserializePoseGraphCallback(
   ROS_DEBUG("DeserializePoseGraph: Successfully read file.");
 
   loadSerializedPoseGraph(mapper, dataset);
-
-  solver_->Compute();
   updateMap();
 
   first_measurement_ = true;

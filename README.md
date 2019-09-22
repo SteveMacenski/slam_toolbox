@@ -53,7 +53,7 @@ Slam Toolbox supports all the major modes:
 
 In the RVIZ interface (see section below) you'll be able to re-localize in a map or continue mapping graphically or programatically using ROS services. 
 
-On time of writing: the LifeLong mapping implementation does not curently support the method for removing nodes over time when not in localization mode. Its recommended to run LifeLong mapping mode in the cloud for the increased computational burdens. However a real and desperately needed application of this is to have multi-session mapping to update just a section of the map or map half an area at a time to create a full (and then static) map for AMCL or Slam Toolbox localization mode, which this will handle in spades. The immediate plan is to create a mode within LifeLong mapping to decay old nodes to bound the computation and allow it to run on the edge. To clarity- lifelong mapping works, but the number of nodes will grow unbounded if you never switch to localization mode. Continuing mapping should be used to build a complete map then switch to the pose-graph deformation localization mode until node decay is implemented, and **you should not see any substantial performance impacts**. 
+On time of writing: there a **highly** experimental implementation of what I call "true lifelong" mapping that does support the method for removing nodes over time as well as adding nodes, this results in a true ability to map for life since the computation is bounded by removing extraneous or outdated information. Its recommended to run the non-full LifeLong mapping mode in the cloud for the increased computational burdens if you'd like to be continuously refining a map. However a real and desperately needed application of this is to have multi-session mapping to update just a section of the map or map half an area at a time to create a full (and then static) map for AMCL or Slam Toolbox localization mode, which this will handle in spades. The immediate plan is to create a mode within LifeLong mapping to decay old nodes to bound the computation and allow it to run on the edge by refining the experimental node. Continuing mapping (lifelong) should be used to build a complete map then switch to the pose-graph deformation localization mode until node decay is implemented, and **you should not see any substantial performance impacts**. 
 
 
 # Localization
@@ -204,6 +204,8 @@ The following settings and options are exposed to you. My default configuration 
 `transform_publish_period` - The map to odom transform publish period. 0 will not publish transforms
 
 `map_update_interval` - Interval to update the 2D occupancy map for other applications / visualization
+
+`enable_interactive_mode` - Whether or not to allow for interactive mode to be enabled. Interactive mode will retain a cache of laser scans mapped to their ID for visualization in interactive mode. As a result the memory for the process will increase. This is manually disabled in localization and lifelong modes since they would increase the memory utilization over time. Valid for either mapping or continued mapping modes.
 
 `resolution` - Resolution of the 2D occupancy map to generate
 

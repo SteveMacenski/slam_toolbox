@@ -27,27 +27,7 @@ AsynchronousSlamToolbox::AsynchronousSlamToolbox(ros::NodeHandle& nh)
 : SlamToolbox(nh)
 /*****************************************************************************/
 {
-  std::string filename;
-  geometry_msgs::Pose2D pose;
-  bool dock = false;
-  if (shouldStartWithPoseGraph(filename, pose, dock))
-  {
-    slam_toolbox::DeserializePoseGraph::Request req;
-    slam_toolbox::DeserializePoseGraph::Response resp;
-    req.initial_pose = pose;
-    req.filename = filename;
-    if (dock)
-    {
-      req.match_type =
-        slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
-    }
-    else
-    {
-      req.match_type =
-        slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;      
-    }
-    deserializePoseGraphCallback(req, resp);
-  }
+  loadPoseGraphByParams(nh);
 }
 
 /*****************************************************************************/
@@ -93,29 +73,3 @@ bool AsynchronousSlamToolbox::deserializePoseGraphCallback(
 }
 
 } // end namespace
-
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "slam_toolbox");
-  ros::NodeHandle nh("~");
-  ros::spinOnce();
-
-  int stack_size;
-  if (nh.getParam("stack_size_to_use", stack_size))
-  {
-    ROS_INFO("Node using stack size %i", (int)stack_size);
-    const rlim_t max_stack_size = stack_size;
-    struct rlimit stack_limit;
-    getrlimit(RLIMIT_STACK, &stack_limit);
-    if (stack_limit.rlim_cur < stack_size)
-    {
-      stack_limit.rlim_cur = stack_size;
-    }
-    setrlimit(RLIMIT_STACK, &stack_limit);
-  }
-
-  slam_toolbox::AsynchronousSlamToolbox sst(nh);
-
-  ros::spin();
-  return 0;
-}

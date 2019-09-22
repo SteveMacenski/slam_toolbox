@@ -33,7 +33,7 @@
 
 #include <karto_sdk/Karto.h>
 
-#include "nanoflann.hpp"
+#include "nanoflann_adaptors.h"
 
 namespace karto
 {
@@ -260,11 +260,11 @@ namespace karto
      * @param pObject
      */
     Vertex()
-      : m_pObject(NULL)
+      : m_pObject(NULL), m_Score(1.0)
     {
     }
     Vertex(T* pObject)
-      : m_pObject(pObject)
+      : m_pObject(pObject), m_Score(1.0)
     {
     }
 
@@ -285,12 +285,31 @@ namespace karto
     }
 
     /**
-     * Deletes an edge at a position
+     * Removes an edge at a position
      */
     inline void RemoveEdge(const int& idx)
     {
+      m_Edges[idx] = NULL;
       m_Edges.erase(m_Edges.begin() + idx);
       return;
+    }
+
+    /**
+     * Gets score for vertex
+     * @return score
+     */
+    inline const double GetScore() const
+    {
+      return m_Score;
+    }
+
+    /**
+     * Sets score for vertex
+     * @return adjacent edges
+     */
+    inline void SetScore(const double score)
+    {
+      m_Score = score;
     }
 
     /**
@@ -299,12 +318,15 @@ namespace karto
      */
     inline T* GetObject() const
     {
-      if (!m_pObject)
-      {
-        return nullptr;
-      }
-
       return m_pObject;
+    }
+
+    /**
+     * Deletes the object held by this vertex
+     */
+    inline void RemoveObject()
+    {
+      m_pObject = NULL;
     }
 
     /**
@@ -351,6 +373,7 @@ namespace karto
 
     T* m_pObject;
     std::vector<Edge<T>*> m_Edges;
+    kt_double m_Score;
 
     friend class boost::serialization::access;
     template<class Archive>
@@ -358,45 +381,9 @@ namespace karto
     {
       ar & BOOST_SERIALIZATION_NVP(m_pObject);
       ar & BOOST_SERIALIZATION_NVP(m_Edges);
+      ar & BOOST_SERIALIZATION_NVP(m_Score);
     }
   };  // Vertex<T>
-
-
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-
-  // And this is the "dataset to kd-tree" adaptor class:
-  template <typename Derived>
-  struct VertexVectorNanoFlannAdaptor
-  {
-    const Derived &obj; //!< A const ref to the data set origin
-
-    /// The constructor that sets the data set source
-    VertexVectorNanoFlannAdaptor(const Derived &obj_) : obj(obj_) { }
-
-    /// CRTP helper method
-    inline const Derived& derived() const { return obj; }
-
-    // Must return the number of data points
-    inline size_t kdtree_get_point_count() const { return derived().size(); }
-
-    // Returns the dim'th component of the idx'th point in the class:
-    // Since this is inlined and the "dim" argument is typically an immediate value, the
-    //  "if/else's" are actually solved at compile time.
-    inline double kdtree_get_pt(const size_t idx, const size_t dim) const
-    {
-      if (dim == 0) return derived()[idx]->GetObject()->GetCorrectedPose().GetX();
-      else return derived()[idx]->GetObject()->GetCorrectedPose().GetY();
-    }
-
-    // Optional bounding-box computation: return false to default to a standard bbox computation loop.
-    //   Return true if the BBOX was already computed by the class and returned in "bb" so it can be avoided to redo it again.
-    //   Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
-    template <class BBOX>
-    bool kdtree_get_bbox(BBOX& /*bb*/) const { return false; }
-
-}; // end of VertexVectorNanoFlannAdaptor
 
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -528,16 +515,12 @@ namespace karto
   class Graph;
 
   /**
-   * Graph traversal algorithm
-   */
+  * Graph traversal algorithm
+  */
   template<typename T>
   class GraphTraversal
   {
   public:
-    /**
-     * Constructs a traverser for the given graph
-     * @param pGraph
-     */
     GraphTraversal()
     {
     }
@@ -546,25 +529,16 @@ namespace karto
     {
     }
 
-    /**
-     * Destructor
-     */
     virtual ~GraphTraversal()
     {
     }
 
   public:
-    /**
-     * Traverse the graph starting at the given vertex and applying the visitor to all visited nodes
-     * @param pStartVertex
-     * @param pVisitor
-     */
-    virtual std::vector<T*> Traverse(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
+
+    virtual std::vector<T*> TraverseForScans(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
+    virtual std::vector<Vertex<T>*> TraverseForVertices(Vertex<T>* pStartVertex, Visitor<T>* pVisitor) = 0;
 
   protected:
-    /**
-     * Graph being traversed
-     */
     Graph<T>* m_pGraph;
 
     friend class boost::serialization::access;
@@ -786,11 +760,25 @@ namespace karto
     LocalizedRangeScanVector FindNearLinkedScans(LocalizedRangeScan* pScan, kt_double maxDistance);
 
     /**
+     * Find "nearby" (no further than given distance away) vertices through graph links
+     * @param pScan
+     * @param maxDistance
+     */
+    std::vector<Vertex<LocalizedRangeScan>*> FindNearLinkedVertices(LocalizedRangeScan* pScan, kt_double maxDistance);
+
+    /**
      * Find "nearby" (no further than given distance away) scans through graph links
      * @param pScan
      * @param maxDistance
      */
     LocalizedRangeScanVector FindNearByScans(Name name, const Pose2 refPose, kt_double maxDistance);
+
+    /**
+     * Find "nearby" (no further than given distance away) vertices through KD-tree
+     * @param pScan
+     * @param maxDistance
+     */
+    std::vector<Vertex<LocalizedRangeScan>*> FindNearByVertices(Name name, const Pose2 refPose, kt_double maxDistance);
 
     /**
      * Find closest scan to pose
@@ -1927,6 +1915,7 @@ namespace karto
     kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
     kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
     kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
+    kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan>*);
 
     /**
      * Returns all processed scans added to the mapper.

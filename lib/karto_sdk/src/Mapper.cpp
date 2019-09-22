@@ -1141,80 +1141,93 @@ namespace karto
   class BreadthFirstTraversal : public GraphTraversal<T>
   {
   public:
-    /**
-     * Constructs a breadth-first traverser for the given graph
-     */
-    BreadthFirstTraversal()
-    {
-    }
-    BreadthFirstTraversal(Graph<T>* pGraph)
-    : GraphTraversal<T>(pGraph)
-    {
-    }
+  /**
+   * Constructs a breadth-first traverser for the given graph
+   */
+  BreadthFirstTraversal()
+  {
+  }
+  BreadthFirstTraversal(Graph<T>* pGraph)
+  : GraphTraversal<T>(pGraph)
+  {
+  }
 
-    /**
-     * Destructor
-     */
-    virtual ~BreadthFirstTraversal()
-    {
-    }
+  /**
+   * Destructor
+   */
+  virtual ~BreadthFirstTraversal()
+  {
+  }
 
   public:
-    /**
-     * Traverse the graph starting with the given vertex; applies the visitor to visited nodes
-     * @param pStartVertex
-     * @param pVisitor
-     * @return visited vertice scans
-     */
-    virtual std::vector<T*> Traverse(Vertex<T>* pStartVertex, Visitor<T>* pVisitor)
+  /**
+   * Traverse the graph starting with the given vertex; applies the visitor to visited nodes
+   * @param pStartVertex
+   * @param pVisitor
+   * @return visited vertice scans
+   */
+  virtual std::vector<T*> TraverseForScans(Vertex<T>* pStartVertex, Visitor<T>* pVisitor)
+  {
+    std::vector<Vertex<T>*> validVertices = TraverseForVertices(pStartVertex, pVisitor);
+
+    std::vector<T*> objects;
+    forEach(typename std::vector<Vertex<T>*>, &validVertices)
     {
-      std::queue<Vertex<T>*> toVisit;
-      std::set<Vertex<T>*> seenVertices;
-      std::vector<Vertex<T>*> validVertices;
+      objects.push_back((*iter)->GetObject());
+    }
 
-      toVisit.push(pStartVertex);
-      seenVertices.insert(pStartVertex);
+    return objects;
+  }
 
-      do
+  /**
+   * Traverse the graph starting with the given vertex; applies the visitor to visited nodes
+   * @param pStartVertex
+   * @param pVisitor
+   * @return visited vertices
+   */
+  virtual std::vector<Vertex<T>*> TraverseForVertices(Vertex<T>* pStartVertex, Visitor<T>* pVisitor)
+  {
+    std::queue<Vertex<T>*> toVisit;
+    std::set<Vertex<T>*> seenVertices;
+    std::vector<Vertex<T>*> validVertices;
+
+    toVisit.push(pStartVertex);
+    seenVertices.insert(pStartVertex);
+
+    do
+    {
+      Vertex<T>* pNext = toVisit.front();
+      toVisit.pop();
+
+      if (pNext != NULL && pVisitor->Visit(pNext))
       {
-        Vertex<T>* pNext = toVisit.front();
-        toVisit.pop();
+        // vertex is valid, explore neighbors
+        validVertices.push_back(pNext);
 
-        if (pNext != NULL && pVisitor->Visit(pNext))
+        std::vector<Vertex<T>*> adjacentVertices = pNext->GetAdjacentVertices();
+        forEach(typename std::vector<Vertex<T>*>, &adjacentVertices)
         {
-          // vertex is valid, explore neighbors
-          validVertices.push_back(pNext);
+          Vertex<T>* pAdjacent = *iter;
 
-          std::vector<Vertex<T>*> adjacentVertices = pNext->GetAdjacentVertices();
-          forEach(typename std::vector<Vertex<T>*>, &adjacentVertices)
+          // adjacent vertex has not yet been seen, add to queue for processing
+          if (seenVertices.find(pAdjacent) == seenVertices.end())
           {
-            Vertex<T>* pAdjacent = *iter;
-
-            // adjacent vertex has not yet been seen, add to queue for processing
-            if (seenVertices.find(pAdjacent) == seenVertices.end())
-            {
-              toVisit.push(pAdjacent);
-              seenVertices.insert(pAdjacent);
-            }
+            toVisit.push(pAdjacent);
+            seenVertices.insert(pAdjacent);
           }
         }
-      } while (toVisit.empty() == false);
-
-      std::vector<T*> objects;
-      forEach(typename std::vector<Vertex<T>*>, &validVertices)
-      {
-        objects.push_back((*iter)->GetObject());
       }
+    } while (toVisit.empty() == false);
 
-      return objects;
-    }
+    return validVertices;
+  }
 
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GraphTraversal<T>);
-    }
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(GraphTraversal<T>);
+  }
   };  // class BreadthFirstTraversal
 
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -1224,84 +1237,88 @@ namespace karto
   class NearScanVisitor : public Visitor<LocalizedRangeScan>
   {
   public:
-    NearScanVisitor(LocalizedRangeScan* pScan, kt_double maxDistance, kt_bool useScanBarycenter)
-      : m_MaxDistanceSquared(math::Square(maxDistance))
-      , m_UseScanBarycenter(useScanBarycenter)
-    {
-      m_CenterPose = pScan->GetReferencePose(m_UseScanBarycenter);
-    }
+  NearScanVisitor(LocalizedRangeScan* pScan, kt_double maxDistance, kt_bool useScanBarycenter)
+    : m_MaxDistanceSquared(math::Square(maxDistance))
+    , m_UseScanBarycenter(useScanBarycenter)
+  {
+    m_CenterPose = pScan->GetReferencePose(m_UseScanBarycenter);
+  }
 
-    virtual kt_bool Visit(Vertex<LocalizedRangeScan>* pVertex)
+  virtual kt_bool Visit(Vertex<LocalizedRangeScan>* pVertex)
+  {
+    try
     {
-      try
-      {
-        LocalizedRangeScan* pScan = pVertex->GetObject();
-
-        Pose2 pose = pScan->GetReferencePose(m_UseScanBarycenter);
-        kt_double squaredDistance = pose.GetPosition().SquaredDistance(m_CenterPose.GetPosition());
-        return (squaredDistance <= m_MaxDistanceSquared - KT_TOLERANCE);
-      }
-      catch(...)
-      {
-        // relocalization vertex elements missing
-        std::cout << "Unable to visit valid vertex elements!" << std::endl;
-        return false;
-      }
+      LocalizedRangeScan* pScan = pVertex->GetObject();
+      Pose2 pose = pScan->GetReferencePose(m_UseScanBarycenter);
+      kt_double squaredDistance = pose.GetPosition().SquaredDistance(m_CenterPose.GetPosition());
+      return (squaredDistance <= m_MaxDistanceSquared - KT_TOLERANCE);
     }
+    catch(...)
+    {
+      // relocalization vertex elements missing
+      std::cout << "Unable to visit valid vertex elements!" << std::endl;
+      return false;
+    }
+  }
 
   protected:
-    Pose2 m_CenterPose;
-    kt_double m_MaxDistanceSquared;
-    kt_bool m_UseScanBarycenter;
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Visitor<LocalizedRangeScan>);
-      ar & BOOST_SERIALIZATION_NVP(m_CenterPose);
-      ar & BOOST_SERIALIZATION_NVP(m_MaxDistanceSquared);
-      ar & BOOST_SERIALIZATION_NVP(m_UseScanBarycenter);
-    }
+  Pose2 m_CenterPose;
+  kt_double m_MaxDistanceSquared;
+  kt_bool m_UseScanBarycenter;
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Visitor<LocalizedRangeScan>);
+    ar & BOOST_SERIALIZATION_NVP(m_CenterPose);
+    ar & BOOST_SERIALIZATION_NVP(m_MaxDistanceSquared);
+    ar & BOOST_SERIALIZATION_NVP(m_UseScanBarycenter);
+  }
   };  // NearScanVisitor
+
+  ////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////////////
 
   class NearPoseVisitor : public Visitor<LocalizedRangeScan>
   {
   public:
-    NearPoseVisitor(Pose2 refPose, kt_double maxDistance, kt_bool useScanBarycenter)
-      : m_MaxDistanceSquared(math::Square(maxDistance))
-      , m_UseScanBarycenter(useScanBarycenter)
-    {
-      m_CenterPose = refPose;
-    }
+  NearPoseVisitor(Pose2 refPose, kt_double maxDistance, kt_bool useScanBarycenter)
+    : m_MaxDistanceSquared(math::Square(maxDistance))
+    , m_UseScanBarycenter(useScanBarycenter)
+  {
+    m_CenterPose = refPose;
+  }
 
-    virtual kt_bool Visit(Vertex<LocalizedRangeScan>* pVertex)
-    {
-      LocalizedRangeScan* pScan = pVertex->GetObject();
+  virtual kt_bool Visit(Vertex<LocalizedRangeScan>* pVertex)
+  {
+    LocalizedRangeScan* pScan = pVertex->GetObject();
 
-      Pose2 pose = pScan->GetReferencePose(m_UseScanBarycenter);
+    Pose2 pose = pScan->GetReferencePose(m_UseScanBarycenter);
 
-      kt_double squaredDistance = pose.GetPosition().SquaredDistance(m_CenterPose.GetPosition());
-      return (squaredDistance <= m_MaxDistanceSquared - KT_TOLERANCE);
-    }
+    kt_double squaredDistance = pose.GetPosition().SquaredDistance(m_CenterPose.GetPosition());
+    return (squaredDistance <= m_MaxDistanceSquared - KT_TOLERANCE);
+  }
 
   protected:
-    Pose2 m_CenterPose;
-    kt_double m_MaxDistanceSquared;
-    kt_bool m_UseScanBarycenter;
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive &ar, const unsigned int version)
-    {
-      ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Visitor<LocalizedRangeScan>);
-      ar & BOOST_SERIALIZATION_NVP(m_CenterPose);
-      ar & BOOST_SERIALIZATION_NVP(m_MaxDistanceSquared);
-      ar & BOOST_SERIALIZATION_NVP(m_UseScanBarycenter);
-    }
+  Pose2 m_CenterPose;
+  kt_double m_MaxDistanceSquared;
+  kt_bool m_UseScanBarycenter;
+  friend class boost::serialization::access;
+  template<class Archive>
+  void serialize(Archive &ar, const unsigned int version)
+  {
+    ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Visitor<LocalizedRangeScan>);
+    ar & BOOST_SERIALIZATION_NVP(m_CenterPose);
+    ar & BOOST_SERIALIZATION_NVP(m_MaxDistanceSquared);
+    ar & BOOST_SERIALIZATION_NVP(m_UseScanBarycenter);
+  }
   };  // NearPoseVisitor
 
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
+
 
   MapperGraph::MapperGraph(Mapper* pMapper, kt_double rangeThreshold)
     : m_pMapper(pMapper)
@@ -1712,10 +1729,19 @@ namespace karto
   LocalizedRangeScanVector MapperGraph::FindNearLinkedScans(LocalizedRangeScan* pScan, kt_double maxDistance)
   {
     NearScanVisitor* pVisitor = new NearScanVisitor(pScan, maxDistance, m_pMapper->m_pUseScanBarycenter->GetValue());
-    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->Traverse(GetVertex(pScan), pVisitor);
+    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->TraverseForScans(GetVertex(pScan), pVisitor);
     delete pVisitor;
 
     return nearLinkedScans;
+  }
+
+  std::vector<Vertex<LocalizedRangeScan>*> MapperGraph::FindNearLinkedVertices(LocalizedRangeScan* pScan, kt_double maxDistance)
+  {
+    NearScanVisitor* pVisitor = new NearScanVisitor(pScan, maxDistance, m_pMapper->m_pUseScanBarycenter->GetValue());
+    std::vector<Vertex<LocalizedRangeScan>*> nearLinkedVertices = m_pTraversal->TraverseForVertices(GetVertex(pScan), pVisitor);
+    delete pVisitor;
+
+    return nearLinkedVertices;
   }
 
   LocalizedRangeScanVector MapperGraph::FindNearByScans(Name name, const Pose2 refPose, kt_double maxDistance)
@@ -1724,10 +1750,39 @@ namespace karto
 
     Vertex<LocalizedRangeScan>* closestVertex = FindNearByScan(name, refPose);
 
-    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->Traverse(closestVertex, pVisitor);
+    LocalizedRangeScanVector nearLinkedScans = m_pTraversal->TraverseForScans(closestVertex, pVisitor);
     delete pVisitor;
 
     return nearLinkedScans;
+  }
+
+  std::vector<Vertex<LocalizedRangeScan>*> MapperGraph::FindNearByVertices(Name name, const Pose2 refPose, kt_double maxDistance)
+  {
+    VertexMap vertexMap = GetVertices();
+    std::vector<Vertex<LocalizedRangeScan>*>& vertices = vertexMap[name];
+
+    const size_t dim = 2;
+
+    typedef VertexVectorPoseNanoFlannAdaptor<std::vector<Vertex<LocalizedRangeScan>* > > P2KD;
+    const P2KD p2kd(vertices);
+
+    typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, P2KD > , P2KD, dim> my_kd_tree_t;
+
+    my_kd_tree_t index(dim, p2kd, nanoflann::KDTreeSingleIndexAdaptorParams(10) );
+    index.buildIndex();
+
+    std::vector<std::pair<size_t,double> > ret_matches;
+    const double query_pt[2] = {refPose.GetX(), refPose.GetY()};
+    nanoflann::SearchParams params;
+    const size_t num_results = index.radiusSearch(&query_pt[0], maxDistance, ret_matches, params);
+
+    std::vector<Vertex<LocalizedRangeScan>*> rtn_vertices;
+    rtn_vertices.reserve(ret_matches.size());
+    for (uint i = 0; i != ret_matches.size(); i++)
+    {
+      rtn_vertices.push_back(vertices[ret_matches[i].first]);
+    }
+    return rtn_vertices;
   }
 
   Vertex<LocalizedRangeScan>* MapperGraph::FindNearByScan(Name name, const Pose2 refPose)
@@ -1735,11 +1790,21 @@ namespace karto
     VertexMap vertexMap = GetVertices();
     std::vector<Vertex<LocalizedRangeScan>*>& vertices = vertexMap[name];
 
+    std::vector<Vertex<LocalizedRangeScan>*> vertices_to_search;
+    std::vector<Vertex<LocalizedRangeScan>*>::iterator it;
+    for (it = vertices.begin(); it != vertices.end(); ++it)
+    {
+      if (*it)
+      {
+        vertices_to_search.push_back(*it);
+      }
+    }
+
     size_t num_results = 1;
     const size_t dim = 2;
 
-    typedef VertexVectorNanoFlannAdaptor<std::vector<Vertex<LocalizedRangeScan>* > > P2KD;
-    const P2KD p2kd(vertices);
+    typedef VertexVectorPoseNanoFlannAdaptor<std::vector<Vertex<LocalizedRangeScan>* > > P2KD;
+    const P2KD p2kd(vertices_to_search);
 
     typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, P2KD > , P2KD, dim> my_kd_tree_t;
 
@@ -1753,7 +1818,7 @@ namespace karto
 
     if (num_results > 0)
     {
-      return vertices[ret_index[0]];
+      return vertices_to_search[ret_index[0]];
     }
     else
     {
@@ -2602,7 +2667,7 @@ namespace karto
         Initialize(pLaserRangeFinder->GetRangeThreshold());
       }
 
-      Vertex<LocalizedRangeScan>* closetVertex =m_pGraph->FindNearByScan(
+      Vertex<LocalizedRangeScan>* closetVertex = m_pGraph->FindNearByScan(
         pScan->GetSensorName(), pScan->GetOdometricPose());
       LocalizedRangeScan* pLastScan = NULL;
       if (closetVertex)
@@ -2744,79 +2809,12 @@ namespace karto
     if (m_LocalizationScanVertices.size() > getParamScanBufferSize())
     {
       LocalizationScanVertex& oldLSV = m_LocalizationScanVertices.front();
+      RemoveNodeFromGraph(oldLSV.vertex);
 
-      // 1) delete edges in adjacent vertices, graph, and optimizer
-      std::vector<Vertex<LocalizedRangeScan>*> adjVerts =
-        oldLSV.vertex->GetAdjacentVertices();
-      for (int i = 0; i != adjVerts.size(); i++)
-      {
-        std::vector<Edge<LocalizedRangeScan>*> adjEdges = adjVerts[i]->GetEdges();
-        bool found = false;
-        for (int j=0; j!=adjEdges.size(); j++)
-        {
-          if (adjEdges[j]->GetTarget() == oldLSV.vertex ||
-            adjEdges[j]->GetSource() == oldLSV.vertex)
-          {
-            adjVerts[i]->RemoveEdge(j);
-            m_pScanOptimizer->RemoveConstraint(
-              adjEdges[j]->GetSource()->GetObject()->GetUniqueId(),
-              adjEdges[j]->GetTarget()->GetObject()->GetUniqueId()); 
-            std::vector<Edge<LocalizedRangeScan>*> edges = m_pGraph->GetEdges();
-            std::vector<Edge<LocalizedRangeScan>*>::iterator edgeGraphIt =
-              std::find(edges.begin(), edges.end(), adjEdges[j]);
-
-            if (edgeGraphIt == edges.end())
-            {
-              std::cout << "Edge not found in graph to remove!" << std::endl;
-              continue;
-            }
-
-            int posEdge = edgeGraphIt - edges.begin();
-            m_pGraph->RemoveEdge(posEdge); // remove from graph
-            delete *edgeGraphIt; // free hat!
-            *edgeGraphIt = NULL;
-            found = true;
-          }
-        }
-        if (!found)
-        {
-          std::cout << "Failed to find any edge in adj. vertex" <<
-            " with a matching vertex to current!" << std::endl;
-        }
-      }
-
-      // 2) delete vertex from optimizer
-      m_pScanOptimizer->RemoveNode(oldLSV.vertex->GetObject()->GetUniqueId());
-
-      // 3) delete from vertex map
-      std::map<Name, std::vector<Vertex<LocalizedRangeScan>*> > 
-        vertexMap = m_pGraph->GetVertices();
-      std::vector<Vertex<LocalizedRangeScan>*> graphVertices =
-        vertexMap[pScan->GetSensorName()];
-      std::vector<Vertex<LocalizedRangeScan>*>::iterator
-        vertexGraphIt = std::find(graphVertices.begin(),
-        graphVertices.end(), oldLSV.vertex);
-      if (vertexGraphIt != graphVertices.end())
-      {
-        // right now just sets to NULL, vector map will 
-        // scale in size but just contain a bunch of null pointers
-        int posVert = vertexGraphIt - graphVertices.begin();
-        m_pGraph->RemoveVertex(pScan->GetSensorName(), posVert);
-      }
-      else
-      {
-        std::cout << "Vertex not found in graph to remove!" << std::endl;
-      }
-
-      // 4) delete node and scans
+      // delete node and scans
       // free hat!
       // No need to delete from m_scans as those pointers will be freed memory
-      if (oldLSV.vertex)
-      {
-        delete oldLSV.vertex;
-        oldLSV.vertex = NULL;
-      }
-      
+      oldLSV.vertex->RemoveObject();
       m_pMapperSensorManager->RemoveScan(oldLSV.scan);
       if (oldLSV.scan)
       {
@@ -2831,6 +2829,75 @@ namespace karto
     lsv.scan = pScan;
     lsv.vertex = scan_vertex;
     m_LocalizationScanVertices.push(lsv);
+
+    return true;
+  }
+
+  kt_bool Mapper::RemoveNodeFromGraph(Vertex<LocalizedRangeScan>* vertex_to_remove)
+  {
+    // 1) delete edges in adjacent vertices, graph, and optimizer
+    std::vector<Vertex<LocalizedRangeScan>*> adjVerts =
+      vertex_to_remove->GetAdjacentVertices();
+    for (int i = 0; i != adjVerts.size(); i++)
+    {
+      std::vector<Edge<LocalizedRangeScan>*> adjEdges = adjVerts[i]->GetEdges();
+      bool found = false;
+      for (int j=0; j!=adjEdges.size(); j++)
+      {
+        if (adjEdges[j]->GetTarget() == vertex_to_remove ||
+          adjEdges[j]->GetSource() == vertex_to_remove)
+        {
+          adjVerts[i]->RemoveEdge(j);
+          m_pScanOptimizer->RemoveConstraint(
+            adjEdges[j]->GetSource()->GetObject()->GetUniqueId(),
+            adjEdges[j]->GetTarget()->GetObject()->GetUniqueId()); 
+          std::vector<Edge<LocalizedRangeScan>*> edges = m_pGraph->GetEdges();
+          std::vector<Edge<LocalizedRangeScan>*>::iterator edgeGraphIt =
+            std::find(edges.begin(), edges.end(), adjEdges[j]);
+
+          if (edgeGraphIt == edges.end())
+          {
+            std::cout << "Edge not found in graph to remove!" << std::endl;
+            continue;
+          }
+
+          int posEdge = edgeGraphIt - edges.begin();
+          m_pGraph->RemoveEdge(posEdge); // remove from graph
+          delete *edgeGraphIt; // free hat!
+          *edgeGraphIt = NULL;
+          found = true;
+        }
+      }
+      if (!found)
+      {
+        std::cout << "Failed to find any edge in adj. vertex" <<
+          " with a matching vertex to current!" << std::endl;
+      }
+    }
+
+    // 2) delete vertex from optimizer
+    m_pScanOptimizer->RemoveNode(vertex_to_remove->GetObject()->GetUniqueId());
+
+    // 3) delete from vertex map
+    std::map<Name, std::vector<Vertex<LocalizedRangeScan>*> > 
+      vertexMap = m_pGraph->GetVertices();
+    std::vector<Vertex<LocalizedRangeScan>*> graphVertices =
+      vertexMap[vertex_to_remove->GetObject()->GetSensorName()];
+    std::vector<Vertex<LocalizedRangeScan>*>::iterator
+      vertexGraphIt = std::find(graphVertices.begin(),
+      graphVertices.end(), vertex_to_remove);
+    if (vertexGraphIt != graphVertices.end())
+    {
+      // right now just sets to NULL, vector map will 
+      // scale in size but just contain a bunch of null pointers
+      int posVert = vertexGraphIt - graphVertices.begin();
+      m_pGraph->RemoveVertex(vertex_to_remove->GetObject()->GetSensorName(), posVert);
+    }
+    else
+    {
+      std::cout << "Vertex not found in graph to remove!" << std::endl;
+      return false;
+    }
 
     return true;
   }

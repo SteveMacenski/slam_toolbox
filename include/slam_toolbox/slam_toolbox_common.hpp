@@ -77,12 +77,13 @@ protected:
   virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
     slam_toolbox::DeserializePoseGraph::Response& resp);
   void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper>&, std::unique_ptr<karto::Dataset>&);
+  void loadPoseGraphByParams(ros::NodeHandle& nh);
 
   // functional bits
   karto::LaserRangeFinder* getLaser(const sensor_msgs::LaserScan::ConstPtr& scan);
-  virtual bool addScan(karto::LaserRangeFinder* laser, const sensor_msgs::LaserScan::ConstPtr& scan,
+  virtual karto::LocalizedRangeScan* addScan(karto::LaserRangeFinder* laser, const sensor_msgs::LaserScan::ConstPtr& scan,
     karto::Pose2& karto_pose);
-  bool addScan(karto::LaserRangeFinder* laser, PosedScan& scanWPose);
+  karto::LocalizedRangeScan* addScan(karto::LaserRangeFinder* laser, PosedScan& scanWPose);
   bool updateMap();
   tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2& pose,
     const karto::Pose2& karto_pose, const ros::Time& t, const bool& update_reprocessing_transform);
@@ -113,7 +114,7 @@ protected:
   int throttle_scans_;
 
   double resolution_;
-  bool first_measurement_;
+  bool first_measurement_, enable_interactive_mode_;
 
   // Book keeping
   std::unique_ptr<mapper_utils::SMapper> smapper_;

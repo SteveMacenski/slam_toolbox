@@ -42,7 +42,7 @@ using namespace ::toolbox_types;
 class LoopClosureAssistant
 {
 public:
-  LoopClosureAssistant(ros::NodeHandle& node, karto::Mapper* mapper, laser_utils::ScanHolder* scan_holder, PausedState& state);
+  LoopClosureAssistant(ros::NodeHandle& node, karto::Mapper* mapper, laser_utils::ScanHolder* scan_holder, PausedState& state, ProcessType& processor_type);
 
   void clearMovedNodes();
   void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
@@ -65,10 +65,11 @@ private:
   karto::ScanSolver* solver_;
   std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
   boost::mutex interactive_mutex_;
-  bool interactive_mode_;
+  bool interactive_mode_, enable_interactive_mode_;
   ros::NodeHandle& nh_;
   std::string map_frame_;
   PausedState& state_;
+  ProcessType& processor_type_;
 };
 
 }  // end namespace
