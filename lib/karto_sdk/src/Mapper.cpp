@@ -1790,11 +1790,21 @@ namespace karto
     VertexMap vertexMap = GetVertices();
     std::vector<Vertex<LocalizedRangeScan>*>& vertices = vertexMap[name];
 
+    std::vector<Vertex<LocalizedRangeScan>*> vertices_to_search;
+    std::vector<Vertex<LocalizedRangeScan>*>::iterator it;
+    for (it = vertices.begin(); it != vertices.end(); ++it)
+    {
+      if (*it)
+      {
+        vertices_to_search.push_back(*it);
+      }
+    }
+
     size_t num_results = 1;
     const size_t dim = 2;
 
     typedef VertexVectorPoseNanoFlannAdaptor<std::vector<Vertex<LocalizedRangeScan>* > > P2KD;
-    const P2KD p2kd(vertices);
+    const P2KD p2kd(vertices_to_search);
 
     typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, P2KD > , P2KD, dim> my_kd_tree_t;
 
@@ -1808,7 +1818,7 @@ namespace karto
 
     if (num_results > 0)
     {
-      return vertices[ret_index[0]];
+      return vertices_to_search[ret_index[0]];
     }
     else
     {
@@ -2657,7 +2667,7 @@ namespace karto
         Initialize(pLaserRangeFinder->GetRangeThreshold());
       }
 
-      Vertex<LocalizedRangeScan>* closetVertex =m_pGraph->FindNearByScan(
+      Vertex<LocalizedRangeScan>* closetVertex = m_pGraph->FindNearByScan(
         pScan->GetSensorName(), pScan->GetOdometricPose());
       LocalizedRangeScan* pLastScan = NULL;
       if (closetVertex)
