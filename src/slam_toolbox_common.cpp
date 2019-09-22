@@ -691,6 +691,8 @@ void SlamToolbox::loadSerializedPoseGraph(
     ROS_ERROR("Invalid sensor pointer in dataset. Unable to register sensor.");
   }
 
+  solver_->Compute();
+
   return;
 }
 
@@ -733,8 +735,6 @@ bool SlamToolbox::deserializePoseGraphCallback(
   ROS_DEBUG("DeserializePoseGraph: Successfully read file.");
 
   loadSerializedPoseGraph(mapper, dataset);
-
-  solver_->Compute();
   updateMap();
 
   first_measurement_ = true;
