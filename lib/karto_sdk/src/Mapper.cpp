@@ -178,6 +178,7 @@ namespace karto
       LocalizedRangeScanMap::iterator it = m_Scans.find(pScan->GetStateId());
       if (it != m_Scans.end())
       {
+        it->second = NULL;
         m_Scans.erase(it);
       }
       else
@@ -317,6 +318,7 @@ namespace karto
     LocalizedRangeScanMap::iterator it = m_Scans.find(pScan->GetStateId());
     if (it != m_Scans.end())
     {
+      it->second = NULL;
       m_Scans.erase(it);
     }
     else
@@ -1403,7 +1405,7 @@ namespace karto
   {
     MapperSensorManager* pSensorManager = m_pMapper->m_pMapperSensorManager;
 
-    const Name& rSensorName = pScan->GetSensorName();
+    const Name rSensorName = pScan->GetSensorName();
 
     // link to previous scan
     kt_int32s previousScanNum = pScan->GetStateId() - 1;
@@ -2932,8 +2934,6 @@ namespace karto
       vertexGraphIt = graphVertices.find(vertex_to_remove->GetObject()->GetStateId());
     if (vertexGraphIt != graphVertices.end())
     {
-      // right now just sets to NULL, vector map will 
-      // scale in size but just contain a bunch of null pointers
       m_pGraph->RemoveVertex(vertex_to_remove->GetObject()->GetSensorName(),
         vertexGraphIt->second->GetObject()->GetStateId());
     }

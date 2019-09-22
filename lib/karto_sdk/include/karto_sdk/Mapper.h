@@ -603,6 +603,7 @@ namespace karto
       std::map<int, Vertex<LocalizedRangeScan>* >::iterator it = m_Vertices[rName].find(idx);
       if (it != m_Vertices[rName].end())
       {
+        it->second = NULL;
         m_Vertices[rName].erase(it);
       }
       else
