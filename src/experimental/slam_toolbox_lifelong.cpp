@@ -284,8 +284,8 @@ LifelongSlamToolbox::computeScores(
   for (candidate_scan_it = near_scans.begin();
     candidate_scan_it != near_scans.end(); ++candidate_scan_it)
   {
-    ScoredVertex scored_vertex(*candidate_scan_it,
-      computeScore(range_scan, *candidate_scan_it,
+    ScoredVertex scored_vertex((*candidate_scan_it),
+      computeScore(range_scan, (*candidate_scan_it),
         (*candidate_scan_it)->GetScore(), near_scans.size()));
     scored_vertices.push_back(scored_vertex);
   }

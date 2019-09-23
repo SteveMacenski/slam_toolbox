@@ -564,7 +564,7 @@ namespace karto
     /**
      * Maps names to vector of vertices
      */
-    typedef std::map<Name, std::vector<Vertex<T>*> > VertexMap;
+    typedef std::map<Name, std::map<int, Vertex<T>*> > VertexMap;
 
   public:
     /**
@@ -590,7 +590,7 @@ namespace karto
      */
     inline void AddVertex(const Name& rName, Vertex<T>* pVertex)
     {
-      m_Vertices[rName].push_back(pVertex);
+      m_Vertices[rName].insert({pVertex->GetObject()->GetStateId(), pVertex});
     }
 
     /**
@@ -600,7 +600,17 @@ namespace karto
      */
     inline void RemoveVertex(const Name& rName, const int& idx)
     {
-      m_Vertices[rName][idx] = NULL;
+      std::map<int, Vertex<LocalizedRangeScan>* >::iterator it = m_Vertices[rName].find(idx);
+      if (it != m_Vertices[rName].end())
+      {
+        it->second = NULL;
+        m_Vertices[rName].erase(it);
+      }
+      else
+      {
+        std::cout << "RemoveVertex: Failed to remove vertex " << idx 
+          << " because it doesnt exist in m_Vertices." << std::endl;
+      }
     }
 
     /**
@@ -631,9 +641,10 @@ namespace karto
       forEachAs(typename VertexMap, &m_Vertices, indexIter)
       {
         // delete each vertex
-        forEach(typename std::vector<Vertex<T>*>, &(indexIter->second))
+        typename std::map<int, Vertex<T>*>::iterator iter;
+        for (iter = indexIter->second.begin(); iter != indexIter->second.end(); ++iter)
         {
-          delete *iter;
+          delete iter->second;
         }
       }
       m_Vertices.clear();
@@ -803,7 +814,18 @@ namespace karto
      */
     inline Vertex<LocalizedRangeScan>* GetVertex(LocalizedRangeScan* pScan)
     {
-      return m_Vertices[pScan->GetSensorName()][pScan->GetStateId()];
+      Name rName = pScan->GetSensorName();
+      std::map<int, Vertex<LocalizedRangeScan>* >::iterator it = m_Vertices[rName].find(pScan->GetStateId());
+      if (it != m_Vertices[rName].end())
+      {
+        return it->second;
+      }
+      else
+      {
+        std::cout << "GetVertex: Failed to get vertex, idx " << pScan->GetStateId() << 
+          " is not in m_Vertices." << std::endl;
+        return nullptr;
+      }
     }
 
     /**
@@ -1316,8 +1338,9 @@ namespace karto
      * @param doRefineMatch whether to do finer-grained matching if coarse match is good (default is true)
      * @return strength of response
      */
+    template<class T = LocalizedRangeScanVector>
     kt_double MatchScan(LocalizedRangeScan* pScan,
-                        const LocalizedRangeScanVector& rBaseScans,
+                        const T& rBaseScans,
                         Pose2& rMean, Matrix3& rCovariance,
                         kt_bool doPenalize = true,
                         kt_bool doRefineMatch = true);
@@ -1399,6 +1422,7 @@ namespace karto
      * @param viewPoint do not add points that belong to scans "opposite" the view point
      */
     void AddScans(const LocalizedRangeScanVector& rScans, Vector2<kt_double> viewPoint);
+    void AddScans(const LocalizedRangeScanMap& rScans, Vector2<kt_double> viewPoint);
 
     /**
      * Marks cells where scans' points hit as being occupied.  Can smear points as they are added.
@@ -1565,9 +1589,17 @@ namespace karto
      */
     inline LocalizedRangeScan* GetScan(kt_int32s id)
     {
-      assert(math::IsUpTo(id, (kt_int32s)m_Scans.size()));
-
-      return m_Scans[id];
+      std::map<int, LocalizedRangeScan*>::iterator it = m_Scans.find(id);
+      if (it != m_Scans.end())
+      {
+        return it->second;
+      }
+      else
+      {
+        std::cout << "GetScan: id " << id << 
+          " does not exist in m_scans, cannot retrieve it." << std::endl;
+        return nullptr;
+      }
     }
 
     /**
@@ -1593,7 +1625,7 @@ namespace karto
      * @param rSensorName
      * @return scans of device
      */
-    LocalizedRangeScanVector& GetScans(const Name& rSensorName);
+    LocalizedRangeScanMap& GetScans(const Name& rSensorName);
 
     /**
      * Gets running scans of device
@@ -1670,7 +1702,7 @@ namespace karto
 
     kt_int32s m_NextScanId;
 
-    std::vector<LocalizedRangeScan*> m_Scans;
+    std::map<int, LocalizedRangeScan*> m_Scans;
   };  // MapperSensorManager
 
   ////////////////////////////////////////////////////////////////////////////////////////
