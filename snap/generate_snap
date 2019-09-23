@@ -14,6 +14,7 @@ mkdir snap
 cp -r src/slam_toolbox/snap/snapcraft.yaml snap
 
 # build the snap
+export SNAPCRAFT_BUILD_ENVIRONMENT_MEMORY=4g
 snapcraft
 
 # go back to root

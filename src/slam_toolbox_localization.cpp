@@ -50,6 +50,11 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
     deserializePoseGraphCallback(req, resp);
   }
 
+  // in localization mode, we cannot allow for interactive mode
+  enable_interactive_mode_ = false;
+
+  // in localization mode, disable map saver
+  map_saver_.reset();
   return;
 }
 
@@ -85,14 +90,14 @@ void LocalizationSlamToolbox::laserCallback(
 /*****************************************************************************/
 {
   // no odom info
-  karto::Pose2 pose;
+  Pose2 pose;
   if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
   {
     return;
   }
 
   // ensure the laser can be used
-  karto::LaserRangeFinder* laser = getLaser(scan);
+  LaserRangeFinder* laser = getLaser(scan);
 
   if(!laser)
   {
@@ -110,10 +115,10 @@ void LocalizationSlamToolbox::laserCallback(
 }
 
 /*****************************************************************************/
-bool LocalizationSlamToolbox::addScan(
-  karto::LaserRangeFinder* laser,
+LocalizedRangeScan* LocalizationSlamToolbox::addScan(
+  LaserRangeFinder* laser,
   const sensor_msgs::LaserScan::ConstPtr& scan, 
-  karto::Pose2& karto_pose)
+  Pose2& karto_pose)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock l(pose_mutex_);
@@ -123,7 +128,7 @@ bool LocalizationSlamToolbox::addScan(
     processor_type_ = PROCESS_NEAR_REGION;
   }
 
-  karto::LocalizedRangeScan* range_scan = getLocalizedRangeScan(
+  LocalizedRangeScan* range_scan = getLocalizedRangeScan(
     laser, scan, karto_pose);
 
   // Add the localized range scan to the smapper
@@ -135,7 +140,7 @@ bool LocalizationSlamToolbox::addScan(
     {
       ROS_ERROR("Process near region called without a "
         "valid region request. Ignoring scan.");
-      return false;
+      return nullptr;
     }
 
     // set our position to the requested pose and process
@@ -161,16 +166,13 @@ bool LocalizationSlamToolbox::addScan(
   }
 
   // if successfully processed, create odom to map transformation
-  if(processed)
-  {
-    scan_holder_->addScan(*scan);
-  }
-  else
+  if(!processed)
   {
     delete range_scan;
+    range_scan = nullptr;
   }
 
-  return processed;
+  return range_scan;
 }
 
 /*****************************************************************************/
@@ -186,8 +188,17 @@ void LocalizationSlamToolbox::localizePoseCallback(const
   }
 
   boost::mutex::scoped_lock l(pose_mutex_);
-  process_near_pose_ = std::make_unique<karto::Pose2>(msg->pose.pose.position.x, 
-        msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation));
+  if (process_near_pose_)
+  {
+    process_near_pose_.reset(new Pose2(msg->pose.pose.position.x, 
+      msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation)));
+  }
+  else
+  {
+    process_near_pose_ = std::make_unique<Pose2>(msg->pose.pose.position.x, 
+      msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation));    
+  }
+
   first_measurement_ = true;
 
   ROS_INFO("LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
@@ -197,29 +208,3 @@ void LocalizationSlamToolbox::localizePoseCallback(const
 }
 
 } // end namespace
-
-int main(int argc, char** argv)
-{
-  ros::init(argc, argv, "slam_toolbox");
-  ros::NodeHandle nh("~");
-  ros::spinOnce();
-
-  int stack_size;
-  if (nh.getParam("stack_size_to_use", stack_size))
-  {
-    ROS_INFO("Node using stack size %i", (int)stack_size);
-    const rlim_t max_stack_size = stack_size;
-    struct rlimit stack_limit;
-    getrlimit(RLIMIT_STACK, &stack_limit);
-    if (stack_limit.rlim_cur < stack_size)
-    {
-      stack_limit.rlim_cur = stack_size;
-    }
-    setrlimit(RLIMIT_STACK, &stack_limit);
-  }
-
-  slam_toolbox::LocalizationSlamToolbox sst(nh);
-
-  ros::spin();
-  return 0;
-}

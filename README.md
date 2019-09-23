@@ -1,10 +1,13 @@
 ## Slam Toolbox
 
-[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/slam-toolbox)
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/slam-toolbox-melodic)
+
+| DockerHub  | [![Build Status](https://img.shields.io/docker/cloud/build/stevemacenski/slam-toolbox.svg?label=build)](https://hub.docker.com/r/stevemacenski/slam-toolbox) |
+|-----|----|
+| **Build Farm** | [![Build Status](http://build.ros.org/buildStatus/icon?job=Mdev__slam_toolbox__ubuntu_bionic_amd64)](http://build.ros.org/view/Kbin_uX64/job/Mdev__slam_toolbox__ubuntu_bionic_amd64/) |
 
 # Introduction
 
-<!--  map of huge space here -->
 
 Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/) and in his free time. 
 
@@ -25,7 +28,10 @@ For running on live production robots, I recommend using the snap: slam-toolbox,
 
 This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 200,000 sq.ft. building in synchronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
-![map_image](/images/map_image.png?raw=true "Map Image")
+The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/) in Oakland, California. Thanks to [Silicon Valley Robotics](https://svrobo.org/) & Circuit Launch for being a testbed for some of this work. This data is currently available upon request, but its going to be included in a larger open-source dataset down the line. 
+
+![map_image](/images/circuit_launch.gif?raw=true "Map Image")
+
 
 # LifeLong Mapping
 
@@ -47,7 +53,7 @@ Slam Toolbox supports all the major modes:
 
 In the RVIZ interface (see section below) you'll be able to re-localize in a map or continue mapping graphically or programatically using ROS services. 
 
-On time of writing: the LifeLong mapping implementation does not curently support the method for removing nodes over time when not in localization mode. Its recommended to run LifeLong mapping mode in the cloud for the increased computational burdens. However a real and desperately needed application of this is to have multi-session mapping to update just a section of the map or map half an area at a time to create a full (and then static) map for AMCL or Slam Toolbox localization mode, which this will handle in spades. The immediate plan is to create a mode within LifeLong mapping to decay old nodes to bound the computation and allow it to run on the edge. To clarity- lifelong mapping works, but the number of nodes will grow unbounded if you never switch to localization mode. Continuing mapping should be used to build a complete map then switch to the pose-graph deformation localization mode until node decay is implemented, and **you should not see any substantial performance impacts**. 
+On time of writing: there a **highly** experimental implementation of what I call "true lifelong" mapping that does support the method for removing nodes over time as well as adding nodes, this results in a true ability to map for life since the computation is bounded by removing extraneous or outdated information. Its recommended to run the non-full LifeLong mapping mode in the cloud for the increased computational burdens if you'd like to be continuously refining a map. However a real and desperately needed application of this is to have multi-session mapping to update just a section of the map or map half an area at a time to create a full (and then static) map for AMCL or Slam Toolbox localization mode, which this will handle in spades. The immediate plan is to create a mode within LifeLong mapping to decay old nodes to bound the computation and allow it to run on the edge by refining the experimental node. Continuing mapping (lifelong) should be used to build a complete map then switch to the pose-graph deformation localization mode until node decay is implemented, and **you should not see any substantial performance impacts**. 
 
 
 # Localization
@@ -77,13 +83,13 @@ Then I generated plugins for a few different solvers that people might be intere
 
 GTSAM/G2O/SPA is currently "unsupported" although all the code is there. They don't outperform Ceres settings I describe below so I stopped compiling them to save on build time, but they're there and work if you would like to use them. PRs to implement other optimizer plugins are welcome.
 
-### Map Merging
+### Map Merging - Example uses of serialized raw data & posegraphs
 
 #### Kinematic
 
-<!-- MEDIA Gif here -->
-
 This uses RVIZ and the plugin to load any number of posegraphs that will show up in RVIZ under `map_N` and a set of interactive markers to allow you to move them around. Once you have them all positioned relative to each other in the way you like, you can merge the submaps into a global `map` which can be downloaded with your map server implementation of choice. 
+
+It's more of a demonstration of other things you can do once you have the raw data to work with, but I don't suspect many people will get much use out of it unless you're used to stitching maps by hand.
 
 More information in the RVIZ Plugin section below.
 
@@ -94,12 +100,6 @@ This is under development.
 This is to solve the problem of merging many maps together with an initial guess of location in an elastic sense. This is something you just can't get if you don't have the full pose-graph and raw data to work with -- which we have from our continuous mapping work.
 
 Hint: This is also really good for multi-robot map updating as well :)  
-
-#### Optimization based
-
-This uses RVIZ and the plugin to load any number of posegraphs that will show up in RVIZ under `map_N` and a set of interactive markers to allow you to move them around. Once you have them all positioned relative to each other in the way you like, it will use these relative transforms to offset the pose-graphs into a common frame and minimize the constraint error between them using the Ceres optimizer.  You can merge the submaps into a global `map` which can be downloaded with your map server implementation of choice. Think of this like populating N mappers into 1 global mapper.
-
-Using just kinematic placement of the maps will give you some improvements over an image stiching/editing software since you have sub-pixel accuracy, but you're still a little screwed if your submaps aren't globally consistent and unwarped - this is an intermediate to help with that until the pose-graph merging tool is complete.
 
 ### RVIZ Plugin
 
@@ -134,6 +134,34 @@ The data sets present solve time vs number of nodes in the pose graph on a large
 It can map _very_ large spaces with reasonable CPU and memory consumption. My default settings increase O(N) on number of elements in the pose graph. I recommend from extensive testing to use the `SPARSE_NORMAL_CHOLESKY` solver with Ceres and the `SCHUR_JACOBI` preconditioner. Using `LM` at the trust region strategy is comparable to the dogleg subspace strategy, but `LM` is much better supported so why argue with it. 
 
 You can get away without a loss function if your odometry is good (ie likelihood for outliers is extremely low). If you have an abnormal application or expect wheel slippage, I might recommend a `HuberLoss` function, which is a really good catch-all loss function if you're looking for a place to start. All these options and more are available from the ROS parameter server.
+
+# API
+
+The following are the services/topics that are exposed for use. See the rviz plugin for an implementation of their use. 
+
+## Subscribed topics
+
+| scan  | `sensor_msgs/LaserScan` | the input scan from your laser to utilize | 
+|-----|----|----|
+| **tf** | N/A | a valid transform from your configured odom_frame to base_frame |
+
+## Published topics
+
+| map  | `nav_msgs/OccupancyGrid` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
+|-----|----|----|
+
+## Exposed Services
+
+| Topic  | Type | Description | 
+|-----|----|----|
+| `/slam_toolbox/clear_changes`  | `slam_toolbox/Clear` | Clear all manual pose-graph manipulation changes pending | 
+| `/slam_toolbox/deserialize_map`  | `slam_toolbox/DeserializePoseGraph` | Load a saved serialized pose-graph files from disk | 
+| `/slam_toolbox/dynamic_map`  | `nav_msgs/OccupancyGrid` | Request the current state of the pose-graph as an occupancy grid | 
+| `/slam_toolbox/manual_loop_closure`  | `slam_toolbox/LoopClosure` | Request the manual changes to the pose-graph pending to be processed | 
+| `/slam_toolbox/pause_new_measurements`  | `slam_toolbox/Pause` | Pause processing of new incoming laser scans by the toolbox | 
+| `/slam_toolbox/save_map`  | `slam_toolbox/SaveMap` | Save the map image file of the pose-graph that is useable for display or AMCL localization. It is a simple wrapper on `map_server/map_saver` but is useful. | 
+| `/slam_toolbox/serialize_map`  | `slam_toolbox/SerializePoseGraph` | Save the map pose-graph and datathat is useable for continued mapping, slam_toolbox localization, offline manipulation, and more | 
+| `/slam_toolbox/toggle_interactive_mode`  | `slam_toolbox/ToggleInteractive` | Toggling in and out of interactive mode, publishing interactive markers of the nodes and their positions to be updated in an application | 
 
 # Configuration
 
@@ -176,6 +204,8 @@ The following settings and options are exposed to you. My default configuration 
 `transform_publish_period` - The map to odom transform publish period. 0 will not publish transforms
 
 `map_update_interval` - Interval to update the 2D occupancy map for other applications / visualization
+
+`enable_interactive_mode` - Whether or not to allow for interactive mode to be enabled. Interactive mode will retain a cache of laser scans mapped to their ID for visualization in interactive mode. As a result the memory for the process will increase. This is manually disabled in localization and lifelong modes since they would increase the memory utilization over time. Valid for either mapping or continued mapping modes.
 
 `resolution` - Resolution of the 2D occupancy map to generate
 
@@ -258,7 +288,9 @@ rosdep install -q -y -r --from-paths src --ignore-src
 I also have a Snap built for this that's super easy to install if you know snaps, named `slam-toolbox`.
 
 ```
-sudo snap install slam-toolbox --beta --devmode
+sudo snap install slam-toolbox-melodic --beta --devmode # get the latest and greatest
+
+sudo snap install slam-toolbox-melodic # get the stablist and infrequently updated
 ```
 
 Run your catkin build procedure of choice.
@@ -289,3 +321,10 @@ sudo ln -s /home/steve/maps/serialized_map/ /var/snap/slam-toolbox/common
 ```
 
 and then all you have to do when you specify a map to use is set the filename to `slam-toolbox/map_name` and it should work no matter if you're running in a snap, docker, or on bare metal. The `-s` makes a symbol link so rather than `/var/snap/slam-toolbox/common/*` containing the maps, `/var/snap/slam-toolbox/common/serialized_map/*` will. By default on bare metal, the maps will be saved in `.ros`
+
+
+## More Gifs!
+
+![map_image](/images/mapping_steves_apartment.gif?raw=true "Map Image")
+
+If someone from iRobot can use this to tell me my Roomba serial number by correlating to its maps, I'll buy them lunch and probably try to hire them.

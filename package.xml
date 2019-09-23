@@ -3,7 +3,7 @@
   <description>
      This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
   </description>
-  <version>0.3.3</version>
+  <version>1.1.1</version>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <author>Steve Macenski</author>
   <license>LGPL</license>
@@ -33,6 +33,9 @@
   <build_depend>libg2o</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>tbb</build_depend>
+  <build_depend>libqt5-core</build_depend>
+  <build_depend>libqt5-widgets</build_depend>
+  <build_depend>qtbase5-dev</build_depend>
   <run_depend>eigen</run_depend>
   <run_depend>pluginlib</run_depend>
   <run_depend>message_filters</run_depend>
@@ -55,6 +58,8 @@
   <run_depend>libg2o</run_depend>
   <run_depend>tf2_geometry_msgs</run_depend>
   <run_depend>tbb</run_depend>
+  <run_depend>libqt5-core</run_depend>
+  <run_depend>libqt5-widgets</run_depend>
 
   <export>
     <slam_toolbox plugin="${prefix}/solver_plugins.xml" />

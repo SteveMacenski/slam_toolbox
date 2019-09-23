@@ -31,6 +31,7 @@ CeresSolver::CeresSolver() :
   nh.getParam("ceres_trust_strategy", trust_strategy);
   nh.getParam("ceres_loss_function", loss_fn);
   nh.getParam("mode", mode);
+  nh.getParam("debug_logging", debug_logging_);
 
   corrections_.clear();
   first_node_ = nodes_->end();
@@ -181,7 +182,9 @@ void CeresSolver::Compute()
   // populate contraint for static initial pose
   if (!was_constant_set_ && first_node_ != nodes_->end())
   {
-    ROS_DEBUG("CeresSolver: Setting first node as a constant pose.");
+    ROS_DEBUG("CeresSolver: Setting first node as a constant pose:"
+      "%0.2f, %0.2f, %0.2f.", first_node_->second(0),
+      first_node_->second(1), first_node_->second(2));
     problem_->SetParameterBlockConstant(&first_node_->second(0));
     problem_->SetParameterBlockConstant(&first_node_->second(1));
     problem_->SetParameterBlockConstant(&first_node_->second(2));
@@ -191,7 +194,10 @@ void CeresSolver::Compute()
   const ros::Time start_time = ros::Time::now();
   ceres::Solver::Summary summary;
   ceres::Solve(options_, problem_, &summary);
-  std::cout << summary.FullReport() << '\n';
+  if (debug_logging_)
+  {
+    std::cout << summary.FullReport() << '\n';
+  }
 
   if (!summary.IsSolutionUsable())
   {
@@ -259,7 +265,7 @@ void CeresSolver::Reset()
 
   nodes_ = new std::unordered_map<int, Eigen::Vector3d>();
   blocks_ = new std::unordered_map<std::size_t, ceres::ResidualBlockId>();
-  problem_ = new ceres::Problem();
+  problem_ = new ceres::Problem(options_problem_);
   first_node_ = nodes_->end();
 
   angle_local_parameterization_ = AngleLocalParameterization::Create();
@@ -396,7 +402,7 @@ void CeresSolver::ModifyNode(const int& unique_id, Eigen::Vector3d pose)
   {
     double yaw_init = it->second(2);
     it->second = pose;
-    it->second(2)+= yaw_init;
+    it->second(2) += yaw_init;
   }
 }
 

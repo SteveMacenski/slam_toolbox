@@ -24,6 +24,8 @@
 namespace slam_toolbox
 {
 
+using namespace ::karto;
+
 class LocalizationSlamToolbox : public SlamToolbox
 {
 public:
@@ -43,7 +45,7 @@ protected:
     slam_toolbox::DeserializePoseGraph::Request& req,
     slam_toolbox::DeserializePoseGraph::Response& resp) override final;
 
-  virtual bool addScan(karto::LaserRangeFinder* laser,
+  virtual LocalizedRangeScan* addScan(karto::LaserRangeFinder* laser,
     const sensor_msgs::LaserScan::ConstPtr& scan,
     karto::Pose2& karto_pose) override final;
 

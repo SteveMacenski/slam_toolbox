@@ -106,11 +106,12 @@ karto::LaserRangeFinder* LaserAssistant::makeLaser(const double& mountingYaw)
   double max_laser_range = 25;
   nh_.getParam("max_laser_range", max_laser_range);
   if (max_laser_range > scan_.range_max)
-    {
-      ROS_WARN("maximum laser range setting (%.1f m) exceeds the capabilities of the used Lidar (%.1f m)",
-          max_laser_range, scan_.range_max);
-      max_laser_range = scan_.range_max;
-    }
+  {
+    ROS_WARN("maximum laser range setting (%.1f m) exceeds the capabilities "
+      "of the used Lidar (%.1f m)",
+      max_laser_range, scan_.range_max);
+    max_laser_range = scan_.range_max;
+  }
   laser->SetRangeThreshold(max_laser_range);
   return laser;
 }
