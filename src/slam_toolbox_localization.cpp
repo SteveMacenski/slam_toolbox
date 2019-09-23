@@ -52,6 +52,9 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
 
   // in localization mode, we cannot allow for interactive mode
   enable_interactive_mode_ = false;
+
+  // in localization mode, disable map saver
+  map_saver_.reset();
   return;
 }
 

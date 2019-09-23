@@ -402,7 +402,7 @@ void CeresSolver::ModifyNode(const int& unique_id, Eigen::Vector3d pose)
   {
     double yaw_init = it->second(2);
     it->second = pose;
-    it->second(2)+= yaw_init;
+    it->second(2) += yaw_init;
   }
 }
 
