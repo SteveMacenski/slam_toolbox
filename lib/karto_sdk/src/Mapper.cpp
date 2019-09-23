@@ -2014,12 +2014,28 @@ namespace karto
     {
       pSolver->Compute();
 
+      // int i = 1;
       const_forEach(ScanSolver::IdPoseVector, &pSolver->GetCorrections())
       {
+        // i++;
+        // if (i % 2 == 0)
+        // {
+        //   continue;
+        // }
         // things it could be:
         // wrong scan gotten
         // wrong position (frame, etc)
         // wrong ID stored in optimizer
+        // could be itself optimizer is not good for this in the way its formulated
+          // seems like after the first optimization step is all good - static relatnship between them needs constraint?
+          // first node param static block?
+        // only thing that appears to be wrong is their relative transformations to each other in first optimization
+          // are the graphs not connected?
+          // how do they know their relationship to another to start with in this formulation?
+            // --> I can find via TF myself and give it, but is that what's wrong?
+          // after first optimization the 2 seprate ones go on their way 
+          // unless already aligned, then the next one is the one tha blows up
+            // --> evidence that constraints between the graphs arent stable. good when separate
         std::cout << "STEVE Solver: id " << iter->first << " position: " << iter->second.GetX() << " " << iter->second.GetY() << " " << iter->second.GetHeading() << std::endl;
         LocalizedRangeScan* scan = m_pMapper->m_pMapperSensorManager->GetScan(iter->first);
         if (scan == NULL)

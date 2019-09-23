@@ -64,6 +64,7 @@ private:
   std::unordered_map<int, Eigen::Vector3d>* nodes_;
   std::unordered_map<size_t, ceres::ResidualBlockId>* blocks_;
   std::unordered_map<int, Eigen::Vector3d>::iterator first_node_;
+  std::unordered_map<int, Eigen::Vector3d>::iterator second_node_;
   boost::mutex nodes_mutex_;
 };
 
