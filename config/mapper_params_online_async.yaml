@@ -18,6 +18,7 @@ ceres_loss_function: None
 odom_frame: odom
 map_frame: map
 base_frame: base_footprint
+scan_topic: /scan
 mode: mapping #localization
 
 # if you'd like to immediately start continuing a map at a given pose
