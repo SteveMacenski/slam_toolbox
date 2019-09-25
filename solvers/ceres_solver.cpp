@@ -183,7 +183,7 @@ void CeresSolver::Compute()
   if (!was_constant_set_ && first_node_ != nodes_->end())
   {
     // oh oh but this is still 0/0/0 so if we also update with "TF"....
-        second_node_->second(2) = 3.14159;
+    second_node_->second(2) = 3.14159;
 
     ROS_INFO("CeresSolver: Setting first node as a constant pose:"
       "%0.2f, %0.2f, %0.2f.", first_node_->second(0),
@@ -207,32 +207,32 @@ void CeresSolver::Compute()
     //   karto::Transform transform(rPose2, karto::Pose2());
     //   karto::Pose2 m_PoseDifference = transform.TransformPose(rPose1);
 
-    Eigen::Vector3d pose2dDiff(0.,
-      0.,
-      3.14159);  // BETTER, try finding from TF now
+    // Eigen::Vector3d pose2dDiff(0.,
+    //   0.,
+    //   3.14159);  // BETTER, try finding from TF now
     //  also visualize the constraint maps as well to make sure?
       // color coded by laser id
 
-    Eigen::Matrix3d sqrt_information;
-    sqrt_information(0,0) = 350;
-    sqrt_information(0,1) = sqrt_information(1,0) = -313;
-    sqrt_information(0,2) = sqrt_information(2,0) = 0;
-    sqrt_information(1,1) = 500;
-    sqrt_information(1,2) = sqrt_information(2,1) = 0;
-    sqrt_information(2,2) = 8000;
-    std::cout <<sqrt_information(0,0) << " " << sqrt_information(0,1)<< " " << sqrt_information(0,2) << std::endl;
-    std::cout <<sqrt_information(1,0) << " " << sqrt_information(1,1)<< " " << sqrt_information(1,2) << std::endl;
-    std::cout <<sqrt_information(2,0) << " " << sqrt_information(2,1)<< " " << sqrt_information(2,2) << std::endl;
-    ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create(pose2dDiff(0), 
-      pose2dDiff(1), pose2dDiff(2), sqrt_information);
-    ceres::ResidualBlockId block = problem_->AddResidualBlock(
-     cost_function, loss_function_, 
-     &first_node_->second(0), &first_node_->second(1), &first_node_->second(2),
-     &second_node_->second(0), &second_node_->second(1), &second_node_->second(2));
-    problem_->SetParameterization(&first_node_->second(2),
-      angle_local_parameterization_);
-    problem_->SetParameterization(&second_node_->second(2),
-      angle_local_parameterization_);
+    // Eigen::Matrix3d sqrt_information;
+    // sqrt_information(0,0) = 350;
+    // sqrt_information(0,1) = sqrt_information(1,0) = -313;
+    // sqrt_information(0,2) = sqrt_information(2,0) = 0;
+    // sqrt_information(1,1) = 500;
+    // sqrt_information(1,2) = sqrt_information(2,1) = 0;
+    // sqrt_information(2,2) = 8000;
+    // std::cout <<sqrt_information(0,0) << " " << sqrt_information(0,1)<< " " << sqrt_information(0,2) << std::endl;
+    // std::cout <<sqrt_information(1,0) << " " << sqrt_information(1,1)<< " " << sqrt_information(1,2) << std::endl;
+    // std::cout <<sqrt_information(2,0) << " " << sqrt_information(2,1)<< " " << sqrt_information(2,2) << std::endl;
+    // ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create(pose2dDiff(0), 
+    //   pose2dDiff(1), pose2dDiff(2), sqrt_information);
+    // ceres::ResidualBlockId block = problem_->AddResidualBlock(
+    //  cost_function, loss_function_, 
+    //  &first_node_->second(0), &first_node_->second(1), &first_node_->second(2),
+    //  &second_node_->second(0), &second_node_->second(1), &second_node_->second(2));
+    // problem_->SetParameterization(&first_node_->second(2),
+    //   angle_local_parameterization_);
+    // problem_->SetParameterization(&second_node_->second(2),
+    //   angle_local_parameterization_);
   }
 
   const ros::Time start_time = ros::Time::now();

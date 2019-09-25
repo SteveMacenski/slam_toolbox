@@ -151,7 +151,7 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
 
     // compute our new transform and reset to localization mode
     setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
-      scan->header.stamp, true);
+      scan->header, true);
     processor_type_ = PROCESS_LOCALIZATION;
   }
   else if (processor_type_ == PROCESS_LOCALIZATION)
