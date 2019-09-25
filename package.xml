@@ -1,4 +1,6 @@
-<package>
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>slam_toolbox</name>
   <description>
      This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
@@ -8,7 +10,7 @@
   <author>Steve Macenski</author>
   <license>LGPL</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
   
   <build_depend>cmake_modules</build_depend>
   <build_depend>pluginlib</build_depend>
@@ -24,7 +26,7 @@
   <build_depend>visualization_msgs</build_depend>
   <build_depend>message_generation</build_depend>
   <build_depend>std_srvs</build_depend>
-  <build_depend>interactive_markers</build_depend>
+  <!-- <build_depend>interactive_markers</build_depend> -->
   <build_depend>std_msgs</build_depend>
   <build_depend>suitesparse</build_depend>
   <build_depend>rviz</build_depend>
@@ -37,34 +39,40 @@
   <build_depend>libqt5-widgets</build_depend>
   <build_depend>qtbase5-dev</build_depend>
   <build_depend>map_server</build_depend>
-  <run_depend>eigen</run_depend>
-  <run_depend>pluginlib</run_depend>
-  <run_depend>message_filters</run_depend>
-  <run_depend>nav_msgs</run_depend>
-  <run_depend>rosconsole</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>sparse_bundle_adjustment</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>tf2</run_depend>
-  <run_depend>tf2_ros</run_depend>
-  <run_depend>visualization_msgs</run_depend>
-  <run_depend>message_runtime</run_depend>
-  <run_depend>std_srvs</run_depend>
-  <run_depend>interactive_markers</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>suitesparse</run_depend>
-  <run_depend>rviz</run_depend>
-  <run_depend>liblapack-dev</run_depend>
-  <run_depend>libceres-dev</run_depend>
-  <run_depend>libg2o</run_depend>
-  <run_depend>tf2_geometry_msgs</run_depend>
-  <run_depend>tbb</run_depend>
-  <run_depend>libqt5-core</run_depend>
-  <run_depend>libqt5-widgets</run_depend>
-  <run_depend>map_server</run_depend>
-
+  <build_depend>builtin_interfaces</build_depend>
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>eigen</exec_depend>
+  <exec_depend>pluginlib</exec_depend>
+  <exec_depend>message_filters</exec_depend>
+  <exec_depend>nav_msgs</exec_depend>
+  <exec_depend>rosconsole</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>sparse_bundle_adjustment</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>tf2</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>message_runtime</exec_depend>
+  <exec_depend>std_srvs</exec_depend>
+  <!-- <exec_depend>interactive_markers</exec_depend> -->
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>suitesparse</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>liblapack-dev</exec_depend>
+  <exec_depend>libceres-dev</exec_depend>
+  <exec_depend>libg2o</exec_depend>
+  <exec_depend>tf2_geometry_msgs</exec_depend>
+  <exec_depend>tbb</exec_depend>
+  <exec_depend>libqt5-core</exec_depend>
+  <exec_depend>libqt5-widgets</exec_depend>
+  <exec_depend>map_server</exec_depend>
+  <exec_depend>builtin_interfaces</exec_depend>
+  <exec_depend>rosidl_default_generators</exec_depend>
+  
+  <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>
+    <build_type>ament_cmake</build_type>
     <slam_toolbox plugin="${prefix}/solver_plugins.xml" />
     <rviz plugin="${prefix}/rviz_plugins.xml"/>
   </export>

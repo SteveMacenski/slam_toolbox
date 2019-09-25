@@ -1,4 +1,4 @@
-FROM ros:melodic-ros-base-bionic
+FROM ros:dashing-ros-base-bionic
 
 # USE BASH
 SHELL ["/bin/bash", "-c"]
@@ -9,18 +9,14 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends apt-utils
 
 # slam_toolbox
-RUN mkdir -p catkin_ws/src
-RUN cd catkin_ws/src && git clone https://github.com/SteveMacenski/slam_toolbox.git
-RUN source /opt/ros/melodic/setup.bash \
+RUN mkdir -p colcon_ws/src
+RUN cd colcon_ws/src && git clone -b dashing-devel https://github.com/SteveMacenski/slam_toolbox.git
+RUN source /opt/ros/dashing/setup.bash \
     && cd catkin_ws \
     && rosdep update \
-    && rosdep install -y -r --from-paths src --ignore-src --rosdistro=melodic -y
+    && rosdep install -y -r --from-paths src --ignore-src --rosdistro=dashing -y
 
 RUN apt install python-catkin-tools -y
-RUN source /opt/ros/melodic/setup.bash \ 
-    && cd catkin_ws/src \
-    && catkin_init_workspace \
-    && cd .. \
-    && catkin config --install \
-    && catkin build -DCMAKE_BUILD_TYPE=Release
-
+RUN source /opt/ros/dashing/setup.bash \ 
+    && cd colcon_ws/ \
+    && colcon build -DCMAKE_BUILD_TYPE=Release

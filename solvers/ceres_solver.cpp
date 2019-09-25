@@ -6,8 +6,7 @@
 #include "ceres_solver.hpp"
 #include <karto_sdk/Karto.h>
 
-#include "ros/console.h"
-#include <pluginlib/class_list_macros.h>
+#include <pluginlib/class_list_macros.hpp>
 
 PLUGINLIB_EXPORT_CLASS(solver_plugins::CeresSolver, karto::ScanSolver)
 
@@ -22,16 +21,23 @@ CeresSolver::CeresSolver() :
   problem_(NULL), was_constant_set_(false)
 /*****************************************************************************/
 {
-  ros::NodeHandle nh("~");
+}
+
+/*****************************************************************************/
+CeresSolver::Configure(rclcpp::Node::SharedPtr & node)
+/*****************************************************************************/
+{
+  node_ = node;
+
   std::string solver_type, preconditioner_type, dogleg_type,
     trust_strategy, loss_fn, mode;
-  nh.getParam("ceres_linear_solver", solver_type);
-  nh.getParam("ceres_preconditioner", preconditioner_type);
-  nh.getParam("ceres_dogleg_type", dogleg_type);
-  nh.getParam("ceres_trust_strategy", trust_strategy);
-  nh.getParam("ceres_loss_function", loss_fn);
-  nh.getParam("mode", mode);
-  nh.getParam("debug_logging", debug_logging_);
+  solver_type = node->declare_parameter("ceres_linear_solver");
+  preconditioner_type = node->declare_parameter("ceres_preconditioner");
+  dogleg_type = node->declare_parameter("ceres_dogleg_type");
+  trust_strategy = node->declare_parameter("ceres_trust_strategy");
+  loss_fn = node->declare_parameter("ceres_loss_function");
+  mode = node->declare_parameter("mode");
+  debug_logging_ = node->declare_parameter("debug_logging");
 
   corrections_.clear();
   first_node_ = nodes_->end();
@@ -43,12 +49,14 @@ CeresSolver::CeresSolver() :
   loss_function_ = NULL;
   if (loss_fn == "HuberLoss")
   {
-    ROS_INFO("CeresSolver: Using HuberLoss loss function.");
+    RCLCPP_INFO(node_->get_logger(),
+      "CeresSolver: Using HuberLoss loss function.");
     loss_function_ = new ceres::HuberLoss(0.7);
   }
   else if (loss_fn == "CauchyLoss")
   {
-    ROS_INFO("CeresSolver: Using CauchyLoss loss function.");
+    RCLCPP_INFO(node_->get_logger(),
+      "CeresSolver: Using CauchyLoss loss function.");
     loss_function_ = new ceres::CauchyLoss(0.7);
   }
 
@@ -56,17 +64,20 @@ CeresSolver::CeresSolver() :
   options_.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
   if (solver_type == "SPARSE_SCHUR")
   {
-    ROS_INFO("CeresSolver: Using SPARSE_SCHUR solver.");
+    RRCLCPP_INFO(node_->get_logger(),
+      "CeresSolver: Using SPARSE_SCHUR solver.");
     options_.linear_solver_type = ceres::SPARSE_SCHUR;
   }
   else if (solver_type == "ITERATIVE_SCHUR")
   {
-    ROS_INFO("CeresSolver: Using ITERATIVE_SCHUR solver.");
+    RCLCPP_INFO(node_->get_logger(),
+      "CeresSolver: Using ITERATIVE_SCHUR solver.");
     options_.linear_solver_type = ceres::ITERATIVE_SCHUR;
   }
   else if (solver_type == "CGNR")
   {
-    ROS_INFO("CeresSolver: Using CGNR solver.");
+    RCLCPP_INFO(node_->get_logger(),
+      "CeresSolver: Using CGNR solver.");
     options_.linear_solver_type = ceres::CGNR;
   }
 
@@ -74,12 +85,14 @@ CeresSolver::CeresSolver() :
   options_.preconditioner_type = ceres::JACOBI;
   if (preconditioner_type == "IDENTITY")
   {
-    ROS_INFO("CeresSolver: Using IDENTITY preconditioner.");
+    RCLCPP_INFO(node_->get_logger(),
+      "CeresSolver: Using IDENTITY preconditioner.");
     options_.preconditioner_type = ceres::IDENTITY;
   }
   else if (preconditioner_type == "SCHUR_JACOBI")
   {
-    ROS_INFO("CeresSolver: Using SCHUR_JACOBI preconditioner.");
+    RCLCPP_INFO(node_->get_logger(),
+      "CeresSolver: Using SCHUR_JACOBI preconditioner.");
     options_.preconditioner_type = ceres::SCHUR_JACOBI;
   }
 
@@ -95,7 +108,8 @@ CeresSolver::CeresSolver() :
   options_.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
   if (trust_strategy == "DOGLEG")
   {
-    ROS_INFO("CeresSolver: Using DOGLEG trust region strategy.");
+    RCLCPP_INFO(node_->get_logger(),
+      "CeresSolver: Using DOGLEG trust region strategy.");
     options_.trust_region_strategy_type = ceres::DOGLEG;
   }
 
@@ -105,7 +119,8 @@ CeresSolver::CeresSolver() :
     options_.dogleg_type = ceres::TRADITIONAL_DOGLEG;
     if (dogleg_type == "SUBSPACE_DOGLEG")
     {
-      ROS_INFO("CeresSolver: Using SUBSPACE_DOGLEG dogleg type.");
+      RCLCPP_INFO(node_->get_logger(),
+        "CeresSolver: Using SUBSPACE_DOGLEG dogleg type.");
       options_.dogleg_type = ceres::SUBSPACE_DOGLEG;
     }
   }
@@ -174,7 +189,8 @@ void CeresSolver::Compute()
 
   if (nodes_->size() == 0)
   {
-    ROS_ERROR("CeresSolver: Ceres was called when there are no nodes."
+    RCLCPP_WARN(node_->get_logger(), 
+      "CeresSolver: Ceres was called when there are no nodes."
       " This shouldn't happen.");
     return;
   }
@@ -182,7 +198,8 @@ void CeresSolver::Compute()
   // populate contraint for static initial pose
   if (!was_constant_set_ && first_node_ != nodes_->end())
   {
-    ROS_DEBUG("CeresSolver: Setting first node as a constant pose:"
+    RCLCPP_DEBUG(node_->get_logger(), 
+      "CeresSolver: Setting first node as a constant pose:"
       "%0.2f, %0.2f, %0.2f.", first_node_->second(0),
       first_node_->second(1), first_node_->second(2));
     problem_->SetParameterBlockConstant(&first_node_->second(0));
@@ -201,7 +218,7 @@ void CeresSolver::Compute()
 
   if (!summary.IsSolutionUsable())
   {
-    ROS_WARN("CeresSolver: "
+    RCLCPP_WARN(node_->get_logger(), "CeresSolver: "
       "Ceres could not find a usable solution to optimize.");
     return;
   }
@@ -315,7 +332,8 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   if (node1it == nodes_->end() || 
       node2it == nodes_->end() || node1it == node2it)
   {
-    ROS_WARN("CeresSolver: Failed to add constraint, could not find nodes.");
+    RCLCPP_WARN(node_->get_logger(), 
+      "CeresSolver: Failed to add constraint, could not find nodes.");
     return;
   }
 
@@ -362,7 +380,8 @@ void CeresSolver::RemoveNode(kt_int32s id)
   }
   else
   {
-    ROS_ERROR("RemoveNode: Failed to find node matching id %i", (int)id);
+    RCLCPP_ERROR(node_->get_logger(), "RemoveNode: Failed to find node matching id %i",
+      (int)id);
   }
 }
 
@@ -387,7 +406,8 @@ void CeresSolver::RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
   }
   else
   {
-    ROS_ERROR("RemoveConstraint: Failed to find residual block for %i %i", 
+    RCLCPP_ERROR(node_->get_logger(),
+      "RemoveConstraint: Failed to find residual block for %i %i", 
       (int)sourceId, (int)targetId);
   }
 }

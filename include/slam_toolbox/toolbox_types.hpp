@@ -22,11 +22,11 @@
 #include <map>
 #include <vector>
 
-#include "tf/transform_datatypes.h"
-#include "tf2_ros/buffer.h"
+#include "tf/transform_datatypes.hpp"
+#include "tf2_ros/buffer.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include "sensor_msgs/LaserScan.h"
-#include "geometry_msgs/PoseWithCovarianceStamped.h"
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "geometry_msgs/pose_with_covariance_stamped.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
 #include "karto_sdk/Mapper.h"
 

@@ -8,7 +8,7 @@
   <maintainer email="lbettaieb@fetchrobotics.com">Luc Bettaieb</maintainer>
   <license>LGPLv3</license>
 
-  <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
 
   <build_depend>boost</build_depend>
   <build_depend>tbb</build_depend>
