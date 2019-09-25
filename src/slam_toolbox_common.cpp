@@ -115,7 +115,7 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh)
   private_nh.param("resolution", resolution_, 0.05);
   private_nh.param("map_name", map_name_, std::string("/map"));
   laser_topics_.push_back("/scan_front");
-  laser_topics_.push_back("/scan_rear"); //TODO
+  laser_topics_.push_back("/scan_rear"); //TODO not being read in from parameter server for some reason
   private_nh.param("laser_topics", laser_topics_);
   private_nh.param("throttle_scans", throttle_scans_, 1);
   private_nh.param("enable_interactive_mode", enable_interactive_mode_, false);
