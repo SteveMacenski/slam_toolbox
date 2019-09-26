@@ -128,11 +128,12 @@ rosidl_target_interfaces(ceres_solver_plugin ${PROJECT_NAME} "rosidl_typesupport
 
 
 #### Tool lib for mapping
-#add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)
-#ament_target_dependencies(toolbox_common
-#  ${dependencies}
-#)
-#target_link_libraries(toolbox_common karto ${Boost_LIBRARIES})
+add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)
+ament_target_dependencies(toolbox_common
+  ${dependencies}
+)
+target_link_libraries(toolbox_common karto ${Boost_LIBRARIES})
+rosidl_target_interfaces(toolbox_common ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #### Mapping executibles
 #add_library(async_slam_toolbox src/slam_toolbox_async.cpp)

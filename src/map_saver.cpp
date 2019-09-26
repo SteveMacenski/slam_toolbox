@@ -22,46 +22,54 @@ namespace map_saver
 {
 
 /*****************************************************************************/
-MapSaver::MapSaver(ros::NodeHandle & nh, const std::string& map_name)
-: nh_(nh), map_name_(map_name), received_map_(false)
+MapSaver::MapSaver(rclcpp::Node::SharedPtr & node, const std::string & map_name)
+: node_(node), map_name_(map_name), received_map_(false)
 /*****************************************************************************/
 {
-  server_ = nh_.advertiseService("save_map", &MapSaver::saveMapCallback, this);
-  sub_ = nh_.subscribe(map_name_, 1, &MapSaver::mapCallback, this);
-}
+  server_ = node_->create_service<slam_toolbox::srv::SaveMap>("save_map",
+    std::bind(&MapSaver::saveMapCallback, this, std::placeholders::_1,
+      std::placeholders::_2, std::placeholders::_3));
 
-/*****************************************************************************/
-void MapSaver::mapCallback(const nav_msgs::OccupancyGrid& msg)
-/*****************************************************************************/
-{
-  received_map_ = true;
+  auto mapCallback =
+    [this](const nav_msgs::msg::OccupancyGrid::SharedPtr msg) -> void
+    {
+      received_map_ = true;
+    };
+
+  sub_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
+    map_name_, rclcpp::QoS(1), mapCallback);
 }
 
 /*****************************************************************************/
 bool MapSaver::saveMapCallback(
-  slam_toolbox::SaveMap::Request& req,
-  slam_toolbox::SaveMap::Response& resp)
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<slam_toolbox::srv::SaveMap::Request> req,
+  std::shared_ptr<slam_toolbox::srv::SaveMap::Response> response)
 /*****************************************************************************/
 {
   if (!received_map_)
   {
-    ROS_WARN("Map Saver: Cannot save map, no map yet received on topic %s.",
+    RCLCPP_WARN(node_->get_logger(), 
+      "Map Saver: Cannot save map, no map yet received on topic %s.",
       map_name_.c_str());
     return false;
   }
 
-  const std::string name = req.name.data;
+  const std::string name = req->name.data;
   if (name != "")
   {
-    ROS_INFO("SlamToolbox: Saving map as %s.", name.c_str());
-    int rc = system(("rosrun map_server map_saver -f " + name).c_str());
+    RCLCPP_INFO(node_->get_logger(),
+      "SlamToolbox: Saving map as %s.", name.c_str());
+    int rc = system(("ros2 run nav2_map_server map_saver -f " + name).c_str());
   }
   else
   {
-    ROS_INFO("SlamToolbox: Saving map in current directory.");
+    RCLCPP_INFO(node_->get_logger(),
+      "SlamToolbox: Saving map in current directory.");
     int rc = system("rosrun map_server map_saver");
   }
-  ros::Duration(1.0).sleep();
+
+  rclcpp::sleep_for(std::chrono::seconds(1));
   return true;
 }
 

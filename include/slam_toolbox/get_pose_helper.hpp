@@ -19,9 +19,9 @@
 #ifndef SLAM_TOOLBOX_POSE_UTILS_H_
 #define SLAM_TOOLBOX_POSE_UTILS_H_
 
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
-#include "karto_sdk/Mapper.h"
+#include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
 
 namespace pose_utils
 {
@@ -30,16 +30,16 @@ namespace pose_utils
 class GetPoseHelper
 {
 public:
-  GetPoseHelper(tf2_ros::Buffer* tf,
-    const std::string& base_frame,
-    const std::string& odom_frame)
+  GetPoseHelper(tf2_ros::Buffer * tf,
+    const std::string & base_frame,
+    const std::string & odom_frame)
   : tf_(tf), base_frame_(base_frame), odom_frame_(odom_frame)
   {
   };
 
-  bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
+  bool getOdomPose(karto::Pose2 & karto_pose, const ros::Time & t)
   {
-    geometry_msgs::TransformStamped base_ident, odom_pose;
+    geometry_msgs::msg::TransformStamped base_ident, odom_pose;
     base_ident.header.stamp = t;
     base_ident.header.frame_id = base_frame_;
     base_ident.transform.rotation.w = 1.0;
@@ -48,9 +48,8 @@ public:
     {
       odom_pose = tf_->transform(base_ident, odom_frame_);
     }
-    catch(tf2::TransformException e)
+    catch(tf2::TransformException & e)
     {
-      ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
       return false;
     }
 
@@ -62,7 +61,7 @@ public:
   };
 
 private:
-  tf2_ros::Buffer* tf_;
+  tf2_ros::Buffer * tf_;
   std::string base_frame_, odom_frame_;
 };
 

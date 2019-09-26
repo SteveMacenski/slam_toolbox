@@ -50,7 +50,7 @@ struct PosedScan
 // object containing a vertex pointer and an updated score
 struct ScoredVertex
 {
-  ScoredVertex(karto::Vertex<karto::LocalizedRangeScan>* vertex, double score)
+  ScoredVertex(karto::Vertex<karto::LocalizedRangeScan> * vertex, double score)
   : vertex_(vertex), score_(score)
   {
   }
@@ -60,12 +60,12 @@ struct ScoredVertex
     return score_;
   }
 
-  karto::Vertex<karto::LocalizedRangeScan>* GetVertex()
+  karto::Vertex<karto::LocalizedRangeScan> * GetVertex()
   {
     return vertex_;
   }
 
-  karto::Vertex<karto::LocalizedRangeScan>* vertex_;
+  karto::Vertex<karto::LocalizedRangeScan> * vertex_;
   double score_;
 };
 

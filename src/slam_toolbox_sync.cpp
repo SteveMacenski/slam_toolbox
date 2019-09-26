@@ -72,6 +72,7 @@ void SynchronousSlamToolbox::laserCallback(
   karto::Pose2 pose;
   if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
   {
+    ROS_WARN("Failed to compute odom pose");
     return;
   }
 

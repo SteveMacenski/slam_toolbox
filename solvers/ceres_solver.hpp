@@ -15,7 +15,6 @@
 
 // god... getting this to work in ROS2 was a real pain
 #include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
-#include "../lib/karto_sdk/include/karto_sdk/Karto.h"
 
 #include <ceres/ceres.h>
 #include <ceres/local_parameterization.h>

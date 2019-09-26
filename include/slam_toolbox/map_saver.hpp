@@ -20,7 +20,8 @@
 #define SLAM_TOOLBOX_MAP_SAVER_H_
 
 #include <string>
-#include "ros/ros.h"
+#include <chrono>
+#include "rclcpp/rclcpp.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
 
 namespace map_saver
@@ -30,17 +31,18 @@ namespace map_saver
 class MapSaver
 {
 public:
-  MapSaver(ros::NodeHandle& nh, const std::string& service_name);
+  MapSaver(rclcpp::Node::SharedPtr & node, const std::string & service_name);
 
 protected:
-  bool saveMapCallback(slam_toolbox::SaveMap::Request& req,
-                       slam_toolbox::SaveMap::Response& resp);
-  void mapCallback(const nav_msgs::OccupancyGrid& msg);
+  bool saveMapCallback(
+  	const std::shared_ptr<rmw_request_id_t> request_header,
+  	const std::shared_ptr<slam_toolbox::srv::SaveMap::Request> request,
+  	std::shared_ptr<slam_toolbox::srv::SaveMap::Response> response);
 
 private:
-  ros::NodeHandle nh_;
-  ros::ServiceServer server_;
-  ros::Subscriber sub_;
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Service<slam_toolbox::srv::SaveMap>::SharedPtr server_;
+  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sub_;
   std::string service_name_, map_name_;
   bool received_map_;
 };
