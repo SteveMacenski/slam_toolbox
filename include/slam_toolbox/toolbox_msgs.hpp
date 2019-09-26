@@ -19,26 +19,25 @@
 #ifndef SLAM_TOOLBOX_TOOLBOX_MSGS_H_
 #define SLAM_TOOLBOX_TOOLBOX_MSGS_H_
 
-#include <nav_msgs/MapMetaData.h>
-#include <sensor_msgs/LaserScan.h>
-#include <nav_msgs/GetMap.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include "nav_msgs/msg/map_meta_data.hpp"
+#include "sensor_msgs/msg/laser_scan.hpp"
+#include "nav_msgs/srv/get_map.hpp"
+#include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 
-#include <visualization_msgs/MarkerArray.h>
-#include <visualization_msgs/InteractiveMarker.h>
-#include <visualization_msgs/InteractiveMarkerControl.h> 
-#include <visualization_msgs/InteractiveMarkerFeedback.h>
+#include "visualization_msgs/msg/marker_array.hpp"
+#include "visualization_msgs/msg/interactive_marker.hpp"
+#include "visualization_msgs/msg/interactive_marker_control.hpp" 
+#include "visualization_msgs/msg/interactive_marker_feedback.hpp"
 
-#include "slam_toolbox/Pause.h"
-#include "slam_toolbox/ClearQueue.h"
-#include "slam_toolbox/ToggleInteractive.h"
-#include "slam_toolbox/Clear.h"
-#include "slam_toolbox/ClearQueue.h"
-#include "slam_toolbox/SaveMap.h"
-#include "slam_toolbox/LoopClosure.h"
-#include "slam_toolbox/SerializePoseGraph.h"
-#include "slam_toolbox/DeserializePoseGraph.h"
-#include "slam_toolbox/MergeMaps.h"
-#include "slam_toolbox/AddSubmap.h"
+#include "slam_toolbox/srv/pause.hpp"
+#include "slam_toolbox/srv/clear_queue.hpp"
+#include "slam_toolbox/srv/toggle_interactive.hpp"
+#include "slam_toolbox/srv/clear.hpp"
+#include "slam_toolbox/srv/save_map.hpp"
+#include "slam_toolbox/srv/loop_closure.hpp"
+#include "slam_toolbox/srv/serialize_pose_graph.hpp"
+#include "slam_toolbox/srv/deserialize_pose_graph.hpp"
+#include "slam_toolbox/srv/merge_maps.hpp"
+#include "slam_toolbox/srv/add_submap.hpp"
 
 #endif //SLAM_TOOLBOX_TOOLBOX_MSGS_H_

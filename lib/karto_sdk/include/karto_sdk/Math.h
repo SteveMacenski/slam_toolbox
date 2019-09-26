@@ -22,7 +22,7 @@
 #include <math.h>
 #include <limits>
 
-#include <karto_sdk/Types.h>
+#include "Types.h"
 
 namespace karto
 {

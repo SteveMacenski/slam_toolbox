@@ -6,10 +6,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++17")
 
-#karto_sdk lib
-set(BUILD_SHARED_LIBS ON)
-add_subdirectory(lib/karto_sdk)
-
 find_package(ament_cmake REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -28,6 +24,10 @@ find_package(rosidl_default_generators REQUIRED)
 find_package(nav2_map_server REQUIRED)
 #find_package(rviz2 REQUIRED)
 #find_package(interactive_markers REQUIRED)
+
+#karto_sdk lib
+set(BUILD_SHARED_LIBS ON)
+add_subdirectory(lib/karto_sdk)
 
 set(dependencies
   rclcpp
@@ -117,15 +117,15 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 
 #### Ceres Plugin
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
-ament_target_dependencies(ceres_solver_plugin
-  ${dependencies}
-)
+ament_target_dependencies(ceres_solver_plugin ${dependencies})
 target_link_libraries(ceres_solver_plugin ${CERES_INCLUDE_DIRS}
                                           ${CERES_LIBRARIES}
                                           ${Boost_LIBRARIES}
                                           ${TBB_LIBRARIES}
-                                          ${karto_LIBRARIES}
+                                          karto
 )
+rosidl_target_interfaces(ceres_solver_plugin ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
 
 #### Tool lib for mapping
 #add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)

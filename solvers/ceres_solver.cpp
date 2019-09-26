@@ -4,8 +4,6 @@
  */
 
 #include "ceres_solver.hpp"
-#include <karto_sdk/Karto.h>
-
 #include <pluginlib/class_list_macros.hpp>
 
 PLUGINLIB_EXPORT_CLASS(solver_plugins::CeresSolver, karto::ScanSolver)
@@ -24,20 +22,25 @@ CeresSolver::CeresSolver() :
 }
 
 /*****************************************************************************/
-CeresSolver::Configure(rclcpp::Node::SharedPtr & node)
+void CeresSolver::Configure(rclcpp::Node::SharedPtr & node)
 /*****************************************************************************/
 {
   node_ = node;
 
   std::string solver_type, preconditioner_type, dogleg_type,
     trust_strategy, loss_fn, mode;
-  solver_type = node->declare_parameter("ceres_linear_solver");
-  preconditioner_type = node->declare_parameter("ceres_preconditioner");
-  dogleg_type = node->declare_parameter("ceres_dogleg_type");
-  trust_strategy = node->declare_parameter("ceres_trust_strategy");
-  loss_fn = node->declare_parameter("ceres_loss_function");
-  mode = node->declare_parameter("mode");
-  debug_logging_ = node->declare_parameter("debug_logging");
+  solver_type = node->declare_parameter("ceres_linear_solver",
+    std::string("SPARSE_NORMAL_CHOLESKY"));
+  preconditioner_type = node->declare_parameter("ceres_preconditioner",
+    std::string("JACOBI"));
+  dogleg_type = node->declare_parameter("ceres_dogleg_type",
+    std::string("TRADITIONAL_DOGLEG"));
+  trust_strategy = node->declare_parameter("ceres_trust_strategy",
+    std::string("LM"));
+  loss_fn = node->declare_parameter("ceres_loss_function",
+    std::string("None"));
+  mode = node->declare_parameter("mode", std::string("mapping"));
+  debug_logging_ = node->declare_parameter("debug_logging", false);
 
   corrections_.clear();
   first_node_ = nodes_->end();
@@ -64,7 +67,7 @@ CeresSolver::Configure(rclcpp::Node::SharedPtr & node)
   options_.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
   if (solver_type == "SPARSE_SCHUR")
   {
-    RRCLCPP_INFO(node_->get_logger(),
+    RCLCPP_INFO(node_->get_logger(),
       "CeresSolver: Using SPARSE_SCHUR solver.");
     options_.linear_solver_type = ceres::SPARSE_SCHUR;
   }
@@ -208,7 +211,6 @@ void CeresSolver::Compute()
     was_constant_set_ = !was_constant_set_;
   }
 
-  const ros::Time start_time = ros::Time::now();
   ceres::Solver::Summary summary;
   ceres::Solve(options_, problem_, &summary);
   if (debug_logging_)

@@ -22,13 +22,13 @@
 #include <map>
 #include <vector>
 
-#include "tf/transform_datatypes.hpp"
-#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/buffer.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
-#include "sensor_msgs/msg/laser_scan.hpp"
-#include "geometry_msgs/pose_with_covariance_stamped.hpp"
+#include "tf2/transform_datatypes.h"
+
+// god... getting this to work in ROS2 was a real pain
+#include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
 #include "slam_toolbox/toolbox_msgs.hpp"
-#include "karto_sdk/Mapper.h"
 
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
@@ -39,11 +39,11 @@ namespace toolbox_types
 // object containing a scan pointer and a position
 struct PosedScan
 {
-  PosedScan(sensor_msgs::LaserScan::ConstPtr scan_in, karto::Pose2 pose_in) :
+  PosedScan(sensor_msgs::msg::LaserScan::SharedPtr scan_in, karto::Pose2 pose_in) :
              scan(scan_in), pose(pose_in) 
   {
   }
-  sensor_msgs::LaserScan::ConstPtr scan;
+  sensor_msgs::msg::LaserScan::SharedPtr scan;
   karto::Pose2 pose;
 };
 
@@ -119,7 +119,7 @@ typedef std::map<karto::Name, std::map<int, karto::Vertex<karto::LocalizedRangeS
 typedef std::vector<karto::Edge<karto::LocalizedRangeScan>*> EdgeVector;
 typedef std::map<int, karto::Vertex<karto::LocalizedRangeScan>*> ScanMap;
 typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> ScanVector;
-typedef slam_toolbox::DeserializePoseGraph::Request procType;
+typedef slam_toolbox::srv::DeserializePoseGraph::Request procType;
 
 typedef std::unordered_map<int, Eigen::Vector3d>::iterator GraphIterator;
 typedef std::unordered_map<int, Eigen::Vector3d>::const_iterator ConstGraphIterator;

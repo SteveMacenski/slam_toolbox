@@ -31,7 +31,7 @@
 #include <algorithm>
 #include <chrono>
 
-#include <karto_sdk/Karto.h>
+#include "Karto.h"
 #include <rclcpp/rclcpp.hpp>
 
 #include "nanoflann_adaptors.h"

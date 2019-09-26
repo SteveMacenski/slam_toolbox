@@ -12,7 +12,7 @@ find_package(TBB REQUIRED)
 
 set(dependencies
   rclcpp
- )
+)
 
 add_compile_options(-std=c++17)
 

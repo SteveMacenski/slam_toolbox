@@ -13,7 +13,9 @@
 #include <unordered_map>
 #include <utility>
 
-#include <karto_sdk/Mapper.h>
+// god... getting this to work in ROS2 was a real pain
+#include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
+#include "../lib/karto_sdk/include/karto_sdk/Karto.h"
 
 #include <ceres/ceres.h>
 #include <ceres/local_parameterization.h>
@@ -37,7 +39,6 @@ public:
 public:
   virtual const karto::ScanSolver::IdPoseVector& GetCorrections() const; //Get corrected poses after optimization
 
-  template <typename T>
   virtual void Compute(); //Solve
   virtual void Clear(); //Resets the corrections
   virtual void Reset(); //Resets the solver plugin clean

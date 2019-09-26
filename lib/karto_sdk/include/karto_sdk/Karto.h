@@ -53,8 +53,8 @@
 #include <Poco/Mutex.h>
 #endif
 
-#include <karto_sdk/Math.h>
-#include <karto_sdk/Macros.h>
+#include "Math.h"
+#include "Macros.h"
 
 #define KARTO_Object(name) \
   virtual const char* GetClassName() const { return #name; } \
