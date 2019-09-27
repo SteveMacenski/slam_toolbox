@@ -25,7 +25,7 @@ namespace loop_closure_assistant
 
 /*****************************************************************************/
 LoopClosureAssistant::LoopClosureAssistant(
-  rclcpp::Node::SharedPtr & node,
+  rclcpp::Node::SharedPtr node,
   karto::Mapper * mapper,
   laser_utils::ScanHolder * scan_holder,
   PausedState & state, ProcessType & processor_type)

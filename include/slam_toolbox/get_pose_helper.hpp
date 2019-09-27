@@ -37,7 +37,7 @@ public:
   {
   };
 
-  bool getOdomPose(karto::Pose2 & karto_pose, const ros::Time & t)
+  bool getOdomPose(karto::Pose2 & karto_pose, const rclcpp::Time & t)
   {
     geometry_msgs::msg::TransformStamped base_ident, odom_pose;
     base_ident.header.stamp = t;

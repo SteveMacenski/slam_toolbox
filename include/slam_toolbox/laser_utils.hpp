@@ -71,7 +71,7 @@ private:
 class LaserAssistant
 {
 public:
-  LaserAssistant(rclcpp::Node::SharedPtr & node, tf2_ros::Buffer * tf, const std::string & base_frame);
+  LaserAssistant(rclcpp::Node::SharedPtr node, tf2_ros::Buffer * tf, const std::string & base_frame);
   ~LaserAssistant();
   LaserMetadata toLaserMetadata(sensor_msgs::msg::LaserScan scan);
 

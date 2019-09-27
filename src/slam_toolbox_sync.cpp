@@ -65,7 +65,7 @@ void SynchronousSlamToolbox::run()
 
 /*****************************************************************************/
 void SynchronousSlamToolbox::laserCallback(
-  const sensor_msgs::LaserScan::ConstPtr& scan)
+  const sensor_msgs::LaserScan::ConstSharedPtr& scan)
 /*****************************************************************************/
 {
   // no odom info

@@ -66,7 +66,7 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
 
 /*****************************************************************************/
 void LifelongSlamToolbox::laserCallback(
-  const sensor_msgs::LaserScan::ConstPtr& scan)
+  const sensor_msgs::LaserScan::ConstSharedPtr& scan)
 /*****************************************************************************/
 {
   // no odom info

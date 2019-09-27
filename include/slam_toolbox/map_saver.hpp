@@ -31,7 +31,7 @@ namespace map_saver
 class MapSaver
 {
 public:
-  MapSaver(rclcpp::Node::SharedPtr & node, const std::string & service_name);
+  MapSaver(rclcpp::Node::SharedPtr node, const std::string & service_name);
 
 protected:
   bool saveMapCallback(

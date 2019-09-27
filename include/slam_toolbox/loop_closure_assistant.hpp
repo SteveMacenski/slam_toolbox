@@ -43,7 +43,7 @@ using namespace ::toolbox_types;
 class LoopClosureAssistant
 {
 public:
-  LoopClosureAssistant(rclcpp::Node::SharedPtr & node, karto::Mapper * mapper, laser_utils::ScanHolder * scan_holder, PausedState & state, ProcessType & processor_type);
+  LoopClosureAssistant(rclcpp::Node::SharedPtr node, karto::Mapper * mapper, laser_utils::ScanHolder * scan_holder, PausedState & state, ProcessType & processor_type);
 
   // void clearMovedNodes();
   // void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
