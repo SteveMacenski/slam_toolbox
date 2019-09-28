@@ -136,51 +136,50 @@ target_link_libraries(toolbox_common karto ${Boost_LIBRARIES})
 rosidl_target_interfaces(toolbox_common ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #### Mapping executibles
-#add_library(async_slam_toolbox src/slam_toolbox_async.cpp)
-#target_link_libraries(async_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
-#add_executable(async_slam_toolbox_node src/slam_toolbox_async_node.cpp )
-#target_link_libraries(async_slam_toolbox_node async_slam_toolbox)
+add_library(async_slam_toolbox src/slam_toolbox_async.cpp)
+target_link_libraries(async_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
+add_executable(async_slam_toolbox_node src/slam_toolbox_async_node.cpp )
+target_link_libraries(async_slam_toolbox_node async_slam_toolbox)
 
-#add_library(sync_slam_toolbox src/slam_toolbox_sync.cpp)
-#target_link_libraries(sync_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
-#add_executable(sync_slam_toolbox_node src/slam_toolbox_sync_node.cpp )
-#target_link_libraries(sync_slam_toolbox_node sync_slam_toolbox)
+add_library(sync_slam_toolbox src/slam_toolbox_sync.cpp)
+target_link_libraries(sync_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
+add_executable(sync_slam_toolbox_node src/slam_toolbox_sync_node.cpp )
+target_link_libraries(sync_slam_toolbox_node sync_slam_toolbox)
 
-#add_library(localization_slam_toolbox src/slam_toolbox_localization.cpp)
-#target_link_libraries(localization_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
-#add_executable(localization_slam_toolbox_node src/slam_toolbox_localization_node.cpp )
-#target_link_libraries(localization_slam_toolbox_node localization_slam_toolbox)
+add_library(localization_slam_toolbox src/slam_toolbox_localization.cpp)
+target_link_libraries(localization_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
+add_executable(localization_slam_toolbox_node src/slam_toolbox_localization_node.cpp )
+target_link_libraries(localization_slam_toolbox_node localization_slam_toolbox)
 
-#add_library(lifelong_slam_toolbox src/experimental/slam_toolbox_lifelong.cpp)
-#target_link_libraries(lifelong_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
-#add_executable(lifelong_slam_toolbox_node src/experimental/slam_toolbox_lifelong_node.cpp )
-#target_link_libraries(lifelong_slam_toolbox_node lifelong_slam_toolbox)
+add_library(lifelong_slam_toolbox src/experimental/slam_toolbox_lifelong.cpp)
+target_link_libraries(lifelong_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
+add_executable(lifelong_slam_toolbox_node src/experimental/slam_toolbox_lifelong_node.cpp )
+target_link_libraries(lifelong_slam_toolbox_node lifelong_slam_toolbox)
 
 #### Merging maps tool
-#add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
-#target_link_libraries(merge_maps_kinematic toolbox_common)
+add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
+target_link_libraries(merge_maps_kinematic toolbox_common)
 
 #### testing
-#if(BUILD_TESTING)
-#  #ament_lint_auto_find_test_dependencies()
-#  find_package(ament_cmake_gtest REQUIRED)
-#  include_directories(test)
-#  ament_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
-#  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
-#endif()
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  include_directories(test)
+  ament_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
+  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
+endif()
 
 #### Install
-install(TARGETS #toolbox_common
-                #async_slam_toolbox
-                #async_slam_toolbox_node
-                #sync_slam_toolbox
-                #sync_slam_toolbox_node
-                #localization_slam_toolbox
-                #localization_slam_toolbox_node
-                #lifelong_slam_toolbox
-                #lifelong_slam_toolbox_node
+install(TARGETS toolbox_common
+                async_slam_toolbox
+                async_slam_toolbox_node
+                sync_slam_toolbox
+                sync_slam_toolbox_node
+                localization_slam_toolbox
+                localization_slam_toolbox_node
+                lifelong_slam_toolbox
+                lifelong_slam_toolbox_node
                 ceres_solver_plugin
-                #merge_maps_kinematic
+                merge_maps_kinematic
                 #SlamToolboxPlugin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
@@ -204,11 +203,11 @@ install(FILES solver_plugins.xml rviz_plugins.xml
 )
 
 ament_export_include_directories(include)
-ament_export_libraries(#lifelong_slam_toolbox
-                       #localization_slam_toolbox
-                       #sync_slam_toolbox
-                       #async_slam_toolbox
-                       #toolbox_common
+ament_export_libraries(lifelong_slam_toolbox
+                       localization_slam_toolbox
+                       sync_slam_toolbox
+                       async_slam_toolbox
+                       toolbox_common
                        #SlamToolboxPlugin
                        ceres_solver_plugin)
 ament_export_dependencies(${dependencies})
