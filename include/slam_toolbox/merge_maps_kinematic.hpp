@@ -28,9 +28,9 @@
 #include <fstream>
 #include <boost/thread.hpp>
 
-#include "ros/ros.h"
-#include "interactive_markers/interactive_marker_server.h"
-#include "interactive_markers/menu_handler.h"
+#include "rclcpp/rclcpp.hpp"
+//#include "interactive_markers/interactive_marker_server.h"
+//#include "interactive_markers/menu_handler.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/message_filter.h"
@@ -38,14 +38,15 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2/utils.h"
 
-#include "karto_sdk/Mapper.h"
+#include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
 #include "slam_toolbox/toolbox_types.hpp"
+#include "slam_toolbox/toolbox_msgs.hpp"
 #include "slam_toolbox/laser_utils.hpp"
 #include "slam_toolbox/visualization_utils.hpp"
 
 using namespace toolbox_types;
 
-class MergeMapsKinematic
+class MergeMapsKinematic : public rclcpp::Node
 {
 typedef std::vector<karto::LocalizedRangeScanVector>::iterator LocalizedRangeScansVecIt;
 typedef karto::LocalizedRangeScanVector::iterator LocalizedRangeScansIt;
@@ -60,10 +61,10 @@ private:
   void setup();
 
   // callback
-  bool mergeMapCallback(slam_toolbox::MergeMaps::Request& req, slam_toolbox::MergeMaps::Response& resp);
-  bool addSubmapCallback(slam_toolbox::AddSubmap::Request& req, slam_toolbox::AddSubmap::Response& resp);
-  void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-  void kartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map);
+  bool mergeMapCallback(const std::shared_ptr<rmw_request_id_t> request_header, const std::shared_ptr<slam_toolbox::srv::MergeMaps::Request> req, std::shared_ptr<slam_toolbox::srv::MergeMaps::Response> resp);
+  bool addSubmapCallback(const std::shared_ptr<rmw_request_id_t> request_header, const std::shared_ptr<slam_toolbox::srv::AddSubmap::Request> req, std::shared_ptr<slam_toolbox::srv::AddSubmap::Response> resp);
+  void processInteractiveFeedback(const visualization_msgs::msg::InteractiveMarkerFeedback::SharedPtr feedback);
+  void kartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::srv::GetMap::Response& map);
   void transformScan(LocalizedRangeScansIt iter, tf2::Transform& submap_correction);
 
   //apply transformation to correct pose
@@ -71,9 +72,10 @@ private:
   karto::Vector2<kt_double> applyCorrection(const karto::Vector2<kt_double>&  pose, const tf2::Transform& submap_correction);
 
   // ROS-y-ness
-  ros::NodeHandle nh_;
-  std::vector<ros::Publisher> sstS_, sstmS_;
-  ros::ServiceServer ssMap_, ssSubmap_;
+  std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData> > > sstmS_;
+  std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid> > > sstS_;
+  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::MergeMaps> > ssMap_;
+  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::AddSubmap> > ssSubmap_;
 
   //karto bookkeeping
   std::map<std::string, laser_utils::LaserMetadata> lasers_;
@@ -83,7 +85,7 @@ private:
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
 
   // visualization
-  std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
+  // std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
 
   // state
   std::map<int, Eigen::Vector3d> submap_locations_;
