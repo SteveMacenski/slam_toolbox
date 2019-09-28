@@ -89,18 +89,18 @@ protected:
   void loadPoseGraphByParams();
 
   // functional bits
-  karto::LaserRangeFinder * getLaser(const sensor_msgs::msg::LaserScan::SharedPtr & scan);
-  virtual karto::LocalizedRangeScan * addScan(karto::LaserRangeFinder * laser, const sensor_msgs::msg::LaserScan::SharedPtr & scan,
+  karto::LaserRangeFinder * getLaser(const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan);
+  virtual karto::LocalizedRangeScan * addScan(karto::LaserRangeFinder * laser, const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
     karto::Pose2 & karto_pose);
   karto::LocalizedRangeScan * addScan(karto::LaserRangeFinder * laser, PosedScan & scanWPose);
   bool updateMap();
   tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2 & pose,
     const karto::Pose2 & karto_pose, const rclcpp::Time & t, const bool & update_reprocessing_transform);
   karto::LocalizedRangeScan * getLocalizedRangeScan(karto::LaserRangeFinder * laser,
-    const sensor_msgs::msg::LaserScan::SharedPtr & scan,
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
     karto::Pose2 & karto_pose);
   bool shouldStartWithPoseGraph(std::string & filename, geometry_msgs::msg::Pose2D & pose, bool & start_at_dock);
-  bool shouldProcessScan(const sensor_msgs::msg::LaserScan::SharedPtr & scan, const karto::Pose2 & pose);
+  bool shouldProcessScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan, const karto::Pose2 & pose);
 
   // pausing bits
   bool isPaused(const PausedApplication & app);

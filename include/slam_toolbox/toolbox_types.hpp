@@ -39,11 +39,11 @@ namespace toolbox_types
 // object containing a scan pointer and a position
 struct PosedScan
 {
-  PosedScan(sensor_msgs::msg::LaserScan::SharedPtr scan_in, karto::Pose2 pose_in) :
+  PosedScan(sensor_msgs::msg::LaserScan::ConstSharedPtr scan_in, karto::Pose2 pose_in) :
              scan(scan_in), pose(pose_in) 
   {
   }
-  sensor_msgs::msg::LaserScan::SharedPtr scan;
+  sensor_msgs::msg::LaserScan::ConstSharedPtr scan;
   karto::Pose2 pose;
 };
 

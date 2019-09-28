@@ -328,7 +328,7 @@ bool SlamToolbox::shouldStartWithPoseGraph(std::string & filename,
 
 /*****************************************************************************/
 karto::LaserRangeFinder * SlamToolbox::getLaser(const
-  sensor_msgs::msg::LaserScan::SharedPtr & scan)
+  sensor_msgs::msg::LaserScan::ConstSharedPtr & scan)
 /*****************************************************************************/
 {
   const std::string & frame = scan->header.frame_id;
@@ -442,7 +442,7 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
 /*****************************************************************************/
 karto::LocalizedRangeScan * SlamToolbox::getLocalizedRangeScan(
   karto::LaserRangeFinder * laser,
-  const sensor_msgs::msg::LaserScan::SharedPtr & scan,
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
   karto::Pose2 & karto_pose)
 /*****************************************************************************/
 {
@@ -465,7 +465,7 @@ karto::LocalizedRangeScan * SlamToolbox::getLocalizedRangeScan(
 
 /*****************************************************************************/
 bool SlamToolbox::shouldProcessScan(
-  const sensor_msgs::msg::LaserScan::SharedPtr & scan,
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
   const karto::Pose2 & pose)
 /*****************************************************************************/
 {
@@ -531,7 +531,7 @@ karto::LocalizedRangeScan * SlamToolbox::addScan(
 /*****************************************************************************/
 karto::LocalizedRangeScan * SlamToolbox::addScan(
   karto::LaserRangeFinder * laser,
-  const sensor_msgs::msg::LaserScan::SharedPtr & scan, 
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan, 
   karto::Pose2 & karto_pose)
 /*****************************************************************************/
 {  

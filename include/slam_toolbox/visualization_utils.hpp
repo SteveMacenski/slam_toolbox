@@ -26,7 +26,7 @@ inline visualization_msgs::msg::Marker toMarker(
   const std::string & frame,
   const std::string & ns,
   const double & scale,
-  rclcpp::Node::SharedPtr & node)
+  rclcpp::Node::SharedPtr node)
 {
   visualization_msgs::msg::Marker marker;
 
