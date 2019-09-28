@@ -22,30 +22,44 @@ namespace slam_toolbox
 {
 
 /*****************************************************************************/
-void LifelongSlamToolbox::checkIsNotNormalized(const double& value)
+void LifelongSlamToolbox::checkIsNotNormalized(const double & value)
 /*****************************************************************************/
 {
   if (value < 0.0 || value > 1.0)
   {
-    ROS_FATAL("All stores and scales must be in range [0, 1].");
+    RCLCPP_FATAL(get_logger(),
+      "All stores and scales must be in range [0, 1].");
     exit(-1);
   }
 }
 
 /*****************************************************************************/
-LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
-: SlamToolbox(nh)
+LifelongSlamToolbox::LifelongSlamToolbox()
+: SlamToolbox()
 /*****************************************************************************/
 {
-  loadPoseGraphByParams(nh);
-  nh.param("lifelong_search_use_tree", use_tree_, false);
-  nh.param("lifelong_minimum_score", iou_thresh_, 0.10);
-  nh.param("lifelong_iou_match", iou_match_, 0.85);
-  nh.param("lifelong_node_removal_score", removal_score_, 0.10);
-  nh.param("lifelong_overlap_score_scale", overlap_scale_, 0.5);
-  nh.param("lifelong_constraint_multiplier", constraint_scale_, 0.05);
-  nh.param("lifelong_nearby_penalty", nearby_penalty_, 0.001);
-  nh.param("lifelong_candidates_scale", candidates_scale_, 0.03);
+  loadPoseGraphByParams();
+  use_tree_ = false;
+  use_tree_ = this->declare_parameter("lifelong_search_use_tree", use_tree_);
+  iou_thresh_ =  0.10;
+  iou_thresh_ = this->declare_parameter("lifelong_minimum_score", iou_thresh_);
+  iou_match_ =  0.85;
+  iou_match_ = this->declare_parameter("lifelong_iou_match", iou_match_);
+  removal_score_ =  0.10;
+  removal_score_ = this->declare_parameter("lifelong_node_removal_score",
+    removal_score_);
+  overlap_scale_ =  0.5;
+  overlap_scale_ = this->declare_parameter("lifelong_overlap_score_scale",
+    overlap_scale_);
+  constraint_scale_ =  0.05;
+  constraint_scale_ = this->declare_parameter("lifelong_constraint_multiplier",
+    constraint_scale_);
+  nearby_penalty_ =  0.001;
+  nearby_penalty_ = this->declare_parameter("lifelong_nearby_penalty",
+    nearby_penalty_);
+  candidates_scale_ =  0.03;
+  candidates_scale_ = this->declare_parameter("lifelong_candidates_scale",
+    candidates_scale_);
 
   checkIsNotNormalized(iou_thresh_);
   checkIsNotNormalized(constraint_scale_);
@@ -55,7 +69,7 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
   checkIsNotNormalized(nearby_penalty_);
   checkIsNotNormalized(candidates_scale_);
 
-  ROS_WARN("Lifelong mapping mode in SLAM Toolbox is considered "
+  RCLCPP_WARN(get_logger(), "Lifelong mapping mode in SLAM Toolbox is considered "
     "experimental and should be understood before proceeding. Please visit: "
     "https://github.com/SteveMacenski/slam_toolbox/wiki/"
     "Experimental-Lifelong-Mapping-Node for more information.");
@@ -66,23 +80,23 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
 
 /*****************************************************************************/
 void LifelongSlamToolbox::laserCallback(
-  const sensor_msgs::LaserScan::ConstSharedPtr& scan)
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
   // no odom info
   Pose2 pose;
   if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
   {
-    ROS_WARN("Failed to compute odom pose");
+    RCLCPP_WARN(get_logger(), "Failed to compute odom pose");
     return;
   }
 
   // ensure the laser can be used
-  LaserRangeFinder* laser = getLaser(scan);
+  LaserRangeFinder * laser = getLaser(scan);
 
   if(!laser)
   {
-    ROS_WARN_THROTTLE(5., "Failed to create laser device for"
+    RCLCPP_WARN(get_logger(), "Failed to create laser device for"
       " %s; discarding scan", scan->header.frame_id.c_str());
     return;
   }
@@ -91,21 +105,21 @@ void LifelongSlamToolbox::laserCallback(
   // LTS pseudo-localization mode. If want to add a scan, but not deleting a scan, add to local buffer?
   // LTS if (eval() && dont_add_more_scans) {addScan()} else {localization_add_scan()}
   // LTS if (eval() && ctr / total < add_rate_scans) {addScan()} else {localization_add_scan()}
-  karto::LocalizedRangeScan* range_scan = addScan(laser, scan, pose);
+  karto::LocalizedRangeScan * range_scan = addScan(laser, scan, pose);
   evaluateNodeDepreciation(range_scan);
   return;
 }
 
 /*****************************************************************************/
 void LifelongSlamToolbox::evaluateNodeDepreciation(
-  LocalizedRangeScan* range_scan)
+  LocalizedRangeScan * range_scan)
 /*****************************************************************************/
 {
   if (range_scan)
   {
     boost::mutex::scoped_lock lock(smapper_mutex_);
 
-    const BoundingBox2& bb = range_scan->GetBoundingBox();
+    const BoundingBox2 & bb = range_scan->GetBoundingBox();
     const Size2<double> bb_size = bb.GetSize();
     double radius = sqrt(bb_size.GetWidth()*bb_size.GetWidth() +
       bb_size.GetHeight()*bb_size.GetHeight()) / 2.0;
@@ -119,8 +133,9 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
     {
       if (it->GetScore() < removal_score_)
       {
-        ROS_INFO("Removing node %i from graph with score: %f and "
-          "old score: %f.", it->GetVertex()->GetObject()->GetUniqueId(),
+        RCLCPP_DEBUG(get_logger(), 
+          "Removing node %i from graph with score: %f and old score: %f.",
+          it->GetVertex()->GetObject()->GetUniqueId(),
           it->GetScore(), it->GetVertex()->GetScore());
         removeFromSlamGraph(it->GetVertex());
       }
@@ -136,7 +151,7 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
 
 /*****************************************************************************/
 Vertices LifelongSlamToolbox::FindScansWithinRadius(
-  LocalizedRangeScan* scan, const double& radius)
+  LocalizedRangeScan * scan, const double & radius)
 /*****************************************************************************/
 {
   // Using the tree will create a Kd-tree and find all neighbors in graph
@@ -159,12 +174,12 @@ Vertices LifelongSlamToolbox::FindScansWithinRadius(
 
 /*****************************************************************************/
 double LifelongSlamToolbox::computeObjectiveScore(
-  const double& intersect_over_union,
-  const double& area_overlap,
-  const double& reading_overlap,
-  const int& num_constraints,
-  const double& initial_score,
-  const int& num_candidates) const
+  const double & intersect_over_union,
+  const double & area_overlap,
+  const double & reading_overlap,
+  const int & num_constraints,
+  const double & initial_score,
+  const int & num_candidates) const
 /*****************************************************************************/
 {
   // We have some useful metrics. lets make a new score
@@ -205,7 +220,8 @@ double LifelongSlamToolbox::computeObjectiveScore(
   
   if (score > 1.0)
   {
-    ROS_ERROR("Objective function calculated for vertex score (%0.4f)"
+    RCLCPP_ERROR(get_logger(), 
+      "Objective function calculated for vertex score (%0.4f)"
       " greater than one! Thresholding to 1.0", score);
     return 1.0;
   }
@@ -215,13 +231,13 @@ double LifelongSlamToolbox::computeObjectiveScore(
 
 /*****************************************************************************/
 double LifelongSlamToolbox::computeScore(
-  LocalizedRangeScan* reference_scan,
-  Vertex<LocalizedRangeScan>* candidate,
-  const double& initial_score, const int& num_candidates)
+  LocalizedRangeScan * reference_scan,
+  Vertex<LocalizedRangeScan> * candidate,
+  const double & initial_score, const int & num_candidates)
 /*****************************************************************************/
 {
   double new_score = initial_score;
-  LocalizedRangeScan* candidate_scan = candidate->GetObject();
+  LocalizedRangeScan * candidate_scan = candidate->GetObject();
 
   // compute metrics for information loss normalized
   double iou = computeIntersectOverUnion(reference_scan, candidate_scan);
@@ -245,17 +261,16 @@ double LifelongSlamToolbox::computeScore(
                                initial_score,
                                num_candidates);
 
-  ROS_INFO("Metric Scores: Initial: %f, IOU: %f,"
+  RCLCPP_INFO(get_logger(), "Metric Scores: Initial: %f, IOU: %f,"
     " Area: %f, Num Con: %i, Reading: %f, outcome score: %f.",
     initial_score, iou, area_overlap, num_constraints, reading_overlap, score);
   return score;
 }
 
 /*****************************************************************************/
-ScoredVertices
-LifelongSlamToolbox::computeScores(
-  Vertices& near_scans,
-  LocalizedRangeScan* range_scan)
+ScoredVertices LifelongSlamToolbox::computeScores(
+  Vertices & near_scans,
+  LocalizedRangeScan * range_scan)
 /*****************************************************************************/
 {
   ScoredVertices scored_vertices;
@@ -295,7 +310,7 @@ LifelongSlamToolbox::computeScores(
 
 /*****************************************************************************/
 void LifelongSlamToolbox::removeFromSlamGraph(
-  Vertex<LocalizedRangeScan>* vertex)
+  Vertex<LocalizedRangeScan> * vertex)
 /*****************************************************************************/
 {
   smapper_->getMapper()->RemoveNodeFromGraph(vertex);
@@ -309,8 +324,8 @@ void LifelongSlamToolbox::removeFromSlamGraph(
 }
 
 /*****************************************************************************/
-void LifelongSlamToolbox::updateScoresSlamGraph(const double& score, 
-  Vertex<LocalizedRangeScan>* vertex)
+void LifelongSlamToolbox::updateScoresSlamGraph(const double & score, 
+  Vertex<LocalizedRangeScan> * vertex)
 /*****************************************************************************/
 {
   // Saved in graph so it persists between sessions and runs
@@ -319,24 +334,25 @@ void LifelongSlamToolbox::updateScoresSlamGraph(const double& score,
 
 /*****************************************************************************/
 bool LifelongSlamToolbox::deserializePoseGraphCallback(
-  slam_toolbox::DeserializePoseGraph::Request& req,
-  slam_toolbox::DeserializePoseGraph::Response& resp)
+  const std::shared_ptr<rmw_request_id_t> request_header, 
+  const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
+  std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp)
 /*****************************************************************************/
 {
-  if (req.match_type == procType::LOCALIZE_AT_POSE)
+  if (req->match_type == procType::LOCALIZE_AT_POSE)
   {
-    ROS_ERROR("Requested a localization deserialization "
+    RCLCPP_ERROR(get_logger(), "Requested a localization deserialization "
       "in non-localization mode.");
     return false;
   }
 
-  return SlamToolbox::deserializePoseGraphCallback(req, resp);
+  return SlamToolbox::deserializePoseGraphCallback(request_header, req, resp);
 }
 
 /*****************************************************************************/
 void LifelongSlamToolbox::computeIntersectBounds(
-  LocalizedRangeScan* s1, LocalizedRangeScan* s2,
-  double& x_l, double& x_u, double& y_l, double& y_u)
+  LocalizedRangeScan * s1, LocalizedRangeScan * s2,
+  double & x_l, double & x_u, double & y_l, double & y_u)
 /*****************************************************************************/
 {
   Size2<double> bb1 = s1->GetBoundingBox().GetSize();
@@ -362,8 +378,8 @@ void LifelongSlamToolbox::computeIntersectBounds(
 }
 
 /*****************************************************************************/
-double LifelongSlamToolbox::computeIntersect(LocalizedRangeScan* s1, 
-  LocalizedRangeScan* s2)
+double LifelongSlamToolbox::computeIntersect(LocalizedRangeScan * s1, 
+  LocalizedRangeScan * s2)
 /*****************************************************************************/
 {
   double x_l, x_u, y_l, y_u;
@@ -379,8 +395,8 @@ double LifelongSlamToolbox::computeIntersect(LocalizedRangeScan* s1,
 }
 
 /*****************************************************************************/
-double LifelongSlamToolbox::computeIntersectOverUnion(LocalizedRangeScan* s1, 
-  LocalizedRangeScan* s2)
+double LifelongSlamToolbox::computeIntersectOverUnion(LocalizedRangeScan * s1, 
+  LocalizedRangeScan * s2)
 /*****************************************************************************/
 {
   // this is a common metric in machine learning used to determine
@@ -399,8 +415,8 @@ double LifelongSlamToolbox::computeIntersectOverUnion(LocalizedRangeScan* s1,
 
 /*****************************************************************************/
 double LifelongSlamToolbox::computeAreaOverlapRatio(
-  LocalizedRangeScan* ref_scan, 
-  LocalizedRangeScan* candidate_scan)
+  LocalizedRangeScan * ref_scan, 
+  LocalizedRangeScan * candidate_scan)
 /*****************************************************************************/
 {
   // ref scan is new scan, candidate scan is potential for decay
@@ -417,8 +433,8 @@ double LifelongSlamToolbox::computeAreaOverlapRatio(
 
 /*****************************************************************************/
 double LifelongSlamToolbox::computeReadingOverlapRatio(
-  LocalizedRangeScan* ref_scan, 
-  LocalizedRangeScan* candidate_scan)
+  LocalizedRangeScan * ref_scan, 
+  LocalizedRangeScan * candidate_scan)
 /*****************************************************************************/
 {
   const PointVectorDouble& pts = candidate_scan->GetPointReadings(true);

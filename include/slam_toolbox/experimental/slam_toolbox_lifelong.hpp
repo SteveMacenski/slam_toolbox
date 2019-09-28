@@ -29,31 +29,32 @@ using namespace ::karto;
 class LifelongSlamToolbox : public SlamToolbox
 {
 public:
-  LifelongSlamToolbox(ros::NodeHandle& nh);
+  LifelongSlamToolbox();
   ~LifelongSlamToolbox() {};
 
   // computation metrics
-  double computeObjectiveScore(const double& intersect_over_union, const double& area_overlap, const double& reading_overlap, const int& num_constraints, const double& initial_score, const int& num_candidates) const;
-  static double computeIntersect(LocalizedRangeScan* s1, LocalizedRangeScan* s2);
-  static double computeIntersectOverUnion(LocalizedRangeScan* s1, LocalizedRangeScan* s2);
-  static double computeAreaOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan);
-  static double computeReadingOverlapRatio(LocalizedRangeScan* ref_scan, LocalizedRangeScan* candidate_scan);
-  static void computeIntersectBounds(LocalizedRangeScan* s1, LocalizedRangeScan* s2, double& x_l, double& x_u, double& y_l, double& y_u);
+  double computeObjectiveScore(const double & intersect_over_union, const double & area_overlap, const double & reading_overlap, const int & num_constraints, const double & initial_score, const int & num_candidates) const;
+  static double computeIntersect(LocalizedRangeScan * s1, LocalizedRangeScan * s2);
+  static double computeIntersectOverUnion(LocalizedRangeScan * s1, LocalizedRangeScan * s2);
+  static double computeAreaOverlapRatio(LocalizedRangeScan * ref_scan, LocalizedRangeScan * candidate_scan);
+  static double computeReadingOverlapRatio(LocalizedRangeScan * ref_scan, LocalizedRangeScan * candidate_scan);
+  static void computeIntersectBounds(LocalizedRangeScan * s1, LocalizedRangeScan * s2, double & x_l, double & x_u, double & y_l, double & y_u);
 
 protected:
   virtual void laserCallback(
-    const sensor_msgs::LaserScan::ConstSharedPtr& scan) override final;
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
   virtual bool deserializePoseGraphCallback(
-    slam_toolbox::DeserializePoseGraph::Request& req,
-    slam_toolbox::DeserializePoseGraph::Response& resp) override final;
+    const std::shared_ptr<rmw_request_id_t> request_header, 
+    const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override final;
 
-  void evaluateNodeDepreciation(LocalizedRangeScan* range_scan);
-  void removeFromSlamGraph(Vertex<LocalizedRangeScan>* vertex);
-  double computeScore(LocalizedRangeScan* reference_scan, Vertex<LocalizedRangeScan>* candidate, const double& initial_score, const int& num_candidates);
-  ScoredVertices computeScores(Vertices& near_scans, LocalizedRangeScan* range_scan);
-  Vertices FindScansWithinRadius(LocalizedRangeScan* scan, const double& radius);
-  void updateScoresSlamGraph(const double& score, Vertex<LocalizedRangeScan>* vertex);
-  void checkIsNotNormalized(const double& value);
+  void evaluateNodeDepreciation(LocalizedRangeScan * range_scan);
+  void removeFromSlamGraph(Vertex<LocalizedRangeScan> * vertex);
+  double computeScore(LocalizedRangeScan * reference_scan, Vertex<LocalizedRangeScan> * candidate, const double & initial_score, const int & num_candidates);
+  ScoredVertices computeScores(Vertices & near_scans, LocalizedRangeScan * range_scan);
+  Vertices FindScansWithinRadius(LocalizedRangeScan * scan, const double & radius);
+  void updateScoresSlamGraph(const double & score, Vertex<LocalizedRangeScan> * vertex);
+  void checkIsNotNormalized(const double & value);
 
   bool use_tree_;
   double iou_thresh_;
