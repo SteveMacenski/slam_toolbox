@@ -23,25 +23,26 @@ namespace slam_toolbox
 {
 
 /*****************************************************************************/
-SynchronousSlamToolbox::SynchronousSlamToolbox(ros::NodeHandle& nh)
-: SlamToolbox(nh)
+SynchronousSlamToolbox::SynchronousSlamToolbox()
+: SlamToolbox()
 /*****************************************************************************/
 {
-  ssClear_ = nh.advertiseService("clear_queue",
-    &SynchronousSlamToolbox::clearQueueCallback, this);
+  ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>("clear_queue",
+    std::bind(&SynchronousSlamToolbox::clearQueueCallback, this,
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   threads_.push_back(std::make_unique<boost::thread>(
     boost::bind(&SynchronousSlamToolbox::run, this)));
 
-  loadPoseGraphByParams(nh);
+  loadPoseGraphByParams();
 }
 
 /*****************************************************************************/
 void SynchronousSlamToolbox::run()
 /*****************************************************************************/
 {
-  ros::Rate r(100);
-  while(ros::ok())
+  rclcpp::Rate r(100);
+  while(rclcpp::ok())
   {
     if (!q_.empty() && !isPaused(PROCESSING))
     {
@@ -50,7 +51,7 @@ void SynchronousSlamToolbox::run()
 
       if (q_.size() > 10)
       {
-        ROS_WARN_THROTTLE(10., "Queue size has grown to: %i. "
+        RCLCPP_WARN(get_logger(), "Queue size has grown to: %i. "
           "Recommend stopping until message is gone if online mapping.",
           (int)q_.size());
       }
@@ -65,23 +66,23 @@ void SynchronousSlamToolbox::run()
 
 /*****************************************************************************/
 void SynchronousSlamToolbox::laserCallback(
-  const sensor_msgs::LaserScan::ConstSharedPtr& scan)
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
   // no odom info
   karto::Pose2 pose;
   if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
   {
-    ROS_WARN("Failed to compute odom pose");
+    RCLCPP_WARN(get_logger(), "Failed to compute odom pose");
     return;
   }
 
   // ensure the laser can be used
-  karto::LaserRangeFinder* laser = getLaser(scan);
+  karto::LaserRangeFinder * laser = getLaser(scan);
 
   if(!laser)
   {
-    ROS_WARN_THROTTLE(5., "SynchronousSlamToolbox: Failed to create laser"
+    RCLCPP_WARN(get_logger(), "SynchronousSlamToolbox: Failed to create laser"
       " device for %s; discarding scan", scan->header.frame_id.c_str());
     return;
   }
@@ -97,32 +98,35 @@ void SynchronousSlamToolbox::laserCallback(
 
 /*****************************************************************************/
 bool SynchronousSlamToolbox::clearQueueCallback(
-  slam_toolbox::ClearQueue::Request& req,
-  slam_toolbox::ClearQueue::Response& resp)
+  const std::shared_ptr<rmw_request_id_t> request_header, 
+  const std::shared_ptr<slam_toolbox::srv::ClearQueue::Request> req,
+  std::shared_ptr<slam_toolbox::srv::ClearQueue::Response> resp)
 /*****************************************************************************/
 {
-  ROS_INFO("SynchronousSlamToolbox: Clearing all queued scans to add to map.");
+  RCLCPP_INFO(get_logger(), "SynchronousSlamToolbox: "
+    "Clearing all queued scans to add to map.");
   while(!q_.empty())
   {
     q_.pop();
   }
-  resp.status = true;
-  return true;
+  resp->status = true;
+  return resp->status;
 }
 
 /*****************************************************************************/
 bool SynchronousSlamToolbox::deserializePoseGraphCallback(
-  slam_toolbox::DeserializePoseGraph::Request& req,
-  slam_toolbox::DeserializePoseGraph::Response& resp)
+  const std::shared_ptr<rmw_request_id_t> request_header, 
+  const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
+  std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp)
 /*****************************************************************************/
 {
-  if (req.match_type == procType::LOCALIZE_AT_POSE)
+  if (req->match_type == procType::LOCALIZE_AT_POSE)
   {
-    ROS_ERROR("Requested a localization deserialization "
+    RCLCPP_ERROR(get_logger(), "Requested a localization deserialization "
       "in non-localization mode.");
     return false;
   }
-  return SlamToolbox::deserializePoseGraphCallback(req, resp);
+  return SlamToolbox::deserializePoseGraphCallback(request_header, req, resp);
 }
 
 } // end namespace

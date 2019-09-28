@@ -28,18 +28,24 @@ namespace slam_toolbox
 class SynchronousSlamToolbox : public SlamToolbox
 {
 public:
-  SynchronousSlamToolbox(ros::NodeHandle& nh);
+  SynchronousSlamToolbox();
   ~SynchronousSlamToolbox() {};
   void run();
 
 protected:
-  virtual void laserCallback(const sensor_msgs::LaserScan::ConstSharedPtr& scan) override final;
-  bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req, slam_toolbox::ClearQueue::Response& resp);
-  virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
-    slam_toolbox::DeserializePoseGraph::Response& resp) override final;
+  virtual void laserCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
+  bool clearQueueCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header, 
+    const std::shared_ptr<slam_toolbox::srv::ClearQueue::Request> req,
+    std::shared_ptr<slam_toolbox::srv::ClearQueue::Response> resp);
+  virtual bool deserializePoseGraphCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header, 
+    const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override final;
 
   std::queue<PosedScan> q_;
-  ros::ServiceServer ssClear_;
+  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::ClearQueue> > ssClear_;
+
 };
 
 }
