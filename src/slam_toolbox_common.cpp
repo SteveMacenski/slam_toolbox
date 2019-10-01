@@ -167,6 +167,10 @@ void SlamToolbox::setROSInterfaces()
   tmp_val = this->declare_parameter("tf_buffer_duration", tmp_val);
   tf_ = std::make_unique<tf2_ros::Buffer>(this->get_clock(),
     tf2::durationFromSec(tmp_val));
+  // auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+  //   get_node_base_interface(),
+  //   get_node_timers_interface());
+  // tf_->setCreateTimerInterface(timer_interface);
   tfL_ = std::make_unique<tf2_ros::TransformListener>(*tf_);
   tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(shared_from_this());
 

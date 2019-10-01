@@ -29,33 +29,51 @@
 #include <QLabel>
 #include <QFrame>
 
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(slam_toolbox::SlamToolboxPlugin, rviz::Panel)
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(slam_toolbox::SlamToolboxPlugin, rviz_common::Panel)
 
 namespace slam_toolbox
 {
 
 /*****************************************************************************/
-SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
-    rviz::Panel(parent),
-    _thread(NULL),
-    _match_type(PROCESS_FIRST_NODE_CMT)
+SlamToolboxPlugin::SlamToolboxPlugin(
+  /*rviz_common::ros_integration::RosNodeAbstractionIface::WeakPtr rviz_ros_node,*/
+  /*rviz_common::VisualizationManager * manager,*/
+  QWidget * parent)
+:
+  Panel(parent),
+  _thread(NULL),
+  _match_type(PROCESS_FIRST_NODE_CMT)
 /*****************************************************************************/    
 {
-  ros::NodeHandle nh;
+  //ros_node_ = rviz_ros_node.lock()->get_raw_node();
+
   bool paused_measure = false, interactive = false;
-  nh.getParam("/slam_toolbox/paused_new_measurements", paused_measure);
-  nh.getParam("/slam_toolbox/interactive_mode", interactive);
-  _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/slam_toolbox/serialize_map");
-  _load_map = nh.serviceClient<slam_toolbox::DeserializePoseGraph>("/slam_toolbox/deserialize_map");
-  _clearChanges = nh.serviceClient<slam_toolbox::Clear>("/slam_toolbox/clear_changes");
-  _saveChanges = nh.serviceClient<slam_toolbox::LoopClosure>("/slam_toolbox/manual_loop_closure");
-  _saveMap = nh.serviceClient<slam_toolbox::SaveMap>("/slam_toolbox/save_map");
-  _clearQueue = nh.serviceClient<slam_toolbox::ClearQueue>("/slam_toolbox/clear_queue");
-  _interactive = nh.serviceClient<slam_toolbox::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
-  _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
-  _load_submap_for_merging = nh.serviceClient<slam_toolbox::AddSubmap>("/map_merging/add_submap");
-  _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/map_merging/merge_submaps");
+  // paused_measure = ros_node_->declare_parameter(
+  //   "/slam_toolbox/paused_new_measurements", paused_measure);
+  // interactive = ros_node_->declare_parameter(
+  //   "/slam_toolbox/interactive_mode", interactive);
+
+  // _serialize = ros_node_->create_client<slam_toolbox::srv::SerializePoseGraph>(
+  //   "/slam_toolbox/serialize_map");
+  // _load_map = ros_node_->create_client<slam_toolbox::srv::DeserializePoseGraph>(
+  //   "/slam_toolbox/deserialize_map");
+  // _clearChanges = ros_node_->create_client<slam_toolbox::srv::Clear>(
+  //   "/slam_toolbox/clear_changes");
+  // _saveChanges = ros_node_->create_client<slam_toolbox::srv::LoopClosure>(
+  //   "/slam_toolbox/manual_loop_closure");
+  // _saveMap = ros_node_->create_client<slam_toolbox::srv::SaveMap>(
+  //   "/slam_toolbox/save_map");
+  // _clearQueue = ros_node_->create_client<slam_toolbox::srv::ClearQueue>(
+  //   "/slam_toolbox/clear_queue");
+  // _interactive = ros_node_->create_client<slam_toolbox::srv::ToggleInteractive>(
+  //   "/slam_toolbox/toggle_interactive_mode");
+  // _pause_measurements = ros_node_->create_client<slam_toolbox::srv::Pause>(
+  //   "/slam_toolbox/pause_new_measurements");
+  // _load_submap_for_merging = ros_node_->create_client<slam_toolbox::srv::AddSubmap>(
+  //   "/map_merging/add_submap");
+  // _merge = ros_node_->create_client<slam_toolbox::srv::MergeMaps>(
+  //   "/map_merging/merge_submaps");
 
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();
@@ -214,7 +232,9 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
 
   setLayout(_vbox);
 
-  _thread = new std::thread(&SlamToolboxPlugin::updateCheckStateIfExternalChange, this);
+  _thread = 
+    new std::thread(
+    &SlamToolboxPlugin::updateCheckStateIfExternalChange, this);
 }
 
 /*****************************************************************************/
@@ -223,6 +243,7 @@ SlamToolboxPlugin::~SlamToolboxPlugin()
 {
   if (_thread)
   {
+    _thread->join();
     delete _thread;
   }
 }
@@ -231,11 +252,16 @@ SlamToolboxPlugin::~SlamToolboxPlugin()
 void SlamToolboxPlugin::SerializeMap()
 /*****************************************************************************/
 {
-  slam_toolbox::SerializePoseGraph msg;
-  msg.request.filename = _line3->text().toStdString();
-  if (!_serialize.call(msg))
+  auto request = std::make_shared<slam_toolbox::srv::SerializePoseGraph::Request>();
+  request->filename = _line3->text().toStdString();
+  auto result_future = _serialize->async_send_request(request);
+
+  if (rclcpp::spin_until_future_complete(ros_node_, result_future,
+    std::chrono::seconds(5)) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    ROS_WARN("SlamToolbox: Failed to serialize pose graph to file, is service running?");
+    RCLCPP_WARN(ros_node_->get_logger(), 
+      "SlamToolbox: Failed to serialize pose graph to file, is service running?");
   }
 }
 
@@ -243,36 +269,43 @@ void SlamToolboxPlugin::SerializeMap()
 void SlamToolboxPlugin::DeserializeMap()
 /*****************************************************************************/
 {
-  typedef slam_toolbox::DeserializePoseGraph::Request procType;
+  typedef slam_toolbox::srv::DeserializePoseGraph::Request procType;
 
-  slam_toolbox::DeserializePoseGraph msg;
-  msg.request.filename = _line4->text().toStdString();
+  auto request = std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Request>();
+  request->filename = _line4->text().toStdString();
   if (_match_type == PROCESS_FIRST_NODE_CMT)
   {
-    msg.request.match_type = procType::START_AT_FIRST_NODE;
+    request->match_type = procType::START_AT_FIRST_NODE;
   }
   else if (_match_type == PROCESS_NEAR_REGION_CMT)
   {
-    msg.request.match_type = procType::START_AT_GIVEN_POSE;
-    msg.request.initial_pose.x = std::stod(_line5->text().toStdString());
-    msg.request.initial_pose.y = std::stod(_line6->text().toStdString());
-    msg.request.initial_pose.theta = std::stod(_line7->text().toStdString());
+    request->match_type = procType::START_AT_GIVEN_POSE;
+    request->initial_pose.x = std::stod(_line5->text().toStdString());
+    request->initial_pose.y = std::stod(_line6->text().toStdString());
+    request->initial_pose.theta = std::stod(_line7->text().toStdString());
   }
   else if (_match_type == LOCALIZE_CMT)
   {
-    msg.request.match_type = procType::LOCALIZE_AT_POSE;
-    msg.request.initial_pose.x = std::stod(_line5->text().toStdString());
-    msg.request.initial_pose.y = std::stod(_line6->text().toStdString());
-    msg.request.initial_pose.theta = std::stod(_line7->text().toStdString());
+    request->match_type = procType::LOCALIZE_AT_POSE;
+    request->initial_pose.x = std::stod(_line5->text().toStdString());
+    request->initial_pose.y = std::stod(_line6->text().toStdString());
+    request->initial_pose.theta = std::stod(_line7->text().toStdString());
   }
   else
   {
-    ROS_WARN("No match type selected, cannot send request.");
+    RCLCPP_WARN(ros_node_->get_logger(),
+      "No match type selected, cannot send request.");
     return;
   }
-  if (!_load_map.call(msg))
+
+  auto result_future = _load_map->async_send_request(request);
+
+  if (rclcpp::spin_until_future_complete(ros_node_, result_future,
+    std::chrono::seconds(5)) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-     ROS_WARN("SlamToolbox: Failed to deserialize mapper object "
+     RCLCPP_WARN(ros_node_->get_logger(),
+      "SlamToolbox: Failed to deserialize mapper object "
       "from file, is service running?");
   }
 }
@@ -281,21 +314,31 @@ void SlamToolboxPlugin::DeserializeMap()
 void SlamToolboxPlugin::LoadSubmap()
 /*****************************************************************************/
 {
-  slam_toolbox::AddSubmap msg;
-  msg.request.filename = _line2->text().toStdString();
-  if (!_load_submap_for_merging.call(msg))
+  auto request = std::make_shared<slam_toolbox::srv::AddSubmap::Request>();
+  request->filename = _line2->text().toStdString();
+  auto result_future = _load_submap_for_merging->async_send_request(request);
+
+  if (rclcpp::spin_until_future_complete(ros_node_, result_future,
+    std::chrono::seconds(5)) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    ROS_WARN("MergeMaps: Failed to load pose graph from file, is service running?");
+    RCLCPP_WARN(ros_node_->get_logger(),
+      "MergeMaps: Failed to load pose graph from file, is service running?");
   }
 }
 /*****************************************************************************/
 void SlamToolboxPlugin::GenerateMap()
 /*****************************************************************************/
 {
-  slam_toolbox::MergeMaps msg;
-  if (!_merge.call(msg))
+  auto request = std::make_shared<slam_toolbox::srv::MergeMaps::Request>();
+  auto result_future = _merge->async_send_request(request);
+
+  if (rclcpp::spin_until_future_complete(ros_node_, result_future,
+    std::chrono::seconds(5)) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    ROS_WARN("MergeMaps: Failed to merge maps, is service running?");
+    RCLCPP_WARN(ros_node_->get_logger(),
+      "MergeMaps: Failed to merge maps, is service running?");
   }
 }
 
@@ -303,10 +346,15 @@ void SlamToolboxPlugin::GenerateMap()
 void SlamToolboxPlugin::ClearChanges()
 /*****************************************************************************/
 {
-  slam_toolbox::Clear msg;
-  if (!_clearChanges.call(msg))
+  auto request = std::make_shared<slam_toolbox::srv::Clear::Request>();
+  auto result_future = _clearChanges->async_send_request(request);
+
+  if (rclcpp::spin_until_future_complete(ros_node_, result_future, 
+    std::chrono::seconds(5)) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    ROS_WARN("SlamToolbox: Failed to clear changes, is service running?");
+    RCLCPP_WARN(ros_node_->get_logger(),
+      "SlamToolbox: Failed to clear changes, is service running?");
   }
 }
 
@@ -314,11 +362,15 @@ void SlamToolboxPlugin::ClearChanges()
 void SlamToolboxPlugin::SaveChanges()
 /*****************************************************************************/
 {
-  slam_toolbox::LoopClosure msg;
+  auto request = std::make_shared<slam_toolbox::srv::LoopClosure::Request>();
+  auto result_future = _saveChanges->async_send_request(request);
 
-  if (!_saveChanges.call(msg))
+  if (rclcpp::spin_until_future_complete(ros_node_, result_future,
+    std::chrono::seconds(5)) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    ROS_WARN("SlamToolbox: Failed to save changes, is service running?");
+    RCLCPP_WARN(ros_node_->get_logger(),
+      "SlamToolbox: Failed to save changes, is service running?");
   }
 }
 
@@ -326,12 +378,17 @@ void SlamToolboxPlugin::SaveChanges()
 void SlamToolboxPlugin::SaveMap()
 /*****************************************************************************/
 {
-  slam_toolbox::SaveMap msg;
-  msg.request.name.data = _line1->text().toStdString();
-  if (!_saveMap.call(msg))
+  auto request = std::make_shared<slam_toolbox::srv::SaveMap::Request>();
+  request->name.data = _line1->text().toStdString();
+  auto result_future = _saveMap->async_send_request(request);
+
+  if (rclcpp::spin_until_future_complete(ros_node_, result_future,
+    std::chrono::seconds(5)) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    ROS_WARN("SlamToolbox: Failed to save map as %s, is service running?",
-              msg.request.name.data.c_str());
+    RCLCPP_WARN(ros_node_->get_logger(),
+      "SlamToolbox: Failed to save map as %s, is service running?",
+      request->name.data.c_str());
   }
 }
 
@@ -339,10 +396,15 @@ void SlamToolboxPlugin::SaveMap()
 void SlamToolboxPlugin::ClearQueue()
 /*****************************************************************************/
 {
-  slam_toolbox::ClearQueue msg;
-  if (!_clearQueue.call(msg))
+  auto request = std::make_shared<slam_toolbox::srv::ClearQueue::Request>();
+  auto result_future = _clearQueue->async_send_request(request);
+
+  if (rclcpp::spin_until_future_complete(ros_node_, result_future,
+    std::chrono::seconds(5)) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    ROS_WARN("Failed to clear queue, is service running?");
+    RCLCPP_WARN(ros_node_->get_logger(),
+      "Failed to clear queue, is service running?");
   }
 }
 
@@ -350,10 +412,15 @@ void SlamToolboxPlugin::ClearQueue()
 void SlamToolboxPlugin::InteractiveCb(int state)
 /*****************************************************************************/
 {
-  slam_toolbox::ToggleInteractive msg;
-  if (!_interactive.call(msg))
+  auto request = std::make_shared<slam_toolbox::srv::ToggleInteractive::Request>();
+  auto result_future = _interactive->async_send_request(request);
+
+  if (rclcpp::spin_until_future_complete(ros_node_, result_future,
+    std::chrono::seconds(5)) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    ROS_WARN("SlamToolbox: Failed to toggle interactive mode, is service running?");
+    RCLCPP_WARN(ros_node_->get_logger(),
+      "SlamToolbox: Failed to toggle interactive mode, is service running?");
   }
 }
 
@@ -361,10 +428,15 @@ void SlamToolboxPlugin::InteractiveCb(int state)
 void SlamToolboxPlugin::PauseMeasurementsCb(int state)
 /*****************************************************************************/
 {
-  slam_toolbox::Pause msg;
-  if (!_pause_measurements.call(msg))
+  auto request = std::make_shared<slam_toolbox::srv::Pause::Request>();
+  auto result_future = _pause_measurements->async_send_request(request);
+
+  if (rclcpp::spin_until_future_complete(ros_node_, result_future,
+    std::chrono::seconds(5)) !=
+    rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    ROS_WARN("SlamToolbox: Failed to toggle pause measurements, is service running?");
+    RCLCPP_WARN(ros_node_->get_logger(),
+      "SlamToolbox: Failed to toggle pause measurements, is service running?");
   }
 }
 
@@ -379,7 +451,8 @@ void SlamToolboxPlugin::FirstNodeMatchCb()
   else
   {
     _match_type = PROCESS_FIRST_NODE_CMT;
-    ROS_INFO("Processing at first node selected.");
+    RCLCPP_INFO(ros_node_->get_logger(),
+      "Processing at first node selected.");
   }
 }
 
@@ -394,7 +467,8 @@ void SlamToolboxPlugin::PoseEstMatchCb()
   else
   {
     _match_type = PROCESS_NEAR_REGION_CMT;
-    ROS_INFO("Processing at current pose estimate selected.");
+    RCLCPP_INFO(ros_node_->get_logger(),
+      "Processing at current pose estimate selected.");
   }
 }
 
@@ -409,7 +483,8 @@ void SlamToolboxPlugin::CurEstMatchCb()
   else
   {
     _match_type = PROCESS_CMT;
-    ROS_INFO("Processing at current odometry selected.");
+    RCLCPP_INFO(ros_node_->get_logger(),
+      "Processing at current odometry selected.");
   }
 }
 
@@ -425,7 +500,8 @@ void SlamToolboxPlugin::LocalizeCb()
   else
   {
     _match_type = LOCALIZE_CMT;
-    ROS_INFO("Processing localization selected.");
+    RCLCPP_INFO(ros_node_->get_logger(),
+      "Processing localization selected.");
   }
 }
 
@@ -434,13 +510,15 @@ void SlamToolboxPlugin::LocalizeCb()
 void SlamToolboxPlugin::updateCheckStateIfExternalChange()
 /*****************************************************************************/
 {
-  ros::Rate r(1); //1 hz
-  ros::NodeHandle nh;
+  rclcpp::Rate r(1); //1 hz
   bool paused_measure = false, interactive = false;
-  while (ros::ok())
+
+  while (rclcpp::ok())
   {
-    nh.getParam("/slam_toolbox/paused_new_measurements", paused_measure);
-    nh.getParam("/slam_toolbox/interactive_mode", interactive);
+    // paused_measure = ros_node_->get_parameter(
+    //   "/slam_toolbox/paused_new_measurements").as_bool();
+    // interactive = ros_node_->get_parameter(
+    //   "/slam_toolbox/interactive_mode").as_bool();
 
     bool oldState = _check1->blockSignals(true);
     _check1->setChecked(interactive);

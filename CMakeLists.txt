@@ -96,24 +96,26 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 #    qt4_wrap_cpp(${ARGN})
 #  endmacro()
 #else()
-#  find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
-#  set(QT_LIBRARIES Qt5::Widgets)
+  find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
+  set(QT_LIBRARIES Qt5::Widgets Qt5::Core)
 #  macro(qt_wrap_ui)
 #    qt5_wrap_ui(${ARGN})
 #  endmacro()
-#  macro(qt_wrap_cpp)
-#    qt5_wrap_cpp(${ARGN})
-#  endmacro()
+  macro(qt_wrap_cpp)
+    qt5_wrap_cpp(${ARGN})
+  endmacro()
 #endif()
+
 #### rviz Plugin
-#qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
-#set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
-#set(HEADER_FILES rviz_plugin/slam_toolbox_rviz_plugin.h )
-#add_library(SlamToolboxPlugin ${SOURCE_FILES} ${HEADER_FILES})
-#ament_target_dependencies(SlamToolboxPlugin
-#  ${dependencies}
-#)
-#target_link_libraries(SlamToolboxPlugin ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES})
+qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.h)
+set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
+set(HEADER_FILES rviz_plugin/slam_toolbox_rviz_plugin.h )
+add_library(SlamToolboxPlugin ${SOURCE_FILES} ${HEADER_FILES})
+ament_target_dependencies(SlamToolboxPlugin
+  ${dependencies}
+)
+target_link_libraries(SlamToolboxPlugin karto ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES} ${QT_LIBRARIES2})
+rosidl_target_interfaces(SlamToolboxPlugin ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #### Ceres Plugin
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
