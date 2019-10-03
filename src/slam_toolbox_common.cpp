@@ -37,7 +37,12 @@ SlamToolbox::SlamToolbox()
 {
   smapper_ = std::make_unique<mapper_utils::SMapper>();
   dataset_ = std::make_unique<karto::Dataset>();
+}
 
+/*****************************************************************************/
+void SlamToolbox::configure()
+/*****************************************************************************/
+{
   setParams();
   setROSInterfaces();
   setSolver();
@@ -293,9 +298,9 @@ bool SlamToolbox::shouldStartWithPoseGraph(std::string & filename,
 /*****************************************************************************/
   {
   // if given a map to load at run time, do it.
-  this->declare_parameter("map_file_name");
-  this->declare_parameter("map_start_pose");
-  this->declare_parameter("map_start_at_dock");
+  this->declare_parameter("map_file_name", std::string(""));
+  this->declare_parameter("map_start_pose", std::vector<double>());
+  this->declare_parameter("map_start_at_dock", false);
   filename = this->get_parameter("map_file_name").as_string();
   if (!filename.empty())
   {

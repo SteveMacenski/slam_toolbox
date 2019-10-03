@@ -59,6 +59,7 @@ class SlamToolbox : public rclcpp::Node
 public:
   SlamToolbox();
   ~SlamToolbox();
+  void configure();
 
 protected:
   // threads

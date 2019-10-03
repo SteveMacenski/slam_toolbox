@@ -4,9 +4,6 @@
  */
 
 #include "ceres_solver.hpp"
-#include <pluginlib/class_list_macros.hpp>
-
-PLUGINLIB_EXPORT_CLASS(solver_plugins::CeresSolver, karto::ScanSolver)
 
 namespace solver_plugins
 {
@@ -449,3 +446,6 @@ std::unordered_map<int, Eigen::Vector3d>* CeresSolver::getGraph()
 }
 
 } // end namespace
+
+#include "pluginlib/class_list_macros.hpp"
+PLUGINLIB_EXPORT_CLASS(solver_plugins::CeresSolver, karto::ScanSolver)

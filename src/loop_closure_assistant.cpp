@@ -53,7 +53,7 @@ LoopClosureAssistant::LoopClosureAssistant(
   // node.param("enable_interactive_mode", enable_interactive_mode_, false);
   marker_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
     "graph_visualization",  rclcpp::QoS(1));
-  map_frame_ = node->declare_parameter("map_frame", std::string("map"));
+  map_frame_ = node->get_parameter("map_frame").as_string();
 }
 
 // /*****************************************************************************/

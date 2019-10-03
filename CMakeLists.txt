@@ -115,6 +115,7 @@ ament_target_dependencies(SlamToolboxPlugin
 )
 target_link_libraries(SlamToolboxPlugin karto ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES})
 rosidl_target_interfaces(SlamToolboxPlugin ${PROJECT_NAME} "rosidl_typesupport_cpp")
+pluginlib_export_plugin_description_file(rviz_common rviz_plugins.xml)
 
 #### Ceres Plugin
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
@@ -126,7 +127,7 @@ target_link_libraries(ceres_solver_plugin ${CERES_INCLUDE_DIRS}
                                           karto
 )
 rosidl_target_interfaces(ceres_solver_plugin ${PROJECT_NAME} "rosidl_typesupport_cpp")
-
+pluginlib_export_plugin_description_file(slam_toolbox solver_plugins.xml)
 
 #### Tool lib for mapping
 add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)
@@ -182,19 +183,19 @@ install(TARGETS async_slam_toolbox_node
 )
 
 install(DIRECTORY include/
-  DESTINATION include/
+  DESTINATION include
 )
 
 install(DIRECTORY launch 
-  DESTINATION share/${PROJECT_NAME}
+  DESTINATION share
 )
 
 install(DIRECTORY config 
-  DESTINATION share/${PROJECT_NAME}
+  DESTINATION share
 )
 
 install(FILES solver_plugins.xml rviz_plugins.xml
-  DESTINATION share/${PROJECT_NAME}
+  DESTINATION share
 )
 
 ament_export_include_directories(include)

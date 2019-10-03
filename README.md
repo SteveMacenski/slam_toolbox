@@ -6,6 +6,12 @@
 |-----|----|
 | **Build Farm** | [![Build Status](http://build.ros.org/buildStatus/icon?job=Mdev__slam_toolbox__ubuntu_bionic_amd64)](http://build.ros.org/view/Kbin_uX64/job/Mdev__slam_toolbox__ubuntu_bionic_amd64/) |
 
+NOTE: ROS2 Port of Slam Toolbox is still experimental. Known on-going work:
+- Interactive markers need to be ported to ROS2 and integrated
+- The toolbox needs to be largely tested
+- The rviz plugin needs to work as a nested widget
+- launch and config files need to be ported
+
 # Introduction
 
 
