@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
 project(slam_toolbox)
 
-add_compile_options(-std=c++17)
+add_compile_options(-std=c++14)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
-set(CMAKE_CXX_FLAGS "-fpermissive -std=c++17")
+set(CMAKE_CXX_FLAGS "-fpermissive -std=c++14")
+set(CMAKE_CXX_STANDARD 14)
 
 find_package(ament_cmake REQUIRED)
 find_package(message_filters REQUIRED)
@@ -22,7 +23,7 @@ find_package(std_srvs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(nav2_map_server REQUIRED)
-#find_package(rviz2 REQUIRED)
+find_package(rviz_common REQUIRED)
 #find_package(interactive_markers REQUIRED)
 
 #karto_sdk lib
@@ -44,8 +45,18 @@ set(dependencies
   std_msgs
   std_srvs
   builtin_interfaces
-  #rviz2
+  rviz_common
   #interactive_markers
+)
+
+set(libraries 
+    lifelong_slam_toolbox
+    localization_slam_toolbox
+    sync_slam_toolbox
+    async_slam_toolbox
+    toolbox_common
+    SlamToolboxPlugin
+    ceres_solver_plugin
 )
 
 find_package(PkgConfig REQUIRED)
@@ -84,29 +95,17 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs
 )
 
-# TODO need to have interactive markers ported
-#set(CMAKE_AUTOMOC ON)
-#if(rviz_QT_VERSION VERSION_LESS "5")
-#  find_package(Qt4 ${rviz_QT_VERSION} REQUIRED QtCore QtGui)
-#  include(${QT_USE_FILE})
-#  macro(qt_wrap_ui)
-#    qt4_wrap_ui(${ARGN})
-#  endmacro()
-#  macro(qt_wrap_cpp)
-#    qt4_wrap_cpp(${ARGN})
-#  endmacro()
-#else()
-  find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
-  set(QT_LIBRARIES Qt5::Widgets Qt5::Core)
-#  macro(qt_wrap_ui)
-#    qt5_wrap_ui(${ARGN})
-#  endmacro()
-  macro(qt_wrap_cpp)
-    qt5_wrap_cpp(${ARGN})
-  endmacro()
-#endif()
+set(CMAKE_AUTOMOC ON)
+find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
+set(QT_LIBRARIES Qt5::Widgets Qt5::Core)
+macro(qt_wrap_ui)
+  qt5_wrap_ui(${ARGN})
+endmacro()
+macro(qt_wrap_cpp)
+  qt5_wrap_cpp(${ARGN})
+endmacro()
 
-#### rviz Plugin
+#### rviz Plugin TODO port to ROS2
 qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.h)
 set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
 set(HEADER_FILES rviz_plugin/slam_toolbox_rviz_plugin.h )
@@ -114,7 +113,7 @@ add_library(SlamToolboxPlugin ${SOURCE_FILES} ${HEADER_FILES})
 ament_target_dependencies(SlamToolboxPlugin
   ${dependencies}
 )
-target_link_libraries(SlamToolboxPlugin karto ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES} ${QT_LIBRARIES2})
+target_link_libraries(SlamToolboxPlugin karto ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES})
 rosidl_target_interfaces(SlamToolboxPlugin ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #### Ceres Plugin
@@ -160,7 +159,7 @@ target_link_libraries(lifelong_slam_toolbox_node lifelong_slam_toolbox)
 
 #### Merging maps tool
 add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
-target_link_libraries(merge_maps_kinematic toolbox_common)
+target_link_libraries(merge_maps_kinematic karto toolbox_common)
 
 #### testing
 if(BUILD_TESTING)
@@ -171,18 +170,12 @@ if(BUILD_TESTING)
 endif()
 
 #### Install
-install(TARGETS toolbox_common
-                async_slam_toolbox
-                async_slam_toolbox_node
-                sync_slam_toolbox
+install(TARGETS async_slam_toolbox_node
                 sync_slam_toolbox_node
-                localization_slam_toolbox
                 localization_slam_toolbox_node
-                lifelong_slam_toolbox
                 lifelong_slam_toolbox_node
-                ceres_solver_plugin
                 merge_maps_kinematic
-                #SlamToolboxPlugin
+                ${libraries}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -205,12 +198,6 @@ install(FILES solver_plugins.xml rviz_plugins.xml
 )
 
 ament_export_include_directories(include)
-ament_export_libraries(lifelong_slam_toolbox
-                       localization_slam_toolbox
-                       sync_slam_toolbox
-                       async_slam_toolbox
-                       toolbox_common
-                       #SlamToolboxPlugin
-                       ceres_solver_plugin)
+ament_export_libraries(${libraries})
 ament_export_dependencies(${dependencies})
 ament_package()

@@ -14,7 +14,7 @@ set(dependencies
   rclcpp
 )
 
-add_compile_options(-std=c++17)
+add_compile_options(-std=c++14)
 
 include_directories(include ${catkin_INCLUDE_DIRS} 
                             ${EIGEN3_INCLUDE_DIRS} 

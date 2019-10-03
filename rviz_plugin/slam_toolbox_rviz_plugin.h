@@ -23,8 +23,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rviz_common/panel.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
-//#include "rviz_common/ros_integration/ros_node_abstraction_iface.hpp"
-//#include "rviz_common/visualization_manager.hpp"
 // STL
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,6 +40,7 @@
 
 #include <thread>
 #include <chrono>
+#include <memory>
 
 class QLineEdit;
 class QSpinBox;
@@ -68,10 +67,7 @@ class SlamToolboxPlugin : public rviz_common::Panel
   Q_OBJECT
 
 public:
-  SlamToolboxPlugin(
-    /*rviz_common::ros_integration::RosNodeAbstractionIface::WeakPtr rviz_ros_node,*/
-    /*rviz_common::VisualizationManager * manager, */
-    QWidget * parent);
+  SlamToolboxPlugin(QWidget * parent);
 
   ~SlamToolboxPlugin();
 
@@ -154,7 +150,7 @@ protected:
   rclcpp::Client<slam_toolbox::srv::SerializePoseGraph>::SharedPtr _serialize;
   rclcpp::Client<slam_toolbox::srv::DeserializePoseGraph>::SharedPtr _load_map;
 
-  std::thread* _thread;
+  std::unique_ptr<std::thread> _thread;
 
   ContinueMappingType _match_type;
 };
