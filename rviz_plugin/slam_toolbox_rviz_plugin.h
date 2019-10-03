@@ -68,6 +68,7 @@ class SlamToolboxPlugin : public rviz_common::Panel
 
 public:
   SlamToolboxPlugin(QWidget * parent);
+  SlamToolboxPlugin() {SlamToolboxPlugin(nullptr);};
 
   ~SlamToolboxPlugin();
 
