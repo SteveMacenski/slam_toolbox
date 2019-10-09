@@ -19,3 +19,4 @@ RUN source /opt/ros/dashing/setup.bash \
 RUN source /opt/ros/dashing/setup.bash \ 
     && cd colcon_ws/ \
     && colcon build  --cmake-args=-DCMAKE_BUILD_TYPE=Release
+    && colcon test
