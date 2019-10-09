@@ -19,26 +19,26 @@
   <build_depend>nav_msgs</build_depend>
   <build_depend>rosconsole</build_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>sparse_bundle_adjustment</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_depend>tf2</build_depend>
+  <build_depend>tf2_sensor_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>message_generation</build_depend>
   <build_depend>std_srvs</build_depend>
+  <build_depend>boost</build_depend>
   <!-- <build_depend>interactive_markers</build_depend> -->
   <build_depend>std_msgs</build_depend>
   <build_depend>suitesparse</build_depend>
   <build_depend>rviz</build_depend>
   <build_depend>liblapack-dev</build_depend>
   <build_depend>libceres-dev</build_depend>
-  <build_depend>libg2o</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>tbb</build_depend>
   <build_depend>libqt5-core</build_depend>
   <build_depend>libqt5-widgets</build_depend>
   <build_depend>qtbase5-dev</build_depend>
-  <build_depend>map_server</build_depend>
+  <build_depend>nav2_map_server</build_depend>
   <build_depend>builtin_interfaces</build_depend>
   <build_depend>rosidl_default_generators</build_depend>
   <build_depend>rviz_common</build_depend>
@@ -50,28 +50,28 @@
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>rosconsole</exec_depend>
   <exec_depend>roscpp</exec_depend>
-  <exec_depend>sparse_bundle_adjustment</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>tf2</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf2_sensor_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>message_runtime</exec_depend>
   <exec_depend>std_srvs</exec_depend>
   <exec_depend>rviz_common</exec_depend>
   <exec_depend>rviz_rendering</exec_depend>
   <exec_depend>rviz_default_plugins</exec_depend>
+  <exec_depend>boost</exec_depend>
   <!-- <exec_depend>interactive_markers</exec_depend> -->
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>suitesparse</exec_depend>
   <exec_depend>rviz</exec_depend>
   <exec_depend>liblapack-dev</exec_depend>
   <exec_depend>libceres-dev</exec_depend>
-  <exec_depend>libg2o</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>tbb</exec_depend>
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-widgets</exec_depend>
-  <exec_depend>map_server</exec_depend>
+  <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>rosidl_default_generators</exec_depend>
   
