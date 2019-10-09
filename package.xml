@@ -19,7 +19,6 @@
   <build_depend>nav_msgs</build_depend>
   <build_depend>rosconsole</build_depend>
   <build_depend>roscpp</build_depend>
-  <build_depend>sparse_bundle_adjustment</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_depend>tf2</build_depend>
@@ -34,7 +33,6 @@
   <build_depend>rviz</build_depend>
   <build_depend>liblapack-dev</build_depend>
   <build_depend>libceres-dev</build_depend>
-  <build_depend>libg2o</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>tbb</build_depend>
   <build_depend>libqt5-core</build_depend>
@@ -50,7 +48,6 @@
   <exec_depend>nav_msgs</exec_depend>
   <exec_depend>rosconsole</exec_depend>
   <exec_depend>roscpp</exec_depend>
-  <exec_depend>sparse_bundle_adjustment</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>tf2</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
@@ -66,7 +63,6 @@
   <exec_depend>rviz</exec_depend>
   <exec_depend>liblapack-dev</exec_depend>
   <exec_depend>libceres-dev</exec_depend>
-  <exec_depend>libg2o</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>tbb</exec_depend>
   <exec_depend>libqt5-core</exec_depend>
