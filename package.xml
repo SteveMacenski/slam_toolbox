@@ -42,6 +42,8 @@
   <build_depend>builtin_interfaces</build_depend>
   <build_depend>rosidl_default_generators</build_depend>
   <build_depend>rviz_common</build_depend>
+  <build_depend>rviz_rendering</build_depend>
+  <build_depend>rviz_default_plugins</build_depend>
   <exec_depend>eigen</exec_depend>
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>message_filters</exec_depend>
@@ -56,6 +58,8 @@
   <exec_depend>message_runtime</exec_depend>
   <exec_depend>std_srvs</exec_depend>
   <exec_depend>rviz_common</exec_depend>
+  <exec_depend>rviz_rendering</exec_depend>
+  <exec_depend>rviz_default_plugins</exec_depend>
   <!-- <exec_depend>interactive_markers</exec_depend> -->
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>suitesparse</exec_depend>

@@ -23,7 +23,9 @@ find_package(std_srvs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(nav2_map_server REQUIRED)
-find_package(rviz_common REQUIRED)
+#find_package(rviz_default_plugins REQUIRED)
+#find_package(rviz_rendering REQUIRED)
+#find_package(rviz_common REQUIRED)
 #find_package(interactive_markers REQUIRED)
 
 #karto_sdk lib
@@ -45,9 +47,9 @@ set(dependencies
   std_msgs
   std_srvs
   builtin_interfaces
-  rviz_common
-  rviz_rendering
-  rviz_default_plugins
+  #rviz_common
+  #rviz_rendering
+  #rviz_default_plugins
   #interactive_markers
 )
 

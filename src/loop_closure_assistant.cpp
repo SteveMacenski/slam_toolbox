@@ -37,13 +37,14 @@ LoopClosureAssistant::LoopClosureAssistant(
   node_->declare_parameter("paused_processing", false);
   node_->set_parameter(rclcpp::Parameter("paused_processing", false));
   tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(node_);
+  solver_ = mapper_->getScanSolver();
+
   // ssClear_manual_ = node.advertiseService("clear_changes",
   //   &LoopClosureAssistant::clearChangesCallback, this);
   // ssLoopClosure_ = node.advertiseService("manual_loop_closure",
   //   &LoopClosureAssistant::manualLoopClosureCallback, this);
   // scan_publisher_ = node.advertise<sensor_msgs::LaserScan>(
   //   "karto_scan_visualization",10);
-  // solver_ = mapper_->getScanSolver();
   // interactive_server_ =
   //   std::make_unique<interactive_markers::InteractiveMarkerServer>(
   //   "slam_toolbox","",true);

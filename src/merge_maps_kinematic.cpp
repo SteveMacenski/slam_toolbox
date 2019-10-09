@@ -25,12 +25,11 @@ MergeMapsKinematic::MergeMapsKinematic()
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "MergeMapsKinematic: Starting up!");
-  setup();
   num_submaps_ = 0;
 }
 
 /*****************************************************************************/
-void MergeMapsKinematic::setup()
+void MergeMapsKinematic::configure()
 /*****************************************************************************/
 {
   resolution_ = 0.05;
@@ -376,6 +375,7 @@ int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
   auto merging_node = std::make_shared<MergeMapsKinematic>();
+  merging_node->configure();
   rclcpp::spin(merging_node->get_node_base_interface());
   rclcpp::shutdown();
   return 0;

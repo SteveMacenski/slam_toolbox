@@ -54,11 +54,10 @@ typedef karto::LocalizedRangeScanVector::iterator LocalizedRangeScansIt;
 public:
   MergeMapsKinematic();
   ~MergeMapsKinematic();
+  // setup
+  void configure();
 
 private:
-
-  // setup
-  void setup();
 
   // callback
   bool mergeMapCallback(const std::shared_ptr<rmw_request_id_t> request_header, const std::shared_ptr<slam_toolbox::srv::MergeMaps::Request> req, std::shared_ptr<slam_toolbox::srv::MergeMaps::Response> resp);

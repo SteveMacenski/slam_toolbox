@@ -58,7 +58,6 @@ void SlamToolbox::configure()
     std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
     shared_from_this(), smapper_->getMapper(), scan_holder_.get(),
     state_, processor_type_);
-
   reprocessing_transform_.setIdentity();
 
   double transform_publish_period = 0.05;
@@ -96,7 +95,7 @@ void SlamToolbox::setSolver()
 /*****************************************************************************/
 {
   // Set solver to be used in loop closure
-  std::string solver_plugin = "solver_plugins::CeresSolver";
+  std::string solver_plugin = std::string("solver_plugins::CeresSolver");
   solver_plugin = this->declare_parameter("solver_plugin", solver_plugin);
 
   try 
