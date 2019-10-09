@@ -23,8 +23,8 @@ namespace slam_toolbox
 {
 
 /*****************************************************************************/
-SynchronousSlamToolbox::SynchronousSlamToolbox()
-: SlamToolbox()
+SynchronousSlamToolbox::SynchronousSlamToolbox(rclcpp::NodeOptions options)
+: SlamToolbox(options)
 /*****************************************************************************/
 {
   ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>("clear_queue",

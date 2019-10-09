@@ -29,7 +29,7 @@ using namespace ::karto;
 class LocalizationSlamToolbox : public SlamToolbox
 {
 public:
-  LocalizationSlamToolbox();
+  LocalizationSlamToolbox(rclcpp::NodeOptions options);
   ~LocalizationSlamToolbox() {};
 
 protected:

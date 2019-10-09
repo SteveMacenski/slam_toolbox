@@ -29,7 +29,7 @@ using namespace ::karto;
 class LifelongSlamToolbox : public SlamToolbox
 {
 public:
-  LifelongSlamToolbox();
+  LifelongSlamToolbox(rclcpp::NodeOptions options);
   ~LifelongSlamToolbox() {};
 
   // computation metrics

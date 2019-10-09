@@ -34,8 +34,8 @@ void LifelongSlamToolbox::checkIsNotNormalized(const double & value)
 }
 
 /*****************************************************************************/
-LifelongSlamToolbox::LifelongSlamToolbox()
-: SlamToolbox()
+LifelongSlamToolbox::LifelongSlamToolbox(rclcpp::NodeOptions options)
+: SlamToolbox(options)
 /*****************************************************************************/
 {
   loadPoseGraphByParams();

@@ -23,8 +23,8 @@ namespace slam_toolbox
 {
 
 /*****************************************************************************/
-AsynchronousSlamToolbox::AsynchronousSlamToolbox()
-: SlamToolbox()
+AsynchronousSlamToolbox::AsynchronousSlamToolbox(rclcpp::NodeOptions options)
+: SlamToolbox(options)
 /*****************************************************************************/
 {
   loadPoseGraphByParams();

@@ -57,6 +57,7 @@ using namespace ::toolbox_types;
 class SlamToolbox : public rclcpp::Node
 {
 public:
+  SlamToolbox(rclcpp::NodeOptions);
   SlamToolbox();
   ~SlamToolbox();
   void configure();

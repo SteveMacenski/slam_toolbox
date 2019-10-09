@@ -28,7 +28,7 @@ namespace slam_toolbox
 class SynchronousSlamToolbox : public SlamToolbox
 {
 public:
-  SynchronousSlamToolbox();
+  SynchronousSlamToolbox(rclcpp::NodeOptions options);
   ~SynchronousSlamToolbox() {};
   void run();
 

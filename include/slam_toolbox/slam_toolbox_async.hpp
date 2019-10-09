@@ -28,7 +28,7 @@ namespace slam_toolbox
 class AsynchronousSlamToolbox : public SlamToolbox
 {
 public:
-  AsynchronousSlamToolbox();
+  AsynchronousSlamToolbox(rclcpp::NodeOptions options);
   ~AsynchronousSlamToolbox() {};
 
 protected:

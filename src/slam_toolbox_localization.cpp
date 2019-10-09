@@ -22,8 +22,8 @@ namespace slam_toolbox
 {
 
 /*****************************************************************************/
-LocalizationSlamToolbox::LocalizationSlamToolbox()
-: SlamToolbox()
+LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
+: SlamToolbox(options)
 /*****************************************************************************/
 {
   processor_type_ = PROCESS_LOCALIZATION;

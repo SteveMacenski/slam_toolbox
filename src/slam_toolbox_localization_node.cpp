@@ -41,7 +41,8 @@ int main(int argc, char** argv)
     }
   }
 
-  auto localize_node = std::make_shared<slam_toolbox::LocalizationSlamToolbox>();
+  rclcpp::NodeOptions options;
+  auto localize_node = std::make_shared<slam_toolbox::LocalizationSlamToolbox>(options);
   localize_node->configure();
   rclcpp::spin(localize_node->get_node_base_interface());
   rclcpp::shutdown();

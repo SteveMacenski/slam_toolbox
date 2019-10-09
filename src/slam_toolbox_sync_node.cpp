@@ -41,7 +41,8 @@ int main(int argc, char** argv)
     }
   }
 
-  auto sync_node = std::make_shared<slam_toolbox::SynchronousSlamToolbox>();
+  rclcpp::NodeOptions options;
+  auto sync_node = std::make_shared<slam_toolbox::SynchronousSlamToolbox>(options);
   sync_node->configure();
   rclcpp::spin(sync_node->get_node_base_interface());
   rclcpp::shutdown();

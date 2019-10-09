@@ -10,7 +10,7 @@ NOTE: ROS2 Port of Slam Toolbox is still experimental. Known on-going work:
 - Interactive markers need to be ported to ROS2 and integrated
 - Panel plugins need to be ported to ROS2 to test and ship the rviz plugin
 - The toolbox needs to be largely tested
-- launch and config files need to be ported
+- launch files need to be ported
 
 # Introduction
 

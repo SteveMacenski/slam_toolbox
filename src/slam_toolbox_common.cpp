@@ -26,7 +26,14 @@ namespace slam_toolbox
 
 /*****************************************************************************/
 SlamToolbox::SlamToolbox()
-: Node("slam_toolbox", rclcpp::NodeOptions()),
+: SlamToolbox(rclcpp::NodeOptions())
+/*****************************************************************************/
+{
+}
+
+/*****************************************************************************/
+SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
+: Node("slam_toolbox", "", options),
   solver_loader_("slam_toolbox", "karto::ScanSolver"),
   processor_type_(PROCESS),
   first_measurement_(true),
