@@ -12,11 +12,10 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
 RUN mkdir -p colcon_ws/src
 RUN cd colcon_ws/src && git clone -b dashing-devel https://github.com/SteveMacenski/slam_toolbox.git
 RUN source /opt/ros/dashing/setup.bash \
-    && cd catkin_ws \
+    && cd colcon_ws \
     && rosdep update \
     && rosdep install -y -r --from-paths src --ignore-src --rosdistro=dashing -y
 
-RUN apt install python-catkin-tools -y
 RUN source /opt/ros/dashing/setup.bash \ 
     && cd colcon_ws/ \
-    && colcon build -DCMAKE_BUILD_TYPE=Release
+    && colcon build  --cmake-args=-DCMAKE_BUILD_TYPE=Release

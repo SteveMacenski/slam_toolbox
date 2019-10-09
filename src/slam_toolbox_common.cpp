@@ -179,9 +179,11 @@ void SlamToolbox::setROSInterfaces()
   tfL_ = std::make_unique<tf2_ros::TransformListener>(*tf_);
   tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(shared_from_this());
 
-  sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(map_name_, 1);
+  sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    map_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
-    map_name_ + "_metadata", 1);
+    map_name_ + "_metadata",
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   ssMap_ = this->create_service<nav_msgs::srv::GetMap>("dynamic_map", 
     std::bind(&SlamToolbox::mapCallback, this, std::placeholders::_1,
     std::placeholders::_2, std::placeholders::_3));
