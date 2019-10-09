@@ -48,7 +48,7 @@ slam_toolbox:
     minimum_travel_distance: 0.5
     minimum_travel_heading: 0.5
     scan_buffer_size: 10
-    scan_buffer_maximum_scan_distance: 10
+    scan_buffer_maximum_scan_distance: 10.0
     link_match_minimum_response_fine: 0.1  
     link_scan_maximum_distance: 1.5
     loop_search_maximum_distance: 3.0

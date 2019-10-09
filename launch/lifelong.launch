@@ -1,7 +1,0 @@
-<launch>
-
-  <node pkg="slam_toolbox" type="lifelong_slam_toolbox_node" name="slam_toolbox" output="screen">
-    <rosparam command="load" file="$(find slam_toolbox)/config/mapper_params_lifelong.yaml" />
-  </node>
-
-</launch>

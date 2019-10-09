@@ -192,11 +192,11 @@ install(DIRECTORY include/
 )
 
 install(DIRECTORY launch 
-  DESTINATION share
+  DESTINATION share/${PROJECT_NAME}
 )
 
 install(DIRECTORY config 
-  DESTINATION share
+  DESTINATION share/${PROJECT_NAME}
 )
 
 install(FILES solver_plugins.xml #rviz_plugins.xml
