@@ -79,6 +79,7 @@ include_directories(include ${EIGEN3_INCLUDE_DIRS}
                             ${BOOST_INCLUDE_DIRS}
                             ${TBB_INCLUDE_DIRS}
                             ${karto_INCLUDE_DIRS}
+                            ${CERES_INCLUDES}
 )
 
 add_definitions(${EIGEN3_DEFINITIONS})
@@ -123,8 +124,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 #### Ceres Plugin
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
 ament_target_dependencies(ceres_solver_plugin ${dependencies})
-target_link_libraries(ceres_solver_plugin ${CERES_INCLUDE_DIRS}
-                                          ${CERES_LIBRARIES}
+target_link_libraries(ceres_solver_plugin ${CERES_LIBRARIES}
                                           ${Boost_LIBRARIES}
                                           ${TBB_LIBRARIES}
                                           karto
