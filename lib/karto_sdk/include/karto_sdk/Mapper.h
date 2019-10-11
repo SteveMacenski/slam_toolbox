@@ -965,7 +965,7 @@ namespace karto
      */
     virtual void Compute() = 0;
 
-    virtual void Configure(rclcpp::Node::SharedPtr & node) = 0;
+    virtual void Configure(rclcpp::Node::SharedPtr node) = 0;
 
     /**
      * Get corrected poses after optimization

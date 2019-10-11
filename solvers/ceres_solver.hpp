@@ -41,7 +41,7 @@ public:
   virtual void Compute(); //Solve
   virtual void Clear(); //Resets the corrections
   virtual void Reset(); //Resets the solver plugin clean
-  virtual void Configure(rclcpp::Node::SharedPtr & node);
+  virtual void Configure(rclcpp::Node::SharedPtr node);
 
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex); //Adds a node to the solver
   virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge); //Adds a constraint to the solver

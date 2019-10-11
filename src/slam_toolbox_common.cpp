@@ -110,6 +110,7 @@ void SlamToolbox::setSolver()
     solver_ = solver_loader_.createSharedInstance(solver_plugin);
     RCLCPP_INFO(get_logger(), "Using solver plugin %s",
       solver_plugin.c_str());
+    solver_->Configure(shared_from_this());
   } 
   catch (const pluginlib::PluginlibException& ex)
   {

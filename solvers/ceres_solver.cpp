@@ -19,7 +19,7 @@ CeresSolver::CeresSolver() :
 }
 
 /*****************************************************************************/
-void CeresSolver::Configure(rclcpp::Node::SharedPtr & node)
+void CeresSolver::Configure(rclcpp::Node::SharedPtr node)
 /*****************************************************************************/
 {
   node_ = node;
@@ -37,7 +37,7 @@ void CeresSolver::Configure(rclcpp::Node::SharedPtr & node)
   loss_fn = node->declare_parameter("ceres_loss_function",
     std::string("None"));
   mode = node->declare_parameter("mode", std::string("mapping"));
-  debug_logging_ = node->declare_parameter("debug_logging", false);
+  debug_logging_ = node->get_parameter("debug_logging").as_bool();
 
   corrections_.clear();
   first_node_ = nodes_->end();
