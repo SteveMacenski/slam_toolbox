@@ -105,7 +105,7 @@ void LifelongSlamToolbox::laserCallback(
   // LTS pseudo-localization mode. If want to add a scan, but not deleting a scan, add to local buffer?
   // LTS if (eval() && dont_add_more_scans) {addScan()} else {localization_add_scan()}
   // LTS if (eval() && ctr / total < add_rate_scans) {addScan()} else {localization_add_scan()}
-  karto::LocalizedRangeScan * range_scan = addScan(laser, scan, pose);
+  LocalizedRangeScan * range_scan = addScan(laser, scan, pose);
   evaluateNodeDepreciation(range_scan);
   return;
 }

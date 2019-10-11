@@ -24,8 +24,6 @@
 namespace slam_toolbox
 {
 
-using namespace ::karto;
-
 class LifelongSlamToolbox : public SlamToolbox
 {
 public:

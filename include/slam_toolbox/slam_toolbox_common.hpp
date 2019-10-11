@@ -53,6 +53,7 @@ namespace slam_toolbox
 
 // dirty, dirty cheat I love
 using namespace ::toolbox_types;
+using namespace ::karto;
 
 class SlamToolbox : public rclcpp::Node
 {

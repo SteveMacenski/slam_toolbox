@@ -36,7 +36,7 @@ void AsynchronousSlamToolbox::laserCallback(
 /*****************************************************************************/
 {
   // no odom info
-  karto::Pose2 pose;
+  Pose2 pose;
   if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
   {
     RCLCPP_WARN(get_logger(), "Failed to compute odom pose");
@@ -44,7 +44,7 @@ void AsynchronousSlamToolbox::laserCallback(
   }
 
   // ensure the laser can be used
-  karto::LaserRangeFinder * laser = getLaser(scan);
+  LaserRangeFinder * laser = getLaser(scan);
 
   if(!laser)
   {

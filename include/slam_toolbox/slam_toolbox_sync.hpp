@@ -24,7 +24,6 @@
 
 namespace slam_toolbox
 {
-using namespace ::karto;
 
 class SynchronousSlamToolbox : public SlamToolbox
 {

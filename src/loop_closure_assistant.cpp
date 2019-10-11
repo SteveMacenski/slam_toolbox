@@ -44,7 +44,7 @@ LoopClosureAssistant::LoopClosureAssistant(
   // ssLoopClosure_ = node.advertiseService("manual_loop_closure",
   //   &LoopClosureAssistant::manualLoopClosureCallback, this);
   // scan_publisher_ = node.advertise<sensor_msgs::LaserScan>(
-  //   "karto_scan_visualization",10);
+  //   "scan_visualization",10);
   // interactive_server_ =
   //   std::make_unique<interactive_markers::InteractiveMarkerServer>(
   //   "slam_toolbox","",true);
@@ -113,12 +113,12 @@ LoopClosureAssistant::LoopClosureAssistant(
 //     // publish the scan visualization with transform
 //     geometry_msgs::TransformStamped msg;
 //     tf2::convert(transform, msg.transform);
-//     msg.child_frame_id = "karto_scan_visualization";
+//     msg.child_frame_id = "scan_visualization";
 //     msg.header.frame_id = feedback->header.frame_id;
 //     msg.header.stamp = ros::Time::now();
 //     tfB_->sendTransform(msg);
 
-//     scan.header.frame_id = "karto_scan_visualization";
+//     scan.header.frame_id = "scan_visualization";
 //     scan.header.stamp = ros::Time::now();
 //     scan_publisher_.publish(scan);
 //   }

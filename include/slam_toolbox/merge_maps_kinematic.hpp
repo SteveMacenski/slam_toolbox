@@ -45,6 +45,7 @@
 #include "slam_toolbox/visualization_utils.hpp"
 
 using namespace toolbox_types;
+using namespace karto;
 
 class MergeMapsKinematic : public rclcpp::Node
 {

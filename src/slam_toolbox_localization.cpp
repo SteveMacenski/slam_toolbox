@@ -125,7 +125,7 @@ void LocalizationSlamToolbox::laserCallback(
 LocalizedRangeScan* LocalizationSlamToolbox::addScan(
   LaserRangeFinder* laser,
   const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan, 
-  Pose2& karto_pose)
+  Pose2& odom_pose)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock l(pose_mutex_);
@@ -136,7 +136,7 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
   }
 
   LocalizedRangeScan * range_scan = getLocalizedRangeScan(
-    laser, scan, karto_pose);
+    laser, scan, odom_pose);
 
   // Add the localized range scan to the smapper
   boost::mutex::scoped_lock lock(smapper_mutex_);
@@ -158,7 +158,7 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
     processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan);
 
     // compute our new transform and reset to localization mode
-    setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
+    setTransformFromPoses(range_scan->GetCorrectedPose(), odom_pose,
       scan->header.stamp, true);
     processor_type_ = PROCESS_LOCALIZATION;
   }
