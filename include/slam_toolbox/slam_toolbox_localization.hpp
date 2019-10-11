@@ -34,7 +34,7 @@ public:
 
 protected:
   virtual void laserCallback(
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
+    sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
   void localizePoseCallback(
     const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 

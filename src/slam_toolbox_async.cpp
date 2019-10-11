@@ -32,7 +32,7 @@ AsynchronousSlamToolbox::AsynchronousSlamToolbox(rclcpp::NodeOptions options)
 
 /*****************************************************************************/
 void AsynchronousSlamToolbox::laserCallback(
-  const sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
+  sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
   // no odom info

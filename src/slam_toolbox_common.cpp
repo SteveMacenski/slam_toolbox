@@ -206,12 +206,13 @@ void SlamToolbox::setROSInterfaces()
     "deserialize_map",
     std::bind(&SlamToolbox::deserializePoseGraphCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
   scan_filter_sub_ =
     std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan> >(
-    shared_from_this().get(), scan_topic_);
+    shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> >(
-    *scan_filter_sub_, *tf_, odom_frame_, 5, shared_from_this());
+    *scan_filter_sub_, *tf_, odom_frame_, 10, shared_from_this());
   scan_filter_->registerCallback(
     std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
 }

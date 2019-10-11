@@ -73,7 +73,7 @@ protected:
   void setROSInterfaces();
 
   // callbacks
-  virtual void laserCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr scan) = 0;
+  virtual void laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan) = 0;
   bool mapCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<nav_msgs::srv::GetMap::Request> req,

@@ -80,7 +80,7 @@ LifelongSlamToolbox::LifelongSlamToolbox(rclcpp::NodeOptions options)
 
 /*****************************************************************************/
 void LifelongSlamToolbox::laserCallback(
-  const sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
+  sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
   // no odom info

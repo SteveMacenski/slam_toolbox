@@ -1,7 +1,5 @@
 ## Slam Toolbox
 
-[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/slam-toolbox-melodic)
-
 | DockerHub  | [![Build Status](https://img.shields.io/docker/cloud/build/stevemacenski/slam-toolbox.svg?label=build)](https://hub.docker.com/r/stevemacenski/slam-toolbox) |
 |-----|----|
 | **Build Farm** | [![Build Status](http://build.ros.org/buildStatus/icon?job=Mdev__slam_toolbox__ubuntu_bionic_amd64)](http://build.ros.org/view/Kbin_uX64/job/Mdev__slam_toolbox__ubuntu_bionic_amd64/) |
@@ -9,13 +7,13 @@
 NOTE: ROS2 Port of Slam Toolbox is still experimental. Known on-going work:
 - Interactive markers need to be ported to ROS2 and integrated
 - Panel plugins need to be ported to ROS2 to test and ship the rviz plugin
-- The toolbox needs to be largely tested
-- launch files need to be ported
+- Testing of basic working with robot
+- update readme badges for ros2 versions
 
 # Introduction
 
 
-Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/) and in his free time. 
+Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/), maintained whil at Samsung Research, and largely in his free time. 
 
 This project contains the ability to do most everything any other available SLAM library, both free and paid, and more. This includes:
 - Ordinary point-and-shoot 2D SLAM mobile robotics folks expect (start, map, save pgm file) with some nice built in utilities like saving maps
@@ -147,7 +145,7 @@ The following are the services/topics that are exposed for use. See the rviz plu
 
 ## Subscribed topics
 
-| scan  | `sensor_msgs/LaserScan` | the input scan from your laser to utilize | 
+| /scan  | `sensor_msgs/LaserScan` | the input scan from your laser to utilize | 
 |-----|----|----|
 | **tf** | N/A | a valid transform from your configured odom_frame to base_frame |
 
@@ -196,6 +194,8 @@ The following settings and options are exposed to you. My default configuration 
 `map_frame` - Map frame
 
 `base_frame` - Base frame
+
+`scan_topic` - scan topic, *absolute* path, ei `/scan` not `scan`
 
 `map_file_name` - Name of the pose-graph file to load on startup if available
 
