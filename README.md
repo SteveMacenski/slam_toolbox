@@ -13,7 +13,7 @@ This project contains the ability to do most everything any other available SLAM
 - synchronous and asynchronous modes
 - kinematic map merging (with an elastic graph manipulation merging technique in the works)
 - plugin-based optimization solvers with a new optimized Google Ceres based plugin
-- RVIZ plugin for interating with the tools
+- RVIZ plugin for interacting with the tools
 - graph manipulation tools in RVIZ to manipulate nodes and connections during mapping
 - Map serialization and lossless data storage
 - ... more but those are the highlights 
