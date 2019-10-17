@@ -28,12 +28,12 @@ namespace slam_toolbox
 class SynchronousSlamToolbox : public SlamToolbox
 {
 public:
-  SynchronousSlamToolbox();
+  SynchronousSlamToolbox(rclcpp::NodeOptions options);
   ~SynchronousSlamToolbox() {};
   void run();
 
 protected:
-  virtual void laserCallback(const sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
+  virtual void laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
   bool clearQueueCallback(
     const std::shared_ptr<rmw_request_id_t> request_header, 
     const std::shared_ptr<slam_toolbox::srv::ClearQueue::Request> req,

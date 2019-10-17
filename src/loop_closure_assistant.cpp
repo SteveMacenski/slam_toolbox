@@ -37,13 +37,14 @@ LoopClosureAssistant::LoopClosureAssistant(
   node_->declare_parameter("paused_processing", false);
   node_->set_parameter(rclcpp::Parameter("paused_processing", false));
   tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(node_);
+  solver_ = mapper_->getScanSolver();
+
   // ssClear_manual_ = node.advertiseService("clear_changes",
   //   &LoopClosureAssistant::clearChangesCallback, this);
   // ssLoopClosure_ = node.advertiseService("manual_loop_closure",
   //   &LoopClosureAssistant::manualLoopClosureCallback, this);
   // scan_publisher_ = node.advertise<sensor_msgs::LaserScan>(
-  //   "karto_scan_visualization",10);
-  // solver_ = mapper_->getScanSolver();
+  //   "scan_visualization",10);
   // interactive_server_ =
   //   std::make_unique<interactive_markers::InteractiveMarkerServer>(
   //   "slam_toolbox","",true);
@@ -112,12 +113,12 @@ LoopClosureAssistant::LoopClosureAssistant(
 //     // publish the scan visualization with transform
 //     geometry_msgs::TransformStamped msg;
 //     tf2::convert(transform, msg.transform);
-//     msg.child_frame_id = "karto_scan_visualization";
+//     msg.child_frame_id = "scan_visualization";
 //     msg.header.frame_id = feedback->header.frame_id;
 //     msg.header.stamp = ros::Time::now();
 //     tfB_->sendTransform(msg);
 
-//     scan.header.frame_id = "karto_scan_visualization";
+//     scan.header.frame_id = "scan_visualization";
 //     scan.header.stamp = ros::Time::now();
 //     scan_publisher_.publish(scan);
 //   }

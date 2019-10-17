@@ -15,7 +15,6 @@
  *
  */
 
-/* Orginal Author for slam_karto the original work was based on: Brian Gerkey */
 /* Author: Steven Macenski */
 
 #include "slam_toolbox/slam_toolbox_common.hpp"
@@ -26,17 +25,24 @@ namespace slam_toolbox
 
 /*****************************************************************************/
 SlamToolbox::SlamToolbox()
-: Node("slam_toolbox", rclcpp::NodeOptions()),
+: SlamToolbox(rclcpp::NodeOptions())
+/*****************************************************************************/
+{
+}
+
+/*****************************************************************************/
+SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
+: Node("slam_toolbox", "", options),
   solver_loader_("slam_toolbox", "karto::ScanSolver"),
   processor_type_(PROCESS),
   first_measurement_(true),
   process_near_pose_(nullptr),
-  transform_timeout_(0.),
+  transform_timeout_(rclcpp::Duration(0.5 * 1000000000)),
   minimum_time_interval_(0.)
 /*****************************************************************************/
 {
   smapper_ = std::make_unique<mapper_utils::SMapper>();
-  dataset_ = std::make_unique<karto::Dataset>();
+  dataset_ = std::make_unique<Dataset>();
 }
 
 /*****************************************************************************/
@@ -58,7 +64,6 @@ void SlamToolbox::configure()
     std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
     shared_from_this(), smapper_->getMapper(), scan_holder_.get(),
     state_, processor_type_);
-
   reprocessing_transform_.setIdentity();
 
   double transform_publish_period = 0.05;
@@ -96,7 +101,7 @@ void SlamToolbox::setSolver()
 /*****************************************************************************/
 {
   // Set solver to be used in loop closure
-  std::string solver_plugin = "solver_plugins::CeresSolver";
+  std::string solver_plugin = std::string("solver_plugins::CeresSolver");
   solver_plugin = this->declare_parameter("solver_plugin", solver_plugin);
 
   try 
@@ -104,6 +109,7 @@ void SlamToolbox::setSolver()
     solver_ = solver_loader_.createSharedInstance(solver_plugin);
     RCLCPP_INFO(get_logger(), "Using solver plugin %s",
       solver_plugin.c_str());
+    solver_->Configure(shared_from_this());
   } 
   catch (const pluginlib::PluginlibException& ex)
   {
@@ -144,12 +150,11 @@ void SlamToolbox::setParams()
   enable_interactive_mode_ = this->declare_parameter("enable_interactive_mode",
     enable_interactive_mode_);
 
-  double tmp_val = 0.2;
+  double tmp_val = 0.5;
   tmp_val = this->declare_parameter("transform_timeout", tmp_val);
-  transform_timeout_ = rclcpp::Duration(tmp_val, 0.);
-  tmp_val = 0.5;
+  transform_timeout_ = rclcpp::Duration(tmp_val * 1000000000);
   tmp_val = this->declare_parameter("minimum_time_interval", tmp_val);
-  minimum_time_interval_ = rclcpp::Duration(tmp_val, 0.);
+  minimum_time_interval_ = rclcpp::Duration(tmp_val * 1000000000);
 
   bool debug = false;
   debug = this->declare_parameter("debug_logging", debug);
@@ -200,12 +205,13 @@ void SlamToolbox::setROSInterfaces()
     "deserialize_map",
     std::bind(&SlamToolbox::deserializePoseGraphCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
   scan_filter_sub_ =
     std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan> >(
-    shared_from_this().get(), scan_topic_);
+    shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> >(
-    *scan_filter_sub_, *tf_, odom_frame_, 5, shared_from_this());
+    *scan_filter_sub_, *tf_, odom_frame_, 10, shared_from_this());
   scan_filter_->registerCallback(
     std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
 }
@@ -338,7 +344,7 @@ bool SlamToolbox::shouldStartWithPoseGraph(std::string & filename,
 }
 
 /*****************************************************************************/
-karto::LaserRangeFinder * SlamToolbox::getLaser(const
+LaserRangeFinder * SlamToolbox::getLaser(const
   sensor_msgs::msg::LaserScan::ConstSharedPtr & scan)
 /*****************************************************************************/
 {
@@ -370,7 +376,7 @@ bool SlamToolbox::updateMap()
     return true;
   }
   boost::mutex::scoped_lock lock(smapper_mutex_);
-  karto::OccupancyGrid * occ_grid = smapper_->getOccupancyGrid(resolution_);
+  OccupancyGrid * occ_grid = smapper_->getOccupancyGrid(resolution_);
   if(!occ_grid)
   {
     return false;
@@ -390,8 +396,8 @@ bool SlamToolbox::updateMap()
 
 /*****************************************************************************/
 tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
-  const karto::Pose2 & corrected_pose,
-  const karto::Pose2 & karto_pose,
+  const Pose2 & corrected_pose,
+  const Pose2 & odom_pose,
   const rclcpp::Time & t,
   const bool & update_reprocessing_transform)
 /*****************************************************************************/
@@ -437,7 +443,7 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
     tf2::Quaternion q1(0.,0.,0.,1.0);
     q1.setRPY(0., 0., tf2::getYaw(odom_to_base_serialized.getRotation()));
     odom_to_base_serialized.setRotation(q1);
-    tf2::Transform odom_to_base_current = smapper_->toTfPose(karto_pose);
+    tf2::Transform odom_to_base_current = smapper_->toTfPose(odom_pose);
     reprocessing_transform_ = 
       odom_to_base_serialized * odom_to_base_current.inverse();
   }
@@ -451,23 +457,23 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
 }
 
 /*****************************************************************************/
-karto::LocalizedRangeScan * SlamToolbox::getLocalizedRangeScan(
-  karto::LaserRangeFinder * laser,
+LocalizedRangeScan * SlamToolbox::getLocalizedRangeScan(
+  LaserRangeFinder * laser,
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
-  karto::Pose2 & karto_pose)
+  Pose2 & odom_pose)
 /*****************************************************************************/
 {
-  // Create a vector of doubles for karto
+  // Create a vector of doubles for lib
   std::vector<kt_double> readings = laser_utils::scanToReadings(
     *scan, lasers_[scan->header.frame_id].isInverted());
 
   // transform by the reprocessing transform
-  tf2::Transform pose_original = smapper_->toTfPose(karto_pose);
+  tf2::Transform pose_original = smapper_->toTfPose(odom_pose);
   tf2::Transform tf_pose_transformed = reprocessing_transform_ * pose_original;
-  karto::Pose2 transformed_pose = smapper_->toKartoPose(tf_pose_transformed);
+  Pose2 transformed_pose = smapper_->toKartoPose(tf_pose_transformed);
 
   // create localized range scan
-  karto::LocalizedRangeScan * range_scan = new karto::LocalizedRangeScan(
+  LocalizedRangeScan * range_scan = new LocalizedRangeScan(
     laser->GetName(), readings);
   range_scan->SetOdometricPose(transformed_pose);
   range_scan->SetCorrectedPose(transformed_pose);
@@ -477,10 +483,10 @@ karto::LocalizedRangeScan * SlamToolbox::getLocalizedRangeScan(
 /*****************************************************************************/
 bool SlamToolbox::shouldProcessScan(
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
-  const karto::Pose2 & pose)
+  const Pose2 & pose)
 /*****************************************************************************/
 {
-  static karto::Pose2 last_pose;
+  static Pose2 last_pose;
   static rclcpp::Time last_scan_time = rclcpp::Time(0.);
   static double min_dist2 =
     smapper_->getMapper()->getParamMinimumTravelDistance() *
@@ -531,8 +537,8 @@ bool SlamToolbox::shouldProcessScan(
 }
 
 /*****************************************************************************/
-karto::LocalizedRangeScan * SlamToolbox::addScan(
-  karto::LaserRangeFinder * laser,
+LocalizedRangeScan * SlamToolbox::addScan(
+  LaserRangeFinder * laser,
   PosedScan & scan_w_pose)
 /*****************************************************************************/
 {
@@ -540,15 +546,15 @@ karto::LocalizedRangeScan * SlamToolbox::addScan(
 }
 
 /*****************************************************************************/
-karto::LocalizedRangeScan * SlamToolbox::addScan(
-  karto::LaserRangeFinder * laser,
+LocalizedRangeScan * SlamToolbox::addScan(
+  LaserRangeFinder * laser,
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan, 
-  karto::Pose2 & karto_pose)
+  Pose2 & odom_pose)
 /*****************************************************************************/
 {  
   // get our localized range scan
-  karto::LocalizedRangeScan * range_scan = getLocalizedRangeScan(
-    laser, scan, karto_pose);
+  LocalizedRangeScan * range_scan = getLocalizedRangeScan(
+    laser, scan, odom_pose);
 
   // Add the localized range scan to the smapper
   boost::mutex::scoped_lock lock(smapper_mutex_);
@@ -596,7 +602,7 @@ karto::LocalizedRangeScan * SlamToolbox::addScan(
       scan_holder_->addScan(*scan);
     }
 
-    setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
+    setTransformFromPoses(range_scan->GetCorrectedPose(), odom_pose,
       scan->header.stamp, update_reprocessing_transform);
     dataset_->Add(range_scan);
   }
@@ -676,8 +682,8 @@ bool SlamToolbox::serializePoseGraphCallback(
 
 /*****************************************************************************/
 void SlamToolbox::loadSerializedPoseGraph(
-  std::unique_ptr<karto::Mapper> & mapper,
-  std::unique_ptr<karto::Dataset >& dataset)
+  std::unique_ptr<Mapper> & mapper,
+  std::unique_ptr<Dataset >& dataset)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(smapper_mutex_);
@@ -731,13 +737,13 @@ void SlamToolbox::loadSerializedPoseGraph(
   }
 
   // create a current laser sensor
-  karto::LaserRangeFinder * laser =
-    dynamic_cast<karto::LaserRangeFinder*>(
+  LaserRangeFinder * laser =
+    dynamic_cast<LaserRangeFinder*>(
     dataset_->GetLasers()[0]);
-  karto::Sensor* pSensor = dynamic_cast<karto::Sensor*>(laser);
+  Sensor* pSensor = dynamic_cast<Sensor*>(laser);
   if (pSensor)
   {
-    karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
+    SensorManager::GetInstance()->RegisterSensor(pSensor);
 
     sensor_msgs::msg::LaserScan::SharedPtr scan(nullptr);
     auto laserSub =
@@ -812,8 +818,8 @@ bool SlamToolbox::deserializePoseGraphCallback(
     filename = snap_utils::getSnapPath() + std::string("/") + filename;
   }
 
-  std::unique_ptr<karto::Dataset> dataset = std::make_unique<karto::Dataset>();
-  std::unique_ptr<karto::Mapper> mapper = std::make_unique<karto::Mapper>();
+  std::unique_ptr<Dataset> dataset = std::make_unique<Dataset>();
+  std::unique_ptr<Mapper> mapper = std::make_unique<Mapper>();
 
   if (!serialization::read(filename, *mapper, *dataset, shared_from_this()))
   {
@@ -835,12 +841,12 @@ bool SlamToolbox::deserializePoseGraphCallback(
       break;
     case procType::START_AT_GIVEN_POSE:
       processor_type_ = PROCESS_NEAR_REGION;
-      process_near_pose_ = std::make_unique<karto::Pose2>(req->initial_pose.x, 
+      process_near_pose_ = std::make_unique<Pose2>(req->initial_pose.x, 
         req->initial_pose.y, req->initial_pose.theta);
       break;
     case procType::LOCALIZE_AT_POSE: 
       processor_type_ = PROCESS_LOCALIZATION;
-      process_near_pose_ = std::make_unique<karto::Pose2>(req->initial_pose.x, 
+      process_near_pose_ = std::make_unique<Pose2>(req->initial_pose.x, 
         req->initial_pose.y, req->initial_pose.theta);
       break;
     default:

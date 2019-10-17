@@ -23,8 +23,8 @@ namespace slam_toolbox
 {
 
 /*****************************************************************************/
-SynchronousSlamToolbox::SynchronousSlamToolbox()
-: SlamToolbox()
+SynchronousSlamToolbox::SynchronousSlamToolbox(rclcpp::NodeOptions options)
+: SlamToolbox(options)
 /*****************************************************************************/
 {
   ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>("clear_queue",
@@ -66,11 +66,11 @@ void SynchronousSlamToolbox::run()
 
 /*****************************************************************************/
 void SynchronousSlamToolbox::laserCallback(
-  const sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
+  sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
   // no odom info
-  karto::Pose2 pose;
+  Pose2 pose;
   if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
   {
     RCLCPP_WARN(get_logger(), "Failed to compute odom pose");
@@ -78,7 +78,7 @@ void SynchronousSlamToolbox::laserCallback(
   }
 
   // ensure the laser can be used
-  karto::LaserRangeFinder * laser = getLaser(scan);
+  LaserRangeFinder * laser = getLaser(scan);
 
   if(!laser)
   {

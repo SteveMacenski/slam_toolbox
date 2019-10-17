@@ -25,12 +25,11 @@ MergeMapsKinematic::MergeMapsKinematic()
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "MergeMapsKinematic: Starting up!");
-  setup();
   num_submaps_ = 0;
 }
 
 /*****************************************************************************/
-void MergeMapsKinematic::setup()
+void MergeMapsKinematic::configure()
 /*****************************************************************************/
 {
   resolution_ = 0.05;
@@ -68,8 +67,8 @@ bool MergeMapsKinematic::addSubmapCallback(
   std::shared_ptr<slam_toolbox::srv::AddSubmap::Response> resp)
 /*****************************************************************************/
 {
-  std::unique_ptr<karto::Mapper> mapper = std::make_unique<karto::Mapper>();
-  std::unique_ptr<karto::Dataset> dataset = std::make_unique<karto::Dataset>();
+  std::unique_ptr<Mapper> mapper = std::make_unique<Mapper>();
+  std::unique_ptr<Dataset> dataset = std::make_unique<Dataset>();
 
   if (!serialization::read(req->filename, *mapper,
     *dataset, shared_from_this()))
@@ -80,7 +79,7 @@ bool MergeMapsKinematic::addSubmapCallback(
   }
   
   // we know the position because we put it there before any scans
-  karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(
+  LaserRangeFinder* laser = dynamic_cast<LaserRangeFinder*>(
     dataset->GetLasers()[0]);
   dataset->Add(laser, true);
   dataset_vec_.push_back(std::move(dataset));
@@ -91,7 +90,7 @@ bool MergeMapsKinematic::addSubmapCallback(
     lasers_[laser->GetName().GetName()] = laserMeta;
   }
 
-  karto::LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
+  LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
   scans_vec_.push_back(scans);
   num_submaps_++;
 
@@ -107,7 +106,7 @@ bool MergeMapsKinematic::addSubmapCallback(
   try
   {
     kartoToROSOccupancyGrid(scans, map);
-  } catch (const karto::Exception & e)
+  } catch (const Exception & e)
   {
     RCLCPP_WARN(get_logger(), "Failed to build grid to add submap, Exception: %s",
       e.GetErrorMessage().c_str());
@@ -162,8 +161,8 @@ bool MergeMapsKinematic::addSubmapCallback(
 }
 
 /*****************************************************************************/
-karto::Pose2 MergeMapsKinematic::applyCorrection(const
-  karto::Pose2 & pose,
+Pose2 MergeMapsKinematic::applyCorrection(const
+  Pose2 & pose,
   const tf2::Transform & submap_correction)
 /*****************************************************************************/
 {
@@ -173,13 +172,13 @@ karto::Pose2 MergeMapsKinematic::applyCorrection(const
   pose_tf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
   pose_tf.setRotation(q);
   pose_corr = submap_correction * pose_tf;
-  return karto::Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(),
+  return Pose2(pose_corr.getOrigin().x(), pose_corr.getOrigin().y(),
     tf2::getYaw(pose_corr.getRotation()));
 }
 
 /*****************************************************************************/
-karto::Vector2<kt_double> MergeMapsKinematic::applyCorrection(const
-  karto::Vector2<kt_double> &  pose,
+Vector2<kt_double> MergeMapsKinematic::applyCorrection(const
+  Vector2<kt_double> &  pose,
   const tf2::Transform & submap_correction)
 /*****************************************************************************/
 {
@@ -187,7 +186,7 @@ karto::Vector2<kt_double> MergeMapsKinematic::applyCorrection(const
   pose_tf.setOrigin(tf2::Vector3(pose.GetX(), pose.GetY(), 0.));
   pose_tf.setRotation(tf2::Quaternion(0.,0.,0.,1.0));
   pose_corr = submap_correction * pose_tf;
-  return karto::Vector2<kt_double>(pose_corr.getOrigin().x(),
+  return Vector2<kt_double>(pose_corr.getOrigin().x(),
     pose_corr.getOrigin().y());
 }
 
@@ -197,27 +196,27 @@ void MergeMapsKinematic::transformScan(LocalizedRangeScansIt iter,
 /*****************************************************************************/
 {
   // TRANSFORM BARYCENTERR POSE
-  const karto::Pose2 bary_center_pose = (*iter)->GetBarycenterPose();
+  const Pose2 bary_center_pose = (*iter)->GetBarycenterPose();
   auto bary_center_pose_corr = 
     applyCorrection(bary_center_pose, submap_correction);
   (*iter)->SetBarycenterPose(bary_center_pose_corr);
 
   // TRANSFORM BOUNDING BOX POSITIONS
-  karto::BoundingBox2 bbox = (*iter)->GetBoundingBox();
-  const karto::Vector2<kt_double> bbox_min_corr = 
+  BoundingBox2 bbox = (*iter)->GetBoundingBox();
+  const Vector2<kt_double> bbox_min_corr = 
     applyCorrection(bbox.GetMinimum(), submap_correction);
   bbox.SetMinimum(bbox_min_corr);
-  const karto::Vector2<kt_double> bbox_max_corr = 
+  const Vector2<kt_double> bbox_max_corr = 
     applyCorrection(bbox.GetMaximum(), submap_correction);
   bbox.SetMaximum(bbox_max_corr);
   (*iter)->SetBoundingBox(bbox);
 
   // TRANSFORM UNFILTERED POINTS USED
-  karto::PointVectorDouble UPR_vec = (*iter)->GetPointReadings();
-  for(karto::PointVectorDouble::iterator it_upr = UPR_vec.begin();
+  PointVectorDouble UPR_vec = (*iter)->GetPointReadings();
+  for(PointVectorDouble::iterator it_upr = UPR_vec.begin();
     it_upr != UPR_vec.end(); ++it_upr)
   {
-    const karto::Vector2<kt_double> upr_corr = applyCorrection(
+    const Vector2<kt_double> upr_corr = applyCorrection(
       *it_upr, submap_correction);
     it_upr->SetX(upr_corr.GetX());
     it_upr->SetY(upr_corr.GetY());
@@ -225,18 +224,18 @@ void MergeMapsKinematic::transformScan(LocalizedRangeScansIt iter,
   (*iter)->SetPointReadings(UPR_vec);
 
   // TRANSFORM CORRECTED POSE
-  const karto::Pose2 corrected_pose = (*iter)->GetCorrectedPose();
-  karto::Pose2 karto_robot_pose_corr = applyCorrection(
+  const Pose2 corrected_pose = (*iter)->GetCorrectedPose();
+  Pose2 robot_pose_corr = applyCorrection(
     corrected_pose, submap_correction);
-  (*iter)->SetCorrectedPose(karto_robot_pose_corr);
+  (*iter)->SetCorrectedPose(robot_pose_corr);
   kt_bool dirty = false;
   (*iter)->SetIsDirty(dirty);
 
   // TRANSFORM ODOM POSE
-  karto::Pose2 odom_pose = (*iter)->GetOdometricPose();
-  karto::Pose2 karto_robot_pose_odom = applyCorrection(
+  Pose2 odom_pose = (*iter)->GetOdometricPose();
+  Pose2 robot_pose_odom = applyCorrection(
     odom_pose, submap_correction);
-  (*iter)->SetOdometricPose(karto_robot_pose_odom);
+  (*iter)->SetOdometricPose(robot_pose_odom);
 }
 
 /*****************************************************************************/
@@ -250,7 +249,7 @@ bool MergeMapsKinematic::mergeMapCallback(
 
   // transform all the scans into the new global map coordinates 
   int id = 0;
-  karto::LocalizedRangeScanVector transformed_scans;
+  LocalizedRangeScanVector transformed_scans;
   for(LocalizedRangeScansVecIt it_LRV = scans_vec_.begin();
     it_LRV != scans_vec_.end(); ++it_LRV)
   {
@@ -269,7 +268,7 @@ bool MergeMapsKinematic::mergeMapCallback(
   try
   {
     kartoToROSOccupancyGrid(transformed_scans, map);
-  } catch (const karto::Exception & e)
+  } catch (const Exception & e)
   {
     RCLCPP_WARN(get_logger(), 
       "Failed to build grid to merge maps together, Exception: %s",
@@ -285,16 +284,16 @@ bool MergeMapsKinematic::mergeMapCallback(
 
 /*****************************************************************************/
 void MergeMapsKinematic::kartoToROSOccupancyGrid(
-  const karto::LocalizedRangeScanVector & scans,
+  const LocalizedRangeScanVector & scans,
   nav_msgs::srv::GetMap::Response& map)
 /*****************************************************************************/
 {
-  karto::OccupancyGrid * occ_grid = NULL;
-  occ_grid = karto::OccupancyGrid::CreateFromScans(scans, resolution_);
+  OccupancyGrid * occ_grid = NULL;
+  occ_grid = OccupancyGrid::CreateFromScans(scans, resolution_);
   if (!occ_grid)
   {
     RCLCPP_INFO(get_logger(),
-      "MergeMapsKinematic: Could not make Karto occupancy grid.");
+      "MergeMapsKinematic: Could not make occupancy grid.");
   }
   else
   {
@@ -376,6 +375,7 @@ int main(int argc, char** argv)
 {
   rclcpp::init(argc, argv);
   auto merging_node = std::make_shared<MergeMapsKinematic>();
+  merging_node->configure();
   rclcpp::spin(merging_node->get_node_base_interface());
   rclcpp::shutdown();
   return 0;

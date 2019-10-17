@@ -24,17 +24,15 @@
 namespace slam_toolbox
 {
 
-using namespace ::karto;
-
 class LocalizationSlamToolbox : public SlamToolbox
 {
 public:
-  LocalizationSlamToolbox();
+  LocalizationSlamToolbox(rclcpp::NodeOptions options);
   ~LocalizationSlamToolbox() {};
 
 protected:
   virtual void laserCallback(
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
+    sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
   void localizePoseCallback(
     const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 
@@ -47,9 +45,9 @@ protected:
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override final;
 
-  virtual LocalizedRangeScan* addScan(karto::LaserRangeFinder * laser,
+  virtual LocalizedRangeScan* addScan(LaserRangeFinder * laser,
     const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
-    karto::Pose2 & karto_pose) override final;
+    Pose2 & pose) override final;
 
   std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped> > localization_pose_sub_;
 };

@@ -41,7 +41,8 @@ int main(int argc, char** argv)
     }
   }
 
-  auto async_node = std::make_shared<slam_toolbox::AsynchronousSlamToolbox>();
+  rclcpp::NodeOptions options;
+  auto async_node = std::make_shared<slam_toolbox::AsynchronousSlamToolbox>(options);
   async_node->configure();
   rclcpp::spin(async_node->get_node_base_interface());
   rclcpp::shutdown();

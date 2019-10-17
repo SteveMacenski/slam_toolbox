@@ -5,32 +5,28 @@
   <description>
      This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
   </description>
-  <version>1.1.1</version>
+  <version>2.0.2</version>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <author>Steve Macenski</author>
   <license>LGPL</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   
-  <build_depend>cmake_modules</build_depend>
   <build_depend>pluginlib</build_depend>
   <build_depend>eigen</build_depend>
   <build_depend>message_filters</build_depend>
   <build_depend>nav_msgs</build_depend>
-  <build_depend>rosconsole</build_depend>
-  <build_depend>roscpp</build_depend>
+  <build_depend>rclcpp</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>tf2_sensor_msgs</build_depend>
   <build_depend>visualization_msgs</build_depend>
-  <build_depend>message_generation</build_depend>
   <build_depend>std_srvs</build_depend>
   <build_depend>boost</build_depend>
   <!-- <build_depend>interactive_markers</build_depend> -->
   <build_depend>std_msgs</build_depend>
   <build_depend>suitesparse</build_depend>
-  <build_depend>rviz</build_depend>
   <build_depend>liblapack-dev</build_depend>
   <build_depend>libceres-dev</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
@@ -42,25 +38,26 @@
   <build_depend>builtin_interfaces</build_depend>
   <build_depend>rosidl_default_generators</build_depend>
   <build_depend>rviz_common</build_depend>
+  <build_depend>rviz_rendering</build_depend>
+  <build_depend>rviz_default_plugins</build_depend>
   <exec_depend>eigen</exec_depend>
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>message_filters</exec_depend>
   <exec_depend>nav_msgs</exec_depend>
-  <exec_depend>rosconsole</exec_depend>
-  <exec_depend>roscpp</exec_depend>
+  <exec_depend>rclcpp</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
   <exec_depend>tf2</exec_depend>
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>tf2_sensor_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
-  <exec_depend>message_runtime</exec_depend>
   <exec_depend>std_srvs</exec_depend>
   <exec_depend>rviz_common</exec_depend>
+  <exec_depend>rviz_rendering</exec_depend>
+  <exec_depend>rviz_default_plugins</exec_depend>
   <exec_depend>boost</exec_depend>
   <!-- <exec_depend>interactive_markers</exec_depend> -->
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>suitesparse</exec_depend>
-  <exec_depend>rviz</exec_depend>
   <exec_depend>liblapack-dev</exec_depend>
   <exec_depend>libceres-dev</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
@@ -70,7 +67,11 @@
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>rosidl_default_generators</exec_depend>
-  
+
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>launch</test_depend>
+  <test_depend>launch_testing</test_depend>
+
   <member_of_group>rosidl_interface_packages</member_of_group>
 
   <export>

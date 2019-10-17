@@ -28,12 +28,12 @@ namespace slam_toolbox
 class AsynchronousSlamToolbox : public SlamToolbox
 {
 public:
-  AsynchronousSlamToolbox();
+  AsynchronousSlamToolbox(rclcpp::NodeOptions options);
   ~AsynchronousSlamToolbox() {};
 
 protected:
   virtual void laserCallback(
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
+    sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
   virtual bool deserializePoseGraphCallback(
   	const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,

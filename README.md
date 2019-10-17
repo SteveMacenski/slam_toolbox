@@ -1,21 +1,17 @@
 ## Slam Toolbox
 
-[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/slam-toolbox-melodic)
-
 | DockerHub  | [![Build Status](https://img.shields.io/docker/cloud/build/stevemacenski/slam-toolbox.svg?label=build)](https://hub.docker.com/r/stevemacenski/slam-toolbox) |
 |-----|----|
-| **Build Farm** | [![Build Status](http://build.ros.org/buildStatus/icon?job=Mdev__slam_toolbox__ubuntu_bionic_amd64)](http://build.ros.org/view/Kbin_uX64/job/Mdev__slam_toolbox__ubuntu_bionic_amd64/) |
+| **Build Farm** | [![Build Status](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/) |
 
 NOTE: ROS2 Port of Slam Toolbox is still experimental. Known on-going work:
 - Interactive markers need to be ported to ROS2 and integrated
 - Panel plugins need to be ported to ROS2 to test and ship the rviz plugin
-- The toolbox needs to be largely tested
-- launch and config files need to be ported
 
 # Introduction
 
 
-Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/) and in his free time. 
+Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/), maintained whil at Samsung Research, and largely in his free time. 
 
 This project contains the ability to do most everything any other available SLAM library, both free and paid, and more. This includes:
 - Ordinary point-and-shoot 2D SLAM mobile robotics folks expect (start, map, save pgm file) with some nice built in utilities like saving maps
@@ -147,7 +143,7 @@ The following are the services/topics that are exposed for use. See the rviz plu
 
 ## Subscribed topics
 
-| scan  | `sensor_msgs/LaserScan` | the input scan from your laser to utilize | 
+| /scan  | `sensor_msgs/LaserScan` | the input scan from your laser to utilize | 
 |-----|----|----|
 | **tf** | N/A | a valid transform from your configured odom_frame to base_frame |
 
@@ -196,6 +192,8 @@ The following settings and options are exposed to you. My default configuration 
 `map_frame` - Map frame
 
 `base_frame` - Base frame
+
+`scan_topic` - scan topic, *absolute* path, ei `/scan` not `scan`
 
 `map_file_name` - Name of the pose-graph file to load on startup if available
 
@@ -291,17 +289,15 @@ ROSDep will take care of the major things
 rosdep install -q -y -r --from-paths src --ignore-src
 ```
 
-I also have a Snap built for this that's super easy to install if you know snaps, named `slam-toolbox`.
+Or install via apt
 
 ```
-sudo snap install slam-toolbox-melodic --beta --devmode # get the latest and greatest
-
-sudo snap install slam-toolbox-melodic # get the stablist and infrequently updated
+apt install ros-dashing-slam-toolbox
 ```
 
-Run your catkin build procedure of choice.
+Run your colcon build procedure of choice.
 
-You can run via `roslaunch slam_toolbox online_sync.launch`
+You can run via `ros2 launch slam_toolbox online_sync_launch.py`
 
 # Etc
 

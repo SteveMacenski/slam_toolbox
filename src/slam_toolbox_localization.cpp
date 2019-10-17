@@ -22,8 +22,8 @@ namespace slam_toolbox
 {
 
 /*****************************************************************************/
-LocalizationSlamToolbox::LocalizationSlamToolbox()
-: SlamToolbox()
+LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
+: SlamToolbox(options)
 /*****************************************************************************/
 {
   processor_type_ = PROCESS_LOCALIZATION;
@@ -92,7 +92,7 @@ bool LocalizationSlamToolbox::deserializePoseGraphCallback(
 
 /*****************************************************************************/
 void LocalizationSlamToolbox::laserCallback(
-  const sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
+  sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
   // no odom info
@@ -125,7 +125,7 @@ void LocalizationSlamToolbox::laserCallback(
 LocalizedRangeScan* LocalizationSlamToolbox::addScan(
   LaserRangeFinder* laser,
   const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan, 
-  Pose2& karto_pose)
+  Pose2& odom_pose)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock l(pose_mutex_);
@@ -136,7 +136,7 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
   }
 
   LocalizedRangeScan * range_scan = getLocalizedRangeScan(
-    laser, scan, karto_pose);
+    laser, scan, odom_pose);
 
   // Add the localized range scan to the smapper
   boost::mutex::scoped_lock lock(smapper_mutex_);
