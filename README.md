@@ -1,7 +1,5 @@
 ## Slam Toolbox
 
-[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/slam-toolbox-melodic)
-
 | DockerHub  | [![Build Status](https://img.shields.io/docker/cloud/build/stevemacenski/slam-toolbox.svg?label=build)](https://hub.docker.com/r/stevemacenski/slam-toolbox) |
 |-----|----|
 | **Build Farm** | [![Build Status](http://build.ros.org/buildStatus/icon?job=Mdev__slam_toolbox__ubuntu_bionic_amd64)](http://build.ros.org/view/Kbin_uX64/job/Mdev__slam_toolbox__ubuntu_bionic_amd64/) |
@@ -24,7 +22,7 @@ This project contains the ability to do most everything any other available SLAM
 - Map serialization and lossless data storage
 - ... more but those are the highlights 
 
-For running on live production robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
+For running on live production robots, I recommend using the snap or from the build farm: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
 
 This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 200,000 sq.ft. building in synchronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
@@ -285,13 +283,7 @@ ROSDep will take care of the major things
 rosdep install -q -y -r --from-paths src --ignore-src
 ```
 
-I also have a Snap built for this that's super easy to install if you know snaps, named `slam-toolbox`.
-
-```
-sudo snap install slam-toolbox-melodic --beta --devmode # get the latest and greatest
-
-sudo snap install slam-toolbox-melodic # get the stablist and infrequently updated
-```
+Also released in Melodic / Dashing to the ROS build farm to install debians.
 
 Run your catkin build procedure of choice.
 
@@ -308,7 +300,7 @@ In order to do some operations quickly for continued mapping and localization, I
 
 Snap are completely isolated containerized packages that one can run through the Canonical organization on a large number of Linux distributions. They're similar to Docker containers but it doesn't share the kernel or any of the libraries, and rather has everything internal as essentially a seperate partitioned operating system based on Ubuntu Core. 
 
-We package up slam toolbox in this way for a nice multiple-on speed up in execution from a couple of pretty nuanced reasons in this particular project, but generally speaking you shouldn't expect a speedup from a snap. 
+We package up slam toolbox in this way for a nice multiple-on speed up in execution from a couple of pretty nuanced reasons in this particular project, but generally speaking you shouldn't expect a speedup from a snap. There's a generate snap script in the `snap` directory to create a snap.
 
 Since Snaps are totally isolated and there's no override flags like in Docker, there's only a couple of fixed directories that both the snap and the host system can write and read from, including SNAP_COMMON (usually in `/var/snap/[snap name]/common`). Therefore, this is the place that if you're serializing and deserializing maps, you need to have them accessible to that directory. 
 
