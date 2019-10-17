@@ -180,7 +180,7 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
     range_scan = nullptr;
   } else {
     // compute our new transform
-    setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
+    setTransformFromPoses(range_scan->GetCorrectedPose(), odom_pose,
       scan->header.stamp, update_reprocessing_transform);
   }
 
