@@ -6285,8 +6285,15 @@ namespace karto
           kt_int32u* pCellHitCntPtr = m_pCellHitsCnt->GetDataPointer();
 
           // increment cell pass through and hit count
-          pCellPassCntPtr[index]++;
-          pCellHitCntPtr[index]++;
+          kt_int32u maxCntLimit = 100;
+          if (pCellPassCntPtr[index] <= maxCntLimit){
+            pCellPassCntPtr[index]++;
+            pCellHitCntPtr[index]++;
+          }
+          else{
+            pCellPassCntPtr[index] = 10;
+            pCellHitCntPtr[index] = 2;
+          }
 
           if (doUpdate)
           {
