@@ -4909,7 +4909,7 @@ namespace karto
      * @param y1
      * @param f
      */
-    void TraceLine(kt_int32s x0, kt_int32s y0, kt_int32s x1, kt_int32s y1, Functor* f = NULL, kt_bool hitCntRemove = false)
+    void TraceLine(kt_int32s x0, kt_int32s y0, kt_int32s x1, kt_int32s y1, Functor* f = NULL, kt_bool hitCntRemove = false, kt_int32u maxCntLimit = 1000)
     {
       kt_bool steep = abs(y1 - y0) > abs(x1 - x0);
       if (steep)
@@ -4968,7 +4968,7 @@ namespace karto
           T* pGridPointer = GetDataPointer();
           //TODO:expose this via a .yaml
           if( !hitCntRemove ){
-            if (pGridPointer[index] <= m_maxCntLimit->GetValue()) 
+            if (pGridPointer[index] <= maxCntLimit) 
               pGridPointer[index]++;
           }
           else{
@@ -6312,9 +6312,11 @@ namespace karto
 
       CellUpdater* pCellUpdater = doUpdate ? m_pCellUpdater : NULL;
       //TODO: change the bool for a variable that can make this on/off via a .yaml
-      m_pCellPassCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, false);
+      kt_bool passCntRemove = false;
+      kt_bool hitCntRemove = true;
+      m_pCellPassCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, passCntRemove, m_maxCntLimit->GetValue());
       if(m_dynamicEnvMode->GetValue())
-        m_pCellHitsCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, true);
+        m_pCellHitsCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, hitCntRemove, m_maxCntLimit->GetValue());
 
       // for the end point
       if (isEndPointValid)
