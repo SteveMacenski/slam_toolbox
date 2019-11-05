@@ -6313,7 +6313,7 @@ namespace karto
       CellUpdater* pCellUpdater = doUpdate ? m_pCellUpdater : NULL;
       //TODO: change the bool for a variable that can make this on/off via a .yaml
       m_pCellPassCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, false);
-      if(m_dynamicEnvMode->GetValue)
+      if(m_dynamicEnvMode->GetValue())
         m_pCellHitsCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, true);
 
       // for the end point
