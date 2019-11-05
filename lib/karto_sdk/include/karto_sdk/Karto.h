@@ -4909,7 +4909,7 @@ namespace karto
      * @param y1
      * @param f
      */
-    void TraceLine(kt_int32s x0, kt_int32s y0, kt_int32s x1, kt_int32s y1, Functor* f = NULL)
+    void TraceLine(kt_int32s x0, kt_int32s y0, kt_int32s x1, kt_int32s y1, Functor* f = NULL, bool hitCntRemove = false)
     {
       kt_bool steep = abs(y1 - y0) > abs(x1 - x0);
       if (steep)
@@ -4966,7 +4966,13 @@ namespace karto
         {
           kt_int32s index = GridIndex(gridIndex, false);
           T* pGridPointer = GetDataPointer();
-          pGridPointer[index]++;
+          if( !hitCntRemove ){
+            if (pGridPointer[index] <= 100)
+              pGridPointer[index]++;
+          }
+          else{
+            if(pGridPointer[index] > 0) pGridPointer[index]--;
+          }
 
           if (f != NULL)
           {
@@ -6272,7 +6278,8 @@ namespace karto
       Vector2<kt_int32s> gridTo = m_pCellPassCnt->WorldToGrid(rWorldTo);
 
       CellUpdater* pCellUpdater = doUpdate ? m_pCellUpdater : NULL;
-      m_pCellPassCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater);
+      m_pCellPassCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, false);
+      m_pCellHitsCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, true);
 
       // for the end point
       if (isEndPointValid)
@@ -6287,8 +6294,8 @@ namespace karto
           // increment cell pass through and hit count
           kt_int32u maxCntLimit = 100;
           if (pCellPassCntPtr[index] <= maxCntLimit){
-            pCellPassCntPtr[index]++;
-            pCellHitCntPtr[index]++;
+              pCellPassCntPtr[index]++;
+              pCellHitCntPtr[index]++;
           }
           else{
             pCellPassCntPtr[index] = 10;
