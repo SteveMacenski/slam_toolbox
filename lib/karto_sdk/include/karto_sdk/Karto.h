@@ -4909,7 +4909,7 @@ namespace karto
      * @param y1
      * @param f
      */
-    void TraceLine(kt_int32s x0, kt_int32s y0, kt_int32s x1, kt_int32s y1, Functor* f = NULL, bool hitCntRemove = false)
+    void TraceLine(kt_int32s x0, kt_int32s y0, kt_int32s x1, kt_int32s y1, Functor* f = NULL, kt_bool hitCntRemove = false)
     {
       kt_bool steep = abs(y1 - y0) > abs(x1 - x0);
       if (steep)
@@ -4968,7 +4968,7 @@ namespace karto
           T* pGridPointer = GetDataPointer();
           //TODO:expose this via a .yaml
           if( !hitCntRemove ){
-            if (pGridPointer[index] <= 100) 
+            if (pGridPointer[index] <= m_maxCntLimit->GetValue()) 
               pGridPointer[index]++;
           }
           else{
@@ -5981,6 +5981,10 @@ namespace karto
 
       m_pMinPassThrough = new Parameter<kt_int32u>("MinPassThrough", 2);
       m_pOccupancyThreshold = new Parameter<kt_double>("OccupancyThreshold", 0.1);
+      
+      m_dynamicEnvMode = new Parameter<kt_bool>("DynamicEnvMode", true);
+      m_maxCntLimit = new Parameter<kt_int32u>("MaxCntLimit", 100);
+      m_hitCntStep = new Parameter<kt_int32u>("HitCntStep", 2);
 
       GetCoordinateConverter()->SetScale(1.0 / resolution);
       GetCoordinateConverter()->SetOffset(rOffset);
@@ -5998,6 +6002,10 @@ namespace karto
 
       delete m_pMinPassThrough;
       delete m_pOccupancyThreshold;
+
+      delete m_dynamicEnvMode;
+      delete m_maxCntLimit;
+      delete m_hitCntStep;
     }
 
   public:
@@ -6121,6 +6129,30 @@ namespace karto
     void SetOccupancyThreshold(kt_double thresh)
     {
       m_pOccupancyThreshold->SetValue(thresh);
+    }
+
+    /**
+     * Defines if the dynamic environment mode should be used or not
+     */
+    void SetDynamicEnvironmentMode(kt_bool mode)
+    {
+      m_dynamicEnvMode->SetValue(mode);
+    }
+
+    /**
+     * Sets the maximum pass index value for the pass and hit counter.
+     */
+    void SetMaxCntLimit(kt_int32u count)
+    {
+      m_maxCntLimit->SetValue(count);
+    }
+
+    /**
+     * Sets the hit increment step.
+     */
+    void SetHitCntStep(kt_int32u count)
+    {
+      m_hitCntStep->SetValue(count);
     }
 
   protected:
@@ -6281,7 +6313,8 @@ namespace karto
       CellUpdater* pCellUpdater = doUpdate ? m_pCellUpdater : NULL;
       //TODO: change the bool for a variable that can make this on/off via a .yaml
       m_pCellPassCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, false);
-      m_pCellHitsCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, true);
+      if(m_dynamicEnvMode->GetValue)
+        m_pCellHitsCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, true);
 
       // for the end point
       if (isEndPointValid)
@@ -6295,11 +6328,16 @@ namespace karto
 
           // increment cell pass through and hit count
           //TODO:make the maxCntLimit a variable modded by .yaml
-          kt_int32u maxCntLimit = 100;
-          if (pCellPassCntPtr[index] <= maxCntLimit) pCellPassCntPtr[index]++;
-          if (pCellHitCntPtr[index] <= maxCntLimit) pCellHitCntPtr[index] = pCellHitCntPtr[index] + 2;
-        
-
+          if (m_dynamicEnvMode->GetValue()){
+            if (pCellPassCntPtr[index] <= m_maxCntLimit->GetValue())
+              pCellPassCntPtr[index]++;
+            if (pCellHitCntPtr[index] <= m_maxCntLimit->GetValue())
+              pCellHitCntPtr[index] = pCellHitCntPtr[index] + m_hitCntStep->GetValue();
+          }
+          else{
+            pCellPassCntPtr[index]++;
+            pCellHitCntPtr[index]++;
+          }
           if (doUpdate)
           {
             (*m_pCellUpdater)(index);
@@ -6402,6 +6440,16 @@ namespace karto
 
     // Minimum ratio of beams hitting cell to beams passing through cell for cell to be marked as occupied
     Parameter<kt_double>* m_pOccupancyThreshold;
+
+    // Should the update use the dynamic environment parameters
+    Parameter<kt_bool>* m_dynamicEnvMode;
+
+    // Maximum pass and hit index value for the pass counter
+    Parameter<kt_int32u>* m_maxCntLimit;
+
+    // Hit counter increment step
+    Parameter<kt_int32u>* m_hitCntStep;
+
   };  // OccupancyGrid
 
   ////////////////////////////////////////////////////////////////////////////////////////
