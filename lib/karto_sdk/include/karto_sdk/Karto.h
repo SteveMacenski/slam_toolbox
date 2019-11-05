@@ -4966,8 +4966,9 @@ namespace karto
         {
           kt_int32s index = GridIndex(gridIndex, false);
           T* pGridPointer = GetDataPointer();
+          //TODO:expose this via a .yaml
           if( !hitCntRemove ){
-            if (pGridPointer[index] <= 100)
+            if (pGridPointer[index] <= 100) 
               pGridPointer[index]++;
           }
           else{
@@ -6278,6 +6279,7 @@ namespace karto
       Vector2<kt_int32s> gridTo = m_pCellPassCnt->WorldToGrid(rWorldTo);
 
       CellUpdater* pCellUpdater = doUpdate ? m_pCellUpdater : NULL;
+      //TODO: change the bool for a variable that can make this on/off via a .yaml
       m_pCellPassCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, false);
       m_pCellHitsCnt->TraceLine(gridFrom.GetX(), gridFrom.GetY(), gridTo.GetX(), gridTo.GetY(), pCellUpdater, true);
 
@@ -6292,15 +6294,11 @@ namespace karto
           kt_int32u* pCellHitCntPtr = m_pCellHitsCnt->GetDataPointer();
 
           // increment cell pass through and hit count
+          //TODO:make the maxCntLimit a variable modded by .yaml
           kt_int32u maxCntLimit = 100;
-          if (pCellPassCntPtr[index] <= maxCntLimit){
-              pCellPassCntPtr[index]++;
-              pCellHitCntPtr[index]++;
-          }
-          else{
-            pCellPassCntPtr[index] = 10;
-            pCellHitCntPtr[index] = 2;
-          }
+          if (pCellPassCntPtr[index] <= maxCntLimit) pCellPassCntPtr[index]++;
+          if (pCellHitCntPtr[index] <= maxCntLimit) pCellHitCntPtr[index] = pCellHitCntPtr[index] + 2;
+        
 
           if (doUpdate)
           {
