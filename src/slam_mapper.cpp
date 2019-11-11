@@ -53,7 +53,7 @@ void SMapper::setMapper(karto::Mapper* mapper)
 
 /*****************************************************************************/
 karto::OccupancyGrid* SMapper::getOccupancyGrid(const double& resolution, 
-int MinPassThrough, double OccupancyThreshold, bool dynamicEnvMode, int maxCntLimit, int hitCntStep)
+int minPassThrough, double occupancyThreshold, bool dynamicEnvMode, int maxCntLimit, int hitCntStep)
 /*****************************************************************************/
 {
   karto::OccupancyGrid* occ_grid = nullptr;
