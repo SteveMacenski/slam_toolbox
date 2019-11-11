@@ -6134,7 +6134,7 @@ namespace karto
       m_pMinPassThrough->SetValue(count);
     }
 
-    inline kt_int32u GetMinPassThrough()
+    inline kt_int32u GetMinPassThrough() const
     {
       return m_pMinPassThrough->GetValue();
     }
@@ -6147,7 +6147,7 @@ namespace karto
       m_pOccupancyThreshold->SetValue(thresh);
     }
 
-    inline kt_double GetOccupancyThreshold()
+    inline kt_double GetOccupancyThreshold() const
     {
       return m_pOccupancyThreshold->GetValue();
     }
@@ -6159,7 +6159,7 @@ namespace karto
       m_dynamicEnvMode->SetValue(mode);
     }
 
-    inline kt_bool GetDynamicEnvMode()
+    inline kt_bool GetDynamicEnvMode() const
     {
       return m_dynamicEnvMode->GetValue();
     }
@@ -6171,7 +6171,7 @@ namespace karto
       m_maxCntLimit->SetValue(count);
     }
 
-    inline kt_int32u GetMaxCntLimit()
+    inline kt_int32u GetMaxCntLimit() const
     {
       return m_maxCntLimit->GetValue();
     }
@@ -6184,7 +6184,7 @@ namespace karto
       m_hitCntStep->SetValue(count);
     }
 
-    inline kt_int32u GetHitCntStep()
+    inline kt_int32u GetHitCntStep() const
     {
       return m_hitCntStep->GetValue();
     }
