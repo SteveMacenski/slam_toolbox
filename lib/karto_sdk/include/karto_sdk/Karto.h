@@ -6022,7 +6022,7 @@ namespace karto
      * @param resolution
      */
     static OccupancyGrid* CreateFromScans(const LocalizedRangeScanVector& rScans, kt_double resolution,
-    kt_int32u minPassThrough, kt_double mccupancyThreshold, kt_bool dynamicEnvMode, kt_int32u maxCntLimit, kt_int32u hitCntStep)
+    kt_int32u minPassThrough, kt_double occupancyThreshold, kt_bool dynamicEnvMode, kt_int32u maxCntLimit, kt_int32u hitCntStep)
     {
       if (rScans.empty())
       {
@@ -6159,7 +6159,7 @@ namespace karto
       m_dynamicEnvMode->SetValue(mode);
     }
 
-    inline kt_bool GetDynamicEnvMode()()
+    inline kt_bool GetDynamicEnvMode()
     {
       return m_dynamicEnvMode->GetValue();
     }
@@ -6171,7 +6171,7 @@ namespace karto
       m_maxCntLimit->SetValue(count);
     }
 
-    inline kn_int32 GetMaxCntLimit()
+    inline kt_int32u GetMaxCntLimit()
     {
       return m_maxCntLimit->GetValue();
     }
@@ -6184,7 +6184,7 @@ namespace karto
       m_hitCntStep->SetValue(count);
     }
 
-    inline kt_int32 GetHitCntStep()
+    inline kt_int32u GetHitCntStep()
     {
       return m_hitCntStep->GetValue();
     }
