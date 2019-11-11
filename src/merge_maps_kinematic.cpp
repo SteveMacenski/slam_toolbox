@@ -32,6 +32,13 @@ void MergeMapsKinematic::setup()
 /*****************************************************************************/
 {
   nh_.param("resolution", resolution_, 0.05);
+  nh_.param("enable_interactive_mode", enable_interactive_mode_, false);
+  nh_.param("dynamic_environment_mode", dynamic_environment_mode_, false);
+  nh_.param("cell_data_limit", cell_data_limit_, 100);
+  nh_.param("cell_data_increment", cell_data_increment_, 2);
+  nh_.param("cell_minimum_passes", cell_minimum_passes_, 2);
+  nh_.param("cell_occupancy_threshold", cell_occupancy_threshold_, 0.1);
+
   sstS_.push_back(nh_.advertise<nav_msgs::OccupancyGrid>("/map", 1, true));
   sstmS_.push_back(nh_.advertise<nav_msgs::MapMetaData>(
     "/map_metadata", 1, true));
@@ -276,7 +283,10 @@ void MergeMapsKinematic::kartoToROSOccupancyGrid(
 /*****************************************************************************/
 {
   karto::OccupancyGrid* occ_grid = NULL;
-  occ_grid = karto::OccupancyGrid::CreateFromScans(scans, resolution_);
+  occ_grid = karto::OccupancyGrid::CreateFromScans(scans, resolution_,
+                                                              cell_minimum_passes_,cell_occupancy_threshold_,
+                                                              dynamic_environment_mode_, cell_data_limit_,
+                                                              cell_data_increment_);
   if (!occ_grid)
   {
     ROS_INFO("MergeMapsKinematic: Could not make Karto occupancy grid.");

@@ -91,6 +91,11 @@ private:
   std::map<int, tf2::Transform> submap_marker_transform_;
   double resolution_;
   int num_submaps_;
+  bool dynamic_environment_mode_;
+  int cell_data_limit_;
+  int cell_data_increment_;
+  int cell_minimum_passes_;
+  double cell_occupancy_threshold_;
 };
 
 #endif //SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
