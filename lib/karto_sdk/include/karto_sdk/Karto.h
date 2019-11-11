@@ -4909,7 +4909,7 @@ namespace karto
      * @param y1
      * @param f
      */
-    void TraceLine(kt_int32s x0, kt_int32s y0, kt_int32s x1, kt_int32s y1, Functor* f = NULL, kt_bool hitCntRemove = false, kt_int32u maxCntLimit = 1000)
+    void TraceLine(kt_int32s x0, kt_int32s y0, kt_int32s x1, kt_int32s y1, Functor* f = NULL, kt_bool hitCntRemove = false, kt_int32u maxCntLimit = 0)
     {
       kt_bool steep = abs(y1 - y0) > abs(x1 - x0);
       if (steep)
@@ -4967,12 +4967,12 @@ namespace karto
           kt_int32s index = GridIndex(gridIndex, false);
           T* pGridPointer = GetDataPointer();
           //TODO:expose this via a .yaml
-          if( !hitCntRemove ){
-            if (pGridPointer[index] <= maxCntLimit) 
-              pGridPointer[index]++;
+          if( hitCntRemove ){
+            if(pGridPointer[index] > 0) pGridPointer[index]--;
           }
           else{
-            if(pGridPointer[index] > 0) pGridPointer[index]--;
+            if (maxCntLimit == 0) pGridPointer[index]++;
+            else if (pGridPointer[index] <= maxCntLimit) pGridPointer[index]++;
           }
 
           if (f != NULL)
