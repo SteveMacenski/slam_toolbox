@@ -117,6 +117,11 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh)
   private_nh.param("scan_topic", scan_topic_, std::string("/scan"));
   private_nh.param("throttle_scans", throttle_scans_, 1);
   private_nh.param("enable_interactive_mode", enable_interactive_mode_, false);
+  private_nh.param("dynamic_environment_mode", dynamic_environment_mode_, false);
+  private_nh.param("cell_data_limit", cell_data_limit_, 100);
+  private_nh.param("cell_data_increment", cell_data_increment_, 2);
+  private_nh.param("cell_minimum_passes", cell_minimum_passes_, 2);
+  private_nh.param("cell_occupancy_threshold", cell_occupancy_threshold_, 0.1);
 
   double tmp_val;
   private_nh.param("transform_timeout", tmp_val, 0.2);

@@ -5966,7 +5966,7 @@ namespace karto
      * @param rOffset
      * @param resolution
      */
-    OccupancyGrid(kt_int32s width, kt_int32s height, const Vector2<kt_double>& rOffset, kt_double resolution)
+    OccupancyGrid(kt_int32s width, kt_int32s height, const Vector2<kt_double>& rOffset, kt_double resolution, kt_int32u MinPassThrough, kt_double OccupancyThreshold, kt_bool dynamicEnvMode, kt_int32u maxCntLimit, kt_int32u hitCntStep)
       : Grid<kt_int8u>(width, height)
       , m_pCellPassCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution))
       , m_pCellHitsCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution))
@@ -5979,12 +5979,12 @@ namespace karto
         throw Exception("Resolution cannot be 0");
       }
 
-      m_pMinPassThrough = new Parameter<kt_int32u>("MinPassThrough", 2);
-      m_pOccupancyThreshold = new Parameter<kt_double>("OccupancyThreshold", 0.1);
+      m_pMinPassThrough = new Parameter<kt_int32u>("MinPassThrough", MinPassThrough);
+      m_pOccupancyThreshold = new Parameter<kt_double>("OccupancyThreshold", OccupancyThreshold);
       
-      m_dynamicEnvMode = new Parameter<kt_bool>("DynamicEnvMode", true);
-      m_maxCntLimit = new Parameter<kt_int32u>("MaxCntLimit", 100);
-      m_hitCntStep = new Parameter<kt_int32u>("HitCntStep", 2);
+      m_dynamicEnvMode = new Parameter<kt_bool>("DynamicEnvMode", dynamicEnvMode);
+      m_maxCntLimit = new Parameter<kt_int32u>("MaxCntLimit", maxCntLimit);
+      m_hitCntStep = new Parameter<kt_int32u>("HitCntStep", hitCntStep);
 
       GetCoordinateConverter()->SetScale(1.0 / resolution);
       GetCoordinateConverter()->SetOffset(rOffset);
@@ -6014,7 +6014,8 @@ namespace karto
      * @param rScans
      * @param resolution
      */
-    static OccupancyGrid* CreateFromScans(const LocalizedRangeScanVector& rScans, kt_double resolution)
+    static OccupancyGrid* CreateFromScans(const LocalizedRangeScanVector& rScans, kt_double resolution,
+    kt_int32u MinPassThrough, kt_double OccupancyThreshold, kt_bool dynamicEnvMode, kt_int32u maxCntLimit, kt_int32u hitCntStep)
     {
       if (rScans.empty())
       {
@@ -6024,7 +6025,8 @@ namespace karto
       kt_int32s width, height;
       Vector2<kt_double> offset;
       ComputeDimensions(rScans, resolution, width, height, offset);
-      OccupancyGrid* pOccupancyGrid = new OccupancyGrid(width, height, offset, resolution);
+      OccupancyGrid* pOccupancyGrid = new OccupancyGrid(width, height, offset, resolution, 
+      MinPassThrough, OccupancyThreshold, dynamicEnvMode, maxCntLimit, hitCntStep);
       pOccupancyGrid->CreateFromScans(rScans);
 
       return pOccupancyGrid;

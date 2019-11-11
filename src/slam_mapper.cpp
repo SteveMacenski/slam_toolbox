@@ -52,12 +52,13 @@ void SMapper::setMapper(karto::Mapper* mapper)
 }
 
 /*****************************************************************************/
-karto::OccupancyGrid* SMapper::getOccupancyGrid(const double& resolution)
+karto::OccupancyGrid* SMapper::getOccupancyGrid(const double& resolution, 
+int MinPassThrough, double OccupancyThreshold, bool dynamicEnvMode, int maxCntLimit, int hitCntStep)
 /*****************************************************************************/
 {
   karto::OccupancyGrid* occ_grid = nullptr;
   return karto::OccupancyGrid::CreateFromScans(mapper_->GetAllProcessedScans(),
-    resolution);
+    resolution, MinPassThrough, OccupancyThreshold, dynamicEnvMode, maxCntLimit, hitCntStep);
 }
 
 /*****************************************************************************/

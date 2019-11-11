@@ -116,6 +116,14 @@ protected:
   double resolution_;
   bool first_measurement_, enable_interactive_mode_;
 
+  bool dynamic_environment_mode_;
+  int cell_data_limit_;
+  int cell_data_increment_;
+  int cell_minimum_passes_;
+  double cell_occupancy_threshold_;
+
+
+
   // Book keeping
   std::unique_ptr<mapper_utils::SMapper> smapper_;
   std::unique_ptr<karto::Dataset> dataset_;

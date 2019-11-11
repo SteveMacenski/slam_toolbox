@@ -85,3 +85,10 @@ coarse_angle_resolution: 0.0349
 minimum_angle_penalty: 0.9
 minimum_distance_penalty: 0.5
 use_response_expansion: true
+
+#Dynamic encvironment parameters
+dynamic_environment_mode: true
+cell_data_limit: 100
+cell_data_increment: 2
+cell_minimum_passes: 2
+cell_occupancy_threshold: 0.1
