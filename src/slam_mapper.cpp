@@ -58,7 +58,7 @@ int minPassThrough, double occupancyThreshold, bool dynamicEnvMode, int maxCntLi
 {
   karto::OccupancyGrid* occ_grid = nullptr;
   return karto::OccupancyGrid::CreateFromScans(mapper_->GetAllProcessedScans(),
-    resolution, MinPassThrough, OccupancyThreshold, dynamicEnvMode, maxCntLimit, hitCntStep);
+    resolution, minPassThrough, occupancyThreshold, dynamicEnvMode, maxCntLimit, hitCntStep);
 }
 
 /*****************************************************************************/

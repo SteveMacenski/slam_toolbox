@@ -318,7 +318,9 @@ bool SlamToolbox::updateMap()
     return true;
   }
   boost::mutex::scoped_lock lock(smapper_mutex_);
-  karto::OccupancyGrid* occ_grid = smapper_->getOccupancyGrid(resolution_);
+  karto::OccupancyGrid* occ_grid = smapper_->getOccupancyGrid(resolution_,cell_minimum_passes_,cell_occupancy_threshold_,
+                                                              dynamic_environment_mode_, cell_data_limit_,
+                                                              cell_data_increment_);
   if(!occ_grid)
   {
     return false;
