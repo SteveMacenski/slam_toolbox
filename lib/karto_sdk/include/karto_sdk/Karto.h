@@ -5965,8 +5965,15 @@ namespace karto
      * @param height
      * @param rOffset
      * @param resolution
+     * @param MinPassThrough
+     * @param OccupancyThreshold
+     * @param dynamicEnvMode
+     * @param maxCntLimit
+     * @param hitCntStep
      */
-    OccupancyGrid(kt_int32s width, kt_int32s height, const Vector2<kt_double>& rOffset, kt_double resolution, kt_int32u MinPassThrough, kt_double OccupancyThreshold, kt_bool dynamicEnvMode, kt_int32u maxCntLimit, kt_int32u hitCntStep)
+    OccupancyGrid(kt_int32s width, kt_int32s height, const Vector2<kt_double>& rOffset, kt_double resolution,
+     kt_int32u MinPassThrough, kt_double OccupancyThreshold, kt_bool dynamicEnvMode, kt_int32u maxCntLimit,
+     kt_int32u hitCntStep)
       : Grid<kt_int8u>(width, height)
       , m_pCellPassCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution))
       , m_pCellHitsCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution))
@@ -6015,7 +6022,7 @@ namespace karto
      * @param resolution
      */
     static OccupancyGrid* CreateFromScans(const LocalizedRangeScanVector& rScans, kt_double resolution,
-    kt_int32u MinPassThrough, kt_double OccupancyThreshold, kt_bool dynamicEnvMode, kt_int32u maxCntLimit, kt_int32u hitCntStep)
+    kt_int32u minPassThrough, kt_double mccupancyThreshold, kt_bool dynamicEnvMode, kt_int32u maxCntLimit, kt_int32u hitCntStep)
     {
       if (rScans.empty())
       {
@@ -6026,7 +6033,8 @@ namespace karto
       Vector2<kt_double> offset;
       ComputeDimensions(rScans, resolution, width, height, offset);
       OccupancyGrid* pOccupancyGrid = new OccupancyGrid(width, height, offset, resolution, 
-      MinPassThrough, OccupancyThreshold, dynamicEnvMode, maxCntLimit, hitCntStep);
+                                                        minPassThrough, occupancyThreshold,
+                                                        dynamicEnvMode, maxCntLimit, hitCntStep);
       pOccupancyGrid->CreateFromScans(rScans);
 
       return pOccupancyGrid;
@@ -6041,7 +6049,9 @@ namespace karto
       OccupancyGrid* pOccupancyGrid = new OccupancyGrid(GetWidth(),
                                                         GetHeight(),
                                                         GetCoordinateConverter()->GetOffset(),
-                                                        1.0 / GetCoordinateConverter()->GetScale());
+                                                        1.0 / GetCoordinateConverter()->GetScale(),
+                                                        GetMinPassThrough(), GetOccupancyThreshold(),
+                                                        GetDynamicEnvMode(),GetMaxCntLimit(), GetHitCntStep());
       memcpy(pOccupancyGrid->GetDataPointer(), GetDataPointer(), GetDataSize());
 
       pOccupancyGrid->GetCoordinateConverter()->SetSize(GetCoordinateConverter()->GetSize());
@@ -6124,6 +6134,10 @@ namespace karto
       m_pMinPassThrough->SetValue(count);
     }
 
+    inline kt_int32u GetMinPassThrough()
+    {
+      return m_pMinPassThrough->GetValue();
+    }
     /**
      * Sets the minimum ratio of beams hitting cell to beams passing through
      * cell for cell to be marked as occupied.
@@ -6133,6 +6147,10 @@ namespace karto
       m_pOccupancyThreshold->SetValue(thresh);
     }
 
+    inline kt_double GetOccupancyThreshold()
+    {
+      return m_pOccupancyThreshold->GetValue();
+    }
     /**
      * Defines if the dynamic environment mode should be used or not
      */
@@ -6141,12 +6159,21 @@ namespace karto
       m_dynamicEnvMode->SetValue(mode);
     }
 
+    inline kt_bool GetDynamicEnvMode()()
+    {
+      return m_dynamicEnvMode->GetValue();
+    }
     /**
      * Sets the maximum pass index value for the pass and hit counter.
      */
     void SetMaxCntLimit(kt_int32u count)
     {
       m_maxCntLimit->SetValue(count);
+    }
+
+    inline kn_int32 GetMaxCntLimit()
+    {
+      return m_maxCntLimit->GetValue();
     }
 
     /**
@@ -6157,6 +6184,10 @@ namespace karto
       m_hitCntStep->SetValue(count);
     }
 
+    inline kt_int32 GetHitCntStep()
+    {
+      return m_hitCntStep->GetValue();
+    }
   protected:
     /**
      * Get cell hit grid
