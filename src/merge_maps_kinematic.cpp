@@ -32,7 +32,6 @@ void MergeMapsKinematic::setup()
 /*****************************************************************************/
 {
   nh_.param("resolution", resolution_, 0.05);
-  nh_.param("enable_interactive_mode", enable_interactive_mode_, false);
   nh_.param("dynamic_environment_mode", dynamic_environment_mode_, false);
   nh_.param("cell_data_limit", cell_data_limit_, 100);
   nh_.param("cell_data_increment", cell_data_increment_, 2);
