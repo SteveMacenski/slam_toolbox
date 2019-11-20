@@ -43,6 +43,7 @@ int main(int argc, char** argv)
 
   rclcpp::NodeOptions options;
   auto lifelong_node = std::make_shared<slam_toolbox::LifelongSlamToolbox>(options);
+  lifelong_node->loadPoseGraphByParams();
   lifelong_node->configure();
   rclcpp::spin(lifelong_node->get_node_base_interface());
   rclcpp::shutdown();

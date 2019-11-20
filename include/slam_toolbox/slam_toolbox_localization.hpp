@@ -29,6 +29,7 @@ class LocalizationSlamToolbox : public SlamToolbox
 public:
   LocalizationSlamToolbox(rclcpp::NodeOptions options);
   ~LocalizationSlamToolbox() {};
+  virtual void loadPoseGraphByParams();
 
 protected:
   virtual void laserCallback(

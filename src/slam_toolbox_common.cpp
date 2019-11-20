@@ -282,8 +282,10 @@ void SlamToolbox::loadPoseGraphByParams()
   bool dock = false;
   if (shouldStartWithPoseGraph(filename, pose, dock))
   {
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req;
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp;
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req =
+      std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Request>();
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp =
+      std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Response>();
     req->initial_pose = pose;
     req->filename = filename;
     if (dock)
@@ -296,6 +298,7 @@ void SlamToolbox::loadPoseGraphByParams()
       req->match_type =
         slam_toolbox::srv::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;      
     }
+
     deserializePoseGraphCallback(nullptr, req, resp);
   }
 }
