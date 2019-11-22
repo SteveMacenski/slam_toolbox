@@ -43,8 +43,8 @@ int main(int argc, char** argv)
 
   rclcpp::NodeOptions options;
   auto sync_node = std::make_shared<slam_toolbox::SynchronousSlamToolbox>(options);
-  sync_node->loadPoseGraphByParams();
   sync_node->configure();
+  sync_node->loadPoseGraphByParams();
   rclcpp::spin(sync_node->get_node_base_interface());
   rclcpp::shutdown();
   return 0;
