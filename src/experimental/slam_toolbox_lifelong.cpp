@@ -38,7 +38,6 @@ LifelongSlamToolbox::LifelongSlamToolbox(rclcpp::NodeOptions options)
 : SlamToolbox(options)
 /*****************************************************************************/
 {
-  loadPoseGraphByParams();
   use_tree_ = false;
   use_tree_ = this->declare_parameter("lifelong_search_use_tree", use_tree_);
   iou_thresh_ =  0.10;

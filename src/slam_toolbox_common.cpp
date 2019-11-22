@@ -282,8 +282,10 @@ void SlamToolbox::loadPoseGraphByParams()
   bool dock = false;
   if (shouldStartWithPoseGraph(filename, pose, dock))
   {
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req;
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp;
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req =
+      std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Request>();
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp =
+      std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Response>();
     req->initial_pose = pose;
     req->filename = filename;
     if (dock)
@@ -296,6 +298,7 @@ void SlamToolbox::loadPoseGraphByParams()
       req->match_type =
         slam_toolbox::srv::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;      
     }
+
     deserializePoseGraphCallback(nullptr, req, resp);
   }
 }
@@ -745,19 +748,19 @@ void SlamToolbox::loadSerializedPoseGraph(
   {
     SensorManager::GetInstance()->RegisterSensor(pSensor);
 
-    sensor_msgs::msg::LaserScan::SharedPtr scan(nullptr);
-    auto laserSub =
-      [scan](const sensor_msgs::msg::LaserScan::SharedPtr msg) -> 
-        sensor_msgs::msg::LaserScan::SharedPtr
-      {
-        return msg;
-      };
+    sensor_msgs::msg::LaserScan::SharedPtr scan;
+
     auto sub = this->create_subscription<sensor_msgs::msg::LaserScan>(
-      scan_topic_, rclcpp::QoS(1), laserSub);
+      scan_topic_, rclcpp::SensorDataQoS(),
+      [&](const sensor_msgs::msg::LaserScan::SharedPtr msg)
+      {
+        scan = msg;
+      });
 
     rclcpp::Rate r(1);
     while (rclcpp::ok())
     {
+      rclcpp::spin_some(this->get_node_base_interface());
       RCLCPP_INFO(get_logger(), "Waiting for incoming scan to get metadata...");
 
       if (scan)
@@ -773,7 +776,6 @@ void SlamToolbox::loadSerializedPoseGraph(
         {
           RCLCPP_ERROR(get_logger(), "Failed to compute laser pose, "
             "aborting continue mapping (%s)", e.what());
-          exit(-1);
         }
       }
       r.sleep();
