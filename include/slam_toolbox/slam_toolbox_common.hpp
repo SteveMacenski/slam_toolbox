@@ -62,6 +62,7 @@ public:
   SlamToolbox();
   ~SlamToolbox();
   void configure();
+  virtual void loadPoseGraphByParams();
 
 protected:
   // threads
@@ -90,7 +91,6 @@ protected:
 
   // Loaders
   void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper> &, std::unique_ptr<karto::Dataset> &);
-  void loadPoseGraphByParams();
 
   // functional bits
   karto::LaserRangeFinder * getLaser(const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan);

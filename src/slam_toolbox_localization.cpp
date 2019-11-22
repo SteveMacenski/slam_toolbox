@@ -33,13 +33,27 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
     std::bind(&LocalizationSlamToolbox::localizePoseCallback,
     this, std::placeholders::_1));
 
+  // in localization mode, we cannot allow for interactive mode
+  enable_interactive_mode_ = false;
+
+  // in localization mode, disable map saver
+  map_saver_.reset();
+  return;
+}
+
+/*****************************************************************************/
+void LocalizationSlamToolbox::loadPoseGraphByParams()
+/*****************************************************************************/
+{
   std::string filename;
   geometry_msgs::msg::Pose2D pose;
   bool dock = false;
   if (shouldStartWithPoseGraph(filename, pose, dock))
   {
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req;
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp;
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req =
+      std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Request>();
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp =
+      std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Response>();
     req->initial_pose = pose;
     req->filename = filename;
     req->match_type = 
@@ -53,13 +67,6 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
 
     deserializePoseGraphCallback(nullptr, req, resp);
   }
-
-  // in localization mode, we cannot allow for interactive mode
-  enable_interactive_mode_ = false;
-
-  // in localization mode, disable map saver
-  map_saver_.reset();
-  return;
 }
 
 /*****************************************************************************/

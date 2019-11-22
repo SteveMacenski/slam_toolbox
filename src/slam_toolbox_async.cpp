@@ -27,7 +27,6 @@ AsynchronousSlamToolbox::AsynchronousSlamToolbox(rclcpp::NodeOptions options)
 : SlamToolbox(options)
 /*****************************************************************************/
 {
-  loadPoseGraphByParams();
 }
 
 /*****************************************************************************/

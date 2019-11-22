@@ -33,8 +33,6 @@ SynchronousSlamToolbox::SynchronousSlamToolbox(rclcpp::NodeOptions options)
 
   threads_.push_back(std::make_unique<boost::thread>(
     boost::bind(&SynchronousSlamToolbox::run, this)));
-
-  loadPoseGraphByParams();
 }
 
 /*****************************************************************************/
