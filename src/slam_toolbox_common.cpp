@@ -719,6 +719,7 @@ void SlamToolbox::loadSerializedPoseGraph(
 
   // move the memory to our working dataset
   smapper_->setMapper(mapper.release());
+  smapper_->configure(shared_from_this());
   dataset_.reset(dataset.release());
 
   if (!smapper_->getMapper())
