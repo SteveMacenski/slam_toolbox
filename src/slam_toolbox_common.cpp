@@ -638,6 +638,7 @@ void SlamToolbox::loadSerializedPoseGraph(
 
   // move the memory to our working dataset
   smapper_->setMapper(mapper.release());
+  smapper_->configure(nh_);
   dataset_.reset(dataset.release());
 
   if (!smapper_->getMapper())
@@ -668,7 +669,7 @@ void SlamToolbox::loadSerializedPoseGraph(
       ROS_INFO("Waiting for incoming scan to get metadata...");
       boost::shared_ptr<sensor_msgs::LaserScan const> scan =
         ros::topic::waitForMessage<sensor_msgs::LaserScan>(
-        std::string("/scan"), ros::Duration(1.0));
+        scan_topic_, ros::Duration(1.0));
       if (scan)
       {
         ROS_INFO("Got scan!");
