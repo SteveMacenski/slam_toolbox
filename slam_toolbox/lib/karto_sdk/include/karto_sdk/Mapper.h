@@ -1586,6 +1586,12 @@ namespace karto
     void SetLastScan(LocalizedRangeScan* pScan);
 
     /**
+     * Clears the laser scan of device
+     * @param pScan
+     */
+    void ClearLastScan(LocalizedRangeScan* pScan);
+
+    /**
      * Gets the scan with the given unique id
      * @param id
      * @return scan
@@ -1951,6 +1957,7 @@ namespace karto
     kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
     kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
     kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan>*);
+    void ClearLocalizationBuffer();
 
     /**
      * Returns all processed scans added to the mapper.

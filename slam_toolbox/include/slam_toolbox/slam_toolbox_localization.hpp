@@ -20,6 +20,7 @@
 #define SLAM_TOOLBOX_SLAM_TOOLBOX_LOCALIZATION_H_
 
 #include "slam_toolbox/slam_toolbox_common.hpp"
+#include "std_srvs/Empty.h"
 
 namespace slam_toolbox
 {
@@ -38,6 +39,9 @@ protected:
   void localizePoseCallback(
     const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
+  bool clearLocalizationBuffer(
+    std_srvs::Empty::Request& req,
+    std_srvs::Empty::Response& resp);
   virtual bool serializePoseGraphCallback(
     slam_toolbox_msgs::SerializePoseGraph::Request& req,
     slam_toolbox_msgs::SerializePoseGraph::Response& resp) override final;
@@ -50,6 +54,7 @@ protected:
     karto::Pose2& karto_pose) override final;
 
   ros::Subscriber localization_pose_sub_;
+  ros::ServiceServer clear_localization_;
 };
 
 }
