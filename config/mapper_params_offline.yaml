@@ -1,13 +1,6 @@
 slam_toolbox:
   ros__parameters:
 
-    # link_match_minimum_response_fine: 0.4 
-    # link_scan_maximum_distance: 20.0
-    # loop_search_maximum_distance: 50.0
-    # distance_variance_penalty: 1.8             
-    # angle_variance_penalty: 0.20    
-    # minimum_angle_penalty: 1.6 #0.9
-
     # Plugin params
     solver_plugin: solver_plugins::CeresSolver
     ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
