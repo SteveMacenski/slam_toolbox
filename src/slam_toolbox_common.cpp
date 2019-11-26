@@ -748,39 +748,6 @@ void SlamToolbox::loadSerializedPoseGraph(
   if (pSensor)
   {
     SensorManager::GetInstance()->RegisterSensor(pSensor);
-
-    sensor_msgs::msg::LaserScan::SharedPtr scan;
-
-    auto sub = this->create_subscription<sensor_msgs::msg::LaserScan>(
-      scan_topic_, rclcpp::SensorDataQoS(),
-      [&](const sensor_msgs::msg::LaserScan::SharedPtr msg)
-      {
-        scan = msg;
-      });
-
-    rclcpp::Rate r(1);
-    while (rclcpp::ok())
-    {
-      rclcpp::spin_some(this->get_node_base_interface());
-      RCLCPP_INFO(get_logger(), "Waiting for incoming scan to get metadata...");
-
-      if (scan)
-      {
-        RCLCPP_INFO(get_logger(), "Got scan!");
-        try
-        {
-          lasers_[scan->header.frame_id] =
-            laser_assistant_->toLaserMetadata(*scan);
-          break;
-        }
-        catch (tf2::TransformException& e)
-        {
-          RCLCPP_ERROR(get_logger(), "Failed to compute laser pose, "
-            "aborting continue mapping (%s)", e.what());
-        }
-      }
-      r.sleep();
-    }
   }
   else
   {
