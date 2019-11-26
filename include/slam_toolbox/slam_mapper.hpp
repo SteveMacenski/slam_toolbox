@@ -55,6 +55,8 @@ public:
   void setMapper(karto::Mapper * mapper);
   karto::Mapper * getMapper();
 
+  void clearLocalizationBuffer();
+
 protected:
   std::unique_ptr<karto::Mapper> mapper_;
 };
