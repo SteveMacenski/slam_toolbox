@@ -306,6 +306,15 @@ namespace karto
   }
 
   /**
+   * Clears the last scan of device name
+   * @param pScan
+   */
+  void MapperSensorManager::ClearLastScan(const Name& name)
+  {
+    GetScanManager(name)->ClearLastScan();
+  }
+
+  /**
    * Adds scan to scan vector of device that recorded scan
    * @param pScan
    */
@@ -2915,9 +2924,14 @@ namespace karto
       m_LocalizationScanVertices.pop();
     }
 
-    LocalizedRangeScan* pScan; //  TODO STEVE get scan or information relevent to clearing right stuff. Create GetScanManager overload with Name and clearLocalizationBuffer passes name
-    m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
-    m_pMapperSensorManager->ClearLastScan(pScan);
+    std::vector<Name> names = m_pMapperSensorManager->GetSensorNames();
+    for (uint i = 0; i != names.size(); i++)
+    {
+      m_pMapperSensorManager->ClearRunningScans(names[i]);
+      m_pMapperSensorManager->ClearLastScan(names[i]);
+    }
+
+    return;
   }
 
   kt_bool Mapper::RemoveNodeFromGraph(Vertex<LocalizedRangeScan>* vertex_to_remove)
