@@ -33,13 +33,27 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
     std::bind(&LocalizationSlamToolbox::localizePoseCallback,
     this, std::placeholders::_1));
 
+  // in localization mode, we cannot allow for interactive mode
+  enable_interactive_mode_ = false;
+
+  // in localization mode, disable map saver
+  map_saver_.reset();
+  return;
+}
+
+/*****************************************************************************/
+void LocalizationSlamToolbox::loadPoseGraphByParams()
+/*****************************************************************************/
+{
   std::string filename;
   geometry_msgs::msg::Pose2D pose;
   bool dock = false;
   if (shouldStartWithPoseGraph(filename, pose, dock))
   {
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req;
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp;
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req =
+      std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Request>();
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp =
+      std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Response>();
     req->initial_pose = pose;
     req->filename = filename;
     req->match_type = 
@@ -53,13 +67,6 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
 
     deserializePoseGraphCallback(nullptr, req, resp);
   }
-
-  // in localization mode, we cannot allow for interactive mode
-  enable_interactive_mode_ = false;
-
-  // in localization mode, disable map saver
-  map_saver_.reset();
-  return;
 }
 
 /*****************************************************************************/
@@ -140,7 +147,7 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
 
   // Add the localized range scan to the smapper
   boost::mutex::scoped_lock lock(smapper_mutex_);
-  bool processed = false;
+  bool processed = false, update_reprocessing_transform = false;
   if (processor_type_ == PROCESS_NEAR_REGION)
   {
     if (!process_near_pose_)
@@ -157,14 +164,14 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
     process_near_pose_.reset(nullptr);
     processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan);
 
-    // compute our new transform and reset to localization mode
-    setTransformFromPoses(range_scan->GetCorrectedPose(), odom_pose,
-      scan->header.stamp, true);
+    // reset to localization mode
+    update_reprocessing_transform = true;
     processor_type_ = PROCESS_LOCALIZATION;
   }
   else if (processor_type_ == PROCESS_LOCALIZATION)
   {
     processed = smapper_->getMapper()->ProcessLocalization(range_scan);
+    update_reprocessing_transform = false;
   }
   else
   {
@@ -178,6 +185,10 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
   {
     delete range_scan;
     range_scan = nullptr;
+  } else {
+    // compute our new transform
+    setTransformFromPoses(range_scan->GetCorrectedPose(), odom_pose,
+      scan->header.stamp, update_reprocessing_transform);
   }
 
   return range_scan;

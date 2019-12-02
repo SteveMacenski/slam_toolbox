@@ -282,8 +282,10 @@ void SlamToolbox::loadPoseGraphByParams()
   bool dock = false;
   if (shouldStartWithPoseGraph(filename, pose, dock))
   {
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req;
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp;
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req =
+      std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Request>();
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp =
+      std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Response>();
     req->initial_pose = pose;
     req->filename = filename;
     if (dock)
@@ -296,6 +298,7 @@ void SlamToolbox::loadPoseGraphByParams()
       req->match_type =
         slam_toolbox::srv::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;      
     }
+
     deserializePoseGraphCallback(nullptr, req, resp);
   }
 }
@@ -719,6 +722,7 @@ void SlamToolbox::loadSerializedPoseGraph(
 
   // move the memory to our working dataset
   smapper_->setMapper(mapper.release());
+  smapper_->configure(shared_from_this());
   dataset_.reset(dataset.release());
 
   if (!smapper_->getMapper())
@@ -744,40 +748,6 @@ void SlamToolbox::loadSerializedPoseGraph(
   if (pSensor)
   {
     SensorManager::GetInstance()->RegisterSensor(pSensor);
-
-    sensor_msgs::msg::LaserScan::SharedPtr scan(nullptr);
-    auto laserSub =
-      [scan](const sensor_msgs::msg::LaserScan::SharedPtr msg) -> 
-        sensor_msgs::msg::LaserScan::SharedPtr
-      {
-        return msg;
-      };
-    auto sub = this->create_subscription<sensor_msgs::msg::LaserScan>(
-      scan_topic_, rclcpp::QoS(1), laserSub);
-
-    rclcpp::Rate r(1);
-    while (rclcpp::ok())
-    {
-      RCLCPP_INFO(get_logger(), "Waiting for incoming scan to get metadata...");
-
-      if (scan)
-      {
-        RCLCPP_INFO(get_logger(), "Got scan!");
-        try
-        {
-          lasers_[scan->header.frame_id] =
-            laser_assistant_->toLaserMetadata(*scan);
-          break;
-        }
-        catch (tf2::TransformException& e)
-        {
-          RCLCPP_ERROR(get_logger(), "Failed to compute laser pose, "
-            "aborting continue mapping (%s)", e.what());
-          exit(-1);
-        }
-      }
-      r.sleep();
-    }
   }
   else
   {
