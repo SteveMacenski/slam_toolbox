@@ -653,6 +653,7 @@ void SlamToolbox::loadSerializedPoseGraph(
 
   // move the memory to our working dataset
   smapper_->setMapper(mapper.release());
+  smapper_->configure(nh_);
   dataset_.reset(dataset.release());
 
   if (!smapper_->getMapper())
@@ -677,30 +678,6 @@ void SlamToolbox::loadSerializedPoseGraph(
   if (pSensor)
   {
     karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
-
-    while (ros::ok())
-    {
-      ROS_INFO("Waiting for incoming scan to get metadata...");
-      boost::shared_ptr<sensor_msgs::LaserScan const> scan =
-        ros::topic::waitForMessage<sensor_msgs::LaserScan>(
-        std::string("/scan"), ros::Duration(1.0));
-      if (scan)
-      {
-        ROS_INFO("Got scan!");
-        try
-        {
-          lasers_[scan->header.frame_id] =
-            laser_assistant_->toLaserMetadata(*scan);
-          break;
-        }
-        catch (tf2::TransformException& e)
-        {
-          ROS_ERROR("Failed to compute laser pose, aborting continue mapping (%s)",
-            e.what());
-          exit(-1);
-        }
-      }
-    }
   }
   else
   {
