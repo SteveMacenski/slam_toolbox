@@ -326,6 +326,7 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
     return;
   }
   
+  // TODO I think these are relative to another frame, their laser tracks and not something common
   karto::Pose2 pose = pVertex->GetObject()->GetCorrectedPose();
   Eigen::Vector3d pose2d(pose.GetX(), pose.GetY(), pose.GetHeading());
 
@@ -340,7 +341,7 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
   }
   if (nodes_->size() == 2)
   {
-    second_node_ = nodes_->find(id);
+    second_node_ = nodes_->find(id); //TODO this real?
   }
 }
 
@@ -355,6 +356,8 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   {
     return;
   }
+
+  // TODO I think these are relative to another frame, their laser tracks and not something common
 
   const int node1 = pEdge->GetSource()->GetObject()->GetUniqueId();
   GraphIterator node1it = nodes_->find(node1);

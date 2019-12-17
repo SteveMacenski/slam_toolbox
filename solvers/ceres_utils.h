@@ -100,4 +100,3 @@ class PoseGraph2dErrorTerm
   // The inverse square root of the measurement covariance matrix.
   const Eigen::Matrix3d sqrt_information_;
 };
-

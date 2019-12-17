@@ -37,11 +37,18 @@ public:
   {
   };
 
-  bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t)
+  bool getOdomPose(karto::Pose2& karto_pose,
+    const ros::Time& t,
+    std::string ref_frame = std::string(""))
   {
+    if (ref_frame.empty()) 
+    {
+      ref_frame = base_frame_;
+    }
+
     geometry_msgs::TransformStamped base_ident, odom_pose;
     base_ident.header.stamp = t;
-    base_ident.header.frame_id = base_frame_;
+    base_ident.header.frame_id = ref_frame;
     base_ident.transform.rotation.w = 1.0;
 
     try

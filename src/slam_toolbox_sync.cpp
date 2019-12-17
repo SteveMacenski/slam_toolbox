@@ -70,7 +70,7 @@ void SynchronousSlamToolbox::laserCallback(
 {
   // no odom info
   karto::Pose2 pose;
-  if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
+  if(!pose_helper_->getOdomPose(pose, scan->header.stamp, scan->header.frame_id))
   {
     return;
   }

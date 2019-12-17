@@ -95,8 +95,7 @@ karto::LaserRangeFinder* LaserAssistant::makeLaser(const double& mountingYaw)
   karto::LaserRangeFinder* laser = 
     karto::LaserRangeFinder::CreateLaserRangeFinder(
     karto::LaserRangeFinder_Custom, karto::Name(name.c_str()));
-  laser->SetOffsetPose(karto::Pose2(laser_pose_.transform.translation.x,
-    laser_pose_.transform.translation.y, mountingYaw));
+  laser->SetOffsetPose(karto::Pose2(0.0, 0.0, 0.0));
   laser->SetMinimumRange(scan_.range_min);
   laser->SetMaximumRange(scan_.range_max);
   laser->SetMinimumAngle(scan_.angle_min);

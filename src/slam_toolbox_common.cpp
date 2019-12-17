@@ -114,7 +114,11 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh)
   private_nh.param("base_frame", base_frame_, std::string("base_footprint"));
   private_nh.param("resolution", resolution_, 0.05);
   private_nh.param("map_name", map_name_, std::string("/map"));
-  private_nh.getParam("laser_topics", laser_topics_);
+  std::vector<std::string> default_laser = {"/scan"};
+  if (!private_nh.getParam("laser_topics", laser_topics_))
+  {
+    laser_topics_ = default_laser;
+  }
   private_nh.param("throttle_scans", throttle_scans_, 1);
   private_nh.param("enable_interactive_mode", enable_interactive_mode_, false);
 
@@ -350,15 +354,49 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
   tf2::Quaternion q(0.,0.,0.,1.0);
   q.setRPY(0., 0., corrected_pose.GetHeading());
 
-  tf2::Stamped<tf2::Transform> base_to_map(
+  tf2::Stamped<tf2::Transform> laser_to_map(
     tf2::Transform(q, tf2::Vector3(corrected_pose.GetX(),
-    corrected_pose.GetY(), 0.0)).inverse(), header.stamp, base_frame_);   
+    corrected_pose.GetY(), 0.0)).inverse(), header.stamp, header.frame_id);
+
+  std::cout << header.frame_id << std::endl;
+
+  // open karto only measurements as if they were upside, so we "fake out" TF
+  if (lasers_[header.frame_id].isInverted())
+  {
+    tf2::Quaternion l_t_m_q;
+    l_t_m_q.setRPY(M_PI, 0., 0.); // flip it right side up, but keep orientation yaw, (M_PI, 0., y) for manually changing with laser_to_map.setRotation(l_t_m_q);
+    tf2::Transform trans;
+    trans.setIdentity();
+    trans.setRotation(l_t_m_q);
+
+    // fixes the translation, but rotation is messed up until changed to (M_PI, 0., 0.) because transform not manually overriding
+    laser_to_map.setData(trans * laser_to_map);
+
+    // fixes the orientation, but not how the orientation effects the direction of translation
+    //laser_to_map.setRotation(l_t_m_q);
+  }
+
+
+
+
+  // so why IS there a gap between the 2 sets of data that sems to diverge over time?
+  // does that divergance angle mean something relative to mounting positions? Relative to distance traveled? Relative to rotation of vehicle? Relative of angle from origin?
+  // just the changes in relative quality of matching from visible horizon?
+
+  // independently, both front/rear drift to the right and each iteration has a pretty real correction. rear drifts rright. Front drifts left
+  // I think the gap is natural
+
+
+
+
+
+
 
   try
   {
-    geometry_msgs::TransformStamped base_to_map_msg, odom_to_map_msg;
-    tf2::convert(base_to_map, base_to_map_msg);
-    odom_to_map_msg = tf_->transform(base_to_map_msg, odom_frame_);
+    geometry_msgs::TransformStamped laser_to_map_msg, odom_to_map_msg;
+    tf2::convert(laser_to_map, laser_to_map_msg);
+    odom_to_map_msg = tf_->transform(laser_to_map_msg, odom_frame_);
     tf2::convert(odom_to_map_msg, odom_to_map);
   }
   catch(tf2::TransformException& e)
@@ -373,13 +411,13 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
   // into the older session's frame
   if (update_reprocessing_transform)
   {
-    tf2::Transform odom_to_base_serialized = base_to_map.inverse();
+    tf2::Transform odom_to_laser_serialized = laser_to_map.inverse();
     tf2::Quaternion q1(0.,0.,0.,1.0);
-    q1.setRPY(0., 0., tf2::getYaw(odom_to_base_serialized.getRotation()));
-    odom_to_base_serialized.setRotation(q1);
-    tf2::Transform odom_to_base_current = smapper_->toTfPose(karto_pose);
+    q1.setRPY(0., 0., tf2::getYaw(odom_to_laser_serialized.getRotation()));
+    odom_to_laser_serialized.setRotation(q1);
+    tf2::Transform odom_to_laser_current = smapper_->toTfPose(karto_pose);
     reprocessing_transform_ = 
-      odom_to_base_serialized * odom_to_base_current.inverse();
+      odom_to_laser_serialized * odom_to_laser_current.inverse();
   }
 
   // set map to odom for our transformation thread to publish
