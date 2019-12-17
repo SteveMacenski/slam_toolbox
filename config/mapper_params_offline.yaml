@@ -10,7 +10,7 @@ ceres_loss_function: None
 odom_frame: odom
 map_frame: map
 base_frame: base_link
-laser_topics: ['/scan_front', '/scan_rear'] #TODO
+laser_topics: [/scan_front, /scan_rear]
 mode: mapping #localization
 debug_logging: false
 throttle_scans: 1
