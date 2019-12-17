@@ -200,6 +200,7 @@ void CeresSolver::Compute()
     // problem_->SetParameterBlockConstant(&second_node_->second(2));
     was_constant_set_ = !was_constant_set_;
 
+    // TODO
 
     // // well for this to work, how do they have different poses to know the difference?
     //   karto::Pose2 rPose1(first_node_->second(0),first_node_->second(1),first_node_->second(2));

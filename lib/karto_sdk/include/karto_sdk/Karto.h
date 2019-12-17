@@ -6600,7 +6600,7 @@ namespace karto
       else
       {
         std::cout << "Failed to remove data. Pointer to LocalizedRangeScan could not be found in dataset. "
-          << "Most likely different pointer address but same object TODO STEVE." << std::endl;
+          << "Most likely different pointer address but same object." << std::endl;
       }
     }
 

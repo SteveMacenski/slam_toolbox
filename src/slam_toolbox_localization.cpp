@@ -149,13 +149,7 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
     process_near_pose_.reset(nullptr);
     processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan);
 
-<<<<<<< HEAD
-    // compute our new transform and reset to localization mode
-    setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
-      scan->header, true);
-=======
     // reset to localization mode
->>>>>>> 6a021522ca66d8fbccf3baf0c9ad95bbb0551fa1
     processor_type_ = PROCESS_LOCALIZATION;
     update_reprocessing_transform = true;
   }
@@ -179,7 +173,7 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
   } else {
     // compute our new transform
     setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
-      scan->header.stamp, update_reprocessing_transform);
+      scan->header, update_reprocessing_transform);
   }
 
   return range_scan;

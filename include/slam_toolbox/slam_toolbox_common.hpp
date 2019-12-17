@@ -109,12 +109,8 @@ protected:
   ros::ServiceServer ssMap_, ssPauseMeasurements_, ssSerialize_, ssDesserialize_;
 
   // Storage for ROS parameters
-<<<<<<< HEAD
   std::vector<std::string> laser_topics_;
   std::string odom_frame_, map_frame_, base_frame_, map_name_;
-=======
-  std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_;
->>>>>>> 6a021522ca66d8fbccf3baf0c9ad95bbb0551fa1
   ros::Duration transform_timeout_, tf_buffer_dur_, minimum_time_interval_;
   int throttle_scans_;
 
