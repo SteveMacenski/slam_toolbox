@@ -703,17 +703,21 @@ void SlamToolbox::loadSerializedPoseGraph(
   }
 
   // create a current laser sensor
-  karto::LaserRangeFinder* laser =
-    dynamic_cast<karto::LaserRangeFinder*>(
-    dataset_->GetLasers()[0]);
-  karto::Sensor* pSensor = dynamic_cast<karto::Sensor*>(laser);
-  if (pSensor)
+  int num_sensors = dataset_->GetLasers().size();
+  for (int i = 0; i != num_sensors; i++)
   {
-    karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
-  }
-  else
-  {
-    ROS_ERROR("Invalid sensor pointer in dataset. Unable to register sensor.");
+    karto::LaserRangeFinder* laser =
+      dynamic_cast<karto::LaserRangeFinder*>(
+      dataset_->GetLasers()[num_sensors]);
+    karto::Sensor* pSensor = dynamic_cast<karto::Sensor*>(laser);
+    if (pSensor)
+    {
+      karto::SensorManager::GetInstance()->RegisterSensor(pSensor);
+    }
+    else
+    {
+      ROS_ERROR("Invalid sensor pointer in dataset. Unable to register sensor.");
+    }
   }
 
   solver_->Compute();
