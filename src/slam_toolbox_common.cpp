@@ -458,57 +458,53 @@ bool SlamToolbox::shouldProcessScan(
   const karto::Pose2& pose)
 /*****************************************************************************/
 {
+  static double min_dist2 =
+    smapper_->getMapper()->getParamMinimumTravelDistance() *
+    smapper_->getMapper()->getParamMinimumTravelDistance();
+
+  // we are in a paused mode, reject incomming information
+  if(isPaused(NEW_MEASUREMENTS))
+  {
+    return false;
+  }
+
+  // throttled out
+  if ((scan->header.seq % throttle_scans_) != 0)
+  {
+    return false;
+  }
+
+  laser_utils::LaserMetadata& meta = lasers_[scan->header.frame_id];
+
+  // we give it a pass on the first measurement to get the ball rolling
+  if (first_measurement_)
+  {
+    meta.setLastScanTime(scan->header.stamp);
+    meta.setLastPose(pose);
+    first_measurement_ = false;
+    return true;
+  }
+
+  // not enough time
+  if (scan->header.stamp - meta.getLastScanTime() < minimum_time_interval_)
+  {
+    return false;
+  }
+
+  // check moved enough, within 10% for correction error
+  const double dist2 = fabs((meta.getLastPose().GetX() - pose.GetX()) * 
+    (meta.getLastPose().GetX() - 
+    pose.GetX()) + (meta.getLastPose().GetY() - pose.GetY())*
+    (meta.getLastPose().GetX() - pose.GetY()));
+  if(dist2 < 0.8 * min_dist2 || scan->header.seq < 5)
+  {
+    return false;
+  }
+
+  meta.setLastPose(pose);
+  meta.setLastScanTime(scan->header.stamp);
+
   return true;
-
-  // need to do on a per-scanner basis TODO
-
-
-  // static karto::Pose2 last_pose;
-  // static ros::Time last_scan_time = ros::Time(0.);
-  // static double min_dist2 =
-  //   smapper_->getMapper()->getParamMinimumTravelDistance() *
-  //   smapper_->getMapper()->getParamMinimumTravelDistance();
-
-  // // we give it a pass on the first measurement to get the ball rolling
-  // if (first_measurement_)
-  // {
-  //   last_scan_time = scan->header.stamp;
-  //   last_pose = pose;
-  //   first_measurement_ = false;
-  //   return true;
-  // }
-
-  // // we are in a paused mode, reject incomming information
-  // if(isPaused(NEW_MEASUREMENTS))
-  // {
-  //   return false;
-  // }
-
-  // // throttled out
-  // if ((scan->header.seq % throttle_scans_) != 0)
-  // {
-  //   return false;
-  // }
-
-  // // not enough time
-  // if (scan->header.stamp - last_scan_time < minimum_time_interval_)
-  // {
-  //   return false;
-  // }
-
-  // // check moved enough, within 10% for correction error
-  // const double dist2 = fabs((last_pose.GetX() - pose.GetX())*(last_pose.GetX() - 
-  //   pose.GetX()) + (last_pose.GetY() - pose.GetY())*
-  //   (last_pose.GetX() - pose.GetY()));
-  // if(dist2 < 0.8 * min_dist2 || scan->header.seq < 5)
-  // {
-  //   return false;
-  // }
-
-  // last_pose = pose;
-  // last_scan_time = scan->header.stamp; 
-
-  // return true;
 }
 
 /*****************************************************************************/

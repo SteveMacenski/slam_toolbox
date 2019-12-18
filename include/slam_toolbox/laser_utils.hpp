@@ -63,9 +63,16 @@ public:
   karto::LaserRangeFinder* getLaser();
   void invertScan(sensor_msgs::LaserScan& scan) const;
 
+  ros::Time getLastScanTime();
+  karto::Pose2 getLastPose();
+  void setLastScanTime(const ros::Time last_time_new);
+  void setLastPose(const karto::Pose2 last_pose_new);
+
 private:
   karto::LaserRangeFinder* laser;
   bool inverted;
+  ros::Time last_scan_time;
+  karto::Pose2 last_pose; 
 };
 
 // Help take a scan from a laser and create a laser object

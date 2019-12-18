@@ -33,6 +33,7 @@ LaserMetadata::LaserMetadata(karto::LaserRangeFinder* lsr, bool invert)
 {
   laser = lsr;
   inverted = invert;
+  last_scan_time = ros::Time(0);
 };
 
 bool LaserMetadata::isInverted() const
@@ -43,6 +44,26 @@ bool LaserMetadata::isInverted() const
 karto::LaserRangeFinder* LaserMetadata::getLaser()
 {
   return laser;
+}
+
+ros::Time LaserMetadata::getLastScanTime()
+{
+  return last_scan_time;
+}
+
+karto::Pose2 LaserMetadata::getLastPose()
+{
+  return last_pose;
+}
+
+void LaserMetadata::setLastScanTime(const ros::Time last_time_new)
+{
+  last_scan_time = last_time_new;
+}
+
+void LaserMetadata::setLastPose(const karto::Pose2 last_pose_new)
+{
+  last_pose = last_pose_new;
 }
 
 void LaserMetadata::invertScan(sensor_msgs::LaserScan& scan) const
