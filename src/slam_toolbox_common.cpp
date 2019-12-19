@@ -357,39 +357,16 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
     tf2::Transform(q, tf2::Vector3(corrected_pose.GetX(),
     corrected_pose.GetY(), 0.0)).inverse(), header.stamp, header.frame_id);
 
-  std::cout << header.frame_id << std::endl;
-
   // open karto only measurements as if they were upside, so we "fake out" TF
   if (lasers_[header.frame_id].isInverted())
   {
     tf2::Quaternion l_t_m_q;
-    l_t_m_q.setRPY(M_PI, 0., 0.); // flip it right side up, but keep orientation yaw, (M_PI, 0., y) for manually changing with laser_to_map.setRotation(l_t_m_q);
+    l_t_m_q.setRPY(M_PI, 0., 0.);
     tf2::Transform trans;
     trans.setIdentity();
     trans.setRotation(l_t_m_q);
-
-    // fixes the translation, but rotation is messed up until changed to (M_PI, 0., 0.) because transform not manually overriding
     laser_to_map.setData(trans * laser_to_map);
-
-    // fixes the orientation, but not how the orientation effects the direction of translation
-    //laser_to_map.setRotation(l_t_m_q);
   }
-
-
-
-
-  // so why IS there a gap between the 2 sets of data that sems to diverge over time?
-  // does that divergance angle mean something relative to mounting positions? Relative to distance traveled? Relative to rotation of vehicle? Relative of angle from origin?
-  // just the changes in relative quality of matching from visible horizon?
-
-  // independently, both front/rear drift to the right and each iteration has a pretty real correction. rear drifts rright. Front drifts left
-  // I think the gap is natural
-
-
-
-
-
-
 
   try
   {
@@ -571,7 +548,7 @@ karto::LocalizedRangeScan* SlamToolbox::addScan(
       scan_holder_->addScan(*scan);
     }
 
-    setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
+    setTransformFromPoses(range_scan->GetSensorPose(), karto_pose,
       scan->header, update_reprocessing_transform);
     dataset_->Add(range_scan);
   }
