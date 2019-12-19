@@ -28,7 +28,6 @@ namespace slam_toolbox
 SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
 : solver_loader_("slam_toolbox", "karto::ScanSolver"),
   processor_type_(PROCESS),
-  first_measurement_(true),
   nh_(nh),
   process_near_pose_(nullptr)
 /*****************************************************************************/
@@ -477,11 +476,11 @@ bool SlamToolbox::shouldProcessScan(
   laser_utils::LaserMetadata& meta = lasers_[scan->header.frame_id];
 
   // we give it a pass on the first measurement to get the ball rolling
-  if (first_measurement_)
+  if (meta.isFirstMeasurement())
   {
     meta.setLastScanTime(scan->header.stamp);
     meta.setLastPose(pose);
-    first_measurement_ = false;
+    meta.isFirstMeasurement(false);
     return true;
   }
 
@@ -766,7 +765,12 @@ bool SlamToolbox::deserializePoseGraphCallback(
   loadSerializedPoseGraph(mapper, dataset);
   updateMap();
 
-  first_measurement_ = true;
+  std::map<std::string, laser_utils::LaserMetadata>::iterator it;
+  for (it = lasers_.begin(); it != lasers_.end(); ++it)
+  {
+    it->second.isFirstMeasurement(true);
+  }
+
   boost::mutex::scoped_lock l(pose_mutex_);
   switch (req.match_type)
   {

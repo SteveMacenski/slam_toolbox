@@ -66,6 +66,16 @@ void LaserMetadata::setLastPose(const karto::Pose2 last_pose_new)
   last_pose = last_pose_new;
 }
 
+void LaserMetadata::isFirstMeasurement(const bool isIt)
+{
+  first_measurement = isIt;
+}
+
+bool LaserMetadata::isFirstMeasurement()
+{
+  return first_measurement;
+}
+
 void LaserMetadata::invertScan(sensor_msgs::LaserScan& scan) const
 {
   sensor_msgs::LaserScan temp;

@@ -65,6 +65,8 @@ public:
 
   ros::Time getLastScanTime();
   karto::Pose2 getLastPose();
+  bool isFirstMeasurement();
+  void isFirstMeasurement(bool isIt);
   void setLastScanTime(const ros::Time last_time_new);
   void setLastPose(const karto::Pose2 last_pose_new);
 
@@ -72,7 +74,8 @@ private:
   karto::LaserRangeFinder* laser;
   bool inverted;
   ros::Time last_scan_time;
-  karto::Pose2 last_pose; 
+  karto::Pose2 last_pose;
+  bool first_measurement;
 };
 
 // Help take a scan from a laser and create a laser object

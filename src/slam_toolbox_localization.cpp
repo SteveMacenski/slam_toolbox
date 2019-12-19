@@ -203,7 +203,11 @@ void LocalizationSlamToolbox::localizePoseCallback(const
       msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation));    
   }
 
-  first_measurement_ = true;
+  std::map<std::string, laser_utils::LaserMetadata>::iterator it;
+  for (it = lasers_.begin(); it != lasers_.end(); ++it)
+  {
+    it->second.isFirstMeasurement(true);
+  }
 
   ROS_INFO("LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
     msg->pose.pose.position.x, msg->pose.pose.position.y,
