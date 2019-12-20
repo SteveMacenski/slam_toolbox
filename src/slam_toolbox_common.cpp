@@ -642,7 +642,7 @@ void SlamToolbox::loadSerializedPoseGraph(
     {
       if (vertex_it->second != nullptr)
       {
-        solver_->AddNode(vertex_it->second);
+        solver_->AddNode(vertex_it->second->GetObject()->GetSensorName(), vertex_it->second);
       }
     }
   }
@@ -653,7 +653,7 @@ void SlamToolbox::loadSerializedPoseGraph(
   {
     if (*edges_it != nullptr)
     {
-      solver_->AddConstraint(*edges_it);  
+      solver_->AddConstraint((*edges_it)->GetSource()->GetObject()->GetSensorName(), *edges_it);  
     }
   }
 

@@ -973,7 +973,7 @@ namespace karto
     /**
      * Adds a node to the solver
      */
-    virtual void AddNode(Vertex<LocalizedRangeScan>* /*pVertex*/)
+    virtual void AddNode(karto::Name name, Vertex<LocalizedRangeScan>* /*pVertex*/)
     {
     }
 
@@ -987,14 +987,14 @@ namespace karto
     /**
      * Adds a constraint to the solver
      */
-    virtual void AddConstraint(Edge<LocalizedRangeScan>* /*pEdge*/)
+    virtual void AddConstraint(Name /*name*/, Edge<LocalizedRangeScan>* /*pEdge*/)
     {
     }
 
     /**
      * Removes a constraint from the solver
      */
-    virtual void RemoveConstraint(kt_int32s /*sourceId*/, kt_int32s /*targetId*/)
+    virtual void RemoveConstraint(Name, kt_int32s /*sourceId*/, kt_int32s /*targetId*/)
     {
     }
 

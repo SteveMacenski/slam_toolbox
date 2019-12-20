@@ -16,10 +16,7 @@ namespace solver_plugins
 
 /*****************************************************************************/
 CeresSolver::CeresSolver() : 
- nodes_(new std::unordered_map<int, Eigen::Vector3d>()),
-  blocks_(new std::unordered_map<std::size_t,
-    ceres::ResidualBlockId>()),
-  problem_(NULL), was_constant_set_(false)
+ nodes_(new std::unordered_map<int, Eigen::Vector3d>())
 /*****************************************************************************/
 {
   ros::NodeHandle nh("~");
@@ -34,7 +31,6 @@ CeresSolver::CeresSolver() :
   nh.getParam("debug_logging", debug_logging_);
 
   corrections_.clear();
-  first_node_ = nodes_->end();
 
   // formulate problem
   angle_local_parameterization_ = AngleLocalParameterization::Create();
@@ -143,8 +139,6 @@ CeresSolver::CeresSolver() :
     options_problem_.enable_fast_removal = true;
   }
 
-  problem_ = new ceres::Problem(options_problem_);
-
   return;
 }
 
@@ -160,9 +154,17 @@ CeresSolver::~CeresSolver()
   {
     delete nodes_;
   }
-  if (problem_ != NULL)
+
+  std::unordered_map<karto::Name, ceres::Problem*>::iterator problem_it;
+  for (problem_it = problems_.begin(); problem_it != problems_.end(); ++problem_it)
   {
-    delete problem_;  
+    delete problem_it->second;
+  }
+
+  std::unordered_map<karto::Name, std::unordered_map<size_t, ceres::ResidualBlockId>* >::iterator block_it;
+  for (block_it = blocks_.begin(); block_it != blocks_.end(); ++block_it)
+  {
+    delete block_it->second;
   }
 }
 
@@ -179,76 +181,35 @@ void CeresSolver::Compute()
     return;
   }
 
-  // populate contraint for static initial pose
-  if (!was_constant_set_ && first_node_ != nodes_->end())
+  std::unordered_map<karto::Name, ceres::Problem*>::iterator problem_it;
+  for (problem_it = problems_.begin(); problem_it != problems_.end(); ++problem_it)
   {
-    // oh oh but this is still 0/0/0 so if we also update with "TF"....
-    second_node_->second(2) = 3.14159;
 
-    ROS_INFO("CeresSolver: Setting first node as a constant pose:"
-      "%0.2f, %0.2f, %0.2f.", first_node_->second(0),
-      first_node_->second(1), first_node_->second(2));
-    ROS_INFO("CeresSolver: Setting second node as a constant pose:"
-      "%0.2f, %0.2f, %0.2f.", second_node_->second(0),
-      second_node_->second(1), second_node_->second(2));
+    // populate contraint for static initial pose
+    auto first_node_it = first_nodes_.find(problem_it->first);
+    if (first_node_it != first_nodes_.end())
+    {
+      ROS_DEBUG("CeresSolver: Setting first node as a constant pose:"
+        "%0.2f, %0.2f, %0.2f.", first_node_it->second->second(0),
+        first_node_it->second->second(1), first_node_it->second->second(2));
+      problem_it->second->SetParameterBlockConstant(&first_node_it->second->second(0));
+      problem_it->second->SetParameterBlockConstant(&first_node_it->second->second(1));
+      problem_it->second->SetParameterBlockConstant(&first_node_it->second->second(2));
+    }
 
-    problem_->SetParameterBlockConstant(&first_node_->second(0));
-    problem_->SetParameterBlockConstant(&first_node_->second(1));
-    problem_->SetParameterBlockConstant(&first_node_->second(2));
-    // problem_->SetParameterBlockConstant(&second_node_->second(0));
-    // problem_->SetParameterBlockConstant(&second_node_->second(1));
-    // problem_->SetParameterBlockConstant(&second_node_->second(2));
-    was_constant_set_ = !was_constant_set_;
+    ceres::Solver::Summary summary;
+    ceres::Solve(options_, problem_it->second, &summary);
+    if (debug_logging_)
+    {
+      std::cout << summary.FullReport() << '\n';
+    }
 
-    // TODO
-
-    // // well for this to work, how do they have different poses to know the difference?
-    //   karto::Pose2 rPose1(first_node_->second(0),first_node_->second(1),first_node_->second(2));
-    //   karto::Pose2 rPose2(second_node_->second(0),second_node_->second(1),second_node_->second(2));
-    //   karto::Transform transform(rPose2, karto::Pose2());
-    //   karto::Pose2 m_PoseDifference = transform.TransformPose(rPose1);
-
-    // Eigen::Vector3d pose2dDiff(0.,
-    //   0.,
-    //   3.14159);  // BETTER, try finding from TF now
-    //  also visualize the constraint maps as well to make sure?
-      // color coded by laser id
-
-    // Eigen::Matrix3d sqrt_information;
-    // sqrt_information(0,0) = 350;
-    // sqrt_information(0,1) = sqrt_information(1,0) = -313;
-    // sqrt_information(0,2) = sqrt_information(2,0) = 0;
-    // sqrt_information(1,1) = 500;
-    // sqrt_information(1,2) = sqrt_information(2,1) = 0;
-    // sqrt_information(2,2) = 8000;
-    // std::cout <<sqrt_information(0,0) << " " << sqrt_information(0,1)<< " " << sqrt_information(0,2) << std::endl;
-    // std::cout <<sqrt_information(1,0) << " " << sqrt_information(1,1)<< " " << sqrt_information(1,2) << std::endl;
-    // std::cout <<sqrt_information(2,0) << " " << sqrt_information(2,1)<< " " << sqrt_information(2,2) << std::endl;
-    // ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create(pose2dDiff(0), 
-    //   pose2dDiff(1), pose2dDiff(2), sqrt_information);
-    // ceres::ResidualBlockId block = problem_->AddResidualBlock(
-    //  cost_function, loss_function_, 
-    //  &first_node_->second(0), &first_node_->second(1), &first_node_->second(2),
-    //  &second_node_->second(0), &second_node_->second(1), &second_node_->second(2));
-    // problem_->SetParameterization(&first_node_->second(2),
-    //   angle_local_parameterization_);
-    // problem_->SetParameterization(&second_node_->second(2),
-    //   angle_local_parameterization_);
-  }
-
-  const ros::Time start_time = ros::Time::now();
-  ceres::Solver::Summary summary;
-  ceres::Solve(options_, problem_, &summary);
-  if (debug_logging_)
-  {
-    std::cout << summary.FullReport() << '\n';
-  }
-
-  if (!summary.IsSolutionUsable())
-  {
-    ROS_WARN("CeresSolver: "
-      "Ceres could not find a usable solution to optimize.");
-    return;
+    if (!summary.IsSolutionUsable())
+    {
+      ROS_WARN("CeresSolver: "
+        "Ceres could not find a usable solution to optimize.");
+      return;
+    }
   }
 
   // store corrected poses
@@ -291,11 +252,11 @@ void CeresSolver::Reset()
   boost::mutex::scoped_lock lock(nodes_mutex_);
 
   corrections_.clear();
-  was_constant_set_ = false;
 
-  if (problem_)
+  std::unordered_map<karto::Name, ceres::Problem*>::iterator problem_it;
+  for (problem_it = problems_.begin(); problem_it != problems_.end(); ++problem_it)
   {
-    delete problem_;
+    delete problem_it->second;
   }
 
   if (nodes_)
@@ -303,21 +264,18 @@ void CeresSolver::Reset()
     delete nodes_;
   }
 
-  if (blocks_)
+  std::unordered_map<karto::Name, std::unordered_map<size_t, ceres::ResidualBlockId>* >::iterator block_it;
+  for (block_it = blocks_.begin(); block_it != blocks_.end(); ++block_it)
   {
-    delete blocks_;
+    delete block_it->second;
   }
 
   nodes_ = new std::unordered_map<int, Eigen::Vector3d>();
-  blocks_ = new std::unordered_map<std::size_t, ceres::ResidualBlockId>();
-  problem_ = new ceres::Problem(options_problem_);
-  first_node_ = nodes_->end();
-
   angle_local_parameterization_ = AngleLocalParameterization::Create();
 }
 
 /*****************************************************************************/
-void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
+void CeresSolver::AddNode(karto::Name name, karto::Vertex<karto::LocalizedRangeScan>* pVertex)
 /*****************************************************************************/
 {
   // store nodes
@@ -326,7 +284,6 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
     return;
   }
   
-  // TODO I think these are relative to another frame, their laser tracks and not something common
   karto::Pose2 pose = pVertex->GetObject()->GetCorrectedPose();
   Eigen::Vector3d pose2d(pose.GetX(), pose.GetY(), pose.GetHeading());
 
@@ -335,18 +292,14 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
   boost::mutex::scoped_lock lock(nodes_mutex_);
   nodes_->insert(std::pair<int,Eigen::Vector3d>(id,pose2d));
 
-  if (nodes_->size() == 1)
+  if (first_nodes_.find(name) == first_nodes_.end())
   {
-    first_node_ = nodes_->find(id);
-  }
-  if (nodes_->size() == 2)
-  {
-    second_node_ = nodes_->find(id); //TODO this real?
+    first_nodes_.insert({name, nodes_->find(id)});
   }
 }
 
 /*****************************************************************************/
-void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
+void CeresSolver::AddConstraint(karto::Name name, karto::Edge<karto::LocalizedRangeScan>* pEdge)
 /*****************************************************************************/
 {
   // get IDs in graph for this edge
@@ -356,8 +309,6 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   {
     return;
   }
-
-  // TODO I think these are relative to another frame, their laser tracks and not something common
 
   const int node1 = pEdge->GetSource()->GetObject()->GetUniqueId();
   GraphIterator node1it = nodes_->find(node1);
@@ -369,6 +320,11 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   {
     ROS_WARN("CeresSolver: Failed to add constraint, could not find nodes.");
     return;
+  }
+
+  if (problems_.find(name) == problems_.end())
+  {
+    problems_[name] = new ceres::Problem(options_problem_);
   }
 
   // extract transformation
@@ -384,23 +340,25 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   sqrt_information(1,1) = precisionMatrix(1,1);
   sqrt_information(1,2) = sqrt_information(2,1) = precisionMatrix(1,2);
   sqrt_information(2,2) = precisionMatrix(2,2);
-  std::cout <<sqrt_information(0,0) << " " << sqrt_information(0,1)<< " " << sqrt_information(0,2) << std::endl;
-  std::cout <<sqrt_information(1,0) << " " << sqrt_information(1,1)<< " " << sqrt_information(1,2) << std::endl;
-  std::cout <<sqrt_information(2,0) << " " << sqrt_information(2,1)<< " " << sqrt_information(2,2) << std::endl;
 
   // populate residual and parameterization for heading normalization
   ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create(pose2d(0), 
     pose2d(1), pose2d(2), sqrt_information);
-  ceres::ResidualBlockId block = problem_->AddResidualBlock(
+  ceres::ResidualBlockId block = problems_[name]->AddResidualBlock(
    cost_function, loss_function_, 
    &node1it->second(0), &node1it->second(1), &node1it->second(2),
    &node2it->second(0), &node2it->second(1), &node2it->second(2));
-  problem_->SetParameterization(&node1it->second(2),
+  problems_[name]->SetParameterization(&node1it->second(2),
     angle_local_parameterization_);
-  problem_->SetParameterization(&node2it->second(2),
+  problems_[name]->SetParameterization(&node2it->second(2),
     angle_local_parameterization_);
 
-  blocks_->insert(std::pair<std::size_t, ceres::ResidualBlockId>(
+  if (blocks_.find(name) == blocks_.end())
+  {
+    blocks_.insert({name, new std::unordered_map<std::size_t, ceres::ResidualBlockId>()});
+  }
+
+  blocks_[name]->insert(std::pair<std::size_t, ceres::ResidualBlockId>(
     GetHash(node1, node2), block));
   return;
 }
@@ -422,23 +380,29 @@ void CeresSolver::RemoveNode(kt_int32s id)
 }
 
 /*****************************************************************************/
-void CeresSolver::RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
+void CeresSolver::RemoveConstraint(karto::Name name, kt_int32s sourceId, kt_int32s targetId)
 /*****************************************************************************/
 {
+  if (blocks_.find(name) == blocks_.end() || problems_.find(name) == problems_.end())
+  {
+    std::cout << "Error: No such problem for " << name.ToString().c_str() << std::endl;
+    return;
+  }
+
   boost::mutex::scoped_lock lock(nodes_mutex_);
   std::unordered_map<std::size_t, ceres::ResidualBlockId>::iterator it_a =
-    blocks_->find(GetHash(sourceId, targetId));
+    blocks_[name]->find(GetHash(sourceId, targetId));
   std::unordered_map<std::size_t, ceres::ResidualBlockId>::iterator it_b =
-    blocks_->find(GetHash(targetId, sourceId));
-  if (it_a != blocks_->end())
+    blocks_[name]->find(GetHash(targetId, sourceId));
+  if (it_a != blocks_[name]->end())
   {
-    problem_->RemoveResidualBlock(it_a->second);  
-    blocks_->erase(it_a);
+    problems_[name]->RemoveResidualBlock(it_a->second);  
+    blocks_[name]->erase(it_a);
   }
-  else if (it_b != blocks_->end())
+  else if (it_b != blocks_[name]->end())
   {
-    problem_->RemoveResidualBlock(it_b->second);
-    blocks_->erase(it_b);
+    problems_[name]->RemoveResidualBlock(it_b->second);
+    blocks_.at(name)->erase(it_b);
   }
   else
   {

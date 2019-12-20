@@ -295,7 +295,6 @@ namespace karto
   {
     GetScanManager(pScan)->AddScan(pScan, m_NextScanId);
     m_Scans.insert({m_NextScanId, pScan});
-    std::cout << "STEVE MapperSensorManager: AddNode id " << m_NextScanId << " Name: " << pScan->GetSensorName().GetName() << " position: " << pScan->GetCorrectedPose().GetX() << " " << pScan->GetCorrectedPose().GetY() << " " << pScan->GetCorrectedPose().GetHeading() << std::endl;
     m_NextScanId++;
   }
 
@@ -1386,38 +1385,6 @@ namespace karto
     }
   }
 
-// STEVE MapperSensorManager: AddNode id 0 Name: base_front_laser_link position: 0.00468975 -0.00274544 -0.00056428
-// STEVE MapperSensorManager: AddNode id 1 Name: base_rear_laser_link position: 0.00488492 -0.00407292 -0.000628701
-// STEVE MapperSensorManager: AddNode id 2 Name: base_front_laser_link position: 0.504638 -0.0912087 0.0858251
-// STEVE MapperSensorManager: AddNode id 3 Name: base_rear_laser_link position: 0.493267 0.103577 0.0814254
-// STEVE MapperSensorManager: AddNode id 4 Name: base_front_laser_link position: 0.939788 -0.0927154 0.31341
-// STEVE MapperSensorManager: AddNode id 5 Name: base_rear_laser_link position: 1.04106 0.135951 0.242824
-// STEVE MapperSensorManager: AddNode id 6 Name: base_front_laser_link position: 1.457 -0.0584077 0.199066
-// STEVE MapperSensorManager: AddNode id 7 Name: base_rear_laser_link position: 1.537 0.142853 0.174892
-// STEVE MapperSensorManager: AddNode id 8 Name: base_front_laser_link position: 1.97505 -0.0388193 0.184374
-// STEVE MapperSensorManager: AddNode id 9 Name: base_rear_laser_link position: 2.02084 0.145733 0.107701
-// STEVE MapperSensorManager: AddNode id 10 Name: base_front_laser_link position: 2.48357 -0.0648205 0.0905767
-// STEVE MapperSensorManager: AddNode id 11 Name: base_rear_laser_link position: 2.50525 0.104962 0.0614452
-// STEVE MapperSensorManager: AddNode id 12 Name: base_front_laser_link position: 3.0149 -0.11448 0.0201262
-// STEVE MapperSensorManager: AddNode id 13 Name: base_rear_laser_link position: 3.01006 0.0427007 -0.0245737
-
-
-// STEVE Solver: id 0 position: 0.00468975 -0.00274544 -0.00056428
-// STEVE Solver: id 1 position: 2.74656 1.34979 -0.682203
-// STEVE Solver: id 2 position: 0.366984 0.326723 0.335733
-// STEVE Solver: id 3 position: 2.3882 1.38672 -0.78172
-// STEVE Solver: id 4 position: 0.464926 0.810357 0.816019
-// STEVE Solver: id 5 position: 1.89811 1.4405 -0.825467
-// STEVE Solver: id 6 position: 0.654474 1.28676 0.701674
-// STEVE Solver: id 7 position: 1.4434 1.53016 -1.0982
-// STEVE Solver: id 8 position: 0.790132 1.78536 0.686982
-// STEVE Solver: id 9 position: 1.02421 1.71325 -1.3712
-// STEVE Solver: id 10 position: 1.01795 2.23498 0.593185
-// STEVE Solver: id 11 position: 0.732889 1.96098 -1.62445
-// STEVE Solver: id 12 position: 1.25753 2.70402 0.522734
-// STEVE Solver: id 13 position: 0.517435 2.24815 -1.91796
-
-
   Vertex<LocalizedRangeScan>* MapperGraph::AddVertex(LocalizedRangeScan* pScan)
   {
     assert(pScan);
@@ -1428,8 +1395,7 @@ namespace karto
       Graph<LocalizedRangeScan>::AddVertex(pScan->GetSensorName(), pVertex);
       if (m_pMapper->m_pScanOptimizer != NULL)
       {
-        std::cout << "STEVE Solver: AddNode id " << pScan->GetUniqueId() << " position: " << pScan->GetCorrectedPose().GetX() << " " << pScan->GetCorrectedPose().GetY() << " " << pScan->GetCorrectedPose().GetHeading() << std::endl;
-        m_pMapper->m_pScanOptimizer->AddNode(pVertex);
+        m_pMapper->m_pScanOptimizer->AddNode(pScan->GetSensorName(), pVertex);
       }
       return pVertex;
     }
@@ -1641,7 +1607,7 @@ namespace karto
       pEdge->SetLabel(new LinkInfo(pFromScan->GetSensorPose(), rMean, rCovariance));
       if (m_pMapper->m_pScanOptimizer != NULL)
       {
-        m_pMapper->m_pScanOptimizer->AddConstraint(pEdge);
+        m_pMapper->m_pScanOptimizer->AddConstraint(pFromScan->GetSensorName(), pEdge);
       }
     }
   }
@@ -2036,7 +2002,6 @@ namespace karto
           // after first optimization the 2 seprate ones go on their way 
           // unless already aligned, then the next one is the one tha blows up
             // --> evidence that constraints between the graphs arent stable. good when separate
-        std::cout << "STEVE Solver: id " << iter->first << " position: " << iter->second.GetX() << " " << iter->second.GetY() << " " << iter->second.GetHeading() << std::endl;
         LocalizedRangeScan* scan = m_pMapper->m_pMapperSensorManager->GetScan(iter->first);
         if (scan == NULL)
         {
@@ -2951,6 +2916,7 @@ namespace karto
         {
           adjVerts[i]->RemoveEdge(j);
           m_pScanOptimizer->RemoveConstraint(
+            adjEdges[j]->GetSource()->GetObject()->GetSensorName(),
             adjEdges[j]->GetSource()->GetObject()->GetUniqueId(),
             adjEdges[j]->GetTarget()->GetObject()->GetUniqueId()); 
           std::vector<Edge<LocalizedRangeScan>*> edges = m_pGraph->GetEdges();
