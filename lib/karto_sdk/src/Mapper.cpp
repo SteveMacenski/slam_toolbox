@@ -1478,6 +1478,8 @@ namespace karto
 
     kt_int32u scanIndex = 0;
 
+    // comment STEVE: so when different device, these are scans near the pScan assuming the same frame of reference (odom->laser_scanner_frame)
+      // which, ah ha, happen to be off by 180 degrees and offset
     LocalizedRangeScanVector candidateChain = FindPossibleLoopClosure(pScan, rSensorName, scanIndex);
 
     while (!candidateChain.empty())
@@ -1522,9 +1524,37 @@ namespace karto
         {
           m_pMapper->FireBeginLoopClosure("Closing loop...");
 
-          pScan->SetSensorPose(bestPose);
+          // STEVE
+          // commented out: no change, jump rotation
+          pScan->SetSensorPose(bestPose); // THIS LINE CAUSES THE SHIFT IN XY directly, see comment above FindPossibleLoopClosure
+          // commented out:  no change, jump rotation 
           LinkChainToScan(candidateChain, pScan, bestPose, covariance);
-          CorrectPoses();
+          // commented out:  moves over, not rotated 180
+          CorrectPoses(); // THIS LINE CAUSES THE ROTATION (potentially indirectly, see comment above FindPossibleLoopClosure)
+
+
+          // so rotation issues come from: optimization (and constraint added from LinkChainToScan?)
+            // this may make sense if frames are wrong so constraint added with 180 off not processing new poses until run
+          // so translation issues come from: setting sensor pose with the best pose
+            // this may make sense if the translation is proportional to the translation between sensors
+            // it isnt but it grows over time, so may be relative to the orientation change as well
+
+          // why being triggered to optimize in the first place?
+            // ANSWER: BECAUSE ITS BEING CALLED IN EACH SCAN ITSELF
+            // SO A SCAN FROM REAR WILL TRY TO CONNECT TO GRAPH IN FRONT
+            // --> so if I stop the looping of tryLoopClosure() over all devices for a new scan, it should be separated again
+            // which is true, until optimization eventually runs and they go back to 180 off
+
+            // so why did this happen
+              // DIFFERENT FRAMES OF REFERENCE (probably?)
+              // how can we fix this so that multiple scanners can match against each other in one larger graph?
+                // I think the optimizer isnt actually the issue but is processing the updates displaying the issues
+
+          // why does it still happen eventually if I dont ever mix the sensor names in calling tryloopclosure()?
+            // ???
+            // turning off lets them work but then the sensors can never help fix each other
+            // multiple robots or scanners building a single map, but independently and may diverge
+              // not super useful, but technically enabling it
 
           m_pMapper->FireEndLoopClosure("Loop closed!");
 
@@ -1980,28 +2010,8 @@ namespace karto
     {
       pSolver->Compute();
 
-      // int i = 1;
       const_forEach(ScanSolver::IdPoseVector, &pSolver->GetCorrections())
       {
-        // i++;
-        // if (i % 2 == 0)
-        // {
-        //   continue;
-        // }
-        // things it could be:
-        // wrong scan gotten
-        // wrong position (frame, etc)
-        // wrong ID stored in optimizer
-        // could be itself optimizer is not good for this in the way its formulated
-          // seems like after the first optimization step is all good - static relatnship between them needs constraint?
-          // first node param static block?
-        // only thing that appears to be wrong is their relative transformations to each other in first optimization
-          // are the graphs not connected?
-          // how do they know their relationship to another to start with in this formulation?
-            // --> I can find via TF myself and give it, but is that what's wrong?
-          // after first optimization the 2 seprate ones go on their way 
-          // unless already aligned, then the next one is the one tha blows up
-            // --> evidence that constraints between the graphs arent stable. good when separate
         LocalizedRangeScan* scan = m_pMapper->m_pMapperSensorManager->GetScan(iter->first);
         if (scan == NULL)
         {
@@ -2699,11 +2709,12 @@ namespace karto
 
 			  if (m_pDoLoopClosing->GetValue())
 			  {
-				  std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
-				  const_forEach(std::vector<Name>, &deviceNames)
-				  {
-					  m_pGraph->TryCloseLoop(pScan, *iter);
-				  }
+          // STEVE TODO commenting out to completely isloate the graphs for now
+				  // std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+				  // const_forEach(std::vector<Name>, &deviceNames)
+				  // {
+					  m_pGraph->TryCloseLoop(pScan, pScan->GetSensorName());
+				  // }
 			  }
 		  }
 
@@ -2775,12 +2786,12 @@ namespace karto
 
         if (m_pDoLoopClosing->GetValue())
         {
-          std::vector<Name> deviceNames =
-            m_pMapperSensorManager->GetSensorNames();
-          const_forEach(std::vector<Name>, &deviceNames)
-          {
-            m_pGraph->TryCloseLoop(pScan, *iter);
-          }
+         // STEVE TODO commenting out to completely isloate the graphs for now
+          // std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+          // const_forEach(std::vector<Name>, &deviceNames)
+          // {
+            m_pGraph->TryCloseLoop(pScan, pScan->GetSensorName());
+          // }
         }
       }
 
@@ -2862,11 +2873,12 @@ namespace karto
       
       if (m_pDoLoopClosing->GetValue())
       {
-        std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
-        const_forEach(std::vector<Name>, &deviceNames)
-        {
-          m_pGraph->TryCloseLoop(pScan, *iter);
-        }
+        // STEVE TODO commenting out to completely isloate the graphs for now
+        // std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+        // const_forEach(std::vector<Name>, &deviceNames)
+        // {
+          m_pGraph->TryCloseLoop(pScan, pScan->GetSensorName());
+        // }
       }
     }
 
@@ -3025,12 +3037,12 @@ namespace karto
 
         if (m_pDoLoopClosing->GetValue())
         {
-          std::vector<Name> deviceNames =
-          m_pMapperSensorManager->GetSensorNames();
-          const_forEach(std::vector<Name>, &deviceNames)
-          {
-            m_pGraph->TryCloseLoop(pScan, *iter);
-          }
+           // STEVE TODO commenting out to completely isloate the graphs for now
+          // std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+          // const_forEach(std::vector<Name>, &deviceNames)
+          // {
+            m_pGraph->TryCloseLoop(pScan, pScan->GetSensorName());
+          // }
         }
       }
 

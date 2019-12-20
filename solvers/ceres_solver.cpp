@@ -184,12 +184,11 @@ void CeresSolver::Compute()
   std::unordered_map<karto::Name, ceres::Problem*>::iterator problem_it;
   for (problem_it = problems_.begin(); problem_it != problems_.end(); ++problem_it)
   {
-
     // populate contraint for static initial pose
     auto first_node_it = first_nodes_.find(problem_it->first);
     if (first_node_it != first_nodes_.end())
     {
-      ROS_DEBUG("CeresSolver: Setting first node as a constant pose:"
+      ROS_INFO("CeresSolver: Setting first node as a constant pose:"
         "%0.2f, %0.2f, %0.2f.", first_node_it->second->second(0),
         first_node_it->second->second(1), first_node_it->second->second(2));
       problem_it->second->SetParameterBlockConstant(&first_node_it->second->second(0));
