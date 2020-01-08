@@ -4125,6 +4125,28 @@ namespace karto
       return m_NumberOfRangeReadings;
     }
 
+
+    /**
+     * Gets if this range finder sensor is 360 laser
+     * @return is360Laser
+     */
+    inline kt_double GetIs360Laser() const
+    {
+      return  m_pIs360Laser->GetValue();
+    }
+
+    /**
+     * Sets if this ange finder sensor is 360 laser
+     * @param is360Laser
+     */
+    inline void SetIs360Laser(bool is_360_laser)
+    {
+      m_pIs360Laser->SetValue(is_360_laser);
+
+      Update();
+    }
+
+
     virtual kt_bool Validate()
     {
       Update();
@@ -4323,6 +4345,8 @@ namespace karto
 
       m_pRangeThreshold = new Parameter<kt_double>("RangeThreshold", 12.0, GetParameterManager());
 
+      m_pIs360Laser = new Parameter<kt_bool>("Is360DegreeLaser", false, GetParameterManager());
+
       m_pType = new ParameterEnum("Type", LaserRangeFinder_Custom, GetParameterManager());
       m_pType->DefineEnumValue(LaserRangeFinder_Custom, "Custom");
       m_pType->DefineEnumValue(LaserRangeFinder_Sick_LMS100, "Sick_LMS100");
@@ -4338,9 +4362,10 @@ namespace karto
      */
     void Update()
     {
+      int laserResidual = !GetIs360Laser();
       m_NumberOfRangeReadings = static_cast<kt_int32u>(math::Round((GetMaximumAngle() -
                                                                     GetMinimumAngle())
-                                                                    / GetAngularResolution()) + 1);
+                                                                    / GetAngularResolution()) + laserResidual);
     }
 
   private:
@@ -4358,6 +4383,8 @@ namespace karto
     Parameter<kt_double>* m_pMaximumRange;
 
     Parameter<kt_double>* m_pRangeThreshold;
+
+    Parameter<kt_bool>* m_pIs360Laser;
 
     ParameterEnum* m_pType;
 
@@ -4382,6 +4409,8 @@ namespace karto
 
         m_pRangeThreshold = new Parameter<kt_double>("RangeThreshold", 12.0, GetParameterManager());
 
+        m_pIs360Laser = new Parameter<kt_bool>("Is360DegreeLaser", false, GetParameterManager());
+
         m_pType = new ParameterEnum("Type", LaserRangeFinder_Custom, GetParameterManager());
       }
 
@@ -4392,6 +4421,7 @@ namespace karto
       ar & BOOST_SERIALIZATION_NVP(m_pMinimumRange);
       ar & BOOST_SERIALIZATION_NVP(m_pMaximumRange);
       ar & BOOST_SERIALIZATION_NVP(m_pRangeThreshold);
+      ar & BOOST_SERIALIZATION_NVP(m_pIs360Laser);
       ar & BOOST_SERIALIZATION_NVP(m_pType);
       ar & BOOST_SERIALIZATION_NVP(m_NumberOfRangeReadings);
     }
