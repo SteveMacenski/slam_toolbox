@@ -4127,7 +4127,7 @@ namespace karto
 
 
     /**
-     * Gets if this range finder sensor is 360 laser
+     * Gets if this range finder sensor is 360° laser
      * @return is360Laser
      */
     inline kt_double GetIs360Laser() const
@@ -4136,7 +4136,7 @@ namespace karto
     }
 
     /**
-     * Sets if this ange finder sensor is 360 laser
+     * Sets if this range finder sensor is 360° laser
      * @param is360Laser
      */
     inline void SetIs360Laser(bool is_360_laser)
