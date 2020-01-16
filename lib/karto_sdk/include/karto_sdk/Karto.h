@@ -4130,7 +4130,7 @@ namespace karto
      * Gets if this range finder sensor is 360° laser
      * @return is360Laser
      */
-    inline kt_double GetIs360Laser() const
+    inline kt_bool GetIs360Laser() const
     {
       return  m_pIs360Laser->GetValue();
     }
