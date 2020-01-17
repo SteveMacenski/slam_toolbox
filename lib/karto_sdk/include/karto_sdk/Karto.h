@@ -4362,10 +4362,15 @@ namespace karto
      */
     void Update()
     {
-      int laserResidual = !GetIs360Laser();
+      int residual = 1;
+      if (GetIs360Laser()) 
+      {
+        // residual is 0 by 360 lidar conventions
+        residual = 0;
+      }
       m_NumberOfRangeReadings = static_cast<kt_int32u>(math::Round((GetMaximumAngle() -
                                                                     GetMinimumAngle())
-                                                                    / GetAngularResolution()) + laserResidual);
+                                                                    / GetAngularResolution()) + residual);
     }
 
   private:
