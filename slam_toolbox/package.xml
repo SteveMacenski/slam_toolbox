@@ -27,7 +27,6 @@
   <build_depend>interactive_markers</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>suitesparse</build_depend>
-  <build_depend>rviz</build_depend>
   <build_depend>liblapack-dev</build_depend>
   <build_depend>libceres-dev</build_depend>
   <build_depend>libg2o</build_depend>
@@ -54,7 +53,6 @@
   <run_depend>interactive_markers</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>suitesparse</run_depend>
-  <run_depend>rviz</run_depend>
   <run_depend>liblapack-dev</run_depend>
   <run_depend>libceres-dev</run_depend>
   <run_depend>libg2o</run_depend>
@@ -67,7 +65,6 @@
 
   <export>
     <slam_toolbox plugin="${prefix}/solver_plugins.xml" />
-    <rviz plugin="${prefix}/rviz_plugins.xml"/>
   </export>
 
 </package>
