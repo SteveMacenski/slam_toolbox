@@ -39,11 +39,11 @@ protected:
     const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 
   virtual bool serializePoseGraphCallback(
-    slam_toolbox::SerializePoseGraph::Request& req,
-    slam_toolbox::SerializePoseGraph::Response& resp) override final;
+    slam_toolbox_msgs::SerializePoseGraph::Request& req,
+    slam_toolbox_msgs::SerializePoseGraph::Response& resp) override final;
   virtual bool deserializePoseGraphCallback(
-    slam_toolbox::DeserializePoseGraph::Request& req,
-    slam_toolbox::DeserializePoseGraph::Response& resp) override final;
+    slam_toolbox_msgs::DeserializePoseGraph::Request& req,
+    slam_toolbox_msgs::DeserializePoseGraph::Response& resp) override final;
 
   virtual LocalizedRangeScan* addScan(karto::LaserRangeFinder* laser,
     const sensor_msgs::LaserScan::ConstPtr& scan,

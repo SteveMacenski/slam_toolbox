@@ -96,8 +96,8 @@ void SynchronousSlamToolbox::laserCallback(
 
 /*****************************************************************************/
 bool SynchronousSlamToolbox::clearQueueCallback(
-  slam_toolbox::ClearQueue::Request& req,
-  slam_toolbox::ClearQueue::Response& resp)
+  slam_toolbox_msgs::ClearQueue::Request& req,
+  slam_toolbox_msgs::ClearQueue::Response& resp)
 /*****************************************************************************/
 {
   ROS_INFO("SynchronousSlamToolbox: Clearing all queued scans to add to map.");
@@ -111,8 +111,8 @@ bool SynchronousSlamToolbox::clearQueueCallback(
 
 /*****************************************************************************/
 bool SynchronousSlamToolbox::deserializePoseGraphCallback(
-  slam_toolbox::DeserializePoseGraph::Request& req,
-  slam_toolbox::DeserializePoseGraph::Response& resp)
+  slam_toolbox_msgs::DeserializePoseGraph::Request& req,
+  slam_toolbox_msgs::DeserializePoseGraph::Response& resp)
 /*****************************************************************************/
 {
   if (req.match_type == procType::LOCALIZE_AT_POSE)

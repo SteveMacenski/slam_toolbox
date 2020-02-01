@@ -49,9 +49,9 @@ public:
   void publishGraph();
 
 private:
-  bool manualLoopClosureCallback(slam_toolbox::LoopClosure::Request& req, slam_toolbox::LoopClosure::Response& resp);
-  bool clearChangesCallback(slam_toolbox::Clear::Request& req, slam_toolbox::Clear::Response& resp);
-  bool interactiveModeCallback(slam_toolbox::ToggleInteractive::Request  &req, slam_toolbox::ToggleInteractive::Response &resp);
+  bool manualLoopClosureCallback(slam_toolbox_msgs::LoopClosure::Request& req, slam_toolbox_msgs::LoopClosure::Response& resp);
+  bool clearChangesCallback(slam_toolbox_msgs::Clear::Request& req, slam_toolbox_msgs::Clear::Response& resp);
+  bool interactiveModeCallback(slam_toolbox_msgs::ToggleInteractive::Request  &req, slam_toolbox_msgs::ToggleInteractive::Response &resp);
   void moveNode(const int& id, const Eigen::Vector3d& pose);
   void addMovedNodes(const int& id, Eigen::Vector3d vec);
 

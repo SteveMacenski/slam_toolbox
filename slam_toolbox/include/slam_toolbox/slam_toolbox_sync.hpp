@@ -34,9 +34,9 @@ public:
 
 protected:
   virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) override final;
-  bool clearQueueCallback(slam_toolbox::ClearQueue::Request& req, slam_toolbox::ClearQueue::Response& resp);
-  virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
-    slam_toolbox::DeserializePoseGraph::Response& resp) override final;
+  bool clearQueueCallback(slam_toolbox_msgs::ClearQueue::Request& req, slam_toolbox_msgs::ClearQueue::Response& resp);
+  virtual bool deserializePoseGraphCallback(slam_toolbox_msgs::DeserializePoseGraph::Request& req,
+    slam_toolbox_msgs::DeserializePoseGraph::Response& resp) override final;
 
   std::queue<PosedScan> q_;
   ros::ServiceServer ssClear_;

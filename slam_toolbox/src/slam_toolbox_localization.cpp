@@ -35,12 +35,12 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
   bool dock = false;
   if (shouldStartWithPoseGraph(filename, pose, dock))
   {
-    slam_toolbox::DeserializePoseGraph::Request req;
-    slam_toolbox::DeserializePoseGraph::Response resp;
+    slam_toolbox_msgs::DeserializePoseGraph::Request req;
+    slam_toolbox_msgs::DeserializePoseGraph::Response resp;
     req.initial_pose = pose;
     req.filename = filename;
     req.match_type = 
-      slam_toolbox::DeserializePoseGraph::Request::LOCALIZE_AT_POSE;
+      slam_toolbox_msgs::DeserializePoseGraph::Request::LOCALIZE_AT_POSE;
     if (dock)
     {
       ROS_ERROR("LocalizationSlamToolbox: Starting localization "
@@ -60,8 +60,8 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
 
 /*****************************************************************************/
 bool LocalizationSlamToolbox::serializePoseGraphCallback(
-  slam_toolbox::SerializePoseGraph::Request& req,
-  slam_toolbox::SerializePoseGraph::Response& resp)
+  slam_toolbox_msgs::SerializePoseGraph::Request& req,
+  slam_toolbox_msgs::SerializePoseGraph::Response& resp)
 /*****************************************************************************/
 {
   ROS_FATAL("LocalizationSlamToolbox: Cannot call serialize map "
@@ -71,8 +71,8 @@ bool LocalizationSlamToolbox::serializePoseGraphCallback(
 
 /*****************************************************************************/
 bool LocalizationSlamToolbox::deserializePoseGraphCallback(
-  slam_toolbox::DeserializePoseGraph::Request& req,
-  slam_toolbox::DeserializePoseGraph::Response& resp)
+  slam_toolbox_msgs::DeserializePoseGraph::Request& req,
+  slam_toolbox_msgs::DeserializePoseGraph::Response& resp)
 /*****************************************************************************/
 {
   if (req.match_type != procType::LOCALIZE_AT_POSE)

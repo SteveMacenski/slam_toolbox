@@ -60,8 +60,8 @@ private:
   void setup();
 
   // callback
-  bool mergeMapCallback(slam_toolbox::MergeMaps::Request& req, slam_toolbox::MergeMaps::Response& resp);
-  bool addSubmapCallback(slam_toolbox::AddSubmap::Request& req, slam_toolbox::AddSubmap::Response& resp);
+  bool mergeMapCallback(slam_toolbox_msgs::MergeMaps::Request& req, slam_toolbox_msgs::MergeMaps::Response& resp);
+  bool addSubmapCallback(slam_toolbox_msgs::AddSubmap::Request& req, slam_toolbox_msgs::AddSubmap::Response& resp);
   void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void kartoToROSOccupancyGrid(const karto::LocalizedRangeScanVector& scans, nav_msgs::GetMap::Response& map);
   void transformScan(LocalizedRangeScansIt iter, tf2::Transform& submap_correction);

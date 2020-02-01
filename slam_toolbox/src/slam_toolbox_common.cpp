@@ -223,19 +223,19 @@ void SlamToolbox::loadPoseGraphByParams(ros::NodeHandle& nh)
   bool dock = false;
   if (shouldStartWithPoseGraph(filename, pose, dock))
   {
-    slam_toolbox::DeserializePoseGraph::Request req;
-    slam_toolbox::DeserializePoseGraph::Response resp;
+    slam_toolbox_msgs::DeserializePoseGraph::Request req;
+    slam_toolbox_msgs::DeserializePoseGraph::Response resp;
     req.initial_pose = pose;
     req.filename = filename;
     if (dock)
     {
       req.match_type =
-        slam_toolbox::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
+        slam_toolbox_msgs::DeserializePoseGraph::Request::START_AT_FIRST_NODE;
     }
     else
     {
       req.match_type =
-        slam_toolbox::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;      
+        slam_toolbox_msgs::DeserializePoseGraph::Request::START_AT_GIVEN_POSE;      
     }
     deserializePoseGraphCallback(req, resp);
   }
@@ -558,8 +558,8 @@ bool SlamToolbox::mapCallback(
 
 /*****************************************************************************/
 bool SlamToolbox::pauseNewMeasurementsCallback(
-  slam_toolbox::Pause::Request& req,
-  slam_toolbox::Pause::Response& resp)
+  slam_toolbox_msgs::Pause::Request& req,
+  slam_toolbox_msgs::Pause::Response& resp)
 /*****************************************************************************/
 {
   bool curr_state = isPaused(NEW_MEASUREMENTS);
@@ -582,8 +582,8 @@ bool SlamToolbox::isPaused(const PausedApplication& app)
 
 /*****************************************************************************/
 bool SlamToolbox::serializePoseGraphCallback(
-  slam_toolbox::SerializePoseGraph::Request  &req,
-  slam_toolbox::SerializePoseGraph::Response &resp)
+  slam_toolbox_msgs::SerializePoseGraph::Request  &req,
+  slam_toolbox_msgs::SerializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
   std::string filename = req.filename;
@@ -700,11 +700,11 @@ void SlamToolbox::loadSerializedPoseGraph(
 
 /*****************************************************************************/
 bool SlamToolbox::deserializePoseGraphCallback(
-  slam_toolbox::DeserializePoseGraph::Request  &req,
-  slam_toolbox::DeserializePoseGraph::Response &resp)
+  slam_toolbox_msgs::DeserializePoseGraph::Request  &req,
+  slam_toolbox_msgs::DeserializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
-  if (req.match_type == slam_toolbox::DeserializePoseGraph::Request::UNSET) 
+  if (req.match_type == slam_toolbox_msgs::DeserializePoseGraph::Request::UNSET) 
   {
     ROS_ERROR("Deserialization called without valid processor type set. "
       "Undefined behavior!");

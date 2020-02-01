@@ -72,10 +72,10 @@ protected:
   virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) = 0;
   bool mapCallback(nav_msgs::GetMap::Request& req,
     nav_msgs::GetMap::Response& res);
-  virtual bool serializePoseGraphCallback(slam_toolbox::SerializePoseGraph::Request& req,
-    slam_toolbox::SerializePoseGraph::Response& resp);
-  virtual bool deserializePoseGraphCallback(slam_toolbox::DeserializePoseGraph::Request& req,
-    slam_toolbox::DeserializePoseGraph::Response& resp);
+  virtual bool serializePoseGraphCallback(slam_toolbox_msgs::SerializePoseGraph::Request& req,
+    slam_toolbox_msgs::SerializePoseGraph::Response& resp);
+  virtual bool deserializePoseGraphCallback(slam_toolbox_msgs::DeserializePoseGraph::Request& req,
+    slam_toolbox_msgs::DeserializePoseGraph::Response& resp);
   void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper>&, std::unique_ptr<karto::Dataset>&);
   void loadPoseGraphByParams(ros::NodeHandle& nh);
 
@@ -95,8 +95,8 @@ protected:
 
   // pausing bits
   bool isPaused(const PausedApplication& app);
-  bool pauseNewMeasurementsCallback(slam_toolbox::Pause::Request& req,
-    slam_toolbox::Pause::Response& resp);
+  bool pauseNewMeasurementsCallback(slam_toolbox_msgs::Pause::Request& req,
+    slam_toolbox_msgs::Pause::Response& resp);
 
   // ROS-y-ness
   ros::NodeHandle nh_;

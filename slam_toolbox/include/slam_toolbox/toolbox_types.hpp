@@ -119,7 +119,7 @@ typedef std::map<karto::Name, std::map<int, karto::Vertex<karto::LocalizedRangeS
 typedef std::vector<karto::Edge<karto::LocalizedRangeScan>*> EdgeVector;
 typedef std::map<int, karto::Vertex<karto::LocalizedRangeScan>*> ScanMap;
 typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> ScanVector;
-typedef slam_toolbox::DeserializePoseGraph::Request procType;
+typedef slam_toolbox_msgs::DeserializePoseGraph::Request procType;
 
 typedef std::unordered_map<int, Eigen::Vector3d>::iterator GraphIterator;
 typedef std::unordered_map<int, Eigen::Vector3d>::const_iterator ConstGraphIterator;

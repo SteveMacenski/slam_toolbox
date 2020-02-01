@@ -172,8 +172,8 @@ void LoopClosureAssistant::publishGraph()
 
 /*****************************************************************************/
 bool LoopClosureAssistant::manualLoopClosureCallback(
-  slam_toolbox::LoopClosure::Request& req,
-  slam_toolbox::LoopClosure::Response& resp)
+  slam_toolbox_msgs::LoopClosure::Request& req,
+  slam_toolbox_msgs::LoopClosure::Response& resp)
 /*****************************************************************************/
 {
   if(!enable_interactive_mode_)
@@ -214,8 +214,8 @@ bool LoopClosureAssistant::manualLoopClosureCallback(
 
 /*****************************************************************************/
 bool LoopClosureAssistant::interactiveModeCallback(
-  slam_toolbox::ToggleInteractive::Request  &req,
-  slam_toolbox::ToggleInteractive::Response &resp)
+  slam_toolbox_msgs::ToggleInteractive::Request  &req,
+  slam_toolbox_msgs::ToggleInteractive::Response &resp)
 /*****************************************************************************/
 {
   if(!enable_interactive_mode_)
@@ -255,8 +255,8 @@ void LoopClosureAssistant::moveNode(
 
 /*****************************************************************************/
 bool LoopClosureAssistant::clearChangesCallback(
-  slam_toolbox::Clear::Request& req,
-  slam_toolbox::Clear::Response& resp)
+  slam_toolbox_msgs::Clear::Request& req,
+  slam_toolbox_msgs::Clear::Response& resp)
 /*****************************************************************************/
 {
   if(!enable_interactive_mode_)
