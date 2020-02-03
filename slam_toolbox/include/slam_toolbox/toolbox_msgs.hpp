@@ -29,16 +29,16 @@
 #include <visualization_msgs/InteractiveMarkerControl.h> 
 #include <visualization_msgs/InteractiveMarkerFeedback.h>
 
-#include "slam_toolbox/Pause.h"
-#include "slam_toolbox/ClearQueue.h"
-#include "slam_toolbox/ToggleInteractive.h"
-#include "slam_toolbox/Clear.h"
-#include "slam_toolbox/ClearQueue.h"
-#include "slam_toolbox/SaveMap.h"
-#include "slam_toolbox/LoopClosure.h"
-#include "slam_toolbox/SerializePoseGraph.h"
-#include "slam_toolbox/DeserializePoseGraph.h"
-#include "slam_toolbox/MergeMaps.h"
-#include "slam_toolbox/AddSubmap.h"
+#include "slam_toolbox_msgs/Pause.h"
+#include "slam_toolbox_msgs/ClearQueue.h"
+#include "slam_toolbox_msgs/ToggleInteractive.h"
+#include "slam_toolbox_msgs/Clear.h"
+#include "slam_toolbox_msgs/ClearQueue.h"
+#include "slam_toolbox_msgs/SaveMap.h"
+#include "slam_toolbox_msgs/LoopClosure.h"
+#include "slam_toolbox_msgs/SerializePoseGraph.h"
+#include "slam_toolbox_msgs/DeserializePoseGraph.h"
+#include "slam_toolbox_msgs/MergeMaps.h"
+#include "slam_toolbox_msgs/AddSubmap.h"
 
 #endif //SLAM_TOOLBOX_TOOLBOX_MSGS_H_

@@ -35,8 +35,8 @@ protected:
   virtual void laserCallback(
     const sensor_msgs::LaserScan::ConstPtr& scan) override final;
   virtual bool deserializePoseGraphCallback(
-    slam_toolbox::DeserializePoseGraph::Request& req,
-    slam_toolbox::DeserializePoseGraph::Response& resp) override final;
+    slam_toolbox_msgs::DeserializePoseGraph::Request& req,
+    slam_toolbox_msgs::DeserializePoseGraph::Response& resp) override final;
 };
 
 }

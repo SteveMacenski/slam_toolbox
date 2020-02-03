@@ -318,8 +318,8 @@ void LifelongSlamToolbox::updateScoresSlamGraph(const double& score,
 
 /*****************************************************************************/
 bool LifelongSlamToolbox::deserializePoseGraphCallback(
-  slam_toolbox::DeserializePoseGraph::Request& req,
-  slam_toolbox::DeserializePoseGraph::Response& resp)
+  slam_toolbox_msgs::DeserializePoseGraph::Request& req,
+  slam_toolbox_msgs::DeserializePoseGraph::Response& resp)
 /*****************************************************************************/
 {
   if (req.match_type == procType::LOCALIZE_AT_POSE)

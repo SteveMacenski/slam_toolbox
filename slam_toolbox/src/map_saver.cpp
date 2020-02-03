@@ -39,8 +39,8 @@ void MapSaver::mapCallback(const nav_msgs::OccupancyGrid& msg)
 
 /*****************************************************************************/
 bool MapSaver::saveMapCallback(
-  slam_toolbox::SaveMap::Request& req,
-  slam_toolbox::SaveMap::Response& resp)
+  slam_toolbox_msgs::SaveMap::Request& req,
+  slam_toolbox_msgs::SaveMap::Response& resp)
 /*****************************************************************************/
 {
   if (!received_map_)

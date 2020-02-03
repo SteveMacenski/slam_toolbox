@@ -10,6 +10,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
   
+  <build_depend>slam_toolbox_msgs</build_depend>
   <build_depend>cmake_modules</build_depend>
   <build_depend>pluginlib</build_depend>
   <build_depend>eigen</build_depend>
@@ -22,7 +23,6 @@
   <build_depend>tf2_ros</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>visualization_msgs</build_depend>
-  <build_depend>message_generation</build_depend>
   <build_depend>std_srvs</build_depend>
   <build_depend>interactive_markers</build_depend>
   <build_depend>std_msgs</build_depend>
@@ -37,6 +37,7 @@
   <build_depend>libqt5-widgets</build_depend>
   <build_depend>qtbase5-dev</build_depend>
   <build_depend>map_server</build_depend>
+  <run_depend>slam_toolbox_msgs</run_depend>
   <run_depend>eigen</run_depend>
   <run_depend>pluginlib</run_depend>
   <run_depend>message_filters</run_depend>

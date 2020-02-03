@@ -55,8 +55,8 @@ MergeMapsKinematic::~MergeMapsKinematic()
 
 /*****************************************************************************/
 bool MergeMapsKinematic::addSubmapCallback(
-  slam_toolbox::AddSubmap::Request& req,
-  slam_toolbox::AddSubmap::Response& resp)
+  slam_toolbox_msgs::AddSubmap::Request& req,
+  slam_toolbox_msgs::AddSubmap::Response& resp)
 /*****************************************************************************/
 {
   std::unique_ptr<karto::Mapper> mapper = std::make_unique<karto::Mapper>();
@@ -229,8 +229,8 @@ void MergeMapsKinematic::transformScan(LocalizedRangeScansIt iter,
 
 /*****************************************************************************/
 bool MergeMapsKinematic::mergeMapCallback(
-  slam_toolbox::MergeMaps::Request& req,
-  slam_toolbox::MergeMaps::Response& resp)
+  slam_toolbox_msgs::MergeMaps::Request& req,
+  slam_toolbox_msgs::MergeMaps::Response& resp)
 /*****************************************************************************/
 {
   ROS_INFO("Merging maps!");

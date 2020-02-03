@@ -46,16 +46,16 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   bool paused_measure = false, interactive = false;
   nh.getParam("/slam_toolbox/paused_new_measurements", paused_measure);
   nh.getParam("/slam_toolbox/interactive_mode", interactive);
-  _serialize = nh.serviceClient<slam_toolbox::SerializePoseGraph>("/slam_toolbox/serialize_map");
-  _load_map = nh.serviceClient<slam_toolbox::DeserializePoseGraph>("/slam_toolbox/deserialize_map");
-  _clearChanges = nh.serviceClient<slam_toolbox::Clear>("/slam_toolbox/clear_changes");
-  _saveChanges = nh.serviceClient<slam_toolbox::LoopClosure>("/slam_toolbox/manual_loop_closure");
-  _saveMap = nh.serviceClient<slam_toolbox::SaveMap>("/slam_toolbox/save_map");
-  _clearQueue = nh.serviceClient<slam_toolbox::ClearQueue>("/slam_toolbox/clear_queue");
-  _interactive = nh.serviceClient<slam_toolbox::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
-  _pause_measurements = nh.serviceClient<slam_toolbox::Pause>("/slam_toolbox/pause_new_measurements");
-  _load_submap_for_merging = nh.serviceClient<slam_toolbox::AddSubmap>("/map_merging/add_submap");
-  _merge = nh.serviceClient<slam_toolbox::MergeMaps>("/map_merging/merge_submaps");
+  _serialize = nh.serviceClient<slam_toolbox_msgs::SerializePoseGraph>("/slam_toolbox/serialize_map");
+  _load_map = nh.serviceClient<slam_toolbox_msgs::DeserializePoseGraph>("/slam_toolbox/deserialize_map");
+  _clearChanges = nh.serviceClient<slam_toolbox_msgs::Clear>("/slam_toolbox/clear_changes");
+  _saveChanges = nh.serviceClient<slam_toolbox_msgs::LoopClosure>("/slam_toolbox/manual_loop_closure");
+  _saveMap = nh.serviceClient<slam_toolbox_msgs::SaveMap>("/slam_toolbox/save_map");
+  _clearQueue = nh.serviceClient<slam_toolbox_msgs::ClearQueue>("/slam_toolbox/clear_queue");
+  _interactive = nh.serviceClient<slam_toolbox_msgs::ToggleInteractive>("/slam_toolbox/toggle_interactive_mode");
+  _pause_measurements = nh.serviceClient<slam_toolbox_msgs::Pause>("/slam_toolbox/pause_new_measurements");
+  _load_submap_for_merging = nh.serviceClient<slam_toolbox_msgs::AddSubmap>("/map_merging/add_submap");
+  _merge = nh.serviceClient<slam_toolbox_msgs::MergeMaps>("/map_merging/merge_submaps");
 
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();
@@ -231,7 +231,7 @@ SlamToolboxPlugin::~SlamToolboxPlugin()
 void SlamToolboxPlugin::SerializeMap()
 /*****************************************************************************/
 {
-  slam_toolbox::SerializePoseGraph msg;
+  slam_toolbox_msgs::SerializePoseGraph msg;
   msg.request.filename = _line3->text().toStdString();
   if (!_serialize.call(msg))
   {
@@ -243,9 +243,9 @@ void SlamToolboxPlugin::SerializeMap()
 void SlamToolboxPlugin::DeserializeMap()
 /*****************************************************************************/
 {
-  typedef slam_toolbox::DeserializePoseGraph::Request procType;
+  typedef slam_toolbox_msgs::DeserializePoseGraph::Request procType;
 
-  slam_toolbox::DeserializePoseGraph msg;
+  slam_toolbox_msgs::DeserializePoseGraph msg;
   msg.request.filename = _line4->text().toStdString();
   if (_match_type == PROCESS_FIRST_NODE_CMT)
   {
@@ -281,7 +281,7 @@ void SlamToolboxPlugin::DeserializeMap()
 void SlamToolboxPlugin::LoadSubmap()
 /*****************************************************************************/
 {
-  slam_toolbox::AddSubmap msg;
+  slam_toolbox_msgs::AddSubmap msg;
   msg.request.filename = _line2->text().toStdString();
   if (!_load_submap_for_merging.call(msg))
   {
@@ -292,7 +292,7 @@ void SlamToolboxPlugin::LoadSubmap()
 void SlamToolboxPlugin::GenerateMap()
 /*****************************************************************************/
 {
-  slam_toolbox::MergeMaps msg;
+  slam_toolbox_msgs::MergeMaps msg;
   if (!_merge.call(msg))
   {
     ROS_WARN("MergeMaps: Failed to merge maps, is service running?");
@@ -303,7 +303,7 @@ void SlamToolboxPlugin::GenerateMap()
 void SlamToolboxPlugin::ClearChanges()
 /*****************************************************************************/
 {
-  slam_toolbox::Clear msg;
+  slam_toolbox_msgs::Clear msg;
   if (!_clearChanges.call(msg))
   {
     ROS_WARN("SlamToolbox: Failed to clear changes, is service running?");
@@ -314,7 +314,7 @@ void SlamToolboxPlugin::ClearChanges()
 void SlamToolboxPlugin::SaveChanges()
 /*****************************************************************************/
 {
-  slam_toolbox::LoopClosure msg;
+  slam_toolbox_msgs::LoopClosure msg;
 
   if (!_saveChanges.call(msg))
   {
@@ -326,7 +326,7 @@ void SlamToolboxPlugin::SaveChanges()
 void SlamToolboxPlugin::SaveMap()
 /*****************************************************************************/
 {
-  slam_toolbox::SaveMap msg;
+  slam_toolbox_msgs::SaveMap msg;
   msg.request.name.data = _line1->text().toStdString();
   if (!_saveMap.call(msg))
   {
@@ -339,7 +339,7 @@ void SlamToolboxPlugin::SaveMap()
 void SlamToolboxPlugin::ClearQueue()
 /*****************************************************************************/
 {
-  slam_toolbox::ClearQueue msg;
+  slam_toolbox_msgs::ClearQueue msg;
   if (!_clearQueue.call(msg))
   {
     ROS_WARN("Failed to clear queue, is service running?");
@@ -350,7 +350,7 @@ void SlamToolboxPlugin::ClearQueue()
 void SlamToolboxPlugin::InteractiveCb(int state)
 /*****************************************************************************/
 {
-  slam_toolbox::ToggleInteractive msg;
+  slam_toolbox_msgs::ToggleInteractive msg;
   if (!_interactive.call(msg))
   {
     ROS_WARN("SlamToolbox: Failed to toggle interactive mode, is service running?");
@@ -361,7 +361,7 @@ void SlamToolboxPlugin::InteractiveCb(int state)
 void SlamToolboxPlugin::PauseMeasurementsCb(int state)
 /*****************************************************************************/
 {
-  slam_toolbox::Pause msg;
+  slam_toolbox_msgs::Pause msg;
   if (!_pause_measurements.call(msg))
   {
     ROS_WARN("SlamToolbox: Failed to toggle pause measurements, is service running?");
