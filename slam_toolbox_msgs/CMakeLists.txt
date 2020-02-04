@@ -5,7 +5,7 @@ set(MSG_DEPS std_srvs std_msgs geometry_msgs)
 
 find_package(catkin REQUIRED COMPONENTS message_generation ${MSG_DEPS})
 
-add_service_files(DIRECTORY srvs
+add_service_files(DIRECTORY srv
   FILES
     Pause.srv
     ClearQueue.srv
