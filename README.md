@@ -1,8 +1,16 @@
 ## Slam Toolbox
 
-| DockerHub  | [![Build Status](https://img.shields.io/docker/cloud/build/stevemacenski/slam-toolbox.svg?label=build)](https://hub.docker.com/r/stevemacenski/slam-toolbox) |
-|-----|----|
-| **Build Farm** | [![Build Status](http://build.ros.org/buildStatus/icon?job=Mdev__slam_toolbox__ubuntu_bionic_amd64)](http://build.ros.org/view/Kbin_uX64/job/Mdev__slam_toolbox__ubuntu_bionic_amd64/) |
+| DockerHub  | [![Build Status](https://img.shields.io/docker/cloud/build/stevemacenski/slam-toolbox.svg?label=build)](https://hub.docker.com/r/stevemacenski/slam-toolbox) | [![Build Status](https://img.shields.io/docker/pulls/stevemacenski/slam-toolbox.svg?maxAge=2592000)](https://hub.docker.com/r/stevemacenski/slam-toolbox) |
+|-----|----|----|
+| **Build Farm** | [![Build Status](http://build.ros.org/buildStatus/icon?job=Mdev__slam_toolbox__ubuntu_bionic_amd64)](http://build.ros.org/view/Kbin_uX64/job/Mdev__slam_toolbox__ubuntu_bionic_amd64/) | N/A |
+
+We've received feedback from users and have robots operating in the following environments with SLAM Toolbox:
+- Retail
+- Warehouses
+- Libraries
+- Research
+
+[![IMAGE ALT TEXT](https://user-images.githubusercontent.com/14944147/74176653-f69beb80-4bec-11ea-906a-a233541a6064.png)](https://vimeo.com/378682207)
 
 # Introduction
 
