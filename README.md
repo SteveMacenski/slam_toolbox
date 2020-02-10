@@ -1,12 +1,20 @@
 ## Slam Toolbox
 
-| DockerHub  | [![Build Status](https://img.shields.io/docker/cloud/build/stevemacenski/slam-toolbox.svg?label=build)](https://hub.docker.com/r/stevemacenski/slam-toolbox) |
+| DockerHub  | [![Build Status](https://img.shields.io/docker/cloud/build/stevemacenski/slam-toolbox.svg?label=build)](https://hub.docker.com/r/stevemacenski/slam-toolbox) | [![Build Status](https://img.shields.io/docker/pulls/rosplanning/navigation2.svg?maxAge=2592000)](https://hub.docker.com/r/rosplanning/navigation2) |
 |-----|----|
-| **Build Farm** | [![Build Status](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/) |
+| **Build Farm** | [![Build Status](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/) | N/A |
 
 NOTE: ROS2 Port of Slam Toolbox is still experimental. Known on-going work:
 - Interactive markers need to be ported to ROS2 and integrated
 - Panel plugins need to be ported to ROS2 to test and ship the rviz plugin
+
+We've received feedback from users and have robots operating in the following environments with SLAM Toolbox:
+- Retail
+- Warehouses
+- Libraries
+- Research
+
+[![IMAGE ALT TEXT](https://user-images.githubusercontent.com/14944147/74176653-f69beb80-4bec-11ea-906a-a233541a6064.png)](https://vimeo.com/378682207)
 
 # Introduction
 
