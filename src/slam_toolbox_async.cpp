@@ -36,8 +36,7 @@ void AsynchronousSlamToolbox::laserCallback(
 {
   // no odom info
   Pose2 pose;
-  if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
-  {
+  if (!pose_helper_->getOdomPose(pose, scan->header.stamp)) {
     RCLCPP_WARN(get_logger(), "Failed to compute odom pose");
     return;
   }
@@ -45,15 +44,13 @@ void AsynchronousSlamToolbox::laserCallback(
   // ensure the laser can be used
   LaserRangeFinder * laser = getLaser(scan);
 
-  if(!laser)
-  {
+  if (!laser) {
     RCLCPP_WARN(get_logger(), "Failed to create laser device for"
       " %s; discarding scan", scan->header.frame_id.c_str());
     return;
   }
 
   addScan(laser, scan, pose);
-  return;
 }
 
 /*****************************************************************************/
@@ -63,8 +60,7 @@ bool AsynchronousSlamToolbox::deserializePoseGraphCallback(
   std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp)
 /*****************************************************************************/
 {
-  if (req->match_type == procType::LOCALIZE_AT_POSE)
-  {
+  if (req->match_type == procType::LOCALIZE_AT_POSE) {
     RCLCPP_WARN(get_logger(), "Requested a localization deserialization "
       "in non-localization mode.");
     return false;

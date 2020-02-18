@@ -28,50 +28,45 @@
 namespace serialization
 {
 
-inline bool fileExists(const std::string& name)
+inline bool fileExists(const std::string & name)
 {
   struct stat buffer;
-  return (stat (name.c_str(), &buffer) == 0);
+  return stat(name.c_str(), &buffer) == 0;
 }
 
-inline void write(const std::string& filename,
-  karto::Mapper& mapper,
-  karto::Dataset& dataset,
+inline void write(
+  const std::string & filename,
+  karto::Mapper & mapper,
+  karto::Dataset & dataset,
   rclcpp::Node::SharedPtr node)
 {
-  try
-  {
+  try {
     mapper.SaveToFile(filename + std::string(".posegraph"));
     dataset.SaveToFile(filename + std::string(".data"));
-  }
-  catch (boost::archive::archive_exception e)
-  {
-    RCLCPP_ERROR(node->get_logger(), 
+  } catch (boost::archive::archive_exception e) {
+    RCLCPP_ERROR(node->get_logger(),
       "Failed to write file: Exception %s", e.what());
   }
 }
 
-inline bool read(const std::string& filename,
-  karto::Mapper& mapper,
-  karto::Dataset& dataset,
+inline bool read(
+  const std::string & filename,
+  karto::Mapper & mapper,
+  karto::Dataset & dataset,
   rclcpp::Node::SharedPtr node)
 {
-  if (!fileExists(filename + std::string(".posegraph")))
-  {
+  if (!fileExists(filename + std::string(".posegraph"))) {
     RCLCPP_ERROR(node->get_logger(),
       "serialization::Read: Failed to open "
       "requested file: %s.", filename.c_str());
     return false;
   }
 
-  try
-  {
+  try {
     mapper.LoadFromFile(filename + std::string(".posegraph"));
     dataset.LoadFromFile(filename + std::string(".data"));
     return true;
-  }
-  catch (boost::archive::archive_exception e)
-  {
+  } catch (boost::archive::archive_exception e) {
     RCLCPP_ERROR(node->get_logger(),
       "serialization::Read: Failed to read file: "
       "Exception: %s", e.what());

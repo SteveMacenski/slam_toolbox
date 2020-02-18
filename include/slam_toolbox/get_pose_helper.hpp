@@ -30,12 +30,13 @@ namespace pose_utils
 class GetPoseHelper
 {
 public:
-  GetPoseHelper(tf2_ros::Buffer * tf,
+  GetPoseHelper(
+    tf2_ros::Buffer * tf,
     const std::string & base_frame,
     const std::string & odom_frame)
   : tf_(tf), base_frame_(base_frame), odom_frame_(odom_frame)
   {
-  };
+  }
 
   bool getOdomPose(karto::Pose2 & karto_pose, const rclcpp::Time & t)
   {
@@ -44,21 +45,18 @@ public:
     base_ident.header.frame_id = base_frame_;
     base_ident.transform.rotation.w = 1.0;
 
-    try
-    {
+    try {
       odom_pose = tf_->transform(base_ident, odom_frame_);
-    }
-    catch(tf2::TransformException & e)
-    {
+    } catch (tf2::TransformException & e) {
       return false;
     }
 
     const double yaw = tf2::getYaw(odom_pose.transform.rotation);
     karto_pose = karto::Pose2(odom_pose.transform.translation.x,
-      odom_pose.transform.translation.y, yaw);
+        odom_pose.transform.translation.y, yaw);
 
     return true;
-  };
+  }
 
 private:
   tf2_ros::Buffer * tf_;

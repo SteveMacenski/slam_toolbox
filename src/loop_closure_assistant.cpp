@@ -53,7 +53,7 @@ LoopClosureAssistant::LoopClosureAssistant(
   // node.setParam("interactive_mode", interactive_mode_);
   // node.param("enable_interactive_mode", enable_interactive_mode_, false);
   marker_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
-    "graph_visualization",  rclcpp::QoS(1));
+    "graph_visualization", rclcpp::QoS(1));
   map_frame_ = node->get_parameter("map_frame").as_string();
 }
 
@@ -73,7 +73,7 @@ LoopClosureAssistant::LoopClosureAssistant(
 
 //   // was depressed, something moved, and now released
 //   if (feedback->event_type ==
-//       visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP && 
+//       visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP &&
 //       feedback->mouse_point_valid)
 //   {
 //     addMovedNodes(id, Eigen::Vector3d(feedback->mouse_point.x,
@@ -95,7 +95,7 @@ LoopClosureAssistant::LoopClosureAssistant(
 //     tf2::Quaternion q1(0.,0.,0.,1.0);
 //     q1.setEuler(0., 0., node_yaw - 3.14159);
 //     tf2::Quaternion q2(0.,0.,0.,1.0);
-//     q2.setEuler(0., 0., 3.14159); 
+//     q2.setEuler(0., 0., 3.14159);
 //     quat *= q1;
 //     quat *= q2;
 
@@ -131,12 +131,11 @@ void LoopClosureAssistant::publishGraph()
   // interactive_server_->clear();
   std::unordered_map<int, Eigen::Vector3d> * graph = solver_->getGraph();
 
-  if (graph->size() == 0)
-  {
+  if (graph->size() == 0) {
     return;
   }
 
-  RCLCPP_DEBUG(node_->get_logger(), "Graph size: %i",(int)graph->size());
+  RCLCPP_DEBUG(node_->get_logger(), "Graph size: %i", (int)graph->size());
   // bool interactive_mode = false;
   // {
   //   boost::mutex::scoped_lock lock(interactive_mutex_);
@@ -145,10 +144,9 @@ void LoopClosureAssistant::publishGraph()
 
   visualization_msgs::msg::MarkerArray marray;
   visualization_msgs::msg::Marker m = vis_utils::toMarker(map_frame_,
-    "slam_toolbox", 0.1, node_);
+      "slam_toolbox", 0.1, node_);
 
-  for (ConstGraphIterator it = graph->begin(); it != graph->end(); ++it)
-  {
+  for (ConstGraphIterator it = graph->begin(); it != graph->end(); ++it) {
     m.id = it->first + 1;
     m.pose.position.x = it->second(0);
     m.pose.position.y = it->second(1);
@@ -164,14 +162,13 @@ void LoopClosureAssistant::publishGraph()
     // }
     // else
     // {
-      marray.markers.push_back(m);
+    marray.markers.push_back(m);
     // }
   }
 
   // if disabled, clears out old markers
   // interactive_server_->applyChanges();
   marker_publisher_->publish(marray);
-  return;
 }
 
 // /*****************************************************************************/
@@ -211,7 +208,7 @@ void LoopClosureAssistant::publishGraph()
 //   mapper_->CorrectPoses();
 
 //   // update visualization and clear out nodes completed
-//   publishGraph();  
+//   publishGraph();
 //   clearMovedNodes();
 //   return true;
 // }
@@ -232,12 +229,12 @@ void LoopClosureAssistant::publishGraph()
 //   bool interactive_mode;
 //   {
 //     boost::mutex::scoped_lock lock_i(interactive_mutex_);
-//     interactive_mode_ = !interactive_mode_;   
+//     interactive_mode_ = !interactive_mode_;
 //     interactive_mode = interactive_mode_;
 //     nh_.setParam("interactive_mode", interactive_mode_);
 //   }
 
-//   ROS_INFO("SlamToolbox: Toggling %s interactive mode.", 
+//   ROS_INFO("SlamToolbox: Toggling %s interactive mode.",
 //     interactive_mode ? "on" : "off");
 //   publishGraph();
 //   clearMovedNodes();

@@ -41,7 +41,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(karto::AbstractParameter);
 BOOST_CLASS_EXPORT_IMPLEMENT(karto::ParameterEnum);
 BOOST_CLASS_EXPORT_IMPLEMENT(karto::Parameters);
 BOOST_CLASS_EXPORT_IMPLEMENT(karto::ParameterManager);
-BOOST_CLASS_EXPORT_IMPLEMENT(karto::Parameter<kt_double >);
+BOOST_CLASS_EXPORT_IMPLEMENT(karto::Parameter<kt_double>);
 BOOST_CLASS_EXPORT_IMPLEMENT(karto::Parameter<karto::Pose2>);
 BOOST_CLASS_EXPORT_IMPLEMENT(karto::Parameter<kt_bool>);
 BOOST_CLASS_EXPORT_IMPLEMENT(karto::Parameter<kt_int32u>);
@@ -50,230 +50,220 @@ BOOST_CLASS_EXPORT_IMPLEMENT(karto::Parameter<std::string>);
 namespace karto
 {
 
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
-  SensorManager* SensorManager::GetInstance()
+SensorManager * SensorManager::GetInstance()
+{
+  static Singleton<SensorManager> sInstance;
+  return sInstance.Get();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
+Object::Object()
+: m_pParameterManager(new ParameterManager())
+{
+}
+
+Object::Object(const Name & rName)
+: m_Name(rName),
+  m_pParameterManager(new ParameterManager())
+{
+}
+
+Object::~Object()
+{
+  delete m_pParameterManager;
+  m_pParameterManager = NULL;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
+Module::Module(const std::string & rName)
+: Object(rName)
+{
+}
+
+Module::~Module()
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
+Sensor::Sensor(const Name & rName)
+: Object(rName)
+{
+  m_pOffsetPose = new Parameter<Pose2>("OffsetPose", Pose2(), GetParameterManager());
+}
+
+Sensor::~Sensor()
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
+SensorData::SensorData(const Name & rSensorName)
+: Object(),
+  m_StateId(-1),
+  m_UniqueId(-1),
+  m_SensorName(rSensorName),
+  m_Time(0.0)
+{
+}
+
+SensorData::~SensorData()
+{
+  forEach(CustomDataVector, &m_CustomData)
   {
-    static Singleton<SensorManager> sInstance;
-    return sInstance.Get();
+    delete *iter;
   }
 
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
+  m_CustomData.clear();
+}
 
-  Object::Object()
-    : m_pParameterManager(new ParameterManager())
-  {
-  }
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
-  Object::Object(const Name& rName)
-    : m_Name(rName)
-    , m_pParameterManager(new ParameterManager())
-  {
-  }
+void CellUpdater::operator()(kt_int32u index)
+{
+  kt_int8u * pDataPtr = m_pOccupancyGrid->GetDataPointer();
+  kt_int32u * pCellPassCntPtr = m_pOccupancyGrid->m_pCellPassCnt->GetDataPointer();
+  kt_int32u * pCellHitCntPtr = m_pOccupancyGrid->m_pCellHitsCnt->GetDataPointer();
 
-  Object::~Object()
-  {
-    delete m_pParameterManager;
-    m_pParameterManager = NULL;
-  }
+  m_pOccupancyGrid->UpdateCell(&pDataPtr[index], pCellPassCntPtr[index], pCellHitCntPtr[index]);
+}
 
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
-  Module::Module(const std::string& rName)
-    : Object(rName)
-  {
-  }
+std::ostream & operator<<(std::ostream & rStream, Exception & rException)
+{
+  rStream << "Error detect: " << std::endl;
+  rStream << " ==> error code: " << rException.GetErrorCode() << std::endl;
+  rStream << " ==> error message: " << rException.GetErrorMessage() << std::endl;
 
-  Module::~Module()
-  {
-  }
+  return rStream;
+}
 
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
-  Sensor::Sensor(const Name& rName)
-    : Object(rName)
-  {
-    m_pOffsetPose = new Parameter<Pose2>("OffsetPose", Pose2(), GetParameterManager());
-  }
+const PointVectorDouble LaserRangeFinder::GetPointReadings(
+  LocalizedRangeScan * pLocalizedRangeScan,
+  CoordinateConverter * pCoordinateConverter,
+  kt_bool ignoreThresholdPoints,
+  kt_bool flipY) const
+{
+  PointVectorDouble pointReadings;
 
-  Sensor::~Sensor()
-  {
-  }
+  Pose2 scanPose = pLocalizedRangeScan->GetSensorPose();
 
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
+  // compute point readings
+  kt_int32u beamNum = 0;
+  kt_double * pRangeReadings = pLocalizedRangeScan->GetRangeReadings();
+  for (kt_int32u i = 0; i < m_NumberOfRangeReadings; i++, beamNum++) {
+    kt_double rangeReading = pRangeReadings[i];
 
-  SensorData::SensorData(const Name& rSensorName)
-    : Object()
-    , m_StateId(-1)
-    , m_UniqueId(-1)
-    , m_SensorName(rSensorName)
-    , m_Time(0.0)
-  {
-  }
-
-  SensorData::~SensorData()
-  {
-    forEach(CustomDataVector, &m_CustomData)
-    {
-      delete *iter;
+    if (ignoreThresholdPoints) {
+      if (!math::InRange(rangeReading, GetMinimumRange(), GetRangeThreshold())) {
+        continue;
+      }
+    } else {
+      rangeReading = math::Clip(rangeReading, GetMinimumRange(), GetRangeThreshold());
     }
 
-    m_CustomData.clear();
-  }
+    kt_double angle = scanPose.GetHeading() + GetMinimumAngle() + beamNum * GetAngularResolution();
 
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
+    Vector2<kt_double> point;
 
-  void CellUpdater::operator() (kt_int32u index)
-  {
-    kt_int8u* pDataPtr = m_pOccupancyGrid->GetDataPointer();
-    kt_int32u* pCellPassCntPtr = m_pOccupancyGrid->m_pCellPassCnt->GetDataPointer();
-    kt_int32u* pCellHitCntPtr = m_pOccupancyGrid->m_pCellHitsCnt->GetDataPointer();
+    point.SetX(scanPose.GetX() + (rangeReading * cos(angle)));
+    point.SetY(scanPose.GetY() + (rangeReading * sin(angle)));
 
-    m_pOccupancyGrid->UpdateCell(&pDataPtr[index], pCellPassCntPtr[index], pCellHitCntPtr[index]);
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-
-  std::ostream& operator << (std::ostream& rStream, Exception& rException)
-  {
-    rStream << "Error detect: " << std::endl;
-    rStream << " ==> error code: " << rException.GetErrorCode() << std::endl;
-    rStream << " ==> error message: " << rException.GetErrorMessage() << std::endl;
-
-    return rStream;
-  }
-
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-
-  const PointVectorDouble LaserRangeFinder::GetPointReadings(LocalizedRangeScan* pLocalizedRangeScan,
-                                                             CoordinateConverter* pCoordinateConverter,
-                                                             kt_bool ignoreThresholdPoints,
-                                                             kt_bool flipY) const
-  {
-    PointVectorDouble pointReadings;
-
-    Pose2 scanPose = pLocalizedRangeScan->GetSensorPose();
-
-    // compute point readings
-    kt_int32u beamNum = 0;
-    kt_double* pRangeReadings = pLocalizedRangeScan->GetRangeReadings();
-    for (kt_int32u i = 0; i < m_NumberOfRangeReadings; i++, beamNum++)
-    {
-      kt_double rangeReading = pRangeReadings[i];
-
-      if (ignoreThresholdPoints)
-      {
-        if (!math::InRange(rangeReading, GetMinimumRange(), GetRangeThreshold()))
-        {
-          continue;
-        }
-      }
-      else
-      {
-        rangeReading = math::Clip(rangeReading, GetMinimumRange(), GetRangeThreshold());
-      }
-
-      kt_double angle = scanPose.GetHeading() + GetMinimumAngle() + beamNum * GetAngularResolution();
-
-      Vector2<kt_double> point;
-
-      point.SetX(scanPose.GetX() + (rangeReading * cos(angle)));
-      point.SetY(scanPose.GetY() + (rangeReading * sin(angle)));
-
-      if (pCoordinateConverter != NULL)
-      {
-        Vector2<kt_int32s> gridPoint = pCoordinateConverter->WorldToGrid(point, flipY);
-        point.SetX(gridPoint.GetX());
-        point.SetY(gridPoint.GetY());
-      }
-
-      pointReadings.push_back(point);
+    if (pCoordinateConverter != NULL) {
+      Vector2<kt_int32s> gridPoint = pCoordinateConverter->WorldToGrid(point, flipY);
+      point.SetX(gridPoint.GetX());
+      point.SetY(gridPoint.GetY());
     }
 
-    return pointReadings;
+    pointReadings.push_back(point);
   }
 
-  kt_bool LaserRangeFinder::Validate(SensorData* pSensorData)
-  {
-    LaserRangeScan* pLaserRangeScan = dynamic_cast<LaserRangeScan*>(pSensorData);
+  return pointReadings;
+}
 
-    // verify number of range readings in LaserRangeScan matches the number of expected range readings
-    if (pLaserRangeScan->GetNumberOfRangeReadings() != GetNumberOfRangeReadings())
-    {
-      std::cout << "LaserRangeScan contains " << pLaserRangeScan->GetNumberOfRangeReadings()
-                << " range readings, expected " << GetNumberOfRangeReadings() << std::endl;
-      return false;
-    }
+kt_bool LaserRangeFinder::Validate(SensorData * pSensorData)
+{
+  LaserRangeScan * pLaserRangeScan = dynamic_cast<LaserRangeScan *>(pSensorData);
 
-    return true;
+  // verify number of range readings in LaserRangeScan matches the number of expected range readings
+  if (pLaserRangeScan->GetNumberOfRangeReadings() != GetNumberOfRangeReadings()) {
+    std::cout << "LaserRangeScan contains " << pLaserRangeScan->GetNumberOfRangeReadings() <<
+      " range readings, expected " << GetNumberOfRangeReadings() << std::endl;
+    return false;
   }
 
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
+  return true;
+}
 
-  void ParameterManager::Clear()
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+
+void ParameterManager::Clear()
+{
+  forEach(karto::ParameterVector, &m_Parameters)
   {
-    forEach(karto::ParameterVector, &m_Parameters)
-    {
-      delete *iter;
-    }
-
-    m_Parameters.clear();
-
-    m_ParameterLookup.clear();
+    delete *iter;
   }
 
-  void ParameterManager::Add(AbstractParameter* pParameter)
-  {
-    if (pParameter != NULL && pParameter->GetName() != "")
-    {
-      if (m_ParameterLookup.find(pParameter->GetName()) == m_ParameterLookup.end())
-      {
-        m_Parameters.push_back(pParameter);
+  m_Parameters.clear();
 
-        m_ParameterLookup[pParameter->GetName()] = pParameter;
-      }
-      else
-      {
-        m_ParameterLookup[pParameter->GetName()]->SetValueFromString(pParameter->GetValueAsString());
+  m_ParameterLookup.clear();
+}
 
-        assert(false);
-      }
+void ParameterManager::Add(AbstractParameter * pParameter)
+{
+  if (pParameter != NULL && pParameter->GetName() != "") {
+    if (m_ParameterLookup.find(pParameter->GetName()) == m_ParameterLookup.end()) {
+      m_Parameters.push_back(pParameter);
+
+      m_ParameterLookup[pParameter->GetName()] = pParameter;
+    } else {
+      m_ParameterLookup[pParameter->GetName()]->SetValueFromString(pParameter->GetValueAsString());
+
+      assert(false);
     }
   }
+}
 
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
-  ////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////
 
-  /*
-  std::string LaserRangeFinder::LaserRangeFinderTypeNames[6] =
-  {
-    "Custom",
+/*
+std::string LaserRangeFinder::LaserRangeFinderTypeNames[6] =
+{
+  "Custom",
 
-    "Sick_LMS100",
-    "Sick_LMS200",
-    "Sick_LMS291",
+  "Sick_LMS100",
+  "Sick_LMS200",
+  "Sick_LMS291",
 
-    "Hokuyo_UTM_30LX",
-    "Hokuyo_URG_04LX"
-  };
-   */
+  "Hokuyo_UTM_30LX",
+  "Hokuyo_URG_04LX"
+};
+ */
 }  // namespace karto

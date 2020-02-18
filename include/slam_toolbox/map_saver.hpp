@@ -35,9 +35,9 @@ public:
 
 protected:
   bool saveMapCallback(
-  	const std::shared_ptr<rmw_request_id_t> request_header,
-  	const std::shared_ptr<slam_toolbox::srv::SaveMap::Request> request,
-  	std::shared_ptr<slam_toolbox::srv::SaveMap::Response> response);
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<slam_toolbox::srv::SaveMap::Request> request,
+    std::shared_ptr<slam_toolbox::srv::SaveMap::Response> response);
 
 private:
   rclcpp::Node::SharedPtr node_;

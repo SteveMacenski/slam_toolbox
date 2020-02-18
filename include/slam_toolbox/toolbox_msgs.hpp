@@ -26,7 +26,7 @@
 
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "visualization_msgs/msg/interactive_marker.hpp"
-#include "visualization_msgs/msg/interactive_marker_control.hpp" 
+#include "visualization_msgs/msg/interactive_marker_control.hpp"
 #include "visualization_msgs/msg/interactive_marker_feedback.hpp"
 
 #include "slam_toolbox/srv/pause.hpp"

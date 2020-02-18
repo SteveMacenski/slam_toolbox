@@ -36,7 +36,7 @@ namespace slam_toolbox
 SlamToolboxPlugin::SlamToolboxPlugin(QWidget * parent)
 : Panel(parent),
   _match_type(PROCESS_FIRST_NODE_CMT)
-/*****************************************************************************/    
+/*****************************************************************************/
 {
   ros_node_ = std::make_shared<rclcpp::Node>("SlamToolboxPlugin");
 
@@ -65,7 +65,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget * parent)
     "/slam_toolbox/toggle_interactive_mode");
   _pause_measurements = ros_node_->create_client<slam_toolbox::srv::Pause>(
     "/slam_toolbox/pause_new_measurements");
-  _load_submap_for_merging = 
+  _load_submap_for_merging =
     ros_node_->create_client<slam_toolbox::srv::AddSubmap>(
     "/map_merging/add_submap");
   _merge = ros_node_->create_client<slam_toolbox::srv::MergeMaps>(
@@ -83,7 +83,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget * parent)
   _hbox9 = new QHBoxLayout();
   _hbox10 = new QHBoxLayout();
 
-  QFrame* _line = new QFrame();
+  QFrame * _line = new QFrame();
   _line->setFrameShape(QFrame::HLine);
   _line->setFrameShadow(QFrame::Sunken);
 
@@ -229,7 +229,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget * parent)
 
   setLayout(_vbox);
 
-  _thread = 
+  _thread =
     std::make_unique<std::thread>(
     &SlamToolboxPlugin::updateCheckStateIfExternalChange, this);
 }
@@ -255,7 +255,7 @@ void SlamToolboxPlugin::SerializeMap()
     std::chrono::seconds(5)) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-    RCLCPP_WARN(ros_node_->get_logger(), 
+    RCLCPP_WARN(ros_node_->get_logger(),
       "SlamToolbox: Failed to serialize"
       " pose graph to file, is service running?");
   }
@@ -270,26 +270,19 @@ void SlamToolboxPlugin::DeserializeMap()
   auto request =
     std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Request>();
   request->filename = _line4->text().toStdString();
-  if (_match_type == PROCESS_FIRST_NODE_CMT)
-  {
+  if (_match_type == PROCESS_FIRST_NODE_CMT) {
     request->match_type = procType::START_AT_FIRST_NODE;
-  }
-  else if (_match_type == PROCESS_NEAR_REGION_CMT)
-  {
+  } else if (_match_type == PROCESS_NEAR_REGION_CMT) {
     request->match_type = procType::START_AT_GIVEN_POSE;
     request->initial_pose.x = std::stod(_line5->text().toStdString());
     request->initial_pose.y = std::stod(_line6->text().toStdString());
     request->initial_pose.theta = std::stod(_line7->text().toStdString());
-  }
-  else if (_match_type == LOCALIZE_CMT)
-  {
+  } else if (_match_type == LOCALIZE_CMT) {
     request->match_type = procType::LOCALIZE_AT_POSE;
     request->initial_pose.x = std::stod(_line5->text().toStdString());
     request->initial_pose.y = std::stod(_line6->text().toStdString());
     request->initial_pose.theta = std::stod(_line7->text().toStdString());
-  }
-  else
-  {
+  } else {
     RCLCPP_WARN(ros_node_->get_logger(),
       "No match type selected, cannot send request.");
     return;
@@ -301,7 +294,7 @@ void SlamToolboxPlugin::DeserializeMap()
     std::chrono::seconds(5)) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
-     RCLCPP_WARN(ros_node_->get_logger(),
+    RCLCPP_WARN(ros_node_->get_logger(),
       "SlamToolbox: Failed to deserialize mapper object "
       "from file, is service running?");
   }
@@ -346,12 +339,12 @@ void SlamToolboxPlugin::ClearChanges()
   auto request = std::make_shared<slam_toolbox::srv::Clear::Request>();
   auto result_future = _clearChanges->async_send_request(request);
 
-  if (rclcpp::spin_until_future_complete(ros_node_, result_future, 
+  if (rclcpp::spin_until_future_complete(ros_node_, result_future,
     std::chrono::seconds(5)) !=
     rclcpp::executor::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(ros_node_->get_logger(),
-     "SlamToolbox: Failed to clear changes, is service running?");
+      "SlamToolbox: Failed to clear changes, is service running?");
   }
 }
 
@@ -442,12 +435,9 @@ void SlamToolboxPlugin::PauseMeasurementsCb(int state)
 void SlamToolboxPlugin::FirstNodeMatchCb()
 /*****************************************************************************/
 {
-  if (_radio1->isChecked() == Qt::Unchecked)
-  {
+  if (_radio1->isChecked() == Qt::Unchecked) {
     return;
-  }
-  else
-  {
+  } else {
     _match_type = PROCESS_FIRST_NODE_CMT;
     RCLCPP_INFO(ros_node_->get_logger(),
       "Processing at first node selected.");
@@ -458,12 +448,9 @@ void SlamToolboxPlugin::FirstNodeMatchCb()
 void SlamToolboxPlugin::PoseEstMatchCb()
 /*****************************************************************************/
 {
-  if (_radio2->isChecked() == Qt::Unchecked)
-  {
+  if (_radio2->isChecked() == Qt::Unchecked) {
     return;
-  }
-  else
-  {
+  } else {
     _match_type = PROCESS_NEAR_REGION_CMT;
     RCLCPP_INFO(ros_node_->get_logger(),
       "Processing at current pose estimate selected.");
@@ -474,12 +461,9 @@ void SlamToolboxPlugin::PoseEstMatchCb()
 void SlamToolboxPlugin::CurEstMatchCb()
 /*****************************************************************************/
 {
-  if (_radio3->isChecked() == Qt::Unchecked)
-  {
+  if (_radio3->isChecked() == Qt::Unchecked) {
     return;
-  }
-  else
-  {
+  } else {
     _match_type = PROCESS_CMT;
     RCLCPP_INFO(ros_node_->get_logger(),
       "Processing at current odometry selected.");
@@ -491,12 +475,9 @@ void SlamToolboxPlugin::CurEstMatchCb()
 void SlamToolboxPlugin::LocalizeCb()
 /*****************************************************************************/
 {
-  if (_radio4->isChecked() == Qt::Unchecked)
-  {
+  if (_radio4->isChecked() == Qt::Unchecked) {
     return;
-  }
-  else
-  {
+  } else {
     _match_type = LOCALIZE_CMT;
     RCLCPP_INFO(ros_node_->get_logger(),
       "Processing localization selected.");
@@ -511,12 +492,11 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
   rclcpp::Rate r(1); //1 hz
   bool paused_measure = false, interactive = false;
 
-  while (rclcpp::ok())
-  {
-     paused_measure = ros_node_->get_parameter(
-       "/slam_toolbox/paused_new_measurements").as_bool();
-     interactive = ros_node_->get_parameter(
-       "/slam_toolbox/interactive_mode").as_bool();
+  while (rclcpp::ok()) {
+    paused_measure = ros_node_->get_parameter(
+      "/slam_toolbox/paused_new_measurements").as_bool();
+    interactive = ros_node_->get_parameter(
+      "/slam_toolbox/interactive_mode").as_bool();
 
     bool oldState = _check1->blockSignals(true);
     _check1->setChecked(interactive);

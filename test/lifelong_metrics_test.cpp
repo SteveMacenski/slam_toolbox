@@ -29,13 +29,13 @@ using namespace karto;
 //t2 = IOU([4.5, 3.0, 5.0, 2.0], [4.5, 4.5, 3, 3]) == 3.0
 //t3 = IOU([4.5, 3.5, 3.0, 3.0], [2.5, 5.5, 3, 3]) == 1.0
 
-namespace 
+namespace
 {
 
 TEST(LifelingMetricsTests, TestBounds)
 {
-  LocalizedRangeScan* s1 = new LocalizedRangeScan(); 
-  LocalizedRangeScan* s2 = new LocalizedRangeScan(); 
+  LocalizedRangeScan * s1 = new LocalizedRangeScan();
+  LocalizedRangeScan * s2 = new LocalizedRangeScan();
   Pose2 p1 = Pose2(3.5, 4.0, 0.0);
   Pose2 p2 = Pose2(3.5, 5.5, 0.0);
   s1->SetBarycenterPose(p1);
@@ -66,8 +66,8 @@ TEST(LifelingMetricsTests, TestBounds)
 
 TEST(LifelingMetricsTests, TestIntersect)
 {
-  LocalizedRangeScan* s1 = new LocalizedRangeScan(); 
-  LocalizedRangeScan* s2 = new LocalizedRangeScan(); 
+  LocalizedRangeScan * s1 = new LocalizedRangeScan();
+  LocalizedRangeScan * s2 = new LocalizedRangeScan();
   Pose2 p1 = Pose2(3.5, 4.0, 0.0);
   Pose2 p2 = Pose2(3.5, 5.5, 0.0);
   s1->SetBarycenterPose(p1);
@@ -94,8 +94,8 @@ TEST(LifelingMetricsTests, TestIntersect)
 
 TEST(LifelingMetricsTests, TestIntersectOverUnion)
 {
-  LocalizedRangeScan* s1 = new LocalizedRangeScan(); 
-  LocalizedRangeScan* s2 = new LocalizedRangeScan(); 
+  LocalizedRangeScan * s1 = new LocalizedRangeScan();
+  LocalizedRangeScan * s2 = new LocalizedRangeScan();
   Pose2 p1 = Pose2(3.5, 4.0, 0.0);
   Pose2 p2 = Pose2(3.5, 5.5, 0.0);
   s1->SetBarycenterPose(p1);
@@ -114,7 +114,8 @@ TEST(LifelingMetricsTests, TestIntersectOverUnion)
   bool dirty = false;
   s1->SetIsDirty(dirty);
   s2->SetIsDirty(dirty);
-  double intersect_over_union = slam_toolbox::LifelongSlamToolbox::computeIntersectOverUnion(s1, s2);
+  double intersect_over_union =
+    slam_toolbox::LifelongSlamToolbox::computeIntersectOverUnion(s1, s2);
   EXPECT_EQ(intersect_over_union, 0.4);
   delete s1;
   delete s2;
@@ -122,8 +123,8 @@ TEST(LifelingMetricsTests, TestIntersectOverUnion)
 
 TEST(LifelingMetricsTests, TestAreaOverlap)
 {
-  LocalizedRangeScan* s1 = new LocalizedRangeScan(); 
-  LocalizedRangeScan* s2 = new LocalizedRangeScan(); 
+  LocalizedRangeScan * s1 = new LocalizedRangeScan();
+  LocalizedRangeScan * s2 = new LocalizedRangeScan();
   Pose2 p1 = Pose2(3.5, 4.0, 0.0);
   Pose2 p2 = Pose2(3.5, 5.5, 0.0);
   s1->SetBarycenterPose(p1);
@@ -150,8 +151,8 @@ TEST(LifelingMetricsTests, TestAreaOverlap)
 
 TEST(LifelingMetricsTests, TestPtOverlap)
 {
-  LocalizedRangeScan* s1 = new LocalizedRangeScan(); 
-  LocalizedRangeScan* s2 = new LocalizedRangeScan(); 
+  LocalizedRangeScan * s1 = new LocalizedRangeScan();
+  LocalizedRangeScan * s2 = new LocalizedRangeScan();
   Pose2 p1 = Pose2(3.5, 4.0, 0.0);
   Pose2 p2 = Pose2(3.5, 5.5, 0.0);
   s1->SetBarycenterPose(p1);
@@ -178,7 +179,7 @@ TEST(LifelingMetricsTests, TestPtOverlap)
 
 }
 
-int main(int argc, char** argv)
+int main(int argc, char ** argv)
 {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

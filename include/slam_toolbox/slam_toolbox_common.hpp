@@ -94,17 +94,25 @@ protected:
 
   // functional bits
   karto::LaserRangeFinder * getLaser(const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan);
-  virtual karto::LocalizedRangeScan * addScan(karto::LaserRangeFinder * laser, const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
+  virtual karto::LocalizedRangeScan * addScan(
+    karto::LaserRangeFinder * laser, const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
     karto::Pose2 & karto_pose);
   karto::LocalizedRangeScan * addScan(karto::LaserRangeFinder * laser, PosedScan & scanWPose);
   bool updateMap();
-  tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2 & pose,
-    const karto::Pose2 & karto_pose, const rclcpp::Time & t, const bool & update_reprocessing_transform);
-  karto::LocalizedRangeScan * getLocalizedRangeScan(karto::LaserRangeFinder * laser,
+  tf2::Stamped<tf2::Transform> setTransformFromPoses(
+    const karto::Pose2 & pose,
+    const karto::Pose2 & karto_pose, const rclcpp::Time & t,
+    const bool & update_reprocessing_transform);
+  karto::LocalizedRangeScan * getLocalizedRangeScan(
+    karto::LaserRangeFinder * laser,
     const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
     karto::Pose2 & karto_pose);
-  bool shouldStartWithPoseGraph(std::string & filename, geometry_msgs::msg::Pose2D & pose, bool & start_at_dock);
-  bool shouldProcessScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan, const karto::Pose2 & pose);
+  bool shouldStartWithPoseGraph(
+    std::string & filename, geometry_msgs::msg::Pose2D & pose,
+    bool & start_at_dock);
+  bool shouldProcessScan(
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
+    const karto::Pose2 & pose);
 
   // pausing bits
   bool isPaused(const PausedApplication & app);
@@ -117,14 +125,14 @@ protected:
   std::unique_ptr<tf2_ros::Buffer> tf_;
   std::unique_ptr<tf2_ros::TransformListener> tfL_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
-  std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan> > scan_filter_sub_;
-  std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan> > scan_filter_;
-  std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid> > sst_;
-  std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData> > sstm_;
-  std::shared_ptr<rclcpp::Service<nav_msgs::srv::GetMap> > ssMap_;
-  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::Pause> > ssPauseMeasurements_;
-  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::SerializePoseGraph> > ssSerialize_;
-  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::DeserializePoseGraph> > ssDesserialize_;
+  std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> scan_filter_sub_;
+  std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> scan_filter_;
+  std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>> sst_;
+  std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>> sstm_;
+  std::shared_ptr<rclcpp::Service<nav_msgs::srv::GetMap>> ssMap_;
+  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::Pause>> ssPauseMeasurements_;
+  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::SerializePoseGraph>> ssSerialize_;
+  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::DeserializePoseGraph>> ssDesserialize_;
 
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_;
@@ -147,7 +155,7 @@ protected:
   std::unique_ptr<laser_utils::ScanHolder> scan_holder_;
 
   // Internal state
-  std::vector<std::unique_ptr<boost::thread> > threads_;
+  std::vector<std::unique_ptr<boost::thread>> threads_;
   tf2::Transform map_to_odom_;
   boost::mutex map_to_odom_mutex_, smapper_mutex_, pose_mutex_;
   PausedState state_;

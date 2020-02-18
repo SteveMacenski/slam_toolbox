@@ -29,22 +29,22 @@ class SynchronousSlamToolbox : public SlamToolbox
 {
 public:
   SynchronousSlamToolbox(rclcpp::NodeOptions options);
-  ~SynchronousSlamToolbox() {};
+  ~SynchronousSlamToolbox() {}
   void run();
 
 protected:
   virtual void laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
   bool clearQueueCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header, 
+    const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::ClearQueue::Request> req,
     std::shared_ptr<slam_toolbox::srv::ClearQueue::Response> resp);
   virtual bool deserializePoseGraphCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header, 
+    const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override final;
 
   std::queue<PosedScan> q_;
-  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::ClearQueue> > ssClear_;
+  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::ClearQueue>> ssClear_;
 
 };
 
