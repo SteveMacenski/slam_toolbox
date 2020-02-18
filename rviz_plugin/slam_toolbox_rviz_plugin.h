@@ -48,8 +48,8 @@ class QComboBox;
 
 namespace rviz_common
 {
-  class VisualizationManager;
-};
+class VisualizationManager;
+}
 
 namespace slam_toolbox
 {
@@ -68,7 +68,7 @@ class SlamToolboxPlugin : public rviz_common::Panel
 
 public:
   SlamToolboxPlugin(QWidget * parent);
-  SlamToolboxPlugin() {SlamToolboxPlugin(nullptr);};
+  SlamToolboxPlugin() {SlamToolboxPlugin(nullptr);}
 
   ~SlamToolboxPlugin();
 
@@ -92,52 +92,52 @@ public Q_SLOTS:
   void updateCheckStateIfExternalChange();
 
 protected:
-  QVBoxLayout* _vbox;
-  QHBoxLayout* _hbox1;
-  QHBoxLayout* _hbox2;
-  QHBoxLayout* _hbox3;
-  QHBoxLayout* _hbox4;
-  QHBoxLayout* _hbox5;
-  QHBoxLayout* _hbox6;
-  QHBoxLayout* _hbox7;
-  QHBoxLayout* _hbox8;
-  QHBoxLayout* _hbox9;
-  QHBoxLayout* _hbox10;
+  QVBoxLayout * _vbox;
+  QHBoxLayout * _hbox1;
+  QHBoxLayout * _hbox2;
+  QHBoxLayout * _hbox3;
+  QHBoxLayout * _hbox4;
+  QHBoxLayout * _hbox5;
+  QHBoxLayout * _hbox6;
+  QHBoxLayout * _hbox7;
+  QHBoxLayout * _hbox8;
+  QHBoxLayout * _hbox9;
+  QHBoxLayout * _hbox10;
 
-  QPushButton* _button1;
-  QPushButton* _button2;
-  QPushButton* _button3;
-  QPushButton* _button4;
-  QPushButton* _button5;
-  QPushButton* _button6;
-  QPushButton* _button7;
-  QPushButton* _button8;
+  QPushButton * _button1;
+  QPushButton * _button2;
+  QPushButton * _button3;
+  QPushButton * _button4;
+  QPushButton * _button5;
+  QPushButton * _button6;
+  QPushButton * _button7;
+  QPushButton * _button8;
 
-  QLineEdit* _line1;
-  QLineEdit* _line2;
-  QLineEdit* _line3;
-  QLineEdit* _line4;
-  QLineEdit* _line5;
-  QLineEdit* _line6;
-  QLineEdit* _line7;
+  QLineEdit * _line1;
+  QLineEdit * _line2;
+  QLineEdit * _line3;
+  QLineEdit * _line4;
+  QLineEdit * _line5;
+  QLineEdit * _line6;
+  QLineEdit * _line7;
 
-  QCheckBox* _check1;
-  QCheckBox* _check2;
+  QCheckBox * _check1;
+  QCheckBox * _check2;
 
-  QRadioButton* _radio1;
-  QRadioButton* _radio2;
-  QRadioButton* _radio3;
-  QRadioButton* _radio4;
+  QRadioButton * _radio1;
+  QRadioButton * _radio2;
+  QRadioButton * _radio3;
+  QRadioButton * _radio4;
 
-  QLabel* _label1;
-  QLabel* _label2;
-  QLabel* _label4;
-  QLabel* _label5;
-  QLabel* _label6;
-  QLabel* _label7;
-  QLabel* _label8;
+  QLabel * _label1;
+  QLabel * _label2;
+  QLabel * _label4;
+  QLabel * _label5;
+  QLabel * _label6;
+  QLabel * _label7;
+  QLabel * _label8;
 
-  QFrame* _line;
+  QFrame * _line;
 
   rclcpp::Node::SharedPtr ros_node_;
   rclcpp::Client<slam_toolbox::srv::Clear>::SharedPtr _clearChanges;

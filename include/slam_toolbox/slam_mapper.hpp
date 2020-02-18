@@ -35,7 +35,7 @@ public:
   ~SMapper();
 
   // get occupancy grid from scans
-  karto::OccupancyGrid* getOccupancyGrid(const double & resolution);
+  karto::OccupancyGrid * getOccupancyGrid(const double & resolution);
 
   // convert Karto pose to TF pose
   tf2::Transform toTfPose(const karto::Pose2 & pose) const;

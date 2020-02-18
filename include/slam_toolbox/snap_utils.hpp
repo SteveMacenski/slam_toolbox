@@ -25,18 +25,17 @@ namespace snap_utils
 // whether this is running in a snap container
 inline bool isInSnap()
 {
-  char* snap_common = getenv("SNAP_COMMON");
-  if (snap_common != NULL)
-  {
+  char * snap_common = getenv("SNAP_COMMON");
+  if (snap_common != NULL) {
     return true;
   }
   return false;
-};
+}
 
 // get path of shared space
 inline std::string getSnapPath()
 {
-  char* snap_common = getenv("SNAP_COMMON");
+  char * snap_common = getenv("SNAP_COMMON");
   return std::string(snap_common);
 }
 

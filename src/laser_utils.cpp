@@ -24,7 +24,7 @@ namespace laser_utils
 
 LaserMetadata::LaserMetadata()
 {
-};
+}
 
 LaserMetadata::~LaserMetadata()
 {
@@ -34,14 +34,14 @@ LaserMetadata::LaserMetadata(karto::LaserRangeFinder * lsr, bool invert)
 {
   laser = lsr;
   inverted = invert;
-};
+}
 
 bool LaserMetadata::isInverted() const
 {
   return inverted;
 }
 
-karto::LaserRangeFinder* LaserMetadata::getLaser()
+karto::LaserRangeFinder * LaserMetadata::getLaser()
 {
   return laser;
 }
@@ -53,30 +53,28 @@ void LaserMetadata::invertScan(sensor_msgs::msg::LaserScan & scan) const
   temp.ranges.reserve(scan.ranges.size());
   const bool has_intensities = scan.intensities.size() > 0 ? true : false;
 
-  for (int i = scan.ranges.size(); i != 0; i--)
-  {
+  for (int i = scan.ranges.size(); i != 0; i--) {
     temp.ranges.push_back(scan.ranges[i]);
-    if (has_intensities)
-    {
+    if (has_intensities) {
       temp.intensities.push_back(scan.intensities[i]);
     }
   }
 
   scan.ranges = temp.ranges;
   scan.intensities = temp.intensities;
-  return;
-};
+}
 
 
-LaserAssistant::LaserAssistant(rclcpp::Node::SharedPtr node,
+LaserAssistant::LaserAssistant(
+  rclcpp::Node::SharedPtr node,
   tf2_ros::Buffer * tf, const std::string & base_frame)
-  : node_(node), tf_(tf), base_frame_(base_frame)
+: node_(node), tf_(tf), base_frame_(base_frame)
 {
-};
+}
 
 LaserAssistant::~LaserAssistant()
 {
-};
+}
 
 LaserMetadata LaserAssistant::toLaserMetadata(sensor_msgs::msg::LaserScan scan)
 {
@@ -88,11 +86,11 @@ LaserMetadata LaserAssistant::toLaserMetadata(sensor_msgs::msg::LaserScan scan)
   karto::LaserRangeFinder * laser = makeLaser(mountingYaw);
   LaserMetadata laserMeta(laser, inverted);
   return laserMeta;
-};
+}
 
-karto::LaserRangeFinder* LaserAssistant::makeLaser(const double & mountingYaw)
+karto::LaserRangeFinder * LaserAssistant::makeLaser(const double & mountingYaw)
 {
-  karto::LaserRangeFinder * laser = 
+  karto::LaserRangeFinder * laser =
     karto::LaserRangeFinder::CreateLaserRangeFinder(
     karto::LaserRangeFinder_Custom, karto::Name("Custom Described Lidar"));
   laser->SetOffsetPose(karto::Pose2(laser_pose_.transform.translation.x,
@@ -114,9 +112,8 @@ karto::LaserRangeFinder* LaserAssistant::makeLaser(const double & mountingYaw)
 
   double max_laser_range = 25;
   max_laser_range = node_->declare_parameter("max_laser_range", max_laser_range);
-  if (max_laser_range > scan_.range_max)
-  {
-    RCLCPP_WARN(node_->get_logger(), 
+  if (max_laser_range > scan_.range_max) {
+    RCLCPP_WARN(node_->get_logger(),
       "maximum laser range setting (%.1f m) exceeds the capabilities "
       "of the used Lidar (%.1f m)", max_laser_range, scan_.range_max);
     max_laser_range = scan_.range_max;
@@ -146,41 +143,39 @@ bool LaserAssistant::isInverted(double & mountingYaw)
   laser_orient.header.stamp = scan_.header.stamp;
   laser_orient.header.frame_id = base_frame_;
   laser_orient = tf_->transform(laser_orient, frame_);
-  
-  if (laser_orient.vector.z <= 0)
-  {
+
+  if (laser_orient.vector.z <= 0) {
     RCLCPP_DEBUG(node_->get_logger(), "laser is mounted upside-down");
     return true;
   }
 
   return false;
-};
+}
 
 ScanHolder::ScanHolder(std::map<std::string, laser_utils::LaserMetadata> & lasers)
 : lasers_(lasers)
 {
-  current_scans_ = std::make_unique<std::vector<sensor_msgs::msg::LaserScan> >();
-};
+  current_scans_ = std::make_unique<std::vector<sensor_msgs::msg::LaserScan>>();
+}
 
 ScanHolder::~ScanHolder()
 {
   current_scans_.reset();
-};
+}
 
-sensor_msgs::msg::LaserScan ScanHolder::getCorrectedScan(const int& id)
+sensor_msgs::msg::LaserScan ScanHolder::getCorrectedScan(const int & id)
 {
   sensor_msgs::msg::LaserScan scan = current_scans_->at(id);
-  const laser_utils::LaserMetadata& laser = lasers_[scan.header.frame_id];
-  if (laser.isInverted())
-  {
+  const laser_utils::LaserMetadata & laser = lasers_[scan.header.frame_id];
+  if (laser.isInverted()) {
     laser.invertScan(scan);
   }
   return scan;
-};
+}
 
 void ScanHolder::addScan(const sensor_msgs::msg::LaserScan scan)
 {
   current_scans_->push_back(scan);
-};
+}
 
 } // end namespace

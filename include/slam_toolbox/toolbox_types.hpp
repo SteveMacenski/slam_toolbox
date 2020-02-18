@@ -39,8 +39,8 @@ namespace toolbox_types
 // object containing a scan pointer and a position
 struct PosedScan
 {
-  PosedScan(sensor_msgs::msg::LaserScan::ConstSharedPtr scan_in, karto::Pose2 pose_in) :
-             scan(scan_in), pose(pose_in) 
+  PosedScan(sensor_msgs::msg::LaserScan::ConstSharedPtr scan_in, karto::Pose2 pose_in)
+  : scan(scan_in), pose(pose_in)
   {
   }
   sensor_msgs::msg::LaserScan::ConstSharedPtr scan;
@@ -70,7 +70,7 @@ struct ScoredVertex
 };
 
 typedef std::vector<ScoredVertex> ScoredVertices;
-typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> Vertices;
+typedef std::vector<karto::Vertex<karto::LocalizedRangeScan> *> Vertices;
 
 // types of pause functionality available
 enum PausedApplication
@@ -97,28 +97,28 @@ struct PausedState
     state_map_[NEW_MEASUREMENTS] = false;
     state_map_[VISUALIZING_GRAPH] = false;
     state_map_[PROCESSING] = false;
-  };
+  }
 
-  void set(const PausedApplication& app, const bool& state)
+  void set(const PausedApplication & app, const bool & state)
   {
     boost::mutex::scoped_lock lock(pause_mutex_);
     state_map_[app] = state;
-  };
+  }
 
-  bool get(const PausedApplication& app)
+  bool get(const PausedApplication & app)
   {
     boost::mutex::scoped_lock lock(pause_mutex_);
     return state_map_[app];
-  };
+  }
 
   std::map<PausedApplication, bool> state_map_;
   boost::mutex pause_mutex_;
 };
 
-typedef std::map<karto::Name, std::map<int, karto::Vertex<karto::LocalizedRangeScan>*>> VerticeMap;
-typedef std::vector<karto::Edge<karto::LocalizedRangeScan>*> EdgeVector;
-typedef std::map<int, karto::Vertex<karto::LocalizedRangeScan>*> ScanMap;
-typedef std::vector<karto::Vertex<karto::LocalizedRangeScan>*> ScanVector;
+typedef std::map<karto::Name, std::map<int, karto::Vertex<karto::LocalizedRangeScan> *>> VerticeMap;
+typedef std::vector<karto::Edge<karto::LocalizedRangeScan> *> EdgeVector;
+typedef std::map<int, karto::Vertex<karto::LocalizedRangeScan> *> ScanMap;
+typedef std::vector<karto::Vertex<karto::LocalizedRangeScan> *> ScanVector;
 typedef slam_toolbox::srv::DeserializePoseGraph::Request procType;
 
 typedef std::unordered_map<int, Eigen::Vector3d>::iterator GraphIterator;

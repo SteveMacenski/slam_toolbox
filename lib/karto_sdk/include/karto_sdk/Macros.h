@@ -26,7 +26,7 @@
  * Karto defines for handling deprecated code
  */
 #ifndef KARTO_DEPRECATED
-#  if defined(__GNUC__) && (__GNUC__ >= 4 || (__GNUC__ == 3 && __GNUC_MINOR__>=1))
+#  if defined(__GNUC__) && (__GNUC__ >= 4 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 #    define KARTO_DEPRECATED __attribute__((deprecated))
 #  elif defined(__INTEL) || defined(_MSC_VER)
 #    define KARTO_DEPRECATED __declspec(deprecated)
@@ -42,7 +42,8 @@
 /**
  * Karto defines for windows dynamic build
  */
-#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__) || defined( __BCPLUSPLUS__)  || defined( __MWERKS__)
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__) || defined( __BCPLUSPLUS__) || \
+  defined( __MWERKS__)
 # if defined( _LIB ) || defined( KARTO_STATIC ) || defined( STATIC_BUILD )
 #  define KARTO_EXPORT
 # else
@@ -63,23 +64,23 @@
 /**
  * Helper defines for std iterator loops
  */
-#define forEach( listtype, list ) \
-  for ( listtype::iterator iter = (list)->begin(); iter != (list)->end(); ++iter )
+#define forEach(listtype, list) \
+  for (listtype::iterator iter = (list)->begin(); iter != (list)->end(); ++iter)
 
-#define forEachAs( listtype, list, iter ) \
-  for ( listtype::iterator iter = (list)->begin(); iter != (list)->end(); ++iter )
+#define forEachAs(listtype, list, iter) \
+  for (listtype::iterator iter = (list)->begin(); iter != (list)->end(); ++iter)
 
-#define const_forEach( listtype, list ) \
-  for ( listtype::const_iterator iter = (list)->begin(); iter != (list)->end(); ++iter )
+#define const_forEach(listtype, list) \
+  for (listtype::const_iterator iter = (list)->begin(); iter != (list)->end(); ++iter)
 
-#define const_forEachAs( listtype, list, iter ) \
-  for ( listtype::const_iterator iter = (list)->begin(); iter != (list)->end(); ++iter )
+#define const_forEachAs(listtype, list, iter) \
+  for (listtype::const_iterator iter = (list)->begin(); iter != (list)->end(); ++iter)
 
-#define forEachR( listtype, list ) \
-  for ( listtype::reverse_iterator iter = (list)->rbegin(); iter != (list)->rend(); ++iter )
+#define forEachR(listtype, list) \
+  for (listtype::reverse_iterator iter = (list)->rbegin(); iter != (list)->rend(); ++iter)
 
-#define const_forEachR( listtype, list ) \
-  for ( listtype::const_reverse_iterator iter = (list)->rbegin(); iter != (list)->rend(); ++iter )
+#define const_forEachR(listtype, list) \
+  for (listtype::const_reverse_iterator iter = (list)->rbegin(); iter != (list)->rend(); ++iter)
 
 
 ////////////////////////////////////////////////////////////////////////////////////////

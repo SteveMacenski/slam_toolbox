@@ -90,7 +90,7 @@ inline visualization_msgs::msg::Marker toMarker(
 //   control_rot.interaction_mode =
 //     visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
 //   int_marker.controls.push_back( control_rot );
-  
+
 //   return int_marker;
 // }
 
@@ -104,10 +104,10 @@ inline void toNavMap(
   karto::Vector2<kt_double> offset =
     occ_grid->GetCoordinateConverter()->GetOffset();
 
-  if(map.info.width != (unsigned int) width || 
-     map.info.height != (unsigned int) height ||
-     map.info.origin.position.x != offset.GetX() ||
-     map.info.origin.position.y != offset.GetY())
+  if (map.info.width != (unsigned int) width ||
+    map.info.height != (unsigned int) height ||
+    map.info.origin.position.x != offset.GetX() ||
+    map.info.origin.position.y != offset.GetY())
   {
     map.info.origin.position.x = offset.GetX();
     map.info.origin.position.y = offset.GetY();
@@ -116,13 +116,10 @@ inline void toNavMap(
     map.data.resize(map.info.width * map.info.height);
   }
 
-  for (kt_int32s y = 0; y < height; y++)
-  {
-    for (kt_int32s x = 0; x < width; x++) 
-    {
+  for (kt_int32s y = 0; y < height; y++) {
+    for (kt_int32s x = 0; x < width; x++) {
       kt_int8u value = occ_grid->GetValue(karto::Vector2<kt_int32s>(x, y));
-      switch (value)
-      {
+      switch (value) {
         case karto::GridStates_Unknown:
           map.data[MAP_IDX(map.info.width, x, y)] = -1;
           break;
@@ -135,7 +132,6 @@ inline void toNavMap(
       }
     }
   }
-  return;
 }
 
 }  // end namespace
