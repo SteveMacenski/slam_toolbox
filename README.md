@@ -14,10 +14,11 @@ We've received feedback from users and have robots operating in the following en
 - Libraries
 - Research
 
+It is also the currently supported ROS2-SLAM library. See tutorials for working with it in [ROS2 Navigation here](https://ros-planning.github.io/navigation2/tutorials/docs/navigation2_with_slam.html).
+
 [![IMAGE ALT TEXT](https://user-images.githubusercontent.com/14944147/74176653-f69beb80-4bec-11ea-906a-a233541a6064.png)](https://vimeo.com/378682207)
 
 # Introduction
-
 
 Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steven-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/), maintained whil at Samsung Research, and largely in his free time. 
 
