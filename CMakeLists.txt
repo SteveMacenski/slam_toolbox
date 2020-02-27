@@ -80,7 +80,6 @@ include_directories(include ${EIGEN3_INCLUDE_DIRS}
                             ${Boost_INCLUDE_DIR}
                             ${BOOST_INCLUDE_DIRS}
                             ${TBB_INCLUDE_DIRS}
-                            ${kartoSlamToolbox_INCLUDE_DIRS}
                             ${CERES_INCLUDES}
 )
 
