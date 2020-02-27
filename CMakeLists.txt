@@ -80,7 +80,7 @@ include_directories(include ${EIGEN3_INCLUDE_DIRS}
                             ${Boost_INCLUDE_DIR}
                             ${BOOST_INCLUDE_DIRS}
                             ${TBB_INCLUDE_DIRS}
-                            ${karto_INCLUDE_DIRS}
+                            ${kartoSlamToolbox_INCLUDE_DIRS}
                             ${CERES_INCLUDES}
 )
 
@@ -118,7 +118,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 #ament_target_dependencies(SlamToolboxPlugin
 #  ${dependencies}
 #)
-#target_link_libraries(SlamToolboxPlugin karto ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES})
+#target_link_libraries(SlamToolboxPlugin kartoSlamToolbox ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES})
 #rosidl_target_interfaces(SlamToolboxPlugin ${PROJECT_NAME} "rosidl_typesupport_cpp")
 #target_compile_definitions(SlamToolboxPlugin PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 #pluginlib_export_plugin_description_file(slam_toolbox rviz_plugins.xml)
@@ -129,7 +129,7 @@ ament_target_dependencies(ceres_solver_plugin ${dependencies})
 target_link_libraries(ceres_solver_plugin ${CERES_LIBRARIES}
                                           ${Boost_LIBRARIES}
                                           ${TBB_LIBRARIES}
-                                          karto
+                                          kartoSlamToolbox
 )
 rosidl_target_interfaces(ceres_solver_plugin ${PROJECT_NAME} "rosidl_typesupport_cpp")
 pluginlib_export_plugin_description_file(slam_toolbox solver_plugins.xml)
@@ -139,33 +139,33 @@ add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loo
 ament_target_dependencies(toolbox_common
   ${dependencies}
 )
-target_link_libraries(toolbox_common karto ${Boost_LIBRARIES})
+target_link_libraries(toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 rosidl_target_interfaces(toolbox_common ${PROJECT_NAME} "rosidl_typesupport_cpp")
 
 #### Mapping executibles
 add_library(async_slam_toolbox src/slam_toolbox_async.cpp)
-target_link_libraries(async_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
+target_link_libraries(async_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 add_executable(async_slam_toolbox_node src/slam_toolbox_async_node.cpp )
 target_link_libraries(async_slam_toolbox_node async_slam_toolbox)
 
 add_library(sync_slam_toolbox src/slam_toolbox_sync.cpp)
-target_link_libraries(sync_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
+target_link_libraries(sync_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 add_executable(sync_slam_toolbox_node src/slam_toolbox_sync_node.cpp )
 target_link_libraries(sync_slam_toolbox_node sync_slam_toolbox)
 
 add_library(localization_slam_toolbox src/slam_toolbox_localization.cpp)
-target_link_libraries(localization_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
+target_link_libraries(localization_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 add_executable(localization_slam_toolbox_node src/slam_toolbox_localization_node.cpp )
 target_link_libraries(localization_slam_toolbox_node localization_slam_toolbox)
 
 add_library(lifelong_slam_toolbox src/experimental/slam_toolbox_lifelong.cpp)
-target_link_libraries(lifelong_slam_toolbox toolbox_common karto ${Boost_LIBRARIES})
+target_link_libraries(lifelong_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 add_executable(lifelong_slam_toolbox_node src/experimental/slam_toolbox_lifelong_node.cpp )
 target_link_libraries(lifelong_slam_toolbox_node lifelong_slam_toolbox)
 
 #### Merging maps tool
 add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
-target_link_libraries(merge_maps_kinematic karto toolbox_common)
+target_link_libraries(merge_maps_kinematic kartoSlamToolbox toolbox_common)
 
 #### testing
 if(BUILD_TESTING)
