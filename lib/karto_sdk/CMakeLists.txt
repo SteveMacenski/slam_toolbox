@@ -26,21 +26,21 @@ include_directories(include ${catkin_INCLUDE_DIRS}
 add_definitions(${EIGEN3_DEFINITIONS})
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${Boost_INCLUDE_DIR})
-add_library(karto SHARED src/Karto.cpp src/Mapper.cpp)
-ament_target_dependencies(karto ${dependencies})
-target_link_libraries(karto ${Boost_LIBRARIES} ${TBB_LIBRARIES})
+add_library(kartoSlamToolbox SHARED src/Karto.cpp src/Mapper.cpp)
+ament_target_dependencies(kartoSlamToolbox ${dependencies})
+target_link_libraries(kartoSlamToolbox ${Boost_LIBRARIES} ${TBB_LIBRARIES})
 
 install(DIRECTORY include/
 	DESTINATION include/
 )
 
-install(TARGETS karto
+install(TARGETS kartoSlamToolbox
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
-ament_export_libraries(karto)
+ament_export_libraries(kartoSlamToolbox)
 ament_export_include_directories(include)
 ament_export_dependencies(${dependencies})
 ament_package()
