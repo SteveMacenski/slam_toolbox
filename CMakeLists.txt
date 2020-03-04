@@ -169,6 +169,8 @@ target_link_libraries(merge_maps_kinematic kartoSlamToolbox toolbox_common)
 #### testing
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
   include_directories(test)
   ament_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
   target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
