@@ -4020,8 +4020,9 @@ public:
         stream << angularResolution;
         throw Exception(stream.str());
       }
-    } else if (m_pType->GetValue() == LaserRangeFinder_Sick_LMS200 ||
-      m_pType->GetValue() == LaserRangeFinder_Sick_LMS291) {
+    } else if (m_pType->GetValue() == LaserRangeFinder_Sick_LMS200 ||  // NOLINT
+      m_pType->GetValue() == LaserRangeFinder_Sick_LMS291)
+    {
       if (math::DoubleEqual(angularResolution, math::DegreesToRadians(0.25))) {
         m_pAngularResolution->SetValue(math::DegreesToRadians(0.25));
       } else if (math::DoubleEqual(angularResolution, math::DegreesToRadians(0.50))) {

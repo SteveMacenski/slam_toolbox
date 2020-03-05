@@ -1532,8 +1532,8 @@ class ScanManager;
 class KARTO_EXPORT MapperSensorManager
 //: public SensorManager // was commented out, works with it in, but I'll leave out for now...
 {
-typedef std::map<Name, ScanManager *> ScanManagerMap;
 public:
+  typedef std::map<Name, ScanManager *> ScanManagerMap;
   /**
    * Constructor
    */

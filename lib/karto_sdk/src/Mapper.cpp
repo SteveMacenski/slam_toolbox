@@ -720,12 +720,12 @@ kt_double ScanMatcher::CorrelateScan(
         ptr = (kt_double *)(m_pSearchSpaceProbs->GetDataPointer(grid));  // NOLINT
       } catch (...) {
         throw std::runtime_error("Mapper FATAL ERROR - "
-          "unable to get pointer in probability search!");
+                "unable to get pointer in probability search!");
       }
 
       if (ptr == NULL) {
         throw std::runtime_error("Mapper FATAL ERROR - "
-          "Index out of range in probability search!");
+                "Index out of range in probability search!");
       }
 
       *ptr = math::Maximum(m_pPoseResponse[i].first, *ptr);

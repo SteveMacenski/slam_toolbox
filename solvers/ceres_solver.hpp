@@ -45,7 +45,7 @@ public:
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan> * pVertex);
   // Adds a constraint to the solver
   virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan> * pEdge);
-   // Get graph stored
+  // Get graph stored
   virtual std::unordered_map<int, Eigen::Vector3d> * getGraph();
   // Removes a node from the solver correction table
   virtual void RemoveNode(kt_int32s id);

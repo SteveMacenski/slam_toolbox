@@ -175,7 +175,7 @@ TEST(LifelingMetricsTests, TestPtOverlap)
   delete s2;
 }
 
-}  // namespace
+}  // namespace karto
 
 int main(int argc, char ** argv)
 {
