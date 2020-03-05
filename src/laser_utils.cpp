@@ -16,8 +16,12 @@
 
 /* Author: Steven Macenski */
 
-#include "slam_toolbox/laser_utils.hpp"
 #include <cmath>
+#include <string>
+#include <map>
+#include <vector>
+#include <memory>
+#include "slam_toolbox/laser_utils.hpp"
 
 namespace laser_utils
 {
@@ -178,4 +182,4 @@ void ScanHolder::addScan(const sensor_msgs::msg::LaserScan scan)
   current_scans_->push_back(scan);
 }
 
-} // end namespace
+}  // namespace laser_utils

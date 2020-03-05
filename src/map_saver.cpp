@@ -16,6 +16,8 @@
 
 /* Author: Steven Macenski */
 
+#include <memory>
+#include <string>
 #include "slam_toolbox/map_saver.hpp"
 
 namespace map_saver
@@ -69,4 +71,4 @@ bool MapSaver::saveMapCallback(
   return true;
 }
 
-} // end namespace
+}  // namespace map_saver

@@ -22,12 +22,12 @@
 #include <gtest/gtest.h>
 #include "slam_toolbox/experimental/slam_toolbox_lifelong.hpp"
 
-using namespace karto;
+using karto;
 
 // 3 potential test cases, t1 is used.
-//t1 = IOU([3.5, 4.0, 3.0, 4.0], [3.5, 5.5, 3.0, 3.0]) == 6.0
-//t2 = IOU([4.5, 3.0, 5.0, 2.0], [4.5, 4.5, 3, 3]) == 3.0
-//t3 = IOU([4.5, 3.5, 3.0, 3.0], [2.5, 5.5, 3, 3]) == 1.0
+// t1 = IOU([3.5, 4.0, 3.0, 4.0], [3.5, 5.5, 3.0, 3.0]) == 6.0
+// t2 = IOU([4.5, 3.0, 5.0, 2.0], [4.5, 4.5, 3, 3]) == 3.0
+// t3 = IOU([4.5, 3.5, 3.0, 3.0], [2.5, 5.5, 3, 3]) == 1.0
 
 namespace
 {
@@ -48,8 +48,8 @@ TEST(LifelingMetricsTests, TestBounds)
   s1->SetBoundingBox(bb1);
   s2->SetBoundingBox(bb2);
   PointVectorDouble pts;
-  pts.push_back(Vector2<double>(3.0, 5.0)); //inside
-  pts.push_back(Vector2<double>(3.0, 3.0)); //outside
+  pts.push_back(Vector2<double>(3.0, 5.0));  // inside
+  pts.push_back(Vector2<double>(3.0, 3.0));  // outside
   s2->SetPointReadings(pts, true);
   double x_l, x_u, y_l, y_u;
   bool dirty = false;
@@ -80,8 +80,8 @@ TEST(LifelingMetricsTests, TestIntersect)
   s1->SetBoundingBox(bb1);
   s2->SetBoundingBox(bb2);
   PointVectorDouble pts;
-  pts.push_back(Vector2<double>(3.0, 5.0)); //inside
-  pts.push_back(Vector2<double>(3.0, 3.0)); //outside
+  pts.push_back(Vector2<double>(3.0, 5.0));  // inside
+  pts.push_back(Vector2<double>(3.0, 3.0));  // outside
   s2->SetPointReadings(pts, true);
   bool dirty = false;
   s1->SetIsDirty(dirty);
@@ -108,8 +108,8 @@ TEST(LifelingMetricsTests, TestIntersectOverUnion)
   s1->SetBoundingBox(bb1);
   s2->SetBoundingBox(bb2);
   PointVectorDouble pts;
-  pts.push_back(Vector2<double>(3.0, 5.0)); //inside
-  pts.push_back(Vector2<double>(3.0, 3.0)); //outside
+  pts.push_back(Vector2<double>(3.0, 5.0));  // inside
+  pts.push_back(Vector2<double>(3.0, 3.0));  // outside
   s2->SetPointReadings(pts, true);
   bool dirty = false;
   s1->SetIsDirty(dirty);
@@ -137,8 +137,8 @@ TEST(LifelingMetricsTests, TestAreaOverlap)
   s1->SetBoundingBox(bb1);
   s2->SetBoundingBox(bb2);
   PointVectorDouble pts;
-  pts.push_back(Vector2<double>(3.0, 5.0)); //inside
-  pts.push_back(Vector2<double>(3.0, 3.0)); //outside
+  pts.push_back(Vector2<double>(3.0, 5.0));  // inside
+  pts.push_back(Vector2<double>(3.0, 3.0));  // outside
   s2->SetPointReadings(pts, true);
   bool dirty = false;
   s1->SetIsDirty(dirty);
@@ -165,8 +165,8 @@ TEST(LifelingMetricsTests, TestPtOverlap)
   s1->SetBoundingBox(bb1);
   s2->SetBoundingBox(bb2);
   PointVectorDouble pts;
-  pts.push_back(Vector2<double>(3.0, 5.0)); //inside
-  pts.push_back(Vector2<double>(3.0, 3.0)); //outside
+  pts.push_back(Vector2<double>(3.0, 5.0));  // inside
+  pts.push_back(Vector2<double>(3.0, 3.0));  // outside
   s2->SetPointReadings(pts, true);
   bool dirty = false;
   s1->SetIsDirty(dirty);
@@ -177,7 +177,7 @@ TEST(LifelingMetricsTests, TestPtOverlap)
   delete s2;
 }
 
-}
+}  // namespace
 
 int main(int argc, char ** argv)
 {
@@ -185,4 +185,4 @@ int main(int argc, char ** argv)
   return RUN_ALL_TESTS();
 }
 
-#endif //SLAM_TOOLBOX_SLAM_TOOLBOX_LIFELONG_TEST_H_
+#endif  // SLAM_TOOLBOX_SLAM_TOOLBOX_LIFELONG_TEST_H_

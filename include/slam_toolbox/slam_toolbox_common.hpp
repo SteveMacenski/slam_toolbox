@@ -16,8 +16,18 @@
  *
  */
 
-#ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_COMMON_H_
-#define SLAM_TOOLBOX_SLAM_TOOLBOX_COMMON_H_
+#ifndef SLAM_TOOLBOX__SLAM_TOOLBOX_COMMON_HPP_
+#define SLAM_TOOLBOX__SLAM_TOOLBOX_COMMON_HPP_
+
+#include <sys/resource.h>
+#include <boost/thread.hpp>
+#include <string>
+#include <map>
+#include <vector>
+#include <queue>
+#include <cstdlib>
+#include <memory>
+#include <fstream>
 
 #include "rclcpp/rclcpp.hpp"
 #include "message_filters/subscriber.h"
@@ -39,26 +49,17 @@
 #include "slam_toolbox/map_saver.hpp"
 #include "slam_toolbox/loop_closure_assistant.hpp"
 
-#include <string>
-#include <map>
-#include <vector>
-#include <queue>
-#include <cstdlib>
-#include <fstream>
-#include <boost/thread.hpp>
-#include <sys/resource.h>
-
 namespace slam_toolbox
 {
 
 // dirty, dirty cheat I love
-using namespace ::toolbox_types;
-using namespace ::karto;
+using ::toolbox_types;
+using ::karto;
 
 class SlamToolbox : public rclcpp::Node
 {
 public:
-  SlamToolbox(rclcpp::NodeOptions);
+  explicit SlamToolbox(rclcpp::NodeOptions);
   SlamToolbox();
   ~SlamToolbox();
   void configure();
@@ -169,6 +170,6 @@ protected:
   std::shared_ptr<karto::ScanSolver> solver_;
 };
 
-} // end namespace
+}  // namespace slam_toolbox
 
-#endif //SLAM_TOOLBOX_SLAM_TOOLBOX_COMMON_H_
+#endif   // SLAM_TOOLBOX__SLAM_TOOLBOX_COMMON_HPP_

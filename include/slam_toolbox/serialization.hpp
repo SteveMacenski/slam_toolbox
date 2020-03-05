@@ -16,12 +16,12 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_SERIALIZATION_H_
-#define SLAM_TOOLBOX_SERIALIZATION_H_
+#ifndef SLAM_TOOLBOX__SERIALIZATION_HPP_
+#define SLAM_TOOLBOX__SERIALIZATION_HPP_
 
+#include <sys/stat.h>
 #include <vector>
 #include <string>
-#include <sys/stat.h>
 #include "rclcpp/rclcpp.hpp"
 #include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
 
@@ -75,6 +75,6 @@ inline bool read(
   return false;
 }
 
-} // end namespace
+}  // namespace serialization
 
-#endif //SLAM_TOOLBOX_SERIALIZATION_H_
+#endif  // SLAM_TOOLBOX__SERIALIZATION_HPP_

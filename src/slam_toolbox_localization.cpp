@@ -16,6 +16,8 @@
 
 /* Author: Steven Macenski */
 
+#include <memory>
+#include <string>
 #include "slam_toolbox/slam_toolbox_localization.hpp"
 
 namespace slam_toolbox
@@ -117,7 +119,6 @@ void LocalizationSlamToolbox::laserCallback(
   if (shouldProcessScan(scan, pose)) {
     addScan(laser, scan, pose);
   }
-
 }
 
 /*****************************************************************************/
@@ -208,4 +209,4 @@ void LocalizationSlamToolbox::localizePoseCallback(
     tf2::getYaw(msg->pose.pose.orientation));
 }
 
-} // end namespace
+}  // namespace slam_toolbox

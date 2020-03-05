@@ -19,6 +19,7 @@
 
 #include "slam_toolbox/slam_toolbox_sync.hpp"
 
+#include <memory>
 namespace slam_toolbox
 {
 
@@ -84,7 +85,6 @@ void SynchronousSlamToolbox::laserCallback(
   if (shouldProcessScan(scan, pose)) {
     q_.push(PosedScan(scan, pose));
   }
-
 }
 
 /*****************************************************************************/
@@ -118,4 +118,4 @@ bool SynchronousSlamToolbox::deserializePoseGraphCallback(
   return SlamToolbox::deserializePoseGraphCallback(request_header, req, resp);
 }
 
-} // end namespace
+}  // namespace slam_toolbox

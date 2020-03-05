@@ -16,9 +16,10 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_LOCALIZATION_H_
-#define SLAM_TOOLBOX_SLAM_TOOLBOX_LOCALIZATION_H_
+#ifndef SLAM_TOOLBOX__SLAM_TOOLBOX_LOCALIZATION_HPP_
+#define SLAM_TOOLBOX__SLAM_TOOLBOX_LOCALIZATION_HPP_
 
+#include <memory>
 #include "slam_toolbox/slam_toolbox_common.hpp"
 
 namespace slam_toolbox
@@ -27,34 +28,34 @@ namespace slam_toolbox
 class LocalizationSlamToolbox : public SlamToolbox
 {
 public:
-  LocalizationSlamToolbox(rclcpp::NodeOptions options);
+  explicit LocalizationSlamToolbox(rclcpp::NodeOptions options);
   ~LocalizationSlamToolbox() {}
   virtual void loadPoseGraphByParams();
 
 protected:
-  virtual void laserCallback(
-    sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
+  void laserCallback(
+    sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override;
   void localizePoseCallback(
     const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
 
-  virtual bool serializePoseGraphCallback(
+  bool serializePoseGraphCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::SerializePoseGraph::Request> req,
-    std::shared_ptr<slam_toolbox::srv::SerializePoseGraph::Response> resp) override final;
-  virtual bool deserializePoseGraphCallback(
+    std::shared_ptr<slam_toolbox::srv::SerializePoseGraph::Response> resp) override;
+  bool deserializePoseGraphCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override final;
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override;
 
-  virtual LocalizedRangeScan * addScan(
+  LocalizedRangeScan * addScan(
     LaserRangeFinder * laser,
     const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
-    Pose2 & pose) override final;
+    Pose2 & pose) override;
 
   std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>>
   localization_pose_sub_;
 };
 
-}
+}  // namespace slam_toolbox
 
-#endif //SLAM_TOOLBOX_SLAM_TOOLBOX_LOCALIZATION_H_
+#endif  // SLAM_TOOLBOX__SLAM_TOOLBOX_LOCALIZATION_HPP_

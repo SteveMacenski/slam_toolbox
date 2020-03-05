@@ -16,8 +16,10 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_VISUALIZATION_UTILS_H_
-#define SLAM_TOOLBOX_VISUALIZATION_UTILS_H_
+#ifndef SLAM_TOOLBOX__VISUALIZATION_UTILS_HPP_
+#define SLAM_TOOLBOX__VISUALIZATION_UTILS_HPP_
+
+#include <string>
 
 namespace vis_utils
 {
@@ -134,6 +136,6 @@ inline void toNavMap(
   }
 }
 
-}  // end namespace
+}  // namespace vis_utils
 
-#endif //SLAM_TOOLBOX_VISUALIZATION_UTILS_H_
+#endif  // SLAM_TOOLBOX__VISUALIZATION_UTILS_HPP_

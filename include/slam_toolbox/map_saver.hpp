@@ -16,10 +16,11 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_MAP_SAVER_H_
-#define SLAM_TOOLBOX_MAP_SAVER_H_
+#ifndef SLAM_TOOLBOX__MAP_SAVER_HPP_
+#define SLAM_TOOLBOX__MAP_SAVER_HPP_
 
 #include <string>
+#include <memory>
 #include <chrono>
 #include "rclcpp/rclcpp.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
@@ -47,6 +48,6 @@ private:
   bool received_map_;
 };
 
-} // end namespace
+}  // namespace map_saver
 
-#endif //SLAM_TOOLBOX_MAP_SAVER_H_
+#endif  // SLAM_TOOLBOX__MAP_SAVER_HPP_

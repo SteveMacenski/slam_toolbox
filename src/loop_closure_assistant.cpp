@@ -16,6 +16,9 @@
 
 /* Author: Steven Macenski */
 
+#include <unordered_map>
+#include <memory>
+
 #include "slam_toolbox/loop_closure_assistant.hpp"
 
 namespace loop_closure_assistant
@@ -290,4 +293,4 @@ void LoopClosureAssistant::publishGraph()
 //   moved_nodes_[id] = vec;
 // }
 
-} // end namespace
+}  // namespace loop_closure_assistant

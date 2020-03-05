@@ -16,18 +16,20 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_LOOP_CLOSURE_ASSISTANT_H_
-#define SLAM_TOOLBOX_LOOP_CLOSURE_ASSISTANT_H_
+#ifndef SLAM_TOOLBOX__LOOP_CLOSURE_ASSISTANT_HPP_
+#define SLAM_TOOLBOX__LOOP_CLOSURE_ASSISTANT_HPP_
 
-#include <functional>
 #include <boost/thread.hpp>
+#include <string>
+#include <functional>
+#include <memory>
 #include <map>
 
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2/utils.h"
 #include "rclcpp/rclcpp.hpp"
 // #include "interactive_markers/interactive_marker_server.h"
 // #include "interactive_markers/menu_handler.h"
-#include "tf2_ros/transform_broadcaster.h"
-#include "tf2/utils.h"
 
 #include "slam_toolbox/toolbox_types.hpp"
 #include "slam_toolbox/laser_utils.hpp"
@@ -38,7 +40,7 @@ namespace loop_closure_assistant
 
 // TODO(stevemacenski): Need interactive markers ported to ROS2
 
-using namespace ::toolbox_types;
+using ::toolbox_types;
 
 class LoopClosureAssistant
 {
@@ -49,13 +51,18 @@ public:
     ProcessType & processor_type);
 
   // void clearMovedNodes();
-  // void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+  // void processInteractiveFeedback(
+  //   const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void publishGraph();
 
 private:
-  // bool manualLoopClosureCallback(slam_toolbox::LoopClosure::Request& req, slam_toolbox::LoopClosure::Response& resp);
-  // bool clearChangesCallback(slam_toolbox::Clear::Request& req, slam_toolbox::Clear::Response& resp);
-  // bool interactiveModeCallback(slam_toolbox::ToggleInteractive::Request  &req, slam_toolbox::ToggleInteractive::Response &resp);
+  // bool manualLoopClosureCallback(
+  //   slam_toolbox::LoopClosure::Request& req, slam_toolbox::LoopClosure::Response& resp);
+  // bool clearChangesCallback(
+  //   slam_toolbox::Clear::Request& req, slam_toolbox::Clear::Response& resp);
+  // bool interactiveModeCallback(
+  //   slam_toolbox::ToggleInteractive::Request  &req,
+  //   slam_toolbox::ToggleInteractive::Response &resp);
   // void moveNode(const int& id, const Eigen::Vector3d& pose);
   // void addMovedNodes(const int& id, Eigen::Vector3d vec);
 
@@ -77,6 +84,6 @@ private:
   ProcessType & processor_type_;
 };
 
-}  // end namespace
+}   // namespace loop_closure_assistant
 
-#endif //SLAM_TOOLBOX_LOOP_CLOSURE_ASSISTANT_H_
+#endif  // SLAM_TOOLBOX__LOOP_CLOSURE_ASSISTANT_HPP_

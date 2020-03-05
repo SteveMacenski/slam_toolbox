@@ -16,14 +16,9 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_PANEL_H
-#define SLAM_TOOLBOX_PANEL_H
+#ifndef RVIZ_PLUGIN__SLAM_TOOLBOX_RVIZ_PLUGIN_H_
+#define RVIZ_PLUGIN__SLAM_TOOLBOX_RVIZ_PLUGIN_H_
 
-// ROS
-#include "rclcpp/rclcpp.hpp"
-#include "rviz_common/panel.hpp"
-#include "slam_toolbox/toolbox_msgs.hpp"
-// STL
 #include <stdlib.h>
 #include <stdio.h>
 // QT
@@ -37,10 +32,15 @@
 #include <QLabel>
 #include <QFrame>
 #include <QRadioButton>
-
+// STL
 #include <thread>
 #include <chrono>
 #include <memory>
+// ROS
+#include "rclcpp/rclcpp.hpp"
+#include "rviz_common/panel.hpp"
+#include "slam_toolbox/toolbox_msgs.hpp"
+
 
 class QLineEdit;
 class QSpinBox;
@@ -49,7 +49,7 @@ class QComboBox;
 namespace rviz_common
 {
 class VisualizationManager;
-}
+}  // namespace rviz_common
 
 namespace slam_toolbox
 {
@@ -67,7 +67,7 @@ class SlamToolboxPlugin : public rviz_common::Panel
   Q_OBJECT
 
 public:
-  SlamToolboxPlugin(QWidget * parent);
+  explicit SlamToolboxPlugin(QWidget * parent);
   SlamToolboxPlugin() {SlamToolboxPlugin(nullptr);}
 
   ~SlamToolboxPlugin();
@@ -156,6 +156,6 @@ protected:
   ContinueMappingType _match_type;
 };
 
-} // end namespace
+}  // namespace slam_toolbox
 
-#endif
+#endif  // RVIZ_PLUGIN__SLAM_TOOLBOX_RVIZ_PLUGIN_H_

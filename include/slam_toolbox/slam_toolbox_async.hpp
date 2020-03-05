@@ -17,9 +17,10 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_ASYNC_H_
-#define SLAM_TOOLBOX_SLAM_TOOLBOX_ASYNC_H_
+#ifndef SLAM_TOOLBOX__SLAM_TOOLBOX_ASYNC_HPP_
+#define SLAM_TOOLBOX__SLAM_TOOLBOX_ASYNC_HPP_
 
+#include <memory>
 #include "slam_toolbox/slam_toolbox_common.hpp"
 
 namespace slam_toolbox
@@ -28,18 +29,18 @@ namespace slam_toolbox
 class AsynchronousSlamToolbox : public SlamToolbox
 {
 public:
-  AsynchronousSlamToolbox(rclcpp::NodeOptions options);
+  explicit AsynchronousSlamToolbox(rclcpp::NodeOptions options);
   ~AsynchronousSlamToolbox() {}
 
 protected:
-  virtual void laserCallback(
-    sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
-  virtual bool deserializePoseGraphCallback(
+  void laserCallback(
+    sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override;
+  bool deserializePoseGraphCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override final;
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override;
 };
 
-}
+}  // namespace slam_toolbox
 
-#endif //SLAM_TOOLBOX_SLAM_TOOLBOX_ASYNC_H_
+#endif  // SLAM_TOOLBOX__SLAM_TOOLBOX_ASYNC_HPP_

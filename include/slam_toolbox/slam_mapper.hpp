@@ -16,9 +16,10 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_SLAM_MAPPER_H_
-#define SLAM_TOOLBOX_SLAM_MAPPER_H_
+#ifndef SLAM_TOOLBOX__SLAM_MAPPER_HPP_
+#define SLAM_TOOLBOX__SLAM_MAPPER_HPP_
 
+#include <memory>
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/utils.h"
 #include "slam_toolbox/toolbox_types.hpp"
@@ -26,7 +27,7 @@
 namespace mapper_utils
 {
 
-using namespace ::karto;
+using ::karto;
 
 class SMapper
 {
@@ -59,6 +60,6 @@ protected:
   std::unique_ptr<karto::Mapper> mapper_;
 };
 
-} // end namespace
+}  // namespace mapper_utils
 
-#endif //SLAM_TOOLBOX_SLAM_MAPPER_H_
+#endif   // SLAM_TOOLBOX__SLAM_MAPPER_HPP_

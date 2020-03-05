@@ -17,6 +17,7 @@
 
 /* Author: Steven Macenski */
 
+#include <memory>
 #include "slam_toolbox/experimental/slam_toolbox_lifelong.hpp"
 
 int main(int argc, char ** argv)
