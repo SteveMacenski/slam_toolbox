@@ -16,10 +16,13 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_LASER_UTILS_H_
-#define SLAM_TOOLBOX_LASER_UTILS_H_
+#ifndef SLAM_TOOLBOX__LASER_UTILS_HPP_
+#define SLAM_TOOLBOX__LASER_UTILS_HPP_
 
 #include <string>
+#include <memory>
+#include <map>
+#include <vector>
 
 #include "rclcpp/rclcpp.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
@@ -93,7 +96,7 @@ private:
 class ScanHolder
 {
 public:
-  ScanHolder(std::map<std::string, laser_utils::LaserMetadata> & lasers);
+  explicit ScanHolder(std::map<std::string, laser_utils::LaserMetadata> & lasers);
   ~ScanHolder();
   sensor_msgs::msg::LaserScan getCorrectedScan(const int & id);
   void addScan(const sensor_msgs::msg::LaserScan scan);
@@ -103,6 +106,6 @@ private:
   std::map<std::string, laser_utils::LaserMetadata> & lasers_;
 };
 
-} // end namespace
+}  // namespace laser_utils
 
-#endif //SLAM_TOOLBOX_LASER_UTILS_H_
+#endif  // SLAM_TOOLBOX__LASER_UTILS_HPP_

@@ -17,6 +17,7 @@
 
 /* Author: Steven Macenski */
 
+#include <memory>
 #include "slam_toolbox/slam_toolbox_async.hpp"
 
 namespace slam_toolbox
@@ -69,4 +70,4 @@ bool AsynchronousSlamToolbox::deserializePoseGraphCallback(
   return SlamToolbox::deserializePoseGraphCallback(request_header, req, resp);
 }
 
-} // end namespace
+}  // namespace slam_toolbox

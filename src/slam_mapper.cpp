@@ -18,6 +18,7 @@
 
 /* Author: Steven Macenski */
 
+#include <memory>
 #include "slam_toolbox/slam_mapper.hpp"
 
 namespace mapper_utils
@@ -304,4 +305,4 @@ void SMapper::Reset()
   mapper_->Reset();
 }
 
-} // end namespace
+}  // namespace mapper_utils

@@ -16,21 +16,21 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
-#define SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
+#ifndef SLAM_TOOLBOX__MERGE_MAPS_KINEMATIC_HPP_
+#define SLAM_TOOLBOX__MERGE_MAPS_KINEMATIC_HPP_
 
+#include <boost/thread.hpp>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <string>
 #include <map>
 #include <memory>
 #include <vector>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <fstream>
-#include <boost/thread.hpp>
 
 #include "rclcpp/rclcpp.hpp"
-//#include "interactive_markers/interactive_marker_server.h"
-//#include "interactive_markers/menu_handler.h"
+// #include "interactive_markers/interactive_marker_server.h"
+// #include "interactive_markers/menu_handler.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/message_filter.h"
@@ -44,8 +44,8 @@
 #include "slam_toolbox/laser_utils.hpp"
 #include "slam_toolbox/visualization_utils.hpp"
 
-using namespace toolbox_types;
-using namespace karto;
+using namespace toolbox_types;  // NOLINT
+using namespace karto;  // NOLINT
 
 class MergeMapsKinematic : public rclcpp::Node
 {
@@ -75,7 +75,7 @@ private:
     nav_msgs::srv::GetMap::Response & map);
   void transformScan(LocalizedRangeScansIt iter, tf2::Transform & submap_correction);
 
-  //apply transformation to correct pose
+  // apply transformation to correct pose
   karto::Pose2 applyCorrection(const karto::Pose2 & pose, const tf2::Transform & submap_correction);
   karto::Vector2<kt_double> applyCorrection(
     const karto::Vector2<kt_double> & pose,
@@ -87,7 +87,7 @@ private:
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::MergeMaps>> ssMap_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::AddSubmap>> ssSubmap_;
 
-  //karto bookkeeping
+  // karto bookkeeping
   std::map<std::string, laser_utils::LaserMetadata> lasers_;
   std::vector<std::unique_ptr<karto::Dataset>> dataset_vec_;
 
@@ -105,4 +105,4 @@ private:
   int num_submaps_;
 };
 
-#endif //SLAM_TOOLBOX_MERGE_MAPS_KINEMATIC_H_
+#endif  // SLAM_TOOLBOX__MERGE_MAPS_KINEMATIC_HPP_

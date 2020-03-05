@@ -17,7 +17,7 @@
 /* Author: Steven Macenski */
 
 // Header
-#include "slam_toolbox_rviz_plugin.h"
+#include "rviz_plugin/slam_toolbox_rviz_plugin.h"
 // QT
 #include <QPushButton>
 #include <QCheckBox>
@@ -28,6 +28,9 @@
 #include <QtGui>
 #include <QLabel>
 #include <QFrame>
+// STL
+#include <memory>
+
 
 namespace slam_toolbox
 {
@@ -489,7 +492,7 @@ void SlamToolboxPlugin::LocalizeCb()
 void SlamToolboxPlugin::updateCheckStateIfExternalChange()
 /*****************************************************************************/
 {
-  rclcpp::Rate r(1); //1 hz
+  rclcpp::Rate r(1);
   bool paused_measure = false, interactive = false;
 
   while (rclcpp::ok()) {
@@ -510,7 +513,7 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
   }
 }
 
-} // end namespace
+}  // namespace slam_toolbox
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(slam_toolbox::SlamToolboxPlugin, rviz_common::Panel)

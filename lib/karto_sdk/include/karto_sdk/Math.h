@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef karto_sdk_MATH_H
-#define karto_sdk_MATH_H
+#ifndef KARTO_SDK__MATH_H_
+#define KARTO_SDK__MATH_H_
 
 #include <assert.h>
 #include <math.h>
@@ -235,8 +235,8 @@ inline T AlignValue(size_t value, size_t alignValue = 8)
 {
   return static_cast<T>((value + (alignValue - 1)) & ~(alignValue - 1));
 }
-}    // namespace math
+}  // namespace math
 
 }  // namespace karto
 
-#endif  // karto_sdk_MATH_H
+#endif  // KARTO_SDK__MATH_H_

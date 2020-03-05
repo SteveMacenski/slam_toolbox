@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <boost/serialization/export.hpp>
 #include <math.h>
 #include <assert.h>
 #include <float.h>
@@ -22,8 +23,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <string>
 #include "karto_sdk/Karto.h"
-#include <boost/serialization/export.hpp>
+
 BOOST_CLASS_EXPORT_IMPLEMENT(karto::NonCopyable);
 BOOST_CLASS_EXPORT_IMPLEMENT(karto::Object);
 BOOST_CLASS_EXPORT_IMPLEMENT(karto::Sensor);

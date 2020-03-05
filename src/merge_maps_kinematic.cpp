@@ -16,6 +16,8 @@
 
 /* Author: Steven Macenski */
 
+#include <memory>
+#include <utility>
 #include "slam_toolbox/merge_maps_kinematic.hpp"
 #include "slam_toolbox/serialization.hpp"
 
@@ -132,7 +134,7 @@ bool MergeMapsKinematic::addSubmapCallback(
 
   submap_marker_transform_[num_submaps_] =
     tf2::Transform(tf2::Quaternion(0., 0., 0., 1.0),
-      tf2::Vector3(0, 0, 0)); //no initial correction -- identity mat
+      tf2::Vector3(0, 0, 0));  // no initial correction -- identity mat
   submap_locations_[num_submaps_] =
     Eigen::Vector3d(transform.getOrigin().getX(),
       transform.getOrigin().getY(), 0.);
@@ -313,7 +315,7 @@ void MergeMapsKinematic::processInteractiveFeedback(
   {
     tf2Scalar yaw = tf2::getYaw(feedback->pose.orientation);
     tf2::Quaternion quat(0., 0., 0., 1.0);
-    tf2::fromMsg(feedback->pose.orientation, quat); // relative
+    tf2::fromMsg(feedback->pose.orientation, quat);  // relative
 
     tf2::Transform previous_submap_correction;
     previous_submap_correction.setIdentity();
@@ -347,7 +349,7 @@ void MergeMapsKinematic::processInteractiveFeedback(
   {
     tf2Scalar yaw = tf2::getYaw(feedback->pose.orientation);
     tf2::Quaternion quat(0., 0., 0., 1.0);
-    tf2::fromMsg(feedback->pose.orientation, quat); // relative
+    tf2::fromMsg(feedback->pose.orientation, quat);  // relative
 
     // add the map_N frame there
     tf2::Transform new_submap_location;

@@ -3,31 +3,28 @@
  * Author: Steve Macenski (stevenmacenski@gmail.com)
  */
 
-#ifndef KARTO_CERESSOLVER_H
-#define KARTO_CERESSOLVER_H
+#ifndef SOLVERS__CERES_SOLVER_HPP_
+#define SOLVERS__CERES_SOLVER_HPP_
 
-#include <rclcpp/rclcpp.hpp>
-#include <std_srvs/srv/empty.hpp>
-
+#include <math.h>
+#include <ceres/local_parameterization.h>
+#include <ceres/ceres.h>
 #include <vector>
 #include <unordered_map>
 #include <utility>
-
+#include <cmath>
 // god... getting this to work in ROS2 was a real pain
 #include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
+#include "solvers/ceres_utils.h"
 
-#include <ceres/ceres.h>
-#include <ceres/local_parameterization.h>
-#include <cmath>
-#include <math.h>
-
+#include "rclcpp/rclcpp.hpp"
+#include "std_srvs/srv/empty.hpp"
 #include "../include/slam_toolbox/toolbox_types.hpp"
-#include "ceres_utils.h"
 
 namespace solver_plugins
 {
 
-using namespace ::toolbox_types;
+using namespace ::toolbox_types;  // NOLINT
 
 class CeresSolver : public karto::ScanSolver
 {
@@ -36,21 +33,29 @@ public:
   virtual ~CeresSolver();
 
 public:
-  virtual const karto::ScanSolver::IdPoseVector & GetCorrections() const; //Get corrected poses after optimization
+  // Get corrected poses after optimization
+  virtual const karto::ScanSolver::IdPoseVector & GetCorrections() const;
 
-  virtual void Compute(); //Solve
-  virtual void Clear(); //Resets the corrections
-  virtual void Reset(); //Resets the solver plugin clean
+  virtual void Compute();  // Solve
+  virtual void Clear();  // Resets the corrections
+  virtual void Reset();  // Resets the solver plugin clean
   virtual void Configure(rclcpp::Node::SharedPtr node);
 
-  virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan> * pVertex); //Adds a node to the solver
-  virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan> * pEdge); //Adds a constraint to the solver
-  virtual std::unordered_map<int, Eigen::Vector3d> * getGraph(); //Get graph stored
-  virtual void RemoveNode(kt_int32s id); //Removes a node from the solver correction table
-  virtual void RemoveConstraint(kt_int32s sourceId, kt_int32s targetId); // Removes constraints from the optimization problem
+  // Adds a node to the solver
+  virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan> * pVertex);
+  // Adds a constraint to the solver
+  virtual void AddConstraint(karto::Edge<karto::LocalizedRangeScan> * pEdge);
+  // Get graph stored
+  virtual std::unordered_map<int, Eigen::Vector3d> * getGraph();
+  // Removes a node from the solver correction table
+  virtual void RemoveNode(kt_int32s id);
+  // Removes constraints from the optimization problem
+  virtual void RemoveConstraint(kt_int32s sourceId, kt_int32s targetId);
 
-  virtual void ModifyNode(const int & unique_id, Eigen::Vector3d pose); // change a node's pose
-  virtual void GetNodeOrientation(const int & unique_id, double & pose); // get a node's current pose yaw
+  // change a node's pose
+  virtual void ModifyNode(const int & unique_id, Eigen::Vector3d pose);
+  // get a node's current pose yaw
+  virtual void GetNodeOrientation(const int & unique_id, double & pose);
 
 private:
   // karto
@@ -74,6 +79,6 @@ private:
   rclcpp::Node::SharedPtr node_;
 };
 
-}
+}  // namespace solver_plugins
 
-#endif
+#endif  // SOLVERS__CERES_SOLVER_HPP_

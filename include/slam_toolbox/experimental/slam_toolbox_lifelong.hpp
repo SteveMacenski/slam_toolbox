@@ -16,9 +16,10 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_LIFELONG_H_
-#define SLAM_TOOLBOX_SLAM_TOOLBOX_LIFELONG_H_
+#ifndef SLAM_TOOLBOX__EXPERIMENTAL__SLAM_TOOLBOX_LIFELONG_HPP_
+#define SLAM_TOOLBOX__EXPERIMENTAL__SLAM_TOOLBOX_LIFELONG_HPP_
 
+#include <memory>
 #include "slam_toolbox/slam_toolbox_common.hpp"
 
 namespace slam_toolbox
@@ -27,7 +28,7 @@ namespace slam_toolbox
 class LifelongSlamToolbox : public SlamToolbox
 {
 public:
-  LifelongSlamToolbox(rclcpp::NodeOptions options);
+  explicit LifelongSlamToolbox(rclcpp::NodeOptions options);
   ~LifelongSlamToolbox() {}
 
   // computation metrics
@@ -48,12 +49,12 @@ public:
     double & x_u, double & y_l, double & y_u);
 
 protected:
-  virtual void laserCallback(
-    sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
-  virtual bool deserializePoseGraphCallback(
+  void laserCallback(
+    sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override;
+  bool deserializePoseGraphCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override final;
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override;
 
   void evaluateNodeDepreciation(LocalizedRangeScan * range_scan);
   void removeFromSlamGraph(Vertex<LocalizedRangeScan> * vertex);
@@ -75,6 +76,6 @@ protected:
   double nearby_penalty_;
 };
 
-}
+}  // namespace slam_toolbox
 
-#endif //SLAM_TOOLBOX_SLAM_TOOLBOX_LIFELONG_H_
+#endif  // SLAM_TOOLBOX__EXPERIMENTAL__SLAM_TOOLBOX_LIFELONG_HPP_

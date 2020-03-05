@@ -16,9 +16,10 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_POSE_UTILS_H_
-#define SLAM_TOOLBOX_POSE_UTILS_H_
+#ifndef SLAM_TOOLBOX__GET_POSE_HELPER_HPP_
+#define SLAM_TOOLBOX__GET_POSE_HELPER_HPP_
 
+#include <string>
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
 #include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
@@ -63,6 +64,6 @@ private:
   std::string base_frame_, odom_frame_;
 };
 
-} // end namespace
+}  // namespace pose_utils
 
-#endif //SLAM_TOOLBOX_POSE_UTILS_H_
+#endif  // SLAM_TOOLBOX__GET_POSE_HELPER_HPP_

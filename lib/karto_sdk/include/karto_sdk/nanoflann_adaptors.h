@@ -17,16 +17,19 @@
 
 /* Author: Steven Macenski */
 
+#ifndef KARTO_SDK__NANOFLANN_ADAPTORS_H_
+#define KARTO_SDK__NANOFLANN_ADAPTORS_H_
+
 #include "nanoflann.hpp"
 
 // And this is the "dataset to kd-tree" adaptor class:
 template<typename Derived>
 struct VertexVectorPoseNanoFlannAdaptor
 {
-  const Derived & obj; //!< A const ref to the data set origin
+  const Derived & obj;  //!< A const ref to the data set origin
 
   /// The constructor that sets the data set source
-  VertexVectorPoseNanoFlannAdaptor(const Derived & obj_)
+  explicit VertexVectorPoseNanoFlannAdaptor(const Derived & obj_)
   : obj(obj_) {}
 
   /// CRTP helper method
@@ -45,13 +48,15 @@ struct VertexVectorPoseNanoFlannAdaptor
     }
   }
 
-  // Optional bounding-box computation: return false to default to a standard bbox computation loop.
-  //   Return true if the BBOX was already computed by the class and returned in "bb" so it can be avoided to redo it again.
-  //   Look at bb.size() to find out the expected dimensionality (e.g. 2 or 3 for point clouds)
+  // Optional bounding-box computation: return false
+  // to default to a standard bbox computation loop.
+  //   Return true if the BBOX was already computed by the
+  //   class and returned in "bb" so it can be avoided to redo it again.
+  //   Look at bb.size() to find out the expected
+  //   dimensionality (e.g. 2 or 3 for point clouds)
   template<class BBOX>
   bool kdtree_get_bbox(BBOX & /*bb*/) const {return false;}
-
-}; // end of VertexVectorPoseNanoFlannAdaptor
+};
 
 // And this is the "dataset to kd-tree" adaptor class:
 template<typename Derived>
@@ -59,7 +64,7 @@ struct VertexVectorScanCenterNanoFlannAdaptor
 {
   const Derived & obj;
 
-  VertexVectorScanCenterNanoFlannAdaptor(const Derived & obj_)
+  explicit VertexVectorScanCenterNanoFlannAdaptor(const Derived & obj_)
   : obj(obj_) {}
 
   inline const Derived & derived() const {return obj;}
@@ -75,5 +80,6 @@ struct VertexVectorScanCenterNanoFlannAdaptor
 
   template<class BBOX>
   bool kdtree_get_bbox(BBOX & /*bb*/) const {return false;}
+};  // namespace VertexVectorScanCenterNanoFlannAdaptor
 
-}; // end of VertexVectorScanCenterNanoFlannAdaptor
+#endif  // KARTO_SDK__NANOFLANN_ADAPTORS_H_

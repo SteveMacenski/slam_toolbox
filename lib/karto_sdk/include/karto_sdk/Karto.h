@@ -15,19 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef karto_sdk_KARTO_H
-#define karto_sdk_KARTO_H
-
-#include <string>
-#include <fstream>
-#include <limits>
-#include <algorithm>
-#include <map>
-#include <vector>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <stdexcept>
+#ifndef KARTO_SDK__KARTO_H_
+#define KARTO_SDK__KARTO_H_
 
 #include <math.h>
 #include <float.h>
@@ -48,6 +37,18 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/array.hpp>
 #include <boost/version.hpp>
+
+#include <string>
+#include <fstream>
+#include <limits>
+#include <algorithm>
+#include <map>
+#include <utility>
+#include <vector>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <stdexcept>
 
 #ifdef USE_POCO
 #include <Poco/Mutex.h>
@@ -102,7 +103,7 @@ public:
    * @param rMessage exception message (default: "Karto Exception")
    * @param errorCode error code (default: 0)
    */
-  Exception(const std::string & rMessage = "Karto Exception", kt_int32s errorCode = 0)
+  Exception(const std::string & rMessage = "Karto Exception", kt_int32s errorCode = 0)  // NOLINT
   : m_Message(rMessage),
     m_ErrorCode(errorCode)
   {
@@ -369,7 +370,6 @@ private:
     ar & BOOST_SERIALIZATION_NVP(m_Parameters);
     ar & BOOST_SERIALIZATION_NVP(m_ParameterLookup);
   }
-
 };    // ParameterManager
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -395,7 +395,7 @@ public:
   /**
    * Constructor
    */
-  Name(const std::string & rName)
+  Name(const std::string & rName)  // NOLINT
   {
     Parse(rName);
   }
@@ -563,12 +563,15 @@ private:
         c = rName[i];
         if (!IsValid(c)) {
           throw Exception(
-                  "Invalid character in name. Valid characters must be within the ranges A-Z, a-z, 0-9, '/', '_' and '-'.");
+                  "Invalid character in name. "
+                  "Valid characters must be within the ranges "
+                  "A-Z, a-z, 0-9, '/', '_' and '-'.");
         }
       }
     } else {
       throw Exception(
-              "Invalid first character in name. Valid characters must be within the ranges A-Z, a-z, and '/'.");
+              "Invalid first character in name. "
+              "Valid characters must be within the ranges A-Z, a-z, and '/'.");
     }
   }
 
@@ -626,7 +629,7 @@ public:
    * Constructs an object with the given name
    * @param rName
    */
-  Object(const Name & rName);
+  Object(const Name & rName);  // NOLINT
 
   /**
    * Default constructor
@@ -812,7 +815,7 @@ public:
    * Construct a Module
    * @param rName module name
    */
-  Module(const std::string & rName);
+  Module(const std::string & rName);  // NOLINT
 
   /**
    * Destructor
@@ -2064,7 +2067,7 @@ public:
   /**
    * Constructs a Pose2 object from a Pose3.
    */
-  Pose2(const Pose3 & rPose);
+  Pose2(const Pose3 & rPose);  // NOLINT
 
   /**
    * Copy constructor
@@ -2281,7 +2284,7 @@ public:
    * Create a new Pose3 object from the given position.
    * @param rPosition position vector in three space.
    */
-  Pose3(const Vector3<kt_double> & rPosition)
+  Pose3(const Vector3<kt_double> & rPosition)  // NOLINT
   : m_Position(rPosition)
   {
   }
@@ -2309,7 +2312,7 @@ public:
   /**
    * Constructs a Pose3 object from a Pose2.
    */
-  Pose3(const Pose2 & rPose)
+  Pose3(const Pose2 & rPose)  // NOLINT
   {
     m_Position = Vector3<kt_double>(rPose.GetX(), rPose.GetY(), 0.0);
     m_Orientation.FromEulerAngles(rPose.GetHeading(), 0.0, 0.0);
@@ -2945,7 +2948,7 @@ public:
    * Constructs a transformation from the origin to the given pose
    * @param rPose pose
    */
-  Transform(const Pose2 & rPose)
+  Transform(const Pose2 & rPose)  // NOLINT
   {
     SetTransform(Pose2(), rPose);
   }
@@ -3063,7 +3066,6 @@ typedef enum
  */
 class AbstractParameter
 {
-
 public:
   AbstractParameter()
   {
@@ -3073,7 +3075,7 @@ public:
    * @param rName
    * @param pParameterManger
    */
-  AbstractParameter(const std::string & rName, ParameterManager * pParameterManger = NULL)
+  AbstractParameter(const std::string & rName, ParameterManager * pParameterManger = NULL)  // NOLINT
   : m_Name(rName)
   {
     // if parameter manager is provided add myself to it!
@@ -3517,7 +3519,8 @@ public:
   Parameters()
   {
   }
-  Parameters(const std::string & rName)
+
+  Parameters(const std::string & rName)  // NOLINT
   : Object(rName)
   {
   }
@@ -3552,7 +3555,6 @@ class SensorData;
  */
 class KARTO_EXPORT Sensor : public Object
 {
-
   /**
    * Serialization: class Sensor
    */
@@ -3570,7 +3572,7 @@ protected:
    * Construct a Sensor
    * @param rName sensor name
    */
-  Sensor(const Name & rName);
+  Sensor(const Name & rName);  // NOLINT
 
 public:
   /**
@@ -3614,7 +3616,7 @@ private:
   /**
    * Restrict the copy constructor
    */
-  Sensor(const Sensor &);
+  Sensor(const Sensor &);  // NOLINT
 
   /**
    * Restrict the assignment operator
@@ -3810,7 +3812,7 @@ public:
   /**
    * Constructs a Drive object
    */
-  Drive(const std::string & rName)
+  Drive(const std::string & rName)  // NOLINT
   : Sensor(rName)
   {
   }
@@ -4018,7 +4020,7 @@ public:
         stream << angularResolution;
         throw Exception(stream.str());
       }
-    } else if (m_pType->GetValue() == LaserRangeFinder_Sick_LMS200 ||
+    } else if (m_pType->GetValue() == LaserRangeFinder_Sick_LMS200 ||  // NOLINT
       m_pType->GetValue() == LaserRangeFinder_Sick_LMS291)
     {
       if (math::DoubleEqual(angularResolution, math::DegreesToRadians(0.25))) {
@@ -4124,7 +4126,8 @@ public:
         {
           pLrf = new LaserRangeFinder((rName.GetName() != "") ? rName : Name("Sick LMS 100"));
 
-          // Sensing range is 18 meters (at 10% reflectivity, max range of 20 meters), with an error of about 20mm
+          // Sensing range is 18 meters (at 10% reflectivity,
+          // max range of 20 meters), with an error of about 20mm
           pLrf->m_pMinimumRange->SetValue(0.0);
           pLrf->m_pMaximumRange->SetValue(20.0);
 
@@ -4260,7 +4263,7 @@ private:
   /**
    * Constructs a LaserRangeFinder object with given ID
    */
-  LaserRangeFinder(const Name & rName)
+  LaserRangeFinder(const Name & rName)  // NOLINT
   : Sensor(rName),
     m_NumberOfRangeReadings(0)
   {
@@ -4555,7 +4558,6 @@ private:
     ar & BOOST_SERIALIZATION_NVP(m_Scale);
     ar & BOOST_SERIALIZATION_NVP(m_Offset);
   }
-
 };    // CoordinateConverter
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -4958,7 +4960,6 @@ private:
     }
     ar & boost::serialization::make_array<T>(m_pData, m_WidthStep * m_Height);
   }
-
 };    // Grid
 BOOST_SERIALIZATION_ASSUME_ABSTRACT(Grid)
 
@@ -5130,13 +5131,13 @@ protected:
   /**
    * Construct a SensorData object with a sensor name
    */
-  SensorData(const Name & rSensorName);
+  SensorData(const Name & rSensorName);  // NOLINT
 
 private:
   /**
    * Restrict the copy constructor
    */
-  SensorData(const SensorData &);
+  SensorData(const SensorData &);  // NOLINT
 
   /**
    * Restrict the assignment operator
@@ -5204,7 +5205,7 @@ public:
    * Constructs a scan from the given sensor with the given readings
    * @param rSensorName
    */
-  LaserRangeScan(const Name & rSensorName)
+  LaserRangeScan(const Name & rSensorName)  // NOLINT
   : SensorData(rSensorName),
     m_pRangeReadings(NULL),
     m_NumberOfRangeReadings(0)
@@ -5264,7 +5265,8 @@ public:
     // {
     //   std::stringstream error;
     //   error << "Given number of readings (" << rRangeReadings.size()
-    //         << ") does not match expected number of range finder (" << GetNumberOfRangeReadings() << ")";
+    //         << ") does not match expected number of range finder ("
+    //         << GetNumberOfRangeReadings() << ")";
     //   throw Exception(error.str());
     // }
 
@@ -5351,7 +5353,7 @@ public:
    * Constructs a pose of the given drive sensor
    * @param rSensorName
    */
-  DrivePose(const Name & rSensorName)
+  DrivePose(const Name & rSensorName)  // NOLINT
   : SensorData(rSensorName)
   {
   }
@@ -5847,7 +5849,7 @@ class OccupancyGrid;
 class KARTO_EXPORT CellUpdater : public Functor
 {
 public:
-  CellUpdater(OccupancyGrid * pGrid)
+  CellUpdater(OccupancyGrid * pGrid)  // NOLINT
   : m_pOccupancyGrid(pGrid)
   {
   }
@@ -6293,7 +6295,7 @@ private:
   // or unoccupied.  This prevents stray beams from messing up the map.
   Parameter<kt_int32u> * m_pMinPassThrough;
 
-  // Minimum ratio of beams hitting cell to beams passing through cell for cell to be marked as occupied
+  // Minimum ratio of beams hitting cell to beams passing through cell to be marked as occupied
   Parameter<kt_double> * m_pOccupancyThreshold;
 };    // OccupancyGrid
 
@@ -6431,7 +6433,7 @@ public:
   {
     printf("Load From File\n");
     std::ifstream ifs(filename.c_str());
-    boost::archive::binary_iarchive ia(ifs, boost::archive::no_codecvt);   //no second arg?
+    boost::archive::binary_iarchive ia(ifs, boost::archive::no_codecvt);  // no second arg?
     ia >> BOOST_SERIALIZATION_NVP(*this);
   }
 
@@ -6565,7 +6567,6 @@ private:
     ar & BOOST_SERIALIZATION_NVP(m_pDatasetInfo);
     std::cout << "**Finished serializing Dataset**\n";
   }
-
 };    // Dataset
 BOOST_SERIALIZATION_ASSUME_ABSTRACT(Dataset)
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -6693,8 +6694,6 @@ private:
       m_pArray = new kt_int32s[m_Capacity];
     }
     ar & boost::serialization::make_array<kt_int32s>(m_pArray, m_Capacity);
-
-
   }
 };    // LookupArray
 
@@ -6726,7 +6725,8 @@ public:
   GridIndexLookup()
   {
   }
-  GridIndexLookup(Grid<T> * pGrid)
+
+  GridIndexLookup(Grid<T> * pGrid)  // NOLINT
   : m_pGrid(pGrid),
     m_Capacity(0),
     m_Size(0),
@@ -7015,4 +7015,4 @@ BOOST_CLASS_EXPORT_KEY(karto::Parameter<kt_int32u>);
 BOOST_CLASS_EXPORT_KEY(karto::Parameter<kt_int32s>);
 BOOST_CLASS_EXPORT_KEY(karto::Parameter<std::string>);
 
-#endif  // karto_sdk_KARTO_H
+#endif  // KARTO_SDK__KARTO_H_

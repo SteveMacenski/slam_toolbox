@@ -15,26 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef karto_sdk_MAPPER_H
-#define karto_sdk_MAPPER_H
+#ifndef KARTO_SDK__MAPPER_H_
+#define KARTO_SDK__MAPPER_H_
 
 #include <map>
 #include <vector>
 #include <unordered_map>
 #include <queue>
-
-#include <Eigen/Core>
+#include <algorithm>
+#include <chrono>
+#include <utility>
+#include <string>
 
 #include "tbb/parallel_for.h"
 #include "tbb/blocked_range.h"
 #include "tbb/tbb.h"
-#include <algorithm>
-#include <chrono>
 
-#include "Karto.h"
-#include <rclcpp/rclcpp.hpp>
+#include "Eigen/Core"
+#include "rclcpp/rclcpp.hpp"
+#include "Karto.h"  // NOLINT
+#include "nanoflann_adaptors.h"  // NOLINT
 
-#include "nanoflann_adaptors.h"
 
 namespace karto
 {
@@ -264,7 +265,8 @@ public:
   : m_pObject(NULL), m_Score(1.0)
   {
   }
-  Vertex(T * pObject)
+
+  explicit Vertex(T * pObject)
   : m_pObject(pObject), m_Score(1.0)
   {
   }
@@ -520,7 +522,8 @@ public:
   GraphTraversal()
   {
   }
-  GraphTraversal(Graph<T> * pGraph)
+
+  explicit GraphTraversal(Graph<T> * pGraph)
   : m_pGraph(pGraph)
   {
   }
@@ -931,7 +934,6 @@ private:
     std::cout << "MapperGraph <- m_pTraversal\n";
     ar & BOOST_SERIALIZATION_NVP(m_pTraversal);
   }
-
 };    // MapperGraph
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1071,7 +1073,6 @@ public:
     if (m_pKernel) {
       delete[] m_pKernel;
     }
-
   }
 
 public:
@@ -1468,7 +1469,7 @@ protected:
   /**
    * Default constructor
    */
-  ScanMatcher(Mapper * pMapper)
+  explicit ScanMatcher(Mapper * pMapper)
   : m_pMapper(pMapper),
     m_pCorrelationGrid(NULL),
     m_pSearchSpaceProbs(NULL),
@@ -1517,7 +1518,6 @@ private:
     ar & boost::serialization::make_array<std::pair<kt_double, Pose2>>(m_pPoseResponse,
       poseResponseSize);
   }
-
 };    // ScanMatcher
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1529,11 +1529,11 @@ class ScanManager;
 /**
  * Manages the devices for the mapper
  */
-class KARTO_EXPORT MapperSensorManager   //: public SensorManager // was commented out, works with it in, but I'll leave out for now...
+class KARTO_EXPORT MapperSensorManager
+//: public SensorManager // was commented out, works with it in, but I'll leave out for now...
 {
-  typedef std::map<Name, ScanManager *> ScanManagerMap;
-
 public:
+  typedef std::map<Name, ScanManager *> ScanManagerMap;
   /**
    * Constructor
    */
@@ -1906,7 +1906,7 @@ public:
    * Constructor a mapper with a name
    * @param rName mapper name
    */
-  Mapper(const std::string & rName);
+  explicit Mapper(const std::string & rName);
 
   /**
    * Destructor
@@ -2431,4 +2431,4 @@ public:
 BOOST_SERIALIZATION_ASSUME_ABSTRACT(Mapper)
 }  // namespace karto
 
-#endif  // karto_sdk_MAPPER_H
+#endif  // KARTO_SDK__MAPPER_H_

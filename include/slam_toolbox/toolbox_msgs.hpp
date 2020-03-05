@@ -16,8 +16,8 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_TOOLBOX_MSGS_H_
-#define SLAM_TOOLBOX_TOOLBOX_MSGS_H_
+#ifndef SLAM_TOOLBOX__TOOLBOX_MSGS_HPP_
+#define SLAM_TOOLBOX__TOOLBOX_MSGS_HPP_
 
 #include "nav_msgs/msg/map_meta_data.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
@@ -40,4 +40,4 @@
 #include "slam_toolbox/srv/merge_maps.hpp"
 #include "slam_toolbox/srv/add_submap.hpp"
 
-#endif //SLAM_TOOLBOX_TOOLBOX_MSGS_H_
+#endif  // SLAM_TOOLBOX__TOOLBOX_MSGS_HPP_

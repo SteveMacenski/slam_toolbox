@@ -3,6 +3,9 @@
  * Author: Steve Macenski (stevenmacenski@gmail.com)
  */
 
+#include <unordered_map>
+#include <string>
+#include <utility>
 #include "ceres_solver.hpp"
 
 namespace solver_plugins
@@ -88,7 +91,7 @@ void CeresSolver::Configure(rclcpp::Node::SharedPtr node)
   if (options_.preconditioner_type == ceres::CLUSTER_JACOBI ||
     options_.preconditioner_type == ceres::CLUSTER_TRIDIAGONAL)
   {
-    //default canonical view is O(n^2) which is unacceptable for
+    // default canonical view is O(n^2) which is unacceptable for
     // problems of this size
     options_.visibility_clustering_type = ceres::SINGLE_LINKAGE;
   }
@@ -143,7 +146,6 @@ void CeresSolver::Configure(rclcpp::Node::SharedPtr node)
   }
 
   problem_ = new ceres::Problem(options_problem_);
-
 }
 
 /*****************************************************************************/
@@ -211,7 +213,6 @@ void CeresSolver::Compute()
     pose.SetHeading(iter->second(2));
     corrections_.push_back(std::make_pair(iter->first, pose));
   }
-
 }
 
 /*****************************************************************************/
@@ -401,7 +402,7 @@ std::unordered_map<int, Eigen::Vector3d> * CeresSolver::getGraph()
   return nodes_;
 }
 
-} // end namespace
+}  // namespace solver_plugins
 
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(solver_plugins::CeresSolver, karto::ScanSolver)

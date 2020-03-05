@@ -16,7 +16,9 @@
  */
 
 /* Author: Steven Macenski */
-
+#include <memory>
+#include <vector>
+#include <string>
 #include "slam_toolbox/slam_toolbox_common.hpp"
 #include "slam_toolbox/serialization.hpp"
 
@@ -697,7 +699,6 @@ void SlamToolbox::loadSerializedPoseGraph(
   }
 
   solver_->Compute();
-
 }
 
 /*****************************************************************************/
@@ -762,4 +763,4 @@ bool SlamToolbox::deserializePoseGraphCallback(
   return true;
 }
 
-} // end namespace
+}  // namespace slam_toolbox

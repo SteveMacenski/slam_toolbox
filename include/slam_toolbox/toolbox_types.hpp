@@ -16,10 +16,11 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_TOOLBOX_TYPES_H_
-#define SLAM_TOOLBOX_TOOLBOX_TYPES_H_
+#ifndef SLAM_TOOLBOX__TOOLBOX_TYPES_HPP_
+#define SLAM_TOOLBOX__TOOLBOX_TYPES_HPP_
 
 #include <map>
+#include <unordered_map>
 #include <vector>
 
 #include "tf2_ros/buffer.h"
@@ -124,6 +125,6 @@ typedef slam_toolbox::srv::DeserializePoseGraph::Request procType;
 typedef std::unordered_map<int, Eigen::Vector3d>::iterator GraphIterator;
 typedef std::unordered_map<int, Eigen::Vector3d>::const_iterator ConstGraphIterator;
 
-}  // end namespace
+}   // namespace toolbox_types
 
-#endif //SLAM_TOOLBOX_TOOLBOX_TYPES_H_
+#endif  // SLAM_TOOLBOX__TOOLBOX_TYPES_HPP_

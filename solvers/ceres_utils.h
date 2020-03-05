@@ -3,6 +3,9 @@
  * Author: Steve Macenski
  */
 
+#ifndef SOLVERS__CERES_UTILS_H_
+#define SOLVERS__CERES_UTILS_H_
+
 #include <ceres/ceres.h>
 #include <ceres/local_parameterization.h>
 #include <cmath>
@@ -90,7 +93,8 @@ public:
     residuals_map.template head<2>() = RotationMatrix2D(*yaw_a).transpose() * (p_b - p_a) -
       p_ab_.cast<T>();
     residuals_map(2) = NormalizeAngle((*yaw_b - *yaw_a) - static_cast<T>(yaw_ab_radians_));
-    // Scale the residuals by the square root information matrix to account for the measurement uncertainty.
+    // Scale the residuals by the square root information
+    // matrix to account for the measurement uncertainty.
     residuals_map = sqrt_information_.template cast<T>() * residuals_map;
     return true;
   }
@@ -99,9 +103,10 @@ public:
     double x_ab, double y_ab, double yaw_ab_radians,
     const Eigen::Matrix3d & sqrt_information)
   {
-    return new ceres::AutoDiffCostFunction<PoseGraph2dErrorTerm, 3, 1, 1, 1, 1, 1, 1>(new PoseGraph2dErrorTerm(
-               x_ab, y_ab, yaw_ab_radians,
-               sqrt_information));
+    return new ceres::AutoDiffCostFunction<PoseGraph2dErrorTerm, 3, 1, 1, 1, 1, 1, 1>(
+      new PoseGraph2dErrorTerm(
+        x_ab, y_ab, yaw_ab_radians,
+        sqrt_information));
   }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -114,3 +119,5 @@ private:
   // The inverse square root of the measurement covariance matrix.
   const Eigen::Matrix3d sqrt_information_;
 };
+
+#endif  // SOLVERS__CERES_UTILS_H_

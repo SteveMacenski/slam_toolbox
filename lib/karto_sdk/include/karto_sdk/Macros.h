@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef karto_sdk_MACROS_H
-#define karto_sdk_MACROS_H
+#ifndef KARTO_SDK__MACROS_H_
+#define KARTO_SDK__MACROS_H_
 
 ////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -42,7 +42,8 @@
 /**
  * Karto defines for windows dynamic build
  */
-#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__) || defined( __BCPLUSPLUS__) || \
+#if defined(_MSC_VER) || defined(__CYGWIN__) || \
+  defined(__MINGW32__) || defined( __BCPLUSPLUS__) || \
   defined( __MWERKS__)
 # if defined( _LIB ) || defined( KARTO_STATIC ) || defined( STATIC_BUILD )
 #  define KARTO_EXPORT
@@ -93,7 +94,8 @@
 
 #if defined(__INTEL) || defined(_MSC_VER)
 
-// Disable the warning: 'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'
+// Disable the warning: 'identifier' : class 'type'
+// needs to have dll-interface to be used by clients of class 'type2'
 #pragma warning(disable:4251)
 
 #endif
@@ -125,4 +127,4 @@
 
 #endif  // __INTEL_COMPILER
 
-#endif  // karto_sdk_MACROS_H
+#endif  // KARTO_SDK__MACROS_H_

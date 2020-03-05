@@ -15,6 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+#include <karto_sdk/Types.h>
+#include <math.h>
+#include <assert.h>
+#include <boost/serialization/vector.hpp>
 #include <sstream>
 #include <fstream>
 #include <stdexcept>
@@ -22,10 +27,11 @@
 #include <set>
 #include <list>
 #include <iterator>
-#include <karto_sdk/Types.h>
-#include <math.h>
-#include <assert.h>
-#include <boost/serialization/vector.hpp>
+#include <map>
+#include <vector>
+#include <utility>
+#include <algorithm>
+#include <string>
 
 #include "karto_sdk/Mapper.h"
 
@@ -399,7 +405,6 @@ ScanMatcher::~ScanMatcher()
   if (m_pGridLookup) {
     delete m_pGridLookup;
   }
-
 }
 
 ScanMatcher * ScanMatcher::Create(
@@ -425,7 +430,8 @@ ScanMatcher * ScanMatcher::Create(
   // calculate search space in grid coordinates
   kt_int32u searchSpaceSideSize = static_cast<kt_int32u>(math::Round(searchSize / resolution) + 1);
 
-  // compute requisite size of correlation grid (pad grid so that scan points can't fall off the grid
+  // compute requisite size of correlation grid (pad grid so that scan
+  // points can't fall off the grid
   // if a scan is on the border of the search space)
   kt_int32u pointReadingMargin = static_cast<kt_int32u>(ceil(rangeThreshold / resolution));
 
@@ -477,7 +483,8 @@ kt_double ScanMatcher::MatchScan(
     // maximum covariance
     rCovariance(0, 0) = MAX_VARIANCE;    // XX
     rCovariance(1, 1) = MAX_VARIANCE;    // YY
-    rCovariance(2, 2) = 4 * math::Square(m_pMapper->m_pCoarseAngleResolution->GetValue());    // TH*TH
+    rCovariance(2, 2) =
+      4 * math::Square(m_pMapper->m_pCoarseAngleResolution->GetValue());    // TH*TH
 
     return 0.0;
   }
@@ -710,13 +717,15 @@ kt_double ScanMatcher::CorrelateScan(
       kt_double * ptr;
 
       try {
-        ptr = (kt_double *)(m_pSearchSpaceProbs->GetDataPointer(grid));
+        ptr = (kt_double *)(m_pSearchSpaceProbs->GetDataPointer(grid));  // NOLINT
       } catch (...) {
-        throw std::runtime_error("Mapper FATAL ERROR - unable to get pointer in probability search!");
+        throw std::runtime_error("Mapper FATAL ERROR - "
+                "unable to get pointer in probability search!");
       }
 
       if (ptr == NULL) {
-        throw std::runtime_error("Mapper FATAL ERROR - Index out of range in probability search!");
+        throw std::runtime_error("Mapper FATAL ERROR - "
+                "Index out of range in probability search!");
       }
 
       *ptr = math::Maximum(m_pPoseResponse[i].first, *ptr);
@@ -1145,7 +1154,7 @@ public:
   BreadthFirstTraversal()
   {
   }
-  BreadthFirstTraversal(Graph<T> * pGraph)
+  explicit BreadthFirstTraversal(Graph<T> * pGraph)
   : GraphTraversal<T>(pGraph)
   {
   }
@@ -1731,7 +1740,8 @@ std::vector<Vertex<LocalizedRangeScan> *> MapperGraph::FindNearLinkedVertices(
 {
   NearScanVisitor * pVisitor = new NearScanVisitor(pScan, maxDistance,
       m_pMapper->m_pUseScanBarycenter->GetValue());
-  std::vector<Vertex<LocalizedRangeScan> *> nearLinkedVertices = m_pTraversal->TraverseForVertices(GetVertex(
+  std::vector<Vertex<LocalizedRangeScan> *> nearLinkedVertices =
+    m_pTraversal->TraverseForVertices(GetVertex(
         pScan), pVisitor);
   delete pVisitor;
 
@@ -2562,7 +2572,7 @@ void Mapper::Reset()
   }
 }
 
-kt_bool Mapper::Process(Object *  /*pObject*/)
+kt_bool Mapper::Process(Object *  /*pObject*/)  // NOLINT
 {
   return true;
 }

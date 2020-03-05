@@ -16,6 +16,8 @@
 
 /* Author: Steven Macenski */
 
+#include <algorithm>
+#include <memory>
 #include "slam_toolbox/experimental/slam_toolbox_lifelong.hpp"
 
 namespace slam_toolbox
@@ -98,7 +100,8 @@ void LifelongSlamToolbox::laserCallback(
   }
 
   // LTS additional bounded node increase parameter (rate, or total for run or at all?)
-  // LTS pseudo-localization mode. If want to add a scan, but not deleting a scan, add to local buffer?
+  // LTS pseudo-localization mode. If want to add a scan, but
+  // not deleting a scan, add to local buffer?
   // LTS if (eval() && dont_add_more_scans) {addScan()} else {localization_add_scan()}
   // LTS if (eval() && ctr / total < add_rate_scans) {addScan()} else {localization_add_scan()}
   LocalizedRangeScan * range_scan = addScan(laser, scan, pose);
@@ -135,7 +138,6 @@ void LifelongSlamToolbox::evaluateNodeDepreciation(
       }
     }
   }
-
 }
 
 /*****************************************************************************/
@@ -201,7 +203,7 @@ double LifelongSlamToolbox::computeObjectiveScore(
     overlap -
     nearby_penalty_;
 
-  //score += (initial_score - score) * candidate_scale_factor;
+  // score += (initial_score - score) * candidate_scale_factor;
 
   if (score > 1.0) {
     RCLCPP_ERROR(get_logger(),
@@ -435,7 +437,7 @@ double LifelongSlamToolbox::computeReadingOverlapRatio(
     }
   }
 
-  return double(inner_pts) / double(num_pts);
+  return static_cast<double>(inner_pts) / static_cast<double>(num_pts);
 }
 
-} // end namespace
+}  // namespace slam_toolbox

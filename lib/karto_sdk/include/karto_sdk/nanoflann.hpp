@@ -44,19 +44,20 @@
  * documentation</a>
  */
 
-#ifndef NANOFLANN_HPP_
-#define NANOFLANN_HPP_
+#ifndef KARTO_SDK__NANOFLANN_HPP_
+#define KARTO_SDK__NANOFLANN_HPP_
 
 #include <algorithm>
 #include <array>
 #include <cassert>
 #include <cmath>   // for abs()
 #include <cstdio>  // for fwrite()
-#include <cstdlib> // for abs()
+#include <cstdlib>  // for abs()
 #include <functional>
-#include <limits> // std::reference_wrapper
+#include <limits>  // std::reference_wrapper
 #include <stdexcept>
 #include <vector>
+#include <utility>
 
 /** Library version: 0xMmP (M=Major,m=minor,P=patch) */
 #define NANOFLANN_VERSION 0x130
@@ -164,7 +165,7 @@ private:
   CountType count;
 
 public:
-  inline KNNResultSet(CountType capacity_)
+  inline KNNResultSet(CountType capacity_)  // NOLINT
   : indices(0), dists(0), capacity(capacity_), count(0) {}
 
   inline void init(IndexType * indices_, DistanceType * dists_)
@@ -190,9 +191,9 @@ public:
   {
     CountType i;
     for (i = count; i > 0; --i) {
-#ifdef NANOFLANN_FIRST_MATCH // If defined and two points have the same
-                             // distance, the one with the lowest-index will be
-                             // returned first.
+#ifdef NANOFLANN_FIRST_MATCH  // If defined and two points have the same
+                              // distance, the one with the lowest-index will be
+                              // returned first.
       if ((dists[i - 1] > dist) ||
         ((dist == dists[i - 1]) && (indices[i - 1] > index)))
       {
@@ -359,7 +360,7 @@ struct L1_Adaptor
 
   const DataSource & data_source;
 
-  L1_Adaptor(const DataSource & _data_source)
+  L1_Adaptor(const DataSource & _data_source)  // NOLINT
   : data_source(_data_source) {}
 
   inline DistanceType evalMetric(
@@ -415,7 +416,7 @@ struct L2_Adaptor
 
   const DataSource & data_source;
 
-  L2_Adaptor(const DataSource & _data_source)
+  L2_Adaptor(const DataSource & _data_source)  // NOLINT
   : data_source(_data_source) {}
 
   inline DistanceType evalMetric(
@@ -468,7 +469,7 @@ struct L2_Simple_Adaptor
 
   const DataSource & data_source;
 
-  L2_Simple_Adaptor(const DataSource & _data_source)
+  L2_Simple_Adaptor(const DataSource & _data_source)  // NOLINT
   : data_source(_data_source) {}
 
   inline DistanceType evalMetric(
@@ -504,7 +505,7 @@ struct SO2_Adaptor
 
   const DataSource & data_source;
 
-  SO2_Adaptor(const DataSource & _data_source)
+  SO2_Adaptor(const DataSource & _data_source)  // NOLINT
   : data_source(_data_source) {}
 
   inline DistanceType evalMetric(
@@ -544,7 +545,7 @@ struct SO3_Adaptor
 
   L2_Simple_Adaptor<T, DataSource> distance_L2_Simple;
 
-  SO3_Adaptor(const DataSource & _data_source)
+  SO3_Adaptor(const DataSource & _data_source)  // NOLINT
   : distance_L2_Simple(_data_source) {}
 
   inline DistanceType evalMetric(
@@ -615,7 +616,7 @@ struct metric_SO3 : public Metric
 /**  Parameters (see README.md) */
 struct KDTreeSingleIndexAdaptorParams
 {
-  KDTreeSingleIndexAdaptorParams(size_t _leaf_max_size = 10)
+  KDTreeSingleIndexAdaptorParams(size_t _leaf_max_size = 10)  // NOLINT
   : leaf_max_size(_leaf_max_size) {}
 
   size_t leaf_max_size;
@@ -626,14 +627,14 @@ struct SearchParams
 {
   /** Note: The first argument (checks_IGNORED_) is ignored, but kept for
    * compatibility with the FLANN interface */
-  SearchParams(int checks_IGNORED_ = 32, float eps_ = 0, bool sorted_ = true)
+  SearchParams(int checks_IGNORED_ = 32, float eps_ = 0, bool sorted_ = true)  // NOLINT
   : checks(checks_IGNORED_), eps(eps_), sorted(sorted_) {}
 
-  int checks;  //!< Ignored parameter (Kept for compatibility with the FLANN
-               //!< interface).
-  float eps;   //!< search for eps-approximate neighbours (default: 0)
-  bool sorted; //!< only for radius search, require neighbours sorted by
-               //!< distance (default: true)
+  int checks;   //!< Ignored parameter (Kept for compatibility with the FLANN
+                //!< interface).
+  float eps;    //!< search for eps-approximate neighbours (default: 0)
+  bool sorted;  //!< only for radius search, require neighbours sorted by
+                //!< distance (default: true)
 };
 /** @} */
 
@@ -734,7 +735,6 @@ public:
         of a block is reserved for a pointer to the previous block.
      */
     if (size > remaining) {
-
       wastedMemory += remaining;
 
       /* Allocate new storage. */
@@ -822,7 +822,6 @@ template<class Derived, typename Distance, class DatasetAdaptor, int DIM = -1,
   typename IndexType = size_t>
 class KDTreeBaseClass
 {
-
 public:
   /** Frees the previously-built index. Automatically called within
    * buildIndex(). */
@@ -844,15 +843,15 @@ public:
     union {
       struct leaf
       {
-        IndexType left, right; //!< Indices of points in leaf node
+        IndexType left, right;  //!< Indices of points in leaf node
       } lr;
       struct nonleaf
       {
-        int divfeat;                  //!< Dimension used for subdivision.
-        DistanceType divlow, divhigh; //!< The values used for subdivision.
+        int divfeat;                   //!< Dimension used for subdivision.
+        DistanceType divlow, divhigh;  //!< The values used for subdivision.
       } sub;
     } node_type;
-    Node * child1, * child2; //!< Child nodes (both=NULL mean its a leaf node)
+    Node * child1, * child2;  //!< Child nodes (both=NULL mean its a leaf node)
   };
 
   typedef Node * NodePtr;
@@ -871,10 +870,10 @@ public:
 
   size_t m_leaf_max_size;
 
-  size_t m_size;                //!< Number of current points in the dataset
-  size_t m_size_at_index_build; //!< Number of points in the dataset when the
-                                //!< index was built
-  int dim;                      //!< Dimensionality of each data point
+  size_t m_size;                 //!< Number of current points in the dataset
+  size_t m_size_at_index_build;  //!< Number of points in the dataset when the
+                                 //!< index was built
+  int dim;                       //!< Dimensionality of each data point
 
   /** Define "BoundingBox" as a fixed-size or variable-size container depending
    * on "DIM" */
@@ -956,7 +955,7 @@ public:
     Derived & obj, const IndexType left, const IndexType right,
     BoundingBox & bbox)
   {
-    NodePtr node = obj.pool.template allocate<Node>(); // allocate memory
+    NodePtr node = obj.pool.template allocate<Node>();  // allocate memory
 
     /* If too few exemplars remain, then make this a leaf node. */
     if ((right - left) <= static_cast<IndexType>(obj.m_leaf_max_size)) {
@@ -1087,7 +1086,7 @@ public:
         --right;
       }
       if (left > right || !right) {
-        break; // "!right" was added to support unsigned Index types
+        break;  // "!right" was added to support unsigned Index types
       }
       std::swap(ind[left], ind[right]);
       ++left;
@@ -1108,7 +1107,7 @@ public:
         --right;
       }
       if (left > right || !right) {
-        break; // "!right" was added to support unsigned Index types
+        break;  // "!right" was added to support unsigned Index types
       }
       std::swap(ind[left], ind[right]);
       ++left;
@@ -1248,7 +1247,7 @@ public:
   /**
    * The dataset used by this index
    */
-  const DatasetAdaptor & dataset; //!< The source of our data
+  const DatasetAdaptor & dataset;  //!< The source of our data
 
   const KDTreeSingleIndexAdaptorParams index_params;
 
@@ -1500,7 +1499,7 @@ public:
       for (IndexType i = node->node_type.lr.left; i < node->node_type.lr.right;
         ++i)
       {
-        const IndexType index = BaseClassRef::vind[i]; // reorder... : i;
+        const IndexType index = BaseClassRef::vind[i];  // reorder... : i;
         DistanceType dist = distance.evalMetric(
           vec, index, (DIM > 0 ? DIM : BaseClassRef::dim));
         if (dist < worst_dist) {
@@ -1570,8 +1569,7 @@ public:
    * points used while building the index. See the example:
    * examples/saveload_example.cpp \sa loadIndex  */
   void loadIndex(FILE * stream) {this->loadIndex_(*this, stream);}
-
-}; // class KDTree
+};  // class KDTree
 
 /** kd-tree dynamic index
  *
@@ -1620,7 +1618,7 @@ public:
   /**
    * The dataset used by this index
    */
-  const DatasetAdaptor & dataset; //!< The source of our data
+  const DatasetAdaptor & dataset;  //!< The source of our data
 
   KDTreeSingleIndexAdaptorParams index_params;
 
@@ -1873,7 +1871,7 @@ public:
       for (IndexType i = node->node_type.lr.left; i < node->node_type.lr.right;
         ++i)
       {
-        const IndexType index = BaseClassRef::vind[i]; // reorder... : i;
+        const IndexType index = BaseClassRef::vind[i];  // reorder... : i;
         if (treeIndex[index] == -1) {
           continue;
         }
@@ -1887,7 +1885,7 @@ public:
           {
             // the resultset doesn't want to receive any more points, we're done
             // searching!
-            return; // false;
+            return;
           }
         }
       }
@@ -1971,15 +1969,15 @@ protected:
   /**
    * The dataset used by this index
    */
-  const DatasetAdaptor & dataset; //!< The source of our data
+  const DatasetAdaptor & dataset;  //!< The source of our data
 
-  std::vector<int> treeIndex; //!< treeIndex[idx] is the index of tree in which
-                              //!< point at idx is stored. treeIndex[idx]=-1
-                              //!< means that point has been removed.
+  std::vector<int> treeIndex;  //!< treeIndex[idx] is the index of tree in which
+                               //!< point at idx is stored. treeIndex[idx]=-1
+                               //!< means that point has been removed.
 
   KDTreeSingleIndexAdaptorParams index_params;
 
-  int dim; //!< Dimensionality of each data point
+  int dim;  //!< Dimensionality of each data point
 
   typedef KDTreeSingleIndexDynamicAdaptor_<Distance, DatasetAdaptor, DIM>
     index_container_t;
@@ -2146,8 +2144,8 @@ struct KDTreeEigenMatrixAdaptor
       MatrixType::ColsAtCompileTime, IndexType>
     index_t;
 
-  index_t * index; //! The kd-tree index for the user to call its methods as
-                   //! usual with any other FLANN index.
+  index_t * index;  //! The kd-tree index for the user to call its methods as
+                    //! usual with any other FLANN index.
 
   /// Constructor: takes a const ref to the matrix object with the data points
   KDTreeEigenMatrixAdaptor(
@@ -2161,7 +2159,7 @@ struct KDTreeEigenMatrixAdaptor
       throw std::runtime_error(
               "Error: 'dimensionality' must match column count in data matrix");
     }
-    if (DIM > 0 && int(dims) != DIM) {
+    if (DIM > 0 && static_cast<int>(dims) != DIM) {
       throw std::runtime_error(
               "Data set dimensionality does not match the 'DIM' template argument");
     }
@@ -2173,7 +2171,7 @@ struct KDTreeEigenMatrixAdaptor
 
 public:
   /** Deleted copy constructor */
-  KDTreeEigenMatrixAdaptor(const self_t &) = delete;
+  KDTreeEigenMatrixAdaptor(const self_t &) = delete;  // NOLINT
 
   ~KDTreeEigenMatrixAdaptor() {delete index;}
 
@@ -2225,11 +2223,10 @@ public:
   }
 
   /** @} */
+};  // end of KDTreeEigenMatrixAdaptor
+    /** @} */
 
-}; // end of KDTreeEigenMatrixAdaptor
-   /** @} */
+/** @} */  // end of grouping
+}  // namespace nanoflann
 
-/** @} */ // end of grouping
-} // namespace nanoflann
-
-#endif /* NANOFLANN_HPP_ */
+#endif  // KARTO_SDK__NANOFLANN_HPP_

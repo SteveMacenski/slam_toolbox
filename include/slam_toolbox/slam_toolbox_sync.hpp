@@ -17,9 +17,11 @@
 
 /* Author: Steven Macenski */
 
-#ifndef SLAM_TOOLBOX_SLAM_TOOLBOX_SYNC_H_
-#define SLAM_TOOLBOX_SLAM_TOOLBOX_SYNC_H_
+#ifndef SLAM_TOOLBOX__SLAM_TOOLBOX_SYNC_HPP_
+#define SLAM_TOOLBOX__SLAM_TOOLBOX_SYNC_HPP_
 
+#include <queue>
+#include <memory>
 #include "slam_toolbox/slam_toolbox_common.hpp"
 
 namespace slam_toolbox
@@ -28,26 +30,25 @@ namespace slam_toolbox
 class SynchronousSlamToolbox : public SlamToolbox
 {
 public:
-  SynchronousSlamToolbox(rclcpp::NodeOptions options);
+  explicit SynchronousSlamToolbox(rclcpp::NodeOptions options);
   ~SynchronousSlamToolbox() {}
   void run();
 
 protected:
-  virtual void laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override final;
+  void laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override;
   bool clearQueueCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::ClearQueue::Request> req,
     std::shared_ptr<slam_toolbox::srv::ClearQueue::Response> resp);
-  virtual bool deserializePoseGraphCallback(
+  bool deserializePoseGraphCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
-    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override final;
+    std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override;
 
   std::queue<PosedScan> q_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::ClearQueue>> ssClear_;
-
 };
 
-}
+}  // namespace slam_toolbox
 
-#endif //SLAM_TOOLBOX_SLAM_TOOLBOX_SYNC_NODE_H_
+#endif  // SLAM_TOOLBOX__SLAM_TOOLBOX_SYNC_HPP_

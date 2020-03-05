@@ -17,6 +17,7 @@
 
 /* Author: Steven Macenski */
 
+#include <memory>
 #include "slam_toolbox/slam_toolbox_async.hpp"
 
 int main(int argc, char ** argv)
