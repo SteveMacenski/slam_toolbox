@@ -103,7 +103,7 @@ public:
    * @param rMessage exception message (default: "Karto Exception")
    * @param errorCode error code (default: 0)
    */
-  explicit Exception(const std::string & rMessage = "Karto Exception", kt_int32s errorCode = 0)
+  Exception(const std::string & rMessage = "Karto Exception", kt_int32s errorCode = 0)  // NOLINT
   : m_Message(rMessage),
     m_ErrorCode(errorCode)
   {
@@ -395,7 +395,7 @@ public:
   /**
    * Constructor
    */
-  explicit Name(const std::string & rName)
+  Name(const std::string & rName)  // NOLINT
   {
     Parse(rName);
   }
@@ -629,7 +629,7 @@ public:
    * Constructs an object with the given name
    * @param rName
    */
-  explicit Object(const Name & rName);
+  Object(const Name & rName);  // NOLINT
 
   /**
    * Default constructor
@@ -815,7 +815,7 @@ public:
    * Construct a Module
    * @param rName module name
    */
-  explicit Module(const std::string & rName);
+  Module(const std::string & rName);  // NOLINT
 
   /**
    * Destructor
@@ -2067,7 +2067,7 @@ public:
   /**
    * Constructs a Pose2 object from a Pose3.
    */
-  explicit Pose2(const Pose3 & rPose);
+  Pose2(const Pose3 & rPose);  // NOLINT
 
   /**
    * Copy constructor
@@ -2284,7 +2284,7 @@ public:
    * Create a new Pose3 object from the given position.
    * @param rPosition position vector in three space.
    */
-  explicit Pose3(const Vector3<kt_double> & rPosition)
+  Pose3(const Vector3<kt_double> & rPosition)  // NOLINT
   : m_Position(rPosition)
   {
   }
@@ -2312,7 +2312,7 @@ public:
   /**
    * Constructs a Pose3 object from a Pose2.
    */
-  explicit Pose3(const Pose2 & rPose)
+  Pose3(const Pose2 & rPose)  // NOLINT
   {
     m_Position = Vector3<kt_double>(rPose.GetX(), rPose.GetY(), 0.0);
     m_Orientation.FromEulerAngles(rPose.GetHeading(), 0.0, 0.0);
@@ -2948,7 +2948,7 @@ public:
    * Constructs a transformation from the origin to the given pose
    * @param rPose pose
    */
-  explicit Transform(const Pose2 & rPose)
+  Transform(const Pose2 & rPose)  // NOLINT
   {
     SetTransform(Pose2(), rPose);
   }
@@ -2958,7 +2958,7 @@ public:
    * @param rPose1 first pose
    * @param rPose2 second pose
    */
-  explicit Transform(const Pose2 & rPose1, const Pose2 & rPose2)
+  Transform(const Pose2 & rPose1, const Pose2 & rPose2)
   {
     SetTransform(rPose1, rPose2);
   }
@@ -3075,7 +3075,7 @@ public:
    * @param rName
    * @param pParameterManger
    */
-  explicit AbstractParameter(const std::string & rName, ParameterManager * pParameterManger = NULL)
+  AbstractParameter(const std::string & rName, ParameterManager * pParameterManger = NULL)  // NOLINT
   : m_Name(rName)
   {
     // if parameter manager is provided add myself to it!
@@ -3520,7 +3520,7 @@ public:
   {
   }
 
-  explicit Parameters(const std::string & rName)
+  Parameters(const std::string & rName)  // NOLINT
   : Object(rName)
   {
   }
@@ -3572,7 +3572,7 @@ protected:
    * Construct a Sensor
    * @param rName sensor name
    */
-  explicit Sensor(const Name & rName);
+  Sensor(const Name & rName);  // NOLINT
 
 public:
   /**
@@ -3616,7 +3616,7 @@ private:
   /**
    * Restrict the copy constructor
    */
-  Sensor(const Sensor &);
+  Sensor(const Sensor &);  // NOLINT
 
   /**
    * Restrict the assignment operator
@@ -3812,7 +3812,7 @@ public:
   /**
    * Constructs a Drive object
    */
-  explicit Drive(const std::string & rName)
+  Drive(const std::string & rName)  // NOLINT
   : Sensor(rName)
   {
   }
@@ -4262,7 +4262,7 @@ private:
   /**
    * Constructs a LaserRangeFinder object with given ID
    */
-  explicit LaserRangeFinder(const Name & rName)
+  LaserRangeFinder(const Name & rName)  // NOLINT
   : Sensor(rName),
     m_NumberOfRangeReadings(0)
   {
@@ -5130,13 +5130,13 @@ protected:
   /**
    * Construct a SensorData object with a sensor name
    */
-  explicit SensorData(const Name & rSensorName);
+  SensorData(const Name & rSensorName);  // NOLINT
 
 private:
   /**
    * Restrict the copy constructor
    */
-  explicit SensorData(const SensorData &);
+  SensorData(const SensorData &);  // NOLINT
 
   /**
    * Restrict the assignment operator
@@ -5204,7 +5204,7 @@ public:
    * Constructs a scan from the given sensor with the given readings
    * @param rSensorName
    */
-  explicit LaserRangeScan(const Name & rSensorName)
+  LaserRangeScan(const Name & rSensorName)  // NOLINT
   : SensorData(rSensorName),
     m_pRangeReadings(NULL),
     m_NumberOfRangeReadings(0)
@@ -5352,7 +5352,7 @@ public:
    * Constructs a pose of the given drive sensor
    * @param rSensorName
    */
-  explicit DrivePose(const Name & rSensorName)
+  DrivePose(const Name & rSensorName)  // NOLINT
   : SensorData(rSensorName)
   {
   }
@@ -5848,7 +5848,7 @@ class OccupancyGrid;
 class KARTO_EXPORT CellUpdater : public Functor
 {
 public:
-  explicit CellUpdater(OccupancyGrid * pGrid)
+  CellUpdater(OccupancyGrid * pGrid)  // NOLINT
   : m_pOccupancyGrid(pGrid)
   {
   }
@@ -6725,7 +6725,7 @@ public:
   {
   }
 
-  explicit GridIndexLookup(Grid<T> * pGrid)
+  GridIndexLookup(Grid<T> * pGrid)  // NOLINT
   : m_pGrid(pGrid),
     m_Capacity(0),
     m_Size(0),

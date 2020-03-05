@@ -40,7 +40,7 @@ namespace loop_closure_assistant
 
 // TODO(stevemacenski): Need interactive markers ported to ROS2
 
-using ::toolbox_types;
+using namespace ::toolbox_types;  // NOLINT
 
 class LoopClosureAssistant
 {

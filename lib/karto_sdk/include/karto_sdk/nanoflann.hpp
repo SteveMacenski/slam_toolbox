@@ -165,7 +165,7 @@ private:
   CountType count;
 
 public:
-  inline explicit KNNResultSet(CountType capacity_)
+  inline KNNResultSet(CountType capacity_)  // NOLINT
   : indices(0), dists(0), capacity(capacity_), count(0) {}
 
   inline void init(IndexType * indices_, DistanceType * dists_)
@@ -360,10 +360,10 @@ struct L1_Adaptor
 
   const DataSource & data_source;
 
-  explicit L1_Adaptor(const DataSource & _data_source)
+  L1_Adaptor(const DataSource & _data_source)  // NOLINT
   : data_source(_data_source) {}
 
-  inline explicit DistanceType evalMetric(
+  inline DistanceType evalMetric(
     const T * a, const size_t b_idx, size_t size,
     DistanceType worst_dist = -1) const
   {
@@ -416,7 +416,7 @@ struct L2_Adaptor
 
   const DataSource & data_source;
 
-  explicit L2_Adaptor(const DataSource & _data_source)
+  L2_Adaptor(const DataSource & _data_source)  // NOLINT
   : data_source(_data_source) {}
 
   inline DistanceType evalMetric(
@@ -469,7 +469,7 @@ struct L2_Simple_Adaptor
 
   const DataSource & data_source;
 
-  explicit L2_Simple_Adaptor(const DataSource & _data_source)
+  L2_Simple_Adaptor(const DataSource & _data_source)  // NOLINT
   : data_source(_data_source) {}
 
   inline DistanceType evalMetric(
@@ -505,7 +505,7 @@ struct SO2_Adaptor
 
   const DataSource & data_source;
 
-  explicit SO2_Adaptor(const DataSource & _data_source)
+  SO2_Adaptor(const DataSource & _data_source)  // NOLINT
   : data_source(_data_source) {}
 
   inline DistanceType evalMetric(
@@ -545,7 +545,7 @@ struct SO3_Adaptor
 
   L2_Simple_Adaptor<T, DataSource> distance_L2_Simple;
 
-  explicit SO3_Adaptor(const DataSource & _data_source)
+  SO3_Adaptor(const DataSource & _data_source)  // NOLINT
   : distance_L2_Simple(_data_source) {}
 
   inline DistanceType evalMetric(
@@ -616,7 +616,7 @@ struct metric_SO3 : public Metric
 /**  Parameters (see README.md) */
 struct KDTreeSingleIndexAdaptorParams
 {
-  explicit KDTreeSingleIndexAdaptorParams(size_t _leaf_max_size = 10)
+  KDTreeSingleIndexAdaptorParams(size_t _leaf_max_size = 10)  // NOLINT
   : leaf_max_size(_leaf_max_size) {}
 
   size_t leaf_max_size;
@@ -627,7 +627,7 @@ struct SearchParams
 {
   /** Note: The first argument (checks_IGNORED_) is ignored, but kept for
    * compatibility with the FLANN interface */
-  explicit SearchParams(int checks_IGNORED_ = 32, float eps_ = 0, bool sorted_ = true)
+  SearchParams(int checks_IGNORED_ = 32, float eps_ = 0, bool sorted_ = true)  // NOLINT
   : checks(checks_IGNORED_), eps(eps_), sorted(sorted_) {}
 
   int checks;   //!< Ignored parameter (Kept for compatibility with the FLANN
@@ -2171,7 +2171,7 @@ struct KDTreeEigenMatrixAdaptor
 
 public:
   /** Deleted copy constructor */
-  explicit KDTreeEigenMatrixAdaptor(const self_t &) = delete;
+  KDTreeEigenMatrixAdaptor(const self_t &) = delete;  // NOLINT
 
   ~KDTreeEigenMatrixAdaptor() {delete index;}
 

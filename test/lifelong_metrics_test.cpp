@@ -22,14 +22,12 @@
 #include <gtest/gtest.h>
 #include "slam_toolbox/experimental/slam_toolbox_lifelong.hpp"
 
-using karto;
-
 // 3 potential test cases, t1 is used.
 // t1 = IOU([3.5, 4.0, 3.0, 4.0], [3.5, 5.5, 3.0, 3.0]) == 6.0
 // t2 = IOU([4.5, 3.0, 5.0, 2.0], [4.5, 4.5, 3, 3]) == 3.0
 // t3 = IOU([4.5, 3.5, 3.0, 3.0], [2.5, 5.5, 3, 3]) == 1.0
 
-namespace
+namespace karto
 {
 
 TEST(LifelingMetricsTests, TestBounds)

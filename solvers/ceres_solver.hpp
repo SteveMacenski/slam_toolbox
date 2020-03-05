@@ -24,7 +24,7 @@
 namespace solver_plugins
 {
 
-using ::toolbox_types;
+using namespace ::toolbox_types;  // NOLINT
 
 class CeresSolver : public karto::ScanSolver
 {

@@ -44,8 +44,8 @@
 #include "slam_toolbox/laser_utils.hpp"
 #include "slam_toolbox/visualization_utils.hpp"
 
-using toolbox_types;
-using karto;
+using namespace toolbox_types;  // NOLINT
+using namespace karto;  // NOLINT
 
 class MergeMapsKinematic : public rclcpp::Node
 {

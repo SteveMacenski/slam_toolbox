@@ -27,7 +27,7 @@
 namespace mapper_utils
 {
 
-using ::karto;
+using namespace ::karto;  // NOLINT
 
 class SMapper
 {

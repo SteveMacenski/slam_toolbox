@@ -53,8 +53,8 @@ namespace slam_toolbox
 {
 
 // dirty, dirty cheat I love
-using ::toolbox_types;
-using ::karto;
+using namespace ::toolbox_types;  // NOLINT
+using namespace ::karto;  // NOLINT
 
 class SlamToolbox : public rclcpp::Node
 {

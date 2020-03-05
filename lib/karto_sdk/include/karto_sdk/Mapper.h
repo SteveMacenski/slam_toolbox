@@ -33,8 +33,8 @@
 
 #include "Eigen/Core"
 #include "rclcpp/rclcpp.hpp"
-#include "karto_sdk/Karto.h"
-#include "karto_sdk/nanoflann_adaptors.h"
+#include "Karto.h"  // NOLINT
+#include "nanoflann_adaptors.h"  // NOLINT
 
 
 namespace karto
