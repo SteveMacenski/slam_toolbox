@@ -586,6 +586,11 @@ bool SlamToolbox::serializePoseGraphCallback(
   slam_toolbox_msgs::SerializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
+  if (!smapper_->getMapper()->IsLoopClosed())
+  {
+    return false;
+  }
+
   std::string filename = req.filename;
 
   // if we're inside the snap, we need to write to commonly accessible space
