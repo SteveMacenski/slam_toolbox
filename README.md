@@ -301,7 +301,7 @@ rosdep install -q -y -r --from-paths src --ignore-src
 Or install via apt
 
 ```
-apt install ros-dashing-slam-toolbox
+apt install ros-eloquent-slam-toolbox
 ```
 
 Run your colcon build procedure of choice.
