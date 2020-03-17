@@ -1,4 +1,4 @@
-FROM ros:dashing-ros-base-bionic
+FROM ros:eloquent-ros-base-bionic
 
 # USE BASH
 SHELL ["/bin/bash", "-c"]
@@ -10,13 +10,13 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
 
 # slam_toolbox
 RUN mkdir -p colcon_ws/src
-RUN cd colcon_ws/src && git clone -b dashing-devel https://github.com/SteveMacenski/slam_toolbox.git
-RUN source /opt/ros/dashing/setup.bash \
+RUN cd colcon_ws/src && git clone -b eloquent-devel https://github.com/SteveMacenski/slam_toolbox.git
+RUN source /opt/ros/eloquent/setup.bash \
     && cd colcon_ws \
     && rosdep update \
-    && rosdep install -y -r --from-paths src --ignore-src --rosdistro=dashing -y
+    && rosdep install -y -r --from-paths src --ignore-src --rosdistro=eloquent -y
 
-RUN source /opt/ros/dashing/setup.bash \ 
+RUN source /opt/ros/eloquent/setup.bash \
     && cd colcon_ws/ \
     && colcon build  --cmake-args=-DCMAKE_BUILD_TYPE=Release \
     && colcon test
