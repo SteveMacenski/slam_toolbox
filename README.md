@@ -4,7 +4,7 @@
 |-----|----|----|
 | **Build Farm** | [![Build Status](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/) | N/A |
 
-NOTE: ROS2 Port of Slam Toolbox is still experimental. Known on-going work:
+NOTE: ROS2 Port of Slam Toolbox is incomplete. Known on-going work:
 - Interactive markers need to be ported to ROS2 and integrated
 - Panel plugins need to be ported to ROS2 to test and ship the rviz plugin
 
