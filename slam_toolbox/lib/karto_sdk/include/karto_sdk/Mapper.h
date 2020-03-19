@@ -917,6 +917,11 @@ namespace karto
     GraphTraversal<LocalizedRangeScan>* m_pTraversal;
 
     /**
+     * Member bool variable to keep track of the state of a loop closure.
+     */
+    kt_bool m_pOptimizerCached;
+
+    /**
      * Serialization: class MapperGraph
      */
     friend class boost::serialization::access;
@@ -929,14 +934,11 @@ namespace karto
       ar & BOOST_SERIALIZATION_NVP(m_pMapper);
       std::cout << "MapperGraph <- m_pLoopScanMatcher; ";
       ar & BOOST_SERIALIZATION_NVP(m_pLoopScanMatcher);
-      std::cout << "MapperGraph <- m_pTraversal\n";
+      std::cout << "MapperGraph <- m_pTraversal; ";
       ar & BOOST_SERIALIZATION_NVP(m_pTraversal);
+      std::cout << "MapperGraph <- m_pOptimizerCached\n";
+      ar & BOOST_SERIALIZATION_NVP(m_pOptimizerCached);
     }
-
-    /**
-     * Member bool variable to keep track of the state of a loop closure.
-     */
-    kt_bool m_pLoopClosed;
 
   };  // MapperGraph
 

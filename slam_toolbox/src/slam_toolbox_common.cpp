@@ -588,6 +588,7 @@ bool SlamToolbox::serializePoseGraphCallback(
 {
   if (!smapper_->getMapper()->IsLoopClosed())
   {
+    ROS_WARN("Could not serialize the map because no loop closure has been detected yet!");
     return false;
   }
 
