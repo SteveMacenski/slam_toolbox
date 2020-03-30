@@ -10,7 +10,7 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
 
 # slam_toolbox
 RUN mkdir -p catkin_ws/src
-RUN cd catkin_ws/src && git clone https://github.com/SteveMacenski/slam_toolbox.git
+RUN cd catkin_ws/src && git clone -b melodic-devel https://github.com/SteveMacenski/slam_toolbox.git
 RUN source /opt/ros/melodic/setup.bash \
     && cd catkin_ws \
     && rosdep update \
