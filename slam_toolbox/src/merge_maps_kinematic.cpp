@@ -239,6 +239,7 @@ bool MergeMapsKinematic::mergeMapCallback(
 
   // transform all the scans into the new global map coordinates 
   int id = 0;
+  bool processed = false;
   karto::LocalizedRangeScanVector transformed_scans;
   for(LocalizedRangeScansVecIt it_LRV = scans_vec_.begin();
     it_LRV != scans_vec_.end(); ++it_LRV)
@@ -250,7 +251,14 @@ bool MergeMapsKinematic::mergeMapCallback(
       tf2::Transform submap_correction = submap_marker_transform_[id];
       transformScan(iter, submap_correction);
       transformed_scans.push_back((*iter));
-      merged_mapper -> Process (*iter);
+
+      if (iter == it_LRV->begin() && id != 1){
+      processed = merged_mapper -> ProcessAgainstNodesNearBy (*iter);
+      }
+      else {
+      merged_mapper -> Process(*iter);
+      }
+
     }
   }
   
@@ -279,7 +287,7 @@ bool MergeMapsKinematic::mergeMapCallback(
   sstS_[0].publish(map.map);
   sstmS_[0].publish(map.map.info);
 
-  merged_mapper -> GetGraph()->CorrectPoses();
+  // merged_mapper -> GetGraph()->CorrectPoses();
   std::string filename = req.filename;
   serialization::write(filename, *merged_mapper, *merged_dataset);
 }
