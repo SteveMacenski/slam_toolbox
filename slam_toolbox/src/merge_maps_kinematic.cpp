@@ -287,7 +287,7 @@ bool MergeMapsKinematic::mergeMapCallback(
   sstS_[0].publish(map.map);
   sstmS_[0].publish(map.map.info);
 
-  // merged_mapper -> GetGraph()->CorrectPoses();
+  merged_mapper -> GetGraph()->CorrectPoses();
   std::string filename = req.filename;
   serialization::write(filename, *merged_mapper, *merged_dataset);
 }
