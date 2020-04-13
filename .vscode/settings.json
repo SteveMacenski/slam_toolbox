@@ -1,0 +1,7 @@
+{
+    "python.autoComplete.extraPaths": [
+        "/home/rentao/git/slam_toolbox/devel/lib/python2.7/dist-packages",
+        "/home/rentao/wheel/master-wheel/devel/lib/python2.7/dist-packages",
+        "/opt/ros/melodic/lib/python2.7/dist-packages"
+    ]
+}

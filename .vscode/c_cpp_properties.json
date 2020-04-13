@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "",
+                "limitSymbolsToIncludedHeaders": true
+            },
+            "includePath": [
+                "/home/rentao/git/slam_toolbox/devel/include",
+                "/home/rentao/wheel/master-wheel/devel/include",
+                "/opt/ros/melodic/include",
+                "/home/rentao/git/slam_toolbox/src/m-explore/explore/include",
+                "/home/rentao/git/slam_toolbox/src/m-explore/map_merge/include",
+                "/home/rentao/git/slam_toolbox/src/slam_toolbox/slam_toolbox/include",
+                "/usr/include"
+            ],
+            "name": "Linux",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}
