@@ -252,11 +252,11 @@ bool MergeMapsKinematic::mergeMapCallback(
       transformScan(iter, submap_correction);
       transformed_scans.push_back((*iter));
 
-      if (iter == it_LRV->begin() && id != 1){
-      processed = merged_mapper -> ProcessAgainstNodesNearBy (*iter);
+      if (iter == it_LRV->begin() && id != 1) {
+        processed = merged_mapper->ProcessAgainstNodesNearBy (*iter);
       }
       else {
-      merged_mapper -> Process(*iter);
+        merged_mapper->Process(*iter);
       }
 
     }
@@ -287,8 +287,14 @@ bool MergeMapsKinematic::mergeMapCallback(
   sstS_[0].publish(map.map);
   sstmS_[0].publish(map.map.info);
 
-  merged_mapper -> GetGraph()->CorrectPoses();
+  merged_mapper->GetGraph()->CorrectPoses();
   std::string filename = req.filename;
+  
+  if (filename.empty())
+  {
+    ROS_INFO("save pose graph as \"mergedmap\" ");
+    filename = "mergedmap";
+  }
   serialization::write(filename, *merged_mapper, *merged_dataset);
 }
 
