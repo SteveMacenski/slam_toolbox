@@ -294,6 +294,11 @@ bool MergeMapsKinematic::mergeMapCallback(
   {
     ROS_INFO("save pose graph as \"mergedmap\" ");
     filename = "mergedmap";
+    
+  }
+  if (snap_utils::isInSnap())
+  {
+    filename = snap_utils::getSnapPath() + std::string("/") + filename;
   }
   serialization::write(filename, *merged_mapper, *merged_dataset);
 }
