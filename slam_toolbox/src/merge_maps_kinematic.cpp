@@ -253,7 +253,7 @@ bool MergeMapsKinematic::mergeMapCallback(
       transformed_scans.push_back((*iter));
 
       if (iter == it_LRV->begin() && id != 1) {
-        processed = merged_mapper->ProcessAgainstNodesNearBy (*iter);
+        processed = merged_mapper->ProcessAgainstNodesNearBy(*iter);
       }
       else {
         merged_mapper->Process(*iter);
