@@ -1,16 +1,17 @@
+from ament_index_python.packages import get_package_share_directory
+
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from ament_index_python.packages import get_package_share_directory
 from nav2_common.launch import RewrittenYaml
 
 
 def generate_launch_description():
     use_sim_time = LaunchConfiguration('use_sim_time')
     transform_timeout = LaunchConfiguration('transform_timeout')
-    params_file = get_package_share_directory("slam_toolbox") +\
-        '/config/mapper_params_online_sync.yaml';
+    params_file = get_package_share_directory('slam_toolbox') +\
+        '/config/mapper_params_online_sync.yaml'
 
     param_substitutions = {
         'transform_timeout': transform_timeout}
