@@ -8,7 +8,6 @@ set(CMAKE_CXX_FLAGS "-fpermissive -std=c++17")
 
 #karto_sdk lib
 set(BUILD_SHARED_LIBS ON)
-add_subdirectory(lib/karto_sdk)
 
 find_package(catkin REQUIRED
   COMPONENTS
@@ -30,6 +29,8 @@ find_package(catkin REQUIRED
     map_server
     slam_toolbox_msgs
 )
+
+add_subdirectory(lib/karto_sdk)
 
 find_package(PkgConfig REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -151,12 +152,12 @@ add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 target_link_libraries(merge_maps_kinematic toolbox_common)
 
 #### testing
-#if(CATKIN_ENABLE_TESTING)
-#  find_package(rostest REQUIRED)
-#  include_directories(test)
-#  catkin_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
-#  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
-#endif()
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+  include_directories(test)
+  catkin_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
+  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
+endif()
 
 #### Install
 install(TARGETS toolbox_common
