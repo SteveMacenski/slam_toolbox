@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(slam_toolbox)
+project(slam_toolbox LANGUAGES CXX)
 
 add_compile_options(-std=c++17)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
@@ -38,7 +38,6 @@ find_package(G2O REQUIRED)
 find_package(Cholmod REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
-find_package(rostest REQUIRED)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_definitions(-DQT_NO_KEYWORDS)
@@ -152,11 +151,12 @@ add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 target_link_libraries(merge_maps_kinematic toolbox_common)
 
 #### testing
-if(CATKIN_ENABLE_TESTING)
-  include_directories(test)
-  catkin_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
-  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
-endif()
+#if(CATKIN_ENABLE_TESTING)
+#  find_package(rostest REQUIRED)
+#  include_directories(test)
+#  catkin_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
+#  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
+#endif()
 
 #### Install
 install(TARGETS toolbox_common
