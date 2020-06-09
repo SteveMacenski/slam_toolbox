@@ -3,7 +3,7 @@
   <description>
      This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
   </description>
-  <version>1.1.4</version>
+  <version>1.1.5</version>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <author>Steve Macenski</author>
   <license>LGPL</license>
@@ -64,6 +64,7 @@
   <run_depend>libqt5-widgets</run_depend>
   <run_depend>map_server</run_depend>
 
+  <test_depend>rosunit</test_depend>
   <test_depend>gtest</test_depend>
 
   <export>

@@ -153,6 +153,7 @@ target_link_libraries(merge_maps_kinematic toolbox_common)
 
 #### testing
 if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
   include_directories(test)
   catkin_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
   target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
