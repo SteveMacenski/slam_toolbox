@@ -65,7 +65,6 @@
   <run_depend>map_server</run_depend>
 
   <test_depend>rosunit</test_depend>
-  <test_depend>gtest</test_depend>
 
   <export>
     <slam_toolbox plugin="${prefix}/solver_plugins.xml" />

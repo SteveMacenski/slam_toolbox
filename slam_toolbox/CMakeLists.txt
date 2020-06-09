@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(slam_toolbox)
+project(slam_toolbox LANGUAGES CXX)
 
 add_compile_options(-std=c++17)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
@@ -153,7 +153,6 @@ target_link_libraries(merge_maps_kinematic toolbox_common)
 #### testing
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  find_package(gtest REQUIRED)
   include_directories(test)
   catkin_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
   target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
