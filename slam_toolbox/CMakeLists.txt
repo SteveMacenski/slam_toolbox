@@ -122,11 +122,11 @@ add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 target_link_libraries(merge_maps_kinematic toolbox_common)
 
 #### testing
-if(CATKIN_ENABLE_TESTING)
-  include_directories(test)
-  catkin_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
-  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
-endif()
+#if(CATKIN_ENABLE_TESTING)
+#  include_directories(test)
+#  catkin_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
+#  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
+#endif()
 
 #### Install
 install(TARGETS toolbox_common
