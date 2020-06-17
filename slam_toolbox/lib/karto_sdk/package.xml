@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>karto_sdk</name>
-  <version>1.1.4</version>
+  <version>1.5.2</version>
   <description>Catkinized ROS packaging of the OpenKarto library</description>
 
   <maintainer email="mferguson@fetchrobotics.com">Michael Ferguson</maintainer>

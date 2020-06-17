@@ -26,8 +26,8 @@
 #include <Eigen/Core>
 
 #include "tbb/parallel_for.h"
+#include "tbb/parallel_do.h"
 #include "tbb/blocked_range.h"
-#include "tbb/tbb.h"
 #include <algorithm>
 #include <chrono>
 
