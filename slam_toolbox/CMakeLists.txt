@@ -22,6 +22,7 @@ find_package(catkin REQUIRED
     sparse_bundle_adjustment
     tf2
     tf2_ros
+    tf
     visualization_msgs
     pluginlib
     tf2_geometry_msgs
@@ -71,6 +72,7 @@ catkin_package(
       sparse_bundle_adjustment
       sensor_msgs
       tf2
+      tf
       tf2_ros
       visualization_msgs
       pluginlib

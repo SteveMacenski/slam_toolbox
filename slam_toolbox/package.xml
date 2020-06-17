@@ -21,6 +21,7 @@
   <build_depend>sparse_bundle_adjustment</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>tf2_ros</build_depend>
+  <build_depend>tf</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>visualization_msgs</build_depend>
   <build_depend>std_srvs</build_depend>
@@ -45,6 +46,7 @@
   <run_depend>roscpp</run_depend>
   <run_depend>sparse_bundle_adjustment</run_depend>
   <run_depend>sensor_msgs</run_depend>
+  <run_depend>tf</run_depend>
   <run_depend>tf2</run_depend>
   <run_depend>tf2_ros</run_depend>
   <run_depend>visualization_msgs</run_depend>
