@@ -3,7 +3,7 @@
   <description>
      This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
   </description>
-  <version>1.5.1</version>
+  <version>1.5.3</version>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <author>Steve Macenski</author>
   <license>LGPL</license>
