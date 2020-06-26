@@ -12,7 +12,14 @@
 
   <depend>rviz</depend>
   <depend>slam_toolbox_msgs</depend>
-  
+  <depend>qtbase5-dev</depend>
+
+
+  <exec_depend>libqt5-core</exec_depend>
+  <exec_depend>libqt5-gui</exec_depend>
+  <exec_depend>libqt5-opengl</exec_depend>
+  <exec_depend>libqt5-widgets</exec_depend>
+
   <export>
     <rviz plugin="${prefix}/rviz_plugins.xml"/>
   </export>
