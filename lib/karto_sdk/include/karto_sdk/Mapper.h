@@ -27,9 +27,9 @@
 #include <utility>
 #include <string>
 
+#include "tbb/parallel_do.h"
 #include "tbb/parallel_for.h"
 #include "tbb/blocked_range.h"
-#include "tbb/tbb.h"
 
 #include "Eigen/Core"
 #include "rclcpp/rclcpp.hpp"
@@ -1029,6 +1029,7 @@ public:
     std::cout <<
       "getGraph method not implemented for this solver type. Graph visualization unavailable." <<
       std::endl;
+    return nullptr;
   }
 
   /**

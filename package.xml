@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>slam_toolbox</name>
-  <version>2.2.0</version>
+  <version>2.3.0</version>
   <description>
      This package provides a sped up improved slam karto with updated SDK and visualization and modification toolsets
   </description>
@@ -11,7 +11,7 @@
   <author>Steve Macenski</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  
+
   <build_depend>pluginlib</build_depend>
   <build_depend>eigen</build_depend>
   <build_depend>message_filters</build_depend>
@@ -67,6 +67,11 @@
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>rosidl_default_generators</exec_depend>
+
+  <exec_depend>libqt5-core</exec_depend>
+  <exec_depend>libqt5-gui</exec_depend>
+  <exec_depend>libqt5-opengl</exec_depend>
+  <exec_depend>libqt5-widgets</exec_depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>launch</test_depend>

@@ -280,6 +280,7 @@ bool MergeMapsKinematic::mergeMapCallback(
   map.map.header.frame_id = "map";
   sstS_[0]->publish(map.map);
   sstmS_[0]->publish(map.map.info);
+  return true;
 }
 
 /*****************************************************************************/
