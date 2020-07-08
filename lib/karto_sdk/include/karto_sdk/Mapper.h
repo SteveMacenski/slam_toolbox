@@ -1029,6 +1029,7 @@ public:
     std::cout <<
       "getGraph method not implemented for this solver type. Graph visualization unavailable." <<
       std::endl;
+    return nullptr;
   }
 
   /**

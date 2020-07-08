@@ -1359,6 +1359,8 @@ Vertex<LocalizedRangeScan> * MapperGraph::AddVertex(LocalizedRangeScan * pScan)
     }
     return pVertex;
   }
+
+  return nullptr;
 }
 
 void MapperGraph::AddEdges(LocalizedRangeScan * pScan, const Matrix3 & rCovariance)
