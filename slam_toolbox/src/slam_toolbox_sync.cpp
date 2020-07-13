@@ -41,6 +41,7 @@ void SynchronousSlamToolbox::run()
 /*****************************************************************************/
 {
   ros::Rate r(100);
+  bool warning_active = false;
   while(ros::ok())
   {
     if (!q_.empty() && !isPaused(PROCESSING))
@@ -50,9 +51,16 @@ void SynchronousSlamToolbox::run()
 
       if (q_.size() > 10)
       {
-        ROS_WARN_THROTTLE(10., "Queue size has grown to: %i. "
+        warning_active = true;
+        ROS_WARN_THROTTLE(10., "Queue size has grown to: %zu. "
           "Recommend stopping until message is gone if online mapping.",
-          (int)q_.size());
+          q_.size());
+      }
+
+      if (warning_active && q_.empty())
+      {
+          warning_active = false;
+          ROS_INFO("Queue is empty again!");
       }
 
       addScan(getLaser(scan_w_pose.scan), scan_w_pose);
