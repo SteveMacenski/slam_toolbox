@@ -414,9 +414,8 @@ bool SlamToolbox::shouldProcessScan(
 {
   static karto::Pose2 last_pose;
   static ros::Time last_scan_time = ros::Time(0.);
-  static double min_dist2 =
-    smapper_->getMapper()->getParamMinimumTravelDistance() *
-    smapper_->getMapper()->getParamMinimumTravelDistance();
+  static const double dist_thresh_sq = smapper_->getMapper()->getParamMinimumTravelDistance()*
+                                       smapper_->getMapper()->getParamMinimumTravelDistance();
 
   // we give it a pass on the first measurement to get the ball rolling
   if (first_measurement_)
@@ -446,10 +445,10 @@ bool SlamToolbox::shouldProcessScan(
   }
 
   // check moved enough, within 10% for correction error
-  const double dist2 = fabs((last_pose.GetX() - pose.GetX())*(last_pose.GetX() - 
-    pose.GetX()) + (last_pose.GetY() - pose.GetY())*
-    (last_pose.GetX() - pose.GetY()));
-  if(dist2 < 0.8 * min_dist2 || scan->header.seq < 5)
+  const double sq_dist_to_last_accepted_pose = last_pose.SquaredDistance(pose);
+
+  // TODO: Accept scan if robot rotated on the spot, but did not translate (e.g. while using a non 360-deg scanner)
+  if(sq_dist_to_last_accepted_pose < 0.8 * dist_thresh_sq || scan->header.seq < 5)
   {
     return false;
   }
