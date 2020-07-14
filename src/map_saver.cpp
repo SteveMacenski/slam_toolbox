@@ -60,7 +60,7 @@ bool MapSaver::saveMapCallback(
   if (name != "") {
     RCLCPP_INFO(node_->get_logger(),
       "SlamToolbox: Saving map as %s.", name.c_str());
-    int rc = system(("ros2 run nav2_map_server map_saver_cli -f " + name " --ros-args -p map_subscribe_transient_local:=true").c_str());
+    int rc = system(("ros2 run nav2_map_server map_saver_cli -f " + name  + " --ros-args -p map_subscribe_transient_local:=true").c_str());
   } else {
     RCLCPP_INFO(node_->get_logger(),
       "SlamToolbox: Saving map in current directory.");
