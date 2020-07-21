@@ -29,7 +29,7 @@ Panels:
     Name: Time
     SyncMode: 0
     SyncSource: ""
-  - Class: slam_toolbox/SlamToolboxPlugin
+  - Class: slam_toolbox::SlamToolboxPlugin
     Name: SlamToolboxPlugin
 Visualization Manager:
   Class: ""
