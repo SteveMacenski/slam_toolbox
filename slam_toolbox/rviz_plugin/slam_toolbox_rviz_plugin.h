@@ -74,7 +74,6 @@ protected Q_SLOTS:
   void SaveMap();
   void ClearQueue();
   void InteractiveCb(int state);
-  void PauseProcessingCb(int state);
   void PauseMeasurementsCb(int state);
   void FirstNodeMatchCb();
   void PoseEstMatchCb();
