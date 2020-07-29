@@ -4,7 +4,7 @@ project(slam_toolbox)
 add_compile_options(-std=c++14)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
-set(CMAKE_CXX_FLAGS "-fpermissive -std=c++14")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive -std=c++14")
 set(CMAKE_CXX_STANDARD 14)
 
 find_package(ament_cmake REQUIRED)
