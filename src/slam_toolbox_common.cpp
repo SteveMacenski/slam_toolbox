@@ -367,8 +367,10 @@ bool SlamToolbox::updateMap()
 
   // publish map as current
   map_.map.header.stamp = this->now();
-  sst_->publish(map_.map);
-  sstm_->publish(map_.map.info);
+  sst_->publish(
+    std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
+  sstm_->publish(
+    std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
 
   delete occ_grid;
   occ_grid = nullptr;
