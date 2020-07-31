@@ -390,6 +390,7 @@ namespace karto
     forEach(ScanManagerMap, &m_ScanManagers)
     {
       delete iter->second;
+      iter->second = nullptr;
     }
 
     m_ScanManagers.clear();
