@@ -5327,6 +5327,7 @@ namespace karto
     virtual ~LaserRangeScan()
     {
       delete [] m_pRangeReadings;
+      m_pRangeReadings = nullptr;
     }
 
   public:

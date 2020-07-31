@@ -645,13 +645,15 @@ namespace karto
         for (iter = indexIter->second.begin(); iter != indexIter->second.end(); ++iter)
         {
           delete iter->second;
+          iter->second = nullptr;
         }
       }
       m_Vertices.clear();
 
-      const_forEach(typename std::vector<Edge<T>*>, &m_Edges)
+      forEach(typename std::vector<Edge<T>*>, &m_Edges)
       {
         delete *iter;
+        *iter = nullptr;
       }
       m_Edges.clear();
     }
