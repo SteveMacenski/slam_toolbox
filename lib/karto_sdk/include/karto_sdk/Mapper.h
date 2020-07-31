@@ -641,6 +641,7 @@ public:
       typename std::map<int, Vertex<T> *>::iterator iter;
       for (iter = indexIter->second.begin(); iter != indexIter->second.end(); ++iter) {
         delete iter->second;
+        iter->second = nullptr;
       }
     }
     m_Vertices.clear();
