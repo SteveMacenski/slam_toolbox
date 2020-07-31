@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(karto_sdk)
 
+set(CMAKE_BUILD_TYPE Release) #None, Debug, Release, RelWithDebInfo, MinSizeRel
 set(CMAKE_CXX_FLAGS "-ftemplate-backtrace-limit=0") 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
 
