@@ -646,6 +646,7 @@ namespace karto
         for (iter = indexIter->second.begin(); iter != indexIter->second.end(); ++iter)
         {
           delete iter->second;
+          iter->second = nullptr;
         }
       }
       m_Vertices.clear();
