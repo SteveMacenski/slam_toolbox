@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(slam_toolbox)
 
 add_compile_options(-std=c++17)
+set(CMAKE_BUILD_TYPE Release) #None, Debug, Release, RelWithDebInfo, MinSizeRel
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
 set(CMAKE_CXX_FLAGS "-fpermissive -std=c++17")
