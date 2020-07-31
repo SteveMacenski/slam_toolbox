@@ -645,9 +645,10 @@ public:
     }
     m_Vertices.clear();
 
-    const_forEach(typename std::vector<Edge<T> *>, &m_Edges)
+    forEach(typename std::vector<Edge<T> *>, &m_Edges)
     {
       delete *iter;
+      *iter = nullptr;
     }
     m_Edges.clear();
   }
