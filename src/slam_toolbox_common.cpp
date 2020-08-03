@@ -410,7 +410,7 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
   } catch (tf2::TransformException & e) {
     RCLCPP_ERROR(get_logger(), "Transform from base_link to odom failed: %s",
       e.what());
-    odom_to_map.setIdentity();
+    return odom_to_map;
   }
 
   // if we're continuing a previous session, we need to
