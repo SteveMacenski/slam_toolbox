@@ -3,6 +3,7 @@
 - citations
 - figures / details from roscon presentation
 - https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
+- https://www.theoj.org/joss-papers/joss.00456/10.21105.joss.00456.pdf
 
 ---
 title: 'SLAM Toolbox: SLAM for the dynamic world'
@@ -69,6 +70,10 @@ online/offline
 continous session mapping
 prototype lifelong + distributed
 
+# Configuration
+key parameters
+general if you see this issue what to look at
+a workflow
 
 # Robots Using `slam_toolbox`
 tally
@@ -81,7 +86,6 @@ Robosynthesis
 6 river
 unmanned life
 many reserch groups
-
 
 
 (also what reserach / softwre enabled by it)
