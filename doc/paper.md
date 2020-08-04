@@ -4,6 +4,7 @@
 - figures / details from roscon presentation
 - https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
 - https://www.theoj.org/joss-papers/joss.00456/10.21105.joss.00456.pdf
+- find way to cte STVL
 
 ---
 title: 'SLAM Toolbox: SLAM for the dynamic world'
@@ -54,6 +55,7 @@ SLAM Toolbox provides multiple modes of mapping depending on need, asynchronous 
 
 This package, `slam_toolbox` is open-source under an LGPLv2.1 at https://github.com/SteveMacenski/slam_toolbox.git and is available in every current ROS distribution.
 It was also selected as the new default SLAM vendor in ROS 2, the second generation of robot operating systems, replacing GMapping.
+SLAM Toolbox was integrated into the new ROS 2 Navigation2 project, providing real-time positioning in dynamic environments for autonomous navigation. [CITATION NEEDED NAV2] 
 It has been shown to map spaces as large as 24,000 m^2, or 250,000 ft^2, in real-time by non-expert technicians.
 
 # Related Work
