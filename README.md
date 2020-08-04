@@ -14,7 +14,7 @@ We've received feedback from users and have robots operating in the following en
 - Libraries
 - Research
 
-It is also the currently supported ROS2-SLAM library. See tutorials for working with it in [ROS2 Navigation here](https://ros-planning.github.io/navigation2/tutorials/docs/navigation2_with_slam.html).
+It is also the currently supported ROS2-SLAM library. See tutorials for working with it in [ROS2 Navigation here](https://navigation.ros.org/tutorials/docs/navigation2_with_slam.html).
 
 [![IMAGE ALT TEXT](https://user-images.githubusercontent.com/14944147/74176653-f69beb80-4bec-11ea-906a-a233541a6064.png)](https://vimeo.com/378682207)
 
