@@ -1,6 +1,5 @@
 #TODOs
 - submission: https://joss.theoj.org/papers/new
-- citations
 - figures / details from roscon presentation
 - https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
 - https://www.theoj.org/joss-papers/joss.00456/10.21105.joss.00456.pdf
@@ -95,19 +94,26 @@ For extremely large maps, the stack memory overhead of serializing and deseriali
 To utilize the different tools like map merging and pose-graph manipulation, the `enable_interactive_mode` must be set to true. This parameter enables the storage of additional information required for the interactive mode. However, this comes with non-trivial overhead so it should not be enabled when these features are not being used in a production environment.
 
 # Robots Using `slam_toolbox`
-tally
-ros2 default
-tb3
-magazino
-Cyberbotics
-rover
-Robosynthesis
-6 river
-unmanned life
-many reserch groups
 
+SLAM Toolbox has been integrated, tested, and deployed on a number of robot platforms across the world by both industry and researchers.
+It is also the default SLAM vendor for ROS 2.
 
-(also what reserach / softwre enabled by it)
+A few known examples where SLAM Toolbox has been used or is being used are:
+
+- Simbe Robotics' Tally
+- ROBOTIS' Turtlebot3
+- Samsung Research American anf Russia's research teams
+- Rover Robotics' Rover
+- Pal Robotics ARI
+- Intel's Open Source Group
+- Queensland University of Technology researchers
+- Robosynthesis' EXTRM SC2.0
+- Unbounded Robotics UBR-1
+- Byte Robotics' Platform
+- Unmanned Life's Platform
+- MT Robot AG
+- Magazino robot datasets
+- 6 River Systems
 
 # Acknowledgements
 
