@@ -9,16 +9,14 @@ tags:
 authors:
   - name: Steve Macenski
     orcid: 0000-0003-1090-7733
-    affiliation: "1, 2"
+    affiliation: "1"
   - name: Ivona Jambrecic
-    affiliation: "3"
+    affiliation: "2"
 affiliations:
  - name: Open-Source Robotics Engineering Lead, Samsung Research
    index: 1
- - name: Senior Software Engineer Robotics and Navigation Lead, Simbe Robotics
-   index: 2
  - name: Software Engineering Intern, Simbe Robotics
-   index: 3
+   index: 2
 date: 31 July 2020
 bibliography: paper.bib
 
@@ -28,11 +26,12 @@ bibliography: paper.bib
 
 Developments in the field of mobile robotics and autonomous driving have resulted in robots and vehicles in retail stores, hospitals, warehouses, on the roads, and on sidewalks.
 These deployed areas are both dynamic and frequently massive in scale.
-The average size of a Walmart store is over 16,000 m^2 [CITATION NEEDED] and a single square block in Chicago is over 21,000 m^2 [CITATION NEEDED].
+The average size of a Walmart store is over 16,000 $m^{2}$ [CITATION NEEDED] and a single square block in Chicago is over 21,000 $m^{2}$ [CITATION NEEDED].
 Retail and warehouse spaces can change drastically throughout the year and the state of roadways can be changing by the hour.
+Much work has been made to address changing environments in robot perception [CITATION NEEDED STVL], but less has been built in open-source to represent maps of dynamic spaces. 
 
 For fully autonomous deployed systems to operate in these large and changing environments, they require tools that can be used to accurately map a given area it operates within, update it over time, and scale to handle some of the largest indoor and outdoor spaces imaginable.
-The field of Simultaneous Localization and Mapping (SLAM) aims to solve this problem using a variety of sensor modalities.
+The field of Simultaneous Localization and Mapping (SLAM) aims to solve this problem using a variety of sensor modalities, including: laser scanners, radars, cameras, and IMUs.
 The most common sensors used for localization and mapping in industrial environments is the laser scanner. [CITATION NEEDED]
 SLAM methods using laser scanners are generally considered the most robust in the SLAM field and can provide accurate positioning in the presence of dynamic obstacles and changing environments. [CITATION NEEDED]
 
@@ -47,25 +46,33 @@ SLAM Toolbox provides multiple modes of mapping depending on need, asynchronous 
 
 This package, `slam_toolbox` is open-source under an LGPLv2.1 at https://github.com/SteveMacenski/slam_toolbox.git and is available in every current ROS distribution.
 It was also selected as the new default SLAM vendor in ROS 2, the second generation of robot operating systems, replacing GMapping.
-SLAM Toolbox was integrated into the new ROS 2 Navigation2 project, providing real-time positioning in dynamic environments for autonomous navigation. [CITATION NEEDED NAV2] 
-It has been shown to map spaces as large as 24,000 m^2, or 250,000 ft^2, in real-time by non-expert technicians.
+SLAM Toolbox was integrated into the new ROS 2 Navigation2 project, providing real-time positioning in dynamic environments for autonomous navigation. [CITATION NEEDED NAV2]
+It has been shown to map spaces as large as 24,000 $m^{2}$, or 250,000 $ft^{2}$, in real-time by non-expert technicians.
 
 # Related Work
 
 [CITATION NEEDED gmapping, karto, cartographer, hector]
+Notes from ROSCon talk: 
+  Gmapping (2007): PF based mapping method, emperically hard to map any space larger than 10-20k sqft
+  Karto: graph based, basis for several company's internal developments, good starting point but missing a bunch and needs speed ups 
+  Cartographer: graph based, with localization mode and serialization with 3D support. However abandoned by google without a maintainer in the last year+. In my experience, does not create useable maps without extremely expertly tuned odometry on robot platforms, making it not super helpful for most users
+  Hector: no loop closure, more high-quality lidar odometry
 
 # Features
 sync/async
 large maps
-utilities toolbox
-localization
-pose graph manipulation
+utilities toolbox: kinematic map merging, pose-graph manipulation, rotate maps, continue sessions
+localization embracing change: elastic pose-graph deformation. Fixed buffer of new scans, add new nodes/constraints, once expires free and remove from graph, reverts to original
 plugin optimizaters
 speed ups
 ceres
 online/offline
-continous session mapping
+continous session mapping, complete data reconstruction and use, no artifacts. load last session raw, able to manipulate then or continue mapping and loop close between old data. 
+the raw data is key for all the modes and tools no other slam provides.
 prototype lifelong + distributed
+>>100k qft
+easy, nonexpert
+
 
 # Configuration
 
@@ -95,7 +102,7 @@ A few known examples where SLAM Toolbox has been used or is being used are:
 
 - Simbe Robotics' Tally
 - ROBOTIS' Turtlebot3
-- Samsung Research American anf Russia's research teams
+- Samsung Research America and Russia's research teams
 - Rover Robotics' Rover
 - Pal Robotics ARI
 - Intel's Open Source Group
@@ -114,9 +121,13 @@ We acknowledge this work was largely developed at Simbe Robotics and later conti
 
 # References
 
-#TODOs
-- submission: https://joss.theoj.org/papers/new
-- figures / details from roscon presentation
-- https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
-- https://www.theoj.org/joss-papers/joss.00456/10.21105.joss.00456.pdf
-- find way to cte STVL
+# TODOs
+
+Ex paper reference: https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
+
+- [Steve] Features section
+- [Ivona] citations
+- [Ivona] spelling / grammar
+- [Ivona] related works section
+- [Steve] figures from roscon presentation
+- [Steve] submit
