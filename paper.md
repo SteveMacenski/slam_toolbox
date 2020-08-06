@@ -1,10 +1,3 @@
-#TODOs
-- submission: https://joss.theoj.org/papers/new
-- figures / details from roscon presentation
-- https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
-- https://www.theoj.org/joss-papers/joss.00456/10.21105.joss.00456.pdf
-- find way to cte STVL
-
 ---
 title: 'SLAM Toolbox: SLAM for the dynamic world'
 tags:
@@ -120,3 +113,10 @@ A few known examples where SLAM Toolbox has been used or is being used are:
 We acknowledge this work was largely developed at Simbe Robotics and later continued open-source support and development at Samsung Research.
 
 # References
+
+#TODOs
+- submission: https://joss.theoj.org/papers/new
+- figures / details from roscon presentation
+- https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
+- https://www.theoj.org/joss-papers/joss.00456/10.21105.joss.00456.pdf
+- find way to cte STVL
