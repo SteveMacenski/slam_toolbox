@@ -126,8 +126,8 @@ We acknowledge this work was largely developed at Simbe Robotics and later conti
 Ex paper reference: https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
 
 - [Steve] Features section
+- [Ivona] related works section
 - [Ivona] citations
 - [Ivona] spelling / grammar
-- [Ivona] related works section
 - [Steve] figures from roscon presentation
 - [Steve] submit
