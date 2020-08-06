@@ -60,11 +60,14 @@ It has been shown to map spaces as large as 24,000 m^2, or 250,000 ft^2, in real
 
 # Related Work
 
+[CITATION NEEDED gmapping, karto, cartographer, hector]
+
 # Features
 sync/async
 large maps
 utilities toolbox
 localization
+pose graph manipulation
 plugin optimizaters
 speed ups
 ceres
@@ -73,9 +76,23 @@ continous session mapping
 prototype lifelong + distributed
 
 # Configuration
-key parameters
-general if you see this issue what to look at
-a workflow
+
+To use `slam_toolbox`, there are are 53 potential parameters to tune.
+Luckily, in the project, the authors provide several profiles for common tasks tuned for a typical mobile robot platform.
+Regardless, additional tuning for an application is necessary.
+Many of the parameters are self explanatory, however in this section we will highlight a few needing additional clarification.
+
+The parameter `ceres_loss_function` is used to determine the loss function, if any, to use when performing graph optimization on the pose-graph. For industrial-grade lidars on professional robots, this can remain the default of a Squared loss function. However, for cheaper hardware or working in environments with mirrors and glass, a Huber loss function may improve map quality. A Huber loss function on an industrial-grade robot may slightly lower the positioning quality.
+
+There are three major parameters that impact the frequency the SLAM problem is updated. They are `minimum_travel_distance`, `minimum_travel_heading`, and `minimum_time_interval`. The minimum travel distance and heading are the values for the distance and turning angle changes required to trigger an update. Once either of these are met, an update will be attempted with the current laser scan. The minimum time interval parameter acts differently. It is the minimum time required between updates to be valid, but will not itself trigger an update. For update to occur, bot hthe minimum time interval must be met as well as one of the heading or distance changes. 
+
+The `scan_buffer_size` is the local window of laser scans `slam_toolbox` will use to scan match against and build chains of scans. The shorter this is, the less local running scans there are. This is also used by the localization mode as the window of local scans to use. The longer this is in pure localization, the more scans from the current session will be kept in the problem to potentially scan match against in addition to the data from the prior session.
+
+The `mode` parameter informs the graph optimizer plugin, Ceres, to the mode of operation it is working in. In `localization` mode, Ceres will cache an additional lookup table at the cost of roughly double the memory to speed up the removal of localization scans. In `mapping` mode, it will not but then may take longer to remove scans when in localization mode. This parameter has no meaning in SLAM, only in the pure localization executable.
+
+For extremely large maps, the stack memory overhead of serializing and deserializing maps for multiple sessions can exceed the C++ standard default. The `stack_size_to_use` parameter allows users to define, in bytes, the size of the stack to use to allow for smooth serialization and deserialization. If users do not use multiple session features, they can ignore this parameter.
+
+To utilize the different tools like map merging and pose-graph manipulation, the `enable_interactive_mode` must be set to true. This parameter enables the storage of additional information required for the interactive mode. However, this comes with non-trivial overhead so it should not be enabled when these features are not being used in a production environment.
 
 # Robots Using `slam_toolbox`
 tally
