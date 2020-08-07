@@ -40,6 +40,7 @@
 #include <thread>
 
 // msgs
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include "slam_toolbox_msgs/AddSubmap.h"
 #include "slam_toolbox_msgs/Clear.h"
 #include "slam_toolbox_msgs/ClearQueue.h"
@@ -144,6 +145,9 @@ protected:
   QFrame* _line;
 
   ros::ServiceClient _clearChanges, _saveChanges, _saveMap, _clearQueue, _interactive, _pause_measurements, _load_submap_for_merging, _merge, _serialize, _load_map;
+  ros::Subscriber _initialposeSub;
+
+  void InitialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& pose);
 
   std::thread* _thread;
 

@@ -29,6 +29,8 @@
 #include <QLabel>
 #include <QFrame>
 
+// ROS
+#include <tf/tf.h>
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(slam_toolbox::SlamToolboxPlugin, rviz::Panel)
 
@@ -56,6 +58,8 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _pause_measurements = nh.serviceClient<slam_toolbox_msgs::Pause>("/slam_toolbox/pause_new_measurements");
   _load_submap_for_merging = nh.serviceClient<slam_toolbox_msgs::AddSubmap>("/map_merging/add_submap");
   _merge = nh.serviceClient<slam_toolbox_msgs::MergeMaps>("/map_merging/merge_submaps");
+
+  _initialposeSub = nh.subscribe("/initialpose", 10, &SlamToolboxPlugin::InitialPoseCallback, this);
 
   _vbox = new QVBoxLayout();
   _hbox1 = new QHBoxLayout();
@@ -228,6 +232,27 @@ SlamToolboxPlugin::~SlamToolboxPlugin()
 }
 
 /*****************************************************************************/
+void SlamToolboxPlugin::InitialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg)
+/*****************************************************************************/
+{
+  _match_type = PROCESS_NEAR_REGION_CMT;
+  ROS_INFO("Processing at current pose estimate selected.");
+  _radio2->setChecked(true);
+  _line5->setText(QString::number(msg->pose.pose.position.x, 'f', 2));
+  _line6->setText(QString::number(msg->pose.pose.position.y, 'f', 2));
+  tf::Quaternion q(
+    msg->pose.pose.orientation.x,
+    msg->pose.pose.orientation.y,
+    msg->pose.pose.orientation.z,
+    msg->pose.pose.orientation.w);
+  tf::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  _line7->setText(QString::number(yaw, 'f', 2));
+  DeserializeMap();
+}
+
+/*****************************************************************************/
 void SlamToolboxPlugin::SerializeMap()
 /*****************************************************************************/
 {
@@ -253,17 +278,33 @@ void SlamToolboxPlugin::DeserializeMap()
   }
   else if (_match_type == PROCESS_NEAR_REGION_CMT)
   {
-    msg.request.match_type = procType::START_AT_GIVEN_POSE;
-    msg.request.initial_pose.x = std::stod(_line5->text().toStdString());
-    msg.request.initial_pose.y = std::stod(_line6->text().toStdString());
-    msg.request.initial_pose.theta = std::stod(_line7->text().toStdString());
+    try
+    {
+      msg.request.match_type = procType::START_AT_GIVEN_POSE;
+      msg.request.initial_pose.x = std::stod(_line5->text().toStdString());
+      msg.request.initial_pose.y = std::stod(_line6->text().toStdString());
+      msg.request.initial_pose.theta = std::stod(_line7->text().toStdString());
+    }
+    catch (const std::invalid_argument& ia)
+    {
+      ROS_WARN("Initial pose invalid.");
+      return;
+    }
   }
   else if (_match_type == LOCALIZE_CMT)
   {
-    msg.request.match_type = procType::LOCALIZE_AT_POSE;
-    msg.request.initial_pose.x = std::stod(_line5->text().toStdString());
-    msg.request.initial_pose.y = std::stod(_line6->text().toStdString());
-    msg.request.initial_pose.theta = std::stod(_line7->text().toStdString());
+    try
+    {
+      msg.request.match_type = procType::LOCALIZE_AT_POSE;
+      msg.request.initial_pose.x = std::stod(_line5->text().toStdString());
+      msg.request.initial_pose.y = std::stod(_line6->text().toStdString());
+      msg.request.initial_pose.theta = std::stod(_line7->text().toStdString());
+    }
+    catch (const std::invalid_argument& ia)
+    {
+      ROS_WARN("Initial pose invalid.");
+      return;
+    }
   }
   else
   {
