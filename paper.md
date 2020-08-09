@@ -26,13 +26,13 @@ bibliography: paper.bib
 
 Developments in the field of mobile robotics and autonomous driving have resulted in robots and vehicles in retail stores, hospitals, warehouses, on the roads, and on sidewalks.
 These deployed areas are both dynamic and frequently massive in scale.
-The average size of a Walmart store is over 16,000 $m^{2}$ [CITATION NEEDED] and a single square block in Chicago is over 21,000 $m^{2}$ [CITATION NEEDED].
+The average size of a Walmart store is over 16,000 $m^{2}$ [@Walmart] and a single square block in Chicago is over 21,000 $m^{2}$ [CITATION NEEDED].
 Retail and warehouse spaces can change drastically throughout the year and the state of roadways can be changing by the hour.
-Much work has been made to address changing environments in robot perception [CITATION NEEDED STVL], but less has been built in open-source to represent maps of dynamic spaces. 
+Much work has been made to address changing environments in robot perception [@stvl], but less has been built in open-source to represent maps of dynamic spaces.
 
-For fully autonomous deployed systems to operate in these large and changing environments, they require tools that can be used to accurately map a given area it operates within, update it over time, and scale to handle some of the largest indoor and outdoor spaces imaginable.
-The field of Simultaneous Localization and Mapping (SLAM) aims to solve this problem using a variety of sensor modalities, including: laser scanners, radars, cameras, and IMUs.
-The most common sensors used for localization and mapping in industrial environments is the laser scanner. [CITATION NEEDED]
+For fully autonomous deployed systems to operate in these large and changing environments, they require tools that can be used to accurately map an area specified for their operation, update it over time, and scale to handle mapping of some of the largest indoor and outdoor spaces imaginable.
+The field of Simultaneous Localization and Mapping (SLAM) aims to solve this problem using a variety of sensor modalities, including: laser scanners, radars, cameras, encoders, gps and IMUs.
+The most commonly used perception sensor used for localization and mapping in industrial environments is the laser scanner. [@sensors]
 SLAM methods using laser scanners are generally considered the most robust in the SLAM field and can provide accurate positioning in the presence of dynamic obstacles and changing environments. [CITATION NEEDED]
 
 Prior existing open-source laser scanner SLAM algorithms available to users in the popular Robot Operating System (ROS) include GMapping, Karto, Cartographer, and Hector.
@@ -46,17 +46,17 @@ SLAM Toolbox provides multiple modes of mapping depending on need, asynchronous 
 
 This package, `slam_toolbox` is open-source under an LGPLv2.1 at https://github.com/SteveMacenski/slam_toolbox.git and is available in every current ROS distribution.
 It was also selected as the new default SLAM vendor in ROS 2, the second generation of robot operating systems, replacing GMapping.
-SLAM Toolbox was integrated into the new ROS 2 Navigation2 project, providing real-time positioning in dynamic environments for autonomous navigation. [CITATION NEEDED NAV2]
+SLAM Toolbox was integrated into the new ROS 2 Navigation2 project, providing real-time positioning in dynamic environments for autonomous navigation. [@macenski2020marathon2]
 It has been shown to map spaces as large as 24,000 $m^{2}$, or 250,000 $ft^{2}$, in real-time by non-expert technicians.
 
 # Related Work
-
-[CITATION NEEDED gmapping, karto, cartographer, hector]
-Notes from ROSCon talk: 
-  Gmapping (2007): PF based mapping method, emperically hard to map any space larger than 10-20k sqft
-  Karto: graph based, basis for several company's internal developments, good starting point but missing a bunch and needs speed ups 
-  Cartographer: graph based, with localization mode and serialization with 3D support. However abandoned by google without a maintainer in the last year+. In my experience, does not create useable maps without extremely expertly tuned odometry on robot platforms, making it not super helpful for most users
-  Hector: no loop closure, more high-quality lidar odometry
+SLAM algorithms can be classified into two groups. The earlier algorithms that use the Bayes-based filter approach[@thrun2005probabilistic], and newer GRAPH-based methods[@graphslam, @loopclosure]. Significant lidar-based implementation of 2D SLAM algorithms, available as ROS packages, are GMapping [gmapping](http://www.ros.org/wiki/gmapping) and HectorSLAM [hector](https://wiki.ros.org/hector_slam) under the filter based category, while GRAPH-based implementations are provided by Cartographer [@cartographer] and KartoSLAM [karto](http://www.ros.org/wiki/karto). <br>
+GMapping (2007) is one of the most commonly used SLAM libraries. It uses particle filter approach to SLAM for the purpose of building grid maps from 2D lidar data.<br>
+HectorSLAM (2011) relies on lidar scan matching and 3D navigation filter based on EKF state estimation. This method focuses on real-time robot pose estimation and generates 2D map with high update rate. As opose to other mentioned methods, Hector does not use odometry data, which can cause inaccurate pose and map updates when lidar scans arrive at lower rate, mapping large spaces or the area lacks features.
+KartoSLAM and Cartographer are both graph-based algorithms that store a graph of robot poses and features. Graph based algorithms have to maintin only the pose graph, which is the reason they are usually more efficient in handling resources, especially while building maps of large scale.<br>
+KartoSLAM (2010) uses Sparse Pose Adjustment [@spa] for handling both scan matching and loop-closure.<br>
+Cartographer (2016) consists of front-end, which in charge of scan matching and building trajectory and submaps, and back-end that does the loop closure procedure using SPA. Solver used for scan-matching in Cartographer is Ceres Solver[@ceres-solver]. Cartographer provides pure localization mode, when user has a satisfactory map for usage. It also provides data serialization for storing processed data.
+Mapping with Cartographer requires tuning large number of parameters for different types of terrains, which makes KartoSLAM more reliable when used in different environments. Taking out-of-the-box Cartographer parameters can lead to unsuccesfull mapping, therefore it can make the library challenging to use. On the other hand, Cartographer has bigger flexibility in configuring the mapping and can produce slightly better quality maps.
 
 # Features
 sync/async
