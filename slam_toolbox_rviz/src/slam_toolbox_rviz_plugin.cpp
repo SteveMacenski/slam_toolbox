@@ -236,7 +236,7 @@ void SlamToolboxPlugin::InitialPoseCallback(const geometry_msgs::PoseWithCovaria
 /*****************************************************************************/
 {
   _match_type = PROCESS_NEAR_REGION_CMT;
-  ROS_INFO("Processing at current pose estimate selected.");
+  ROS_INFO("Setting initial pose from rviz; you can now deserialize a map given that pose.");
   _radio2->setChecked(true);
   _line5->setText(QString::number(msg->pose.pose.position.x, 'f', 2));
   _line6->setText(QString::number(msg->pose.pose.position.y, 'f', 2));
@@ -249,7 +249,6 @@ void SlamToolboxPlugin::InitialPoseCallback(const geometry_msgs::PoseWithCovaria
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
   _line7->setText(QString::number(yaw, 'f', 2));
-  DeserializeMap();
 }
 
 /*****************************************************************************/
