@@ -26,7 +26,7 @@ bibliography: paper.bib
 
 Developments in the field of mobile robotics and autonomous driving have resulted in the use of robots and vehicles in retail stores, hospitals, warehouses, on the roads, and on sidewalks.
 These deployed areas are both dynamic and frequently massive in scale.
-The average size of a Walmart store is over 16,000 $m^{2}$ [@Walmart] and a single square block in Chicago is over 21,000 $m^{2}$ [CITATION NEEDED].
+The average size of a Walmart store is over 16,000 $m^{2}$ [@Walmart] and a single square block in Chicago is over 21,000 $m^{2}$ [@chicago].
 Retail and warehouse spaces can change drastically throughout the year and the state of roadways can be changing by the hour.
 Much work has been made to address changing environments in robot perception [@stvl], but less has been built in open-source to represent maps of dynamic spaces.
 
@@ -41,7 +41,7 @@ Even fewer can do so in real-time using the mobile processor typically found in 
 The only package that could accomplish the above was Cartographer, however it was abandoned by Google and it is no longer maintained.
 
 We propose a new fully open-source ROS package, SLAM Toolbox, to solve this problem.
-SLAM Toolbox builds on the legacy of Open Karto, the open-source library from SRI International, providing not only accurate mapping algorithms, but a variety of other tools and improvements. [CITATION NEEDED]
+SLAM Toolbox builds on the legacy of Open Karto, the open-source library from SRI International, providing not only accurate mapping algorithms, but a variety of other tools and improvements [@karto].
 SLAM Toolbox provides multiple modes of mapping depending on need, asynchronous and asynchronous, utilities such as kinematic map merging, a localization mode, multi-session mapping, new and improved graph optimization, substantially reduced compute time, and prototype lifelong and distributed mapping applications.
 
 This package, `slam_toolbox` is open-source under an LGPLv2.1 at https://github.com/SteveMacenski/slam_toolbox.git and is available in every current ROS distribution.
@@ -127,8 +127,6 @@ We acknowledge this work was largely developed at Simbe Robotics and later conti
 Ex paper reference: https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
 
 - [Steve] Features section
-- [Ivona] related works section
-- [Ivona] citations
-- [Ivona] spelling / grammar
 - [Steve] figures from roscon presentation
+- [Steve] Edit
 - [Steve] submit
