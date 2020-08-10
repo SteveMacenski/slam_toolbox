@@ -48,33 +48,69 @@ This package, `slam_toolbox` is open-source under an LGPLv2.1 at https://github.
 It was also selected as the new default SLAM vendor in ROS 2, the second generation of robot operating systems, replacing GMapping.
 SLAM Toolbox was integrated into the new ROS 2 Navigation2 project, providing real-time positioning in dynamic environments for autonomous navigation [@macenski2020marathon2].
 It has been shown to map spaces as large as 24,000 $m^{2}$, or 250,000 $ft^{2}$, in real-time by non-expert technicians.
+An example map can be seen in Fig. \autoref{fig:store_map}.
+
+![Map created using SLAM Toolbox [@roscon]. \label{fig:store_map}](store_map.png)
 
 # Related Work
-SLAM algorithms can be classified into two groups: the earlier algorithms that use the Bayes-based filter approach [@thrun2005probabilistic], and newer GRAPH-based methods [@graphslam]. Significant lidar-based implementation of 2D SLAM algorithms, available as ROS packages, are GMapping [@gmapping] and HectorSLAM [@hector] under the filter based category, while GRAPH-based implementations are provided by Cartographer [@cartographer] and KartoSLAM [@karto]. <br>
-GMapping is one of the most commonly used SLAM libraries. It uses particle filter approach to SLAM for the purpose of building grid maps from 2D lidar data.<br>
+SLAM algorithms can be classified into two groups: the earlier algorithms that use the Bayes-based filter approach [@thrun2005probabilistic], and newer GRAPH-based methods [@graphslam].
+Significant lidar-based implementation of 2D SLAM algorithms, available as ROS packages, are GMapping [@gmapping] and HectorSLAM [@hector] under the filter based category, while GRAPH-based implementations are provided by Cartographer [@cartographer] and KartoSLAM [@karto].
+GMapping is one of the most commonly used SLAM libraries.
+It uses particle filter approach to SLAM for the purpose of building grid maps from 2D lidar data.
 
-HectorSLAM relies on lidar scan matching and 3D navigation filter based on EKF state estimation. This method focuses on real-time robot pose estimation and generates 2D map with high update rate. Unlike other mentioned methods, Hector does not use odometry data, which can cause inaccurate pose and map updates when lidar scans arrive at a lower rate, or when mapping large or featureless spaces.
+HectorSLAM relies on lidar scan matching and 3D navigation filter based on EKF state estimation.
+This method focuses on real-time robot pose estimation and generates 2D map with high update rate.
+Unlike other mentioned methods, Hector does not use odometry data, which can cause inaccurate pose and map updates when lidar scans arrive at a lower rate, or when mapping large or featureless spaces.
 
-KartoSLAM and Cartographer are both graph-based algorithms that store a graph of robot poses and features. Graph based algorithms have to maintain only the pose graph, which usually makes it more efficient in handling resources, especially while building maps of a large scale.<br>
-KartoSLAM uses Sparse Pose Adjustment for handling both scan matching and loop-closure.<br>
-Cartographer consists of front-end, which is in charge of scan matching and building trajectory and submaps, and back-end that does the loop closure procedure using SPA. Solver used for scan-matching in Cartographer is Ceres Solver[@ceres-solver]. Cartographer provides pure localization mode, when user has a satisfactory map for usage. It also provides data serialization for storing processed data.
-Mapping with Cartographer requires tuning a large number of parameters for different types of terrains, which makes KartoSLAM more reliable when used in different environments. Taking out-of-the-box Cartographer parameters can lead to unsuccesful mapping, therefore it can make the library challenging to use. On the other hand, Cartographer has greater flexibility in configuring the mapping and can produce slightly better quality maps.
+KartoSLAM and Cartographer are both graph-based algorithms that store a graph of robot poses and features.
+Graph based algorithms have to maintain only the pose graph, which usually makes it more efficient in handling resources, especially while building maps of a large scale.
+KartoSLAM uses Sparse Pose Adjustment for handling both scan matching and loop-closure.
+Cartographer consists of front-end, which is in charge of scan matching and building trajectory and submaps, and back-end that does the loop closure procedure using SPA.
+Solver used for scan-matching in Cartographer is Ceres Solver [@ceres-solver].
+Cartographer provides pure localization mode, when user has a satisfactory map for usage.
+It also provides data serialization for storing processed data.
+Mapping with Cartographer requires tuning a large number of parameters for different types of terrains, which makes KartoSLAM more reliable when used in different environments.
+Taking out-of-the-box Cartographer parameters can lead to unsuccesful mapping, therefore it can make the library challenging to use.
+On the other hand, Cartographer has greater flexibility in configuring the mapping and can produce slightly better quality maps.
 
 # Features
-sync/async
-large maps
-utilities toolbox: kinematic map merging, pose-graph manipulation, rotate maps, continue sessions
-localization embracing change: elastic pose-graph deformation. Fixed buffer of new scans, add new nodes/constraints, once expires free and remove from graph, reverts to original
-plugin optimizaters
-speed ups
-ceres
-online/offline
-continous session mapping, complete data reconstruction and use, no artifacts. load last session raw, able to manipulate then or continue mapping and loop close between old data. 
-the raw data is key for all the modes and tools no other slam provides.
-prototype lifelong + distributed
->>100k qft
-easy, nonexpert
 
+SLAM Toolbox is able to map spaces effectively using mobile Intel CPUs commonly found on robots well in excess of 100,000 $ft^{2}$.
+It can be done easily using untrained technicans typically hired to deploy robot solutions or remotely using monitoring systems. 
+Some applications have been created to automatically map a space using SLAM Toolbox as well paired with exploration planners.
+
+It can also serialize a current mapping session and deserialized at a later time to continue refining or expanding an existing map.
+This serialization saves the complete raw data and pose-graph rather than submaps, as in Cartographer, allowing a variety of novel tools to be developed and more accurate multi-session mapping [@cartographer].
+These utilities include manual pose-graph manipulation, whereas a user can manually manipulate the pose-graph nodes and data to rotate a map or assist in a challenging loop closure.
+It also includes kinematic map merging, the process of merging multiple serialized maps into a composite map.
+A 3D visualizer plugin was also created to assist in utilization of these tools and the core SLAM library capabilities.
+Many additional tools and utilities could be developed using this representation as well.
+
+It provides 3 major operation modes and executables: synchronous mapping, asynchronous mapping, and pure localization.
+Synchronous mapping provides the ability to map and localize in a space keeping a buffer of measurements to add to the SLAM problem.
+This can be adventitious when the quality of the map is of particular importance or when doing offline processing.
+By contrast, the asynchronous mode will only process new measurements when the last measurement is completed and the new update criteria are met.
+As a result, this will never lag behind real-time when running complex loop closures.
+However, the map may not include all valid measurements if processing the last takes too long.
+This mode is adventitious when the quality of real-time localization is of particular importance.
+Both of these modes can be used for multi-session SLAM, the process of reloading a prior session and continuing to refine the pose-graph.
+
+The pure localization mode cannot be used to persist changes in the environment.
+Instead, it uses a rolling buffer of measurements in the current session and matches them against the original session(s) measurements and pose-graph.
+The current session's measurements will be added to the pose-graph with new constraints and nodes in the graph.
+This allows changes in the environment to be embraced to increase localization quality based on new features or moved objects.
+Over time, the measurements in the rolling buffer will "expire" and be removed from the pose-graph and localization problem, reverting the pose-graph to its original state for that region.
+The authors refer to this process as elastic pose-graph deformation.
+An interesting side effect is that the pure-localization mode can be used for effective lidar odometry when paired with no prior mapping session data.
+It will simply match against its local buffer and keep only a recent view of the environment, allowing lidar odometry to scale to infinite sized spaces.
+
+Finally, many updates were made to the OpenKarto SLAM libary.
+The measurement matching methods were restructured for a 10x speed-up enabling multi-threaded processing.
+The proided Sparse Bundle Adjustment optimization interface was replaced with Google Ceres, providing faster and more flexible optimization settings.
+Additionally, the optimizer interface was turned into a run-time dynamically loaded plugin interface to allow future developers to use the latest and greatest in optimization technologies without modifying the original code.
+Serialization and deserializion support was enabled to allow for saving and reloading mapping sessions.
+Finally, new processing modes and K-D tree search were developed to process measurements to enable localization and multi-session mapping.
+Various smaller improvements and optimizations were also made but excluded for brevity.
 
 # Configuration
 
@@ -121,12 +157,3 @@ A few known examples where SLAM Toolbox has been used or is being used are:
 We acknowledge this work was largely developed at Simbe Robotics and later continued open-source support and development at Samsung Research.
 
 # References
-
-# TODOs
-
-Ex paper reference: https://joss.readthedocs.io/en/latest/submitting.html#example-paper-and-bibliography
-
-- [Steve] Features section
-- [Steve] figures from roscon presentation
-- [Steve] Edit
-- [Steve] submit
