@@ -18,6 +18,8 @@
 
 // Header
 #include "rviz_plugin/slam_toolbox_rviz_plugin.h"
+// ROS
+#include <tf2_ros/transform_listener.h>
 // QT
 #include <QPushButton>
 #include <QCheckBox>
@@ -48,6 +50,9 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget * parent)
     "/slam_toolbox/paused_new_measurements", paused_measure);
   interactive = ros_node_->declare_parameter(
     "/slam_toolbox/interactive_mode", interactive);
+    
+  _initialposeSub = ros_node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "/initialpose", 10, std::bind(&SlamToolboxPlugin::InitialPoseCallback, this, _1));
 
   _serialize =
     ros_node_->create_client<slam_toolbox::srv::SerializePoseGraph>(
@@ -244,6 +249,23 @@ SlamToolboxPlugin::~SlamToolboxPlugin()
   _thread->join();
   _thread.reset();
 }
+  
+/*****************************************************************************/
+void SlamToolboxPlugin::InitialPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr& msg)
+/*****************************************************************************/
+{
+  _match_type = PROCESS_NEAR_REGION_CMT;
+  ROS_INFO("Setting initial pose from rviz; you can now deserialize a map given that pose.");
+  _radio2->setChecked(true);
+  _line5->setText(QString::number(msg->pose.pose.position.x, 'f', 2));
+  _line6->setText(QString::number(msg->pose.pose.position.y, 'f', 2));
+  tf2::Quaternion quat_tf;
+  tf2::convert(msg->pose.pose.orientation , quat_tf);
+  tf2::Matrix3x3 m(quat_tf);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  _line7->setText(QString::number(yaw, 'f', 2));
+}
 
 /*****************************************************************************/
 void SlamToolboxPlugin::SerializeMap()
@@ -276,15 +298,31 @@ void SlamToolboxPlugin::DeserializeMap()
   if (_match_type == PROCESS_FIRST_NODE_CMT) {
     request->match_type = procType::START_AT_FIRST_NODE;
   } else if (_match_type == PROCESS_NEAR_REGION_CMT) {
-    request->match_type = procType::START_AT_GIVEN_POSE;
-    request->initial_pose.x = std::stod(_line5->text().toStdString());
-    request->initial_pose.y = std::stod(_line6->text().toStdString());
-    request->initial_pose.theta = std::stod(_line7->text().toStdString());
+    try
+    {
+      request->match_type = procType::START_AT_GIVEN_POSE;
+      request->initial_pose.x = std::stod(_line5->text().toStdString());
+      request->initial_pose.y = std::stod(_line6->text().toStdString());
+      request->initial_pose.theta = std::stod(_line7->text().toStdString());
+    }
+    catch (const std::invalid_argument& ia)
+    {
+      ROS_WARN("Initial pose invalid.");
+      return;
+    }
   } else if (_match_type == LOCALIZE_CMT) {
-    request->match_type = procType::LOCALIZE_AT_POSE;
-    request->initial_pose.x = std::stod(_line5->text().toStdString());
-    request->initial_pose.y = std::stod(_line6->text().toStdString());
-    request->initial_pose.theta = std::stod(_line7->text().toStdString());
+    try
+    {
+      request->match_type = procType::LOCALIZE_AT_POSE;
+      request->initial_pose.x = std::stod(_line5->text().toStdString());
+      request->initial_pose.y = std::stod(_line6->text().toStdString());
+      request->initial_pose.theta = std::stod(_line7->text().toStdString());
+    }
+    catch (const std::invalid_argument& ia)
+    {
+      ROS_WARN("Initial pose invalid.");
+      return;
+    }
   } else {
     RCLCPP_WARN(ros_node_->get_logger(),
       "No match type selected, cannot send request.");
