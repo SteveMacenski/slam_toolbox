@@ -48,9 +48,9 @@ This package, `slam_toolbox` is open-source under an LGPLv2.1 at https://github.
 It was also selected as the new default SLAM vendor in ROS 2, the second generation of robot operating systems, replacing GMapping.
 SLAM Toolbox was integrated into the new ROS 2 Navigation2 project, providing real-time positioning in dynamic environments for autonomous navigation [@macenski2020marathon2].
 It has been shown to map spaces as large as 24,000 $m^{2}$, or 250,000 $ft^{2}$, in real-time by non-expert technicians.
-An example map can be seen in Fig. \autoref{fig:store_map}.
+An example map can be seen in \autoref{fig:store_map}.
 
-![Map created using SLAM Toolbox [@roscon]. \label{fig:store_map}](store_map.png)
+![Map created using SLAM Toolbox [@roscon]. \label{fig:store_map} =200x200](store_map.png)
 
 # Related Work
 SLAM algorithms can be classified into two groups: the earlier algorithms that use the Bayes-based filter approach [@thrun2005probabilistic], and newer GRAPH-based methods [@graphslam].
