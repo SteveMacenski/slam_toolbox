@@ -50,7 +50,7 @@ SLAM Toolbox was integrated into the new ROS 2 Navigation2 project, providing re
 It has been shown to map spaces as large as 24,000 $m^{2}$, or 250,000 $ft^{2}$, in real-time by non-expert technicians.
 An example map can be seen in \autoref{fig:store_map}.
 
-![Map created using SLAM Toolbox [@roscon]. \label{fig:store_map} =200x200](store_map.png)
+![Map created using SLAM Toolbox [@roscon]. \label{fig:store_map}](store_map.png)
 
 # Related Work
 SLAM algorithms can be classified into two groups: the earlier algorithms that use the Bayes-based filter approach [@thrun2005probabilistic], and newer GRAPH-based methods [@graphslam].
