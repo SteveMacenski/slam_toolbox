@@ -32,8 +32,8 @@ Much work has been made to address changing environments in robot perception [@s
 
 For fully autonomous deployed systems to operate in these large and changing environments, they require tools that can be used to accurately map an area specified for their operation, update it over time, and scale to handle mapping of some of the largest indoor and outdoor spaces imaginable.
 The field of Simultaneous Localization and Mapping (SLAM) aims to solve this problem using a variety of sensor modalities, including: laser scanners, radars, cameras, encoders, gps and IMUs.
-The most commonly used perception sensor used for localization and mapping in industrial environments is the laser scanner. [@sensors]
-SLAM methods using laser scanners are generally considered the most robust in the SLAM field and can provide accurate positioning in the presence of dynamic obstacles and changing environments. [@lidarslam]
+The most commonly used perception sensor used for localization and mapping in industrial environments is the laser scanner [@sensors].
+SLAM methods using laser scanners are generally considered the most robust in the SLAM field and can provide accurate positioning in the presence of dynamic obstacles and changing environments [@lidarslam].
 
 Previously existing open-source laser scanner SLAM algorithms available to users in the popular Robot Operating System (ROS) include GMapping, Karto, Cartographer, and Hector.
 However, few of these can build accurate maps of large spaces on the scale of the average Walmart store.
@@ -46,18 +46,18 @@ SLAM Toolbox provides multiple modes of mapping depending on need, asynchronous 
 
 This package, `slam_toolbox` is open-source under an LGPLv2.1 at https://github.com/SteveMacenski/slam_toolbox.git and is available in every current ROS distribution.
 It was also selected as the new default SLAM vendor in ROS 2, the second generation of robot operating systems, replacing GMapping.
-SLAM Toolbox was integrated into the new ROS 2 Navigation2 project, providing real-time positioning in dynamic environments for autonomous navigation. [@macenski2020marathon2]
+SLAM Toolbox was integrated into the new ROS 2 Navigation2 project, providing real-time positioning in dynamic environments for autonomous navigation [@macenski2020marathon2].
 It has been shown to map spaces as large as 24,000 $m^{2}$, or 250,000 $ft^{2}$, in real-time by non-expert technicians.
 
 # Related Work
-SLAM algorithms can be classified into two groups: the earlier algorithms that use the Bayes-based filter approach[@thrun2005probabilistic], and newer GRAPH-based methods[@graphslam, @loopclosure]. Significant lidar-based implementation of 2D SLAM algorithms, available as ROS packages, are GMapping [@gmapping] and HectorSLAM [@hector] under the filter based category, while GRAPH-based implementations are provided by Cartographer [@cartographer] and KartoSLAM [@karto]. <br>
-GMapping (2007) is one of the most commonly used SLAM libraries. It uses particle filter approach to SLAM for the purpose of building grid maps from 2D lidar data.<br>
+SLAM algorithms can be classified into two groups: the earlier algorithms that use the Bayes-based filter approach [@thrun2005probabilistic], and newer GRAPH-based methods [@graphslam]. Significant lidar-based implementation of 2D SLAM algorithms, available as ROS packages, are GMapping [@gmapping] and HectorSLAM [@hector] under the filter based category, while GRAPH-based implementations are provided by Cartographer [@cartographer] and KartoSLAM [@karto]. <br>
+GMapping is one of the most commonly used SLAM libraries. It uses particle filter approach to SLAM for the purpose of building grid maps from 2D lidar data.<br>
 
-HectorSLAM (2011) relies on lidar scan matching and 3D navigation filter based on EKF state estimation. This method focuses on real-time robot pose estimation and generates 2D map with high update rate. Unlike other mentioned methods, Hector does not use odometry data, which can cause inaccurate pose and map updates when lidar scans arrive at a lower rate, or when mapping large or featureless spaces.
+HectorSLAM relies on lidar scan matching and 3D navigation filter based on EKF state estimation. This method focuses on real-time robot pose estimation and generates 2D map with high update rate. Unlike other mentioned methods, Hector does not use odometry data, which can cause inaccurate pose and map updates when lidar scans arrive at a lower rate, or when mapping large or featureless spaces.
 
 KartoSLAM and Cartographer are both graph-based algorithms that store a graph of robot poses and features. Graph based algorithms have to maintain only the pose graph, which usually makes it more efficient in handling resources, especially while building maps of a large scale.<br>
-KartoSLAM (2010) uses Sparse Pose Adjustment for handling both scan matching and loop-closure.<br>
-Cartographer (2016) consists of front-end, which is in charge of scan matching and building trajectory and submaps, and back-end that does the loop closure procedure using SPA. Solver used for scan-matching in Cartographer is Ceres Solver[@ceres-solver]. Cartographer provides pure localization mode, when user has a satisfactory map for usage. It also provides data serialization for storing processed data.
+KartoSLAM uses Sparse Pose Adjustment for handling both scan matching and loop-closure.<br>
+Cartographer consists of front-end, which is in charge of scan matching and building trajectory and submaps, and back-end that does the loop closure procedure using SPA. Solver used for scan-matching in Cartographer is Ceres Solver[@ceres-solver]. Cartographer provides pure localization mode, when user has a satisfactory map for usage. It also provides data serialization for storing processed data.
 Mapping with Cartographer requires tuning a large number of parameters for different types of terrains, which makes KartoSLAM more reliable when used in different environments. Taking out-of-the-box Cartographer parameters can lead to unsuccesful mapping, therefore it can make the library challenging to use. On the other hand, Cartographer has greater flexibility in configuring the mapping and can produce slightly better quality maps.
 
 # Features
