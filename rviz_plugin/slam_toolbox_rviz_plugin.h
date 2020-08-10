@@ -40,6 +40,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rviz_common/panel.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
+#include "geometry_msgs/msg/PoseWithCovarianceStamped.hpp"
 
 
 class QLineEdit;
@@ -153,6 +154,10 @@ protected:
   std::unique_ptr<std::thread> _thread;
 
   ContinueMappingType _match_type;
+  
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr _initialposeSub;
+  
+  void InitialPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr& pose);
 };
 
 }  // namespace slam_toolbox
