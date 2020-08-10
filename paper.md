@@ -41,8 +41,8 @@ Even fewer can do so in real-time using the mobile processor typically found in 
 The only package that could accomplish the above was Cartographer, however it was abandoned by Google and it is no longer maintained.
 
 We propose a new fully open-source ROS package, SLAM Toolbox, to solve this problem.
-SLAM Toolbox builds on the legacy of Open Karto, the open-source library from SRI International, providing not only accurate mapping algorithms, but a variety of other tools and improvements [@karto].
-SLAM Toolbox provides multiple modes of mapping depending on need, asynchronous and asynchronous, utilities such as kinematic map merging, a localization mode, multi-session mapping, new and improved graph optimization, substantially reduced compute time, and prototype lifelong and distributed mapping applications.
+SLAM Toolbox builds on the legacy of Open Karto [@karto], the open-source library from SRI International, providing not only accurate mapping algorithms, but a variety of other tools and improvements.
+SLAM Toolbox provides multiple modes of mapping depending on need, asynchronous and asynchronous, utilities such as kinematic map merging, a localization mode, multi-session mapping, improved graph optimization, substantially reduced compute time, and prototype lifelong and distributed mapping applications.
 
 This package, `slam_toolbox` is open-source under an LGPLv2.1 at https://github.com/SteveMacenski/slam_toolbox.git and is available in every current ROS distribution.
 It was also selected as the new default SLAM vendor in ROS 2, the second generation of robot operating systems, replacing GMapping.
@@ -53,25 +53,30 @@ An example map can be seen in \autoref{fig:store_map}.
 ![Retail store map created using SLAM Toolbox [@roscon]. \label{fig:store_map}](store_map.png)
 
 # Related Work
-SLAM algorithms can be classified into two groups: the earlier algorithms that use the Bayes-based filter approach [@thrun2005probabilistic], and newer GRAPH-based methods [@graphslam].
-Significant lidar-based implementation of 2D SLAM algorithms, available as ROS packages, are GMapping [@gmapping] and HectorSLAM [@hector] under the filter based category, while GRAPH-based implementations are provided by Cartographer [@cartographer] and KartoSLAM [@karto].
-GMapping is one of the most commonly used SLAM libraries.
+SLAM algorithms can be classified into two groups: the earlier algorithms that use the Bayes-based filter approaches [@thrun2005probabilistic], and newer graph-based methods [@graphslam].
+Significant filter-based implementations available as ROS packages are GMapping [@gmapping] and HectorSLAM [@hector].
+Cartographer [@cartographer] and KartoSLAM [@karto] are the major graph-based implementations available.
+
+GMapping is one of the most commonly used SLAM libraries, presented in 2007.
 It uses particle filter approach to SLAM for the purpose of building grid maps from 2D lidar data.
+However, GMapping is not well suited for large spaces and fails to accurately close loops at an industrial scale.
+Additionally, filter-based approaches cannot be easily reinitialized with multiple sessions.
 
 HectorSLAM relies on lidar scan matching and 3D navigation filter based on EKF state estimation.
 This method focuses on real-time robot pose estimation and generates 2D map with high update rate.
 Unlike other mentioned methods, Hector does not use odometry data, which can cause inaccurate pose and map updates when lidar scans arrive at a lower rate, or when mapping large or featureless spaces.
+HectorSLAM however does not provide loop closure capabilities, making it unsuitable for reliable mapping of large spaces or when using laser scanners with low update rates.
 
 KartoSLAM and Cartographer are both graph-based algorithms that store a graph of robot poses and features.
-Graph based algorithms have to maintain only the pose graph, which usually makes it more efficient in handling resources, especially while building maps of a large scale.
-KartoSLAM uses Sparse Pose Adjustment for handling both scan matching and loop-closure.
-Cartographer consists of front-end, which is in charge of scan matching and building trajectory and submaps, and back-end that does the loop closure procedure using SPA.
-Solver used for scan-matching in Cartographer is Ceres Solver [@ceres-solver].
+Graph-based algorithms have to maintain only the pose-graph, which usually makes it efficient in handling resources, especially while building maps of a large scale.
+KartoSLAM uses Sparse Bundle Adjustment for loop-closure graph optimization.
+Cartographer consists of front-end, which is in charge of scan matching and building trajectory and submaps, and back-end that does the loop closure procedure.
+The graph solver used in Cartographer is Google Ceres [@ceres-solver].
 Cartographer provides pure localization mode, when user has a satisfactory map for usage.
 It also provides data serialization for storing processed data.
-Mapping with Cartographer requires tuning a large number of parameters for different types of terrains, which makes KartoSLAM more reliable when used in different environments.
-Taking out-of-the-box Cartographer parameters can lead to unsuccesful mapping, therefore it can make the library challenging to use.
-On the other hand, Cartographer has greater flexibility in configuring the mapping and can produce slightly better quality maps.
+However, Cartographer has stopped maintenance and support from Google and has been largely abandoned.
+Further, it fails to build suitable maps for annotation and localization with other localization software packages on robotic platforms without exceptional odometry.
+The software's unusual complexity makes it challenging to modify or resolve seemingly simple issues, making it not suitable for many applications.
 
 # Features
 
@@ -80,7 +85,7 @@ It can be done easily using untrained technicans typically hired to deploy robot
 Some applications have been created to automatically map a space using SLAM Toolbox as well paired with exploration planners.
 
 It can also serialize a current mapping session and deserialized at a later time to continue refining or expanding an existing map.
-This serialization saves the complete raw data and pose-graph rather than submaps, as in Cartographer, allowing a variety of novel tools to be developed and more accurate multi-session mapping [@cartographer].
+This serialization saves the complete raw data and pose-graph rather than submaps, as in Cartographer, allowing a variety of novel tools to be developed and more accurate multi-session mapping.
 These utilities include manual pose-graph manipulation, whereas a user can manually manipulate the pose-graph nodes and data to rotate a map or assist in a challenging loop closure, shown in \autoref{fig:utils}.
 It also includes kinematic map merging, the process of merging multiple serialized maps into a composite map.
 A 3D visualizer plugin was also created to assist in utilization of these tools and the core SLAM library capabilities.
