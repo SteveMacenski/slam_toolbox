@@ -26,7 +26,7 @@ bibliography: paper.bib
 
 Developments in the field of mobile robotics and autonomous driving have resulted in the use of robots and vehicles in retail stores, hospitals, warehouses, on the roads, and on sidewalks.
 These deployed areas are both dynamic and frequently massive in scale.
-The average size of a Walmart store is over 16,000 $m^{2}$ [@Walmart] and a single square block in Chicago is over 21,000 $m^{2}$ [@chicago].
+The average size of a Walmart store is over 16,000 $m^{2}$ [@walmart] and a single square block in Chicago is over 21,000 $m^{2}$ [@chicago].
 Retail and warehouse spaces can change drastically throughout the year and the state of roadways can be changing by the hour.
 Much work has been made to address changing environments in robot perception [@stvl], but less has been built in open-source to represent maps of dynamic spaces.
 
