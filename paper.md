@@ -50,7 +50,7 @@ SLAM Toolbox was integrated into the new ROS 2 Navigation2 project, providing re
 It has been shown to map spaces as large as 24,000 $m^{2}$, or 250,000 $ft^{2}$, in real-time by non-expert technicians.
 An example map can be seen in \autoref{fig:store_map}.
 
-![Map created using SLAM Toolbox [@roscon]. \label{fig:store_map}](store_map.png)
+![Retail store map created using SLAM Toolbox [@roscon]. \label{fig:store_map}](store_map.png)
 
 # Related Work
 SLAM algorithms can be classified into two groups: the earlier algorithms that use the Bayes-based filter approach [@thrun2005probabilistic], and newer GRAPH-based methods [@graphslam].
@@ -94,6 +94,8 @@ As a result, this will never lag behind real-time when running complex loop clos
 However, the map may not include all valid measurements if processing the last takes too long.
 This mode is adventitious when the quality of real-time localization is of particular importance.
 Both of these modes can be used for multi-session SLAM, the process of reloading a prior session and continuing to refine the pose-graph.
+\autoref{fig:circuit} shows a map of a large office building created by partially mapping in one session and completing the map in another session.
+This map has multiple loop closures between the two datasets and was later used with the pure-localization mode to navigate autonomously.
 
 The pure localization mode cannot be used to persist changes in the environment.
 Instead, it uses a rolling buffer of measurements in the current session and matches them against the original session(s) measurements and pose-graph.
@@ -103,6 +105,8 @@ Over time, the measurements in the rolling buffer will "expire" and be removed f
 The authors refer to this process as elastic pose-graph deformation.
 An interesting side effect is that the pure-localization mode can be used for effective lidar odometry when paired with no prior mapping session data.
 It will simply match against its local buffer and keep only a recent view of the environment, allowing lidar odometry to scale to infinite sized spaces.
+
+![Large office building map created using SLAM Toolbox [@roscon]. \label{fig:circuit}](circuit_launch.png)
 
 Finally, many updates were made to the OpenKarto SLAM libary.
 The measurement matching methods were restructured for a 10x speed-up enabling multi-threaded processing.
