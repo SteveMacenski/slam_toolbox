@@ -73,7 +73,7 @@ KartoSLAM uses Sparse Bundle Adjustment for loop-closure graph optimization.
 Cartographer consists of front-end, which is in charge of scan matching and building trajectory and submaps, and back-end that does the loop closure procedure.
 The graph solver used in Cartographer is Google Ceres [@ceres-solver].
 Cartographer provides pure localization mode, when user has a satisfactory map for usage.
-It also provides data serialization for storing processed data.
+It also provides data serialization for storing processed submaps only.
 However, Cartographer has stopped maintenance and support from Google and has been largely abandoned.
 Further, it fails to build suitable maps for annotation and localization with other localization software packages on robotic platforms without exceptional odometry.
 The software's unusual complexity makes it challenging to modify or resolve seemingly simple issues, making it not suitable for many applications.
