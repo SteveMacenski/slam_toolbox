@@ -81,10 +81,12 @@ Some applications have been created to automatically map a space using SLAM Tool
 
 It can also serialize a current mapping session and deserialized at a later time to continue refining or expanding an existing map.
 This serialization saves the complete raw data and pose-graph rather than submaps, as in Cartographer, allowing a variety of novel tools to be developed and more accurate multi-session mapping [@cartographer].
-These utilities include manual pose-graph manipulation, whereas a user can manually manipulate the pose-graph nodes and data to rotate a map or assist in a challenging loop closure.
+These utilities include manual pose-graph manipulation, whereas a user can manually manipulate the pose-graph nodes and data to rotate a map or assist in a challenging loop closure, shown in \autoref{fig:utils}.
 It also includes kinematic map merging, the process of merging multiple serialized maps into a composite map.
 A 3D visualizer plugin was also created to assist in utilization of these tools and the core SLAM library capabilities.
 Many additional tools and utilities could be developed using this representation as well.
+
+![Pose-graph manipulation in progress to manually match a node's laser scan to the map [@roscon]. \label{fig:utils}](utils.png)
 
 It provides 3 major operation modes and executables: synchronous mapping, asynchronous mapping, and pure localization.
 Synchronous mapping provides the ability to map and localize in a space keeping a buffer of measurements to add to the SLAM problem.
@@ -106,7 +108,7 @@ The authors refer to this process as elastic pose-graph deformation.
 An interesting side effect is that the pure-localization mode can be used for effective lidar odometry when paired with no prior mapping session data.
 It will simply match against its local buffer and keep only a recent view of the environment, allowing lidar odometry to scale to infinite sized spaces.
 
-![Large office building map created using SLAM Toolbox [@roscon]. \label{fig:circuit}](circuit_launch.png)
+![Large office building map created using multiple SLAM sessions [@roscon]. \label{fig:circuit}](circuit_launch.png)
 
 Finally, many updates were made to the OpenKarto SLAM libary.
 The measurement matching methods were restructured for a 10x speed-up enabling multi-threaded processing.
