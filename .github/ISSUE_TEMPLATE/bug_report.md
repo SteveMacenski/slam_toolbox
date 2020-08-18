@@ -17,7 +17,9 @@ assignees: ''
   - <!-- ROS1, ROS2, what distribution -->
 - Version or commit hash:
   - <!-- Output of git rev-parse HEAD, release version, or repos file  -->
-
+- Laser unit:
+  - <!-- Hokuyo 20-LX, RP Lidar S1, SICK TiM 571, etc  -->
+  
 #### Steps to reproduce issue
 <!-- Detailed instructions on how to reliably reproduce this issue -->
 
