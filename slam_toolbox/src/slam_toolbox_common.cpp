@@ -446,9 +446,7 @@ bool SlamToolbox::shouldProcessScan(
   }
 
   // check moved enough, within 10% for correction error
-  const double dist2 = fabs((last_pose.GetX() - pose.GetX())*(last_pose.GetX() - 
-    pose.GetX()) + (last_pose.GetY() - pose.GetY())*
-    (last_pose.GetX() - pose.GetY()));
+  const double dist2 = last_pose.SquaredDistance(pose);
   if(dist2 < 0.8 * min_dist2 || scan->header.seq < 5)
   {
     return false;
