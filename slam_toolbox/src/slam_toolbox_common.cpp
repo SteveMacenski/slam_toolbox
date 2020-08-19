@@ -447,7 +447,6 @@ bool SlamToolbox::shouldProcessScan(
   // check moved enough, within 10% for correction error
   const double sq_dist_to_last_accepted_pose = last_pose.SquaredDistance(pose);
 
-  // TODO: Accept scan if robot rotated on the spot, but did not translate (e.g. while using a non 360-deg scanner)
   if(sq_dist_to_last_accepted_pose < 0.8 * dist_thresh_sq || scan->header.seq < 5)
   {
     return false;
