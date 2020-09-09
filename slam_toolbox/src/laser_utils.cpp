@@ -104,7 +104,7 @@ karto::LaserRangeFinder* LaserAssistant::makeLaser(const double& mountingYaw)
   laser->SetAngularResolution(scan_.angle_increment);
   
   bool is_360_lidar = false;
-  if (std::fabs(scan_.angle_max - scan_.angle_min - 2.0 * M_PI) < 1e-1)
+  if (std::fabs(scan_.angle_max - scan_.angle_min - 2.0 * M_PI) < (scan_.angle_increment - (std::numeric_limits<float>::epsilon() * 2.0f*M_PI)))
   {
     is_360_lidar = true;
   }
