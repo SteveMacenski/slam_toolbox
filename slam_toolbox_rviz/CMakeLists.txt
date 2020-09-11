@@ -54,3 +54,5 @@ install(TARGETS ${PROJECT_NAME}
 install(FILES rviz_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
+
+add_dependencies(slam_toolbox_rviz slam_toolbox_msgs_generate_messages_cpp)
