@@ -117,7 +117,7 @@ It will simply match against its local buffer and keep only a recent view of the
 
 Finally, many updates were made to the OpenKarto SLAM libary.
 The measurement matching methods were restructured for a 10x speed-up enabling multi-threaded processing.
-The proided Sparse Bundle Adjustment optimization interface was replaced with Google Ceres, providing faster and more flexible optimization settings.
+The provided Sparse Bundle Adjustment optimization interface was replaced with Google Ceres, providing faster and more flexible optimization settings.
 Additionally, the optimizer interface was turned into a run-time dynamically loaded plugin interface to allow future developers to use the latest and greatest in optimization technologies without modifying the original code.
 Serialization and deserializion support was enabled to allow for saving and reloading mapping sessions.
 Finally, new processing modes and K-D tree search were developed to process measurements to enable localization and multi-session mapping.
