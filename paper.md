@@ -52,6 +52,10 @@ An example map can be seen in \autoref{fig:store_map}.
 
 ![Retail store map created using SLAM Toolbox [@roscon]. \label{fig:store_map}](store_map.png)
 
+# Statement of Need
+
+This software package provides an approach for multi-session mapping and localization. It also utilizes modern graph-optimization techniques and provides first of its kind pose-graph manipulation tools and demo applications.
+
 # Related Work
 SLAM algorithms can be classified into two groups: the earlier algorithms that use the Bayes-based filter approaches [@thrun2005probabilistic], and newer graph-based methods [@graphslam].
 Significant filter-based implementations available as ROS packages are GMapping [@gmapping] and HectorSLAM [@hector].
