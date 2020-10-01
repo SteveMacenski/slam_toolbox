@@ -111,7 +111,7 @@ karto::LaserRangeFinder* LaserAssistant::makeLaser(const double& mountingYaw)
 
   // Check if we have a 360 laser, but incorrectly setup as to produce
   // measurements in range [0, 360] rather than appropriately as [0, 360)
-  if (angular_range > 6.10865 /*350 deg*/ && (angular_range / scan_.angle_increment) + 1 == scans_.range.size()) {
+  if (angular_range > 6.10865 /*350 deg*/ && (angular_range / scan_.angle_increment) + 1 == scan_.range.size()) {
     is_360_lidar = false;
   }
 
