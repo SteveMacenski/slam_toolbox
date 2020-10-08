@@ -5,7 +5,7 @@ add_compile_options(-std=c++17)
 set(CMAKE_BUILD_TYPE Release) #None, Debug, Release, RelWithDebInfo, MinSizeRel
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
-set(CMAKE_CXX_FLAGS "-fpermissive -std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive -std=c++17")
 
 #karto_sdk lib
 set(BUILD_SHARED_LIBS ON)
@@ -48,8 +48,7 @@ find_package(Boost REQUIRED system serialization filesystem thread)
 include_directories(include ${catkin_INCLUDE_DIRS} 
                             ${EIGEN3_INCLUDE_DIRS} 
                             ${CHOLMOD_INCLUDE_DIR}
-                            ${Boost_INCLUDE_DIR}
-                            ${BOOST_INCLUDE_DIRS}
+                            ${Boost_INCLUDE_DIRS}
                             ${TBB_INCLUDE_DIRS}
 )
 
@@ -58,7 +57,7 @@ add_definitions(${EIGEN3_DEFINITIONS})
 catkin_package(
     INCLUDE_DIRS
       include
-      ${BOOST_INCLUDE_DIRS}
+      ${Boost_INCLUDE_DIRS}
       ${EIGEN3_INCLUDE_DIRS}
       ${TBB_INCLUDE_DIRS}
     LIBRARIES
@@ -89,7 +88,6 @@ catkin_package(
 #### Ceres Plugin
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
 target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES} 
-                                          ${CERES_INCLUDE_DIRS}
                                           ${CERES_LIBRARIES}
                                           ${Boost_LIBRARIES}
                                           ${TBB_LIBRARIES}
