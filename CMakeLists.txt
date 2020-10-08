@@ -78,8 +78,7 @@ find_package(Boost REQUIRED system serialization filesystem thread)
 
 include_directories(include ${EIGEN3_INCLUDE_DIRS}
                             ${CHOLMOD_INCLUDE_DIR}
-                            ${Boost_INCLUDE_DIR}
-                            ${BOOST_INCLUDE_DIRS}
+                            ${Boost_INCLUDE_DIRS}
                             ${TBB_INCLUDE_DIRS}
                             ${CERES_INCLUDES}
 )
