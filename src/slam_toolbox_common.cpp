@@ -456,6 +456,7 @@ LocalizedRangeScan * SlamToolbox::getLocalizedRangeScan(
     laser->GetName(), readings);
   range_scan->SetOdometricPose(transformed_pose);
   range_scan->SetCorrectedPose(transformed_pose);
+  range_scan->SetTime(rclcpp::Time(scan->header.stamp).nanoseconds()/1.e9);
   return range_scan;
 }
 
