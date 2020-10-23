@@ -30,6 +30,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS} ${TBB_
 add_library(kartoSlamToolbox SHARED src/Karto.cpp src/Mapper.cpp)
 ament_target_dependencies(kartoSlamToolbox ${dependencies})
 target_link_libraries(kartoSlamToolbox ${Boost_LIBRARIES} ${TBB_LIBRARIES})
+target_compile_definitions(kartoSlamToolbox PRIVATE "KARTO_DYNAMIC")
 
 install(DIRECTORY include/
 	DESTINATION include/
@@ -38,7 +39,7 @@ install(DIRECTORY include/
 install(TARGETS kartoSlamToolbox
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+  RUNTIME DESTINATION bin
 )
 
 ament_export_libraries(kartoSlamToolbox)

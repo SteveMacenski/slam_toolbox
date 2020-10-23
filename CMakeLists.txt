@@ -8,6 +8,10 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive -std=c++14")
 set(CMAKE_CXX_STANDARD 14)
 
+if(MSVC)
+  add_compile_definitions(_USE_MATH_DEFINES)
+endif()
+
 find_package(ament_cmake REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -135,6 +139,7 @@ pluginlib_export_plugin_description_file(slam_toolbox solver_plugins.xml)
 
 #### Tool lib for mapping
 add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)
+set_target_properties(toolbox_common PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 ament_target_dependencies(toolbox_common
   ${dependencies}
 )
@@ -143,21 +148,25 @@ rosidl_target_interfaces(toolbox_common ${PROJECT_NAME} "rosidl_typesupport_cpp"
 
 #### Mapping executibles
 add_library(async_slam_toolbox src/slam_toolbox_async.cpp)
+set_target_properties(async_slam_toolbox PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 target_link_libraries(async_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 add_executable(async_slam_toolbox_node src/slam_toolbox_async_node.cpp)
 target_link_libraries(async_slam_toolbox_node async_slam_toolbox)
 
 add_library(sync_slam_toolbox src/slam_toolbox_sync.cpp)
+set_target_properties(sync_slam_toolbox PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 target_link_libraries(sync_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 add_executable(sync_slam_toolbox_node src/slam_toolbox_sync_node.cpp)
 target_link_libraries(sync_slam_toolbox_node sync_slam_toolbox)
 
 add_library(localization_slam_toolbox src/slam_toolbox_localization.cpp)
+set_target_properties(localization_slam_toolbox PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 target_link_libraries(localization_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 add_executable(localization_slam_toolbox_node src/slam_toolbox_localization_node.cpp)
 target_link_libraries(localization_slam_toolbox_node localization_slam_toolbox)
 
 add_library(lifelong_slam_toolbox src/experimental/slam_toolbox_lifelong.cpp)
+set_target_properties(lifelong_slam_toolbox PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 target_link_libraries(lifelong_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 add_executable(lifelong_slam_toolbox_node src/experimental/slam_toolbox_lifelong_node.cpp)
 target_link_libraries(lifelong_slam_toolbox_node lifelong_slam_toolbox)
@@ -182,10 +191,15 @@ install(TARGETS async_slam_toolbox_node
                 localization_slam_toolbox_node
                 lifelong_slam_toolbox_node
                 merge_maps_kinematic
-                ${libraries}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS ${libraries}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
 install(DIRECTORY include/

@@ -18,6 +18,7 @@
 /* Author: Steven Macenski */
 
 #include <memory>
+#include "slam_toolbox/system_utils.hpp"
 #include "slam_toolbox/slam_toolbox_async.hpp"
 
 int main(int argc, char ** argv)
@@ -30,13 +31,7 @@ int main(int argc, char ** argv)
     temp_node->declare_parameter("stack_size_to_use");
     if (temp_node->get_parameter("stack_size_to_use", stack_size)) {
       RCLCPP_INFO(temp_node->get_logger(), "Node using stack size %i", (int)stack_size);
-      const rlim_t max_stack_size = stack_size;
-      struct rlimit stack_limit;
-      getrlimit(RLIMIT_STACK, &stack_limit);
-      if (stack_limit.rlim_cur < stack_size) {
-        stack_limit.rlim_cur = stack_size;
-      }
-      setrlimit(RLIMIT_STACK, &stack_limit);
+      system_utils::setStackLimitMaximum(stack_size);
     }
   }
 

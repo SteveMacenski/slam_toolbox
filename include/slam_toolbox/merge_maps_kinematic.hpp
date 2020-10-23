@@ -20,8 +20,6 @@
 #define SLAM_TOOLBOX__MERGE_MAPS_KINEMATIC_HPP_
 
 #include <boost/thread.hpp>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <string>
 #include <map>
 #include <memory>

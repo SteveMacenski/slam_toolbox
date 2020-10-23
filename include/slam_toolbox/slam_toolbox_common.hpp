@@ -19,7 +19,6 @@
 #ifndef SLAM_TOOLBOX__SLAM_TOOLBOX_COMMON_HPP_
 #define SLAM_TOOLBOX__SLAM_TOOLBOX_COMMON_HPP_
 
-#include <sys/resource.h>
 #include <boost/thread.hpp>
 #include <string>
 #include <map>

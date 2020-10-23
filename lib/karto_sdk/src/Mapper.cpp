@@ -1801,7 +1801,7 @@ std::vector<Vertex<LocalizedRangeScan> *> MapperGraph::FindNearByVertices(
 
   std::vector<Vertex<LocalizedRangeScan> *> rtn_vertices;
   rtn_vertices.reserve(ret_matches.size());
-  for (uint i = 0; i != ret_matches.size(); i++) {
+  for (size_t i = 0; i != ret_matches.size(); i++) {
     rtn_vertices.push_back(vertices_to_search[ret_matches[i].first]);
   }
   return rtn_vertices;
