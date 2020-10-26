@@ -149,6 +149,7 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>();
   sst_ = node.advertise<nav_msgs::OccupancyGrid>(map_name_, 1, true);
   sstm_ = node.advertise<nav_msgs::MapMetaData>(map_name_ + "_metadata", 1, true);
+  sspose_ = node.advertise<geometry_msgs::PoseWithCovarianceStamped>("karto_pose", 5, true);
   ssMap_ = node.advertiseService("dynamic_map", &SlamToolbox::mapCallback, this);
   ssPauseMeasurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::serializePoseGraphCallback, this);
@@ -397,6 +398,16 @@ karto::LocalizedRangeScan* SlamToolbox::getLocalizedRangeScan(
   tf2::Transform pose_original = smapper_->toTfPose(karto_pose);
   tf2::Transform tf_pose_transformed = reprocessing_transform_ * pose_original;
   karto::Pose2 transformed_pose = smapper_->toKartoPose(tf_pose_transformed);
+  
+  geometry_msgs::PoseWithCovarianceStamped pose_msg;
+  pose_msg.header.frame_id = map_frame_;
+  pose_msg.header.stamp = ros::Time::now();
+  pose_msg.pose.pose.position.x = karto_pose.GetX();
+  pose_msg.pose.pose.position.y = karto_pose.GetY();
+  tf2::Quaternion q_pose;
+  q_pose.setRPY(0, 0, karto_pose.GetHeading());
+  tf2::convert(q_pose, pose_msg.pose.pose.orientation);
+  sspose_.publish(pose_msg);
 
   // create localized range scan
   karto::LocalizedRangeScan* range_scan = new karto::LocalizedRangeScan(
