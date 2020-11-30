@@ -10,7 +10,7 @@ def generate_launch_description():
             get_package_share_directory("slam_toolbox") + '/config/mapper_params_offline.yaml'
           ],
           package='slam_toolbox',
-          node_executable='sync_slam_toolbox_node',
+          executable='sync_slam_toolbox_node',
           name='slam_toolbox',
           output='screen'
         )

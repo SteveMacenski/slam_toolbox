@@ -10,7 +10,7 @@ def generate_launch_description():
             get_package_share_directory("slam_toolbox") + '/config/mapper_params_localization.yaml'
           ],
           package='slam_toolbox',
-          node_executable='localization_slam_toolbox_node',
+          executable='localization_slam_toolbox_node',
           name='slam_toolbox',
           output='screen'
         )
