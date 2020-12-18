@@ -38,11 +38,11 @@ SLAM methods using laser scanners are generally considered the most robust in th
 Previously existing open-source laser scanner SLAM algorithms available to users in the popular Robot Operating System (ROS) include GMapping, Karto, Cartographer, and Hector.
 However, few of these can build accurate maps of large spaces on the scale of the average Walmart store.
 Even fewer can do so in real-time using the mobile processor typically found in mobile robot systems today.
-The only package that could accomplish the above was Cartographer, however it was abandoned by Google and it is no longer maintained.
+The only package that could accomplish the above was Cartographer. However, it was abandoned by Google and it is no longer maintained.
 
 We propose a new fully open-source ROS package, SLAM Toolbox, to solve this problem.
 SLAM Toolbox builds on the legacy of Open Karto [@karto], the open-source library from SRI International, providing not only accurate mapping algorithms, but a variety of other tools and improvements.
-SLAM Toolbox provides multiple modes of mapping depending on need, asynchronous and asynchronous, utilities such as kinematic map merging, a localization mode, multi-session mapping, improved graph optimization, substantially reduced compute time, and prototype lifelong and distributed mapping applications.
+SLAM Toolbox provides multiple modes of mapping depending on need, synchronous and asynchronous, utilities such as kinematic map merging, a localization mode, multi-session mapping, improved graph optimization, substantially reduced compute time, and prototype lifelong and distributed mapping applications.
 
 This package, `slam_toolbox` is open-source under an LGPLv2.1 at https://github.com/SteveMacenski/slam_toolbox.git and is available in every current ROS distribution.
 It was also selected as the new default SLAM vendor in ROS 2, the second generation of robot operating systems, replacing GMapping.
@@ -62,9 +62,9 @@ Significant filter-based implementations available as ROS packages are GMapping 
 Cartographer [@cartographer] and KartoSLAM [@karto] are the major graph-based implementations available.
 
 GMapping is one of the most commonly used SLAM libraries, presented in 2007.
-It uses particle filter approach to SLAM for the purpose of building grid maps from 2D lidar data.
+It uses a particle filter approach to SLAM for the purpose of building grid maps from 2D lidar data.
 However, GMapping is not well suited for large spaces and fails to accurately close loops at an industrial scale.
-Additionally, filter-based approaches cannot be easily reinitialized with multiple sessions.
+Additionally, filter-based approaches cannot be easily reinitialized across multiple sessions.
 
 HectorSLAM relies on lidar scan matching and 3D navigation filter based on EKF state estimation.
 This method focuses on real-time robot pose estimation and generates 2D map with high update rate.
@@ -86,9 +86,9 @@ The software's unusual complexity makes it challenging to modify or resolve seem
 
 SLAM Toolbox is able to map spaces effectively using mobile Intel CPUs commonly found on robots well in excess of 100,000 $ft^{2}$.
 It can be done easily using untrained technicans typically hired to deploy robot solutions or remotely using monitoring systems. 
-Some applications have been created to automatically map a space using SLAM Toolbox as well paired with exploration planners.
+Some applications have been created to automatically map a space using SLAM Toolbox as well as paired with exploration planners.
 
-It can also serialize a current mapping session and deserialized at a later time to continue refining or expanding an existing map.
+It can also serialize a current mapping session and deserialize it at a later time to continue refining or expanding an existing map.
 This serialization saves the complete raw data and pose-graph rather than submaps, as in Cartographer, allowing a variety of novel tools to be developed and more accurate multi-session mapping.
 These utilities include manual pose-graph manipulation, whereas a user can manually manipulate the pose-graph nodes and data to rotate a map or assist in a challenging loop closure, shown in \autoref{fig:utils}.
 It also includes kinematic map merging, the process of merging multiple serialized maps into a composite map.
@@ -99,11 +99,11 @@ Many additional tools and utilities could be developed using this representation
 
 It provides 3 major operation modes and executables: synchronous mapping, asynchronous mapping, and pure localization.
 Synchronous mapping provides the ability to map and localize in a space keeping a buffer of measurements to add to the SLAM problem.
-This can be adventitious when the quality of the map is of particular importance or when doing offline processing.
+This can be advantageous when the quality of the map is of particular importance or when doing offline processing.
 By contrast, the asynchronous mode will only process new measurements when the last measurement is completed and the new update criteria are met.
 As a result, this will never lag behind real-time when running complex loop closures.
-However, the map may not include all valid measurements if processing the last takes too long.
-This mode is adventitious when the quality of real-time localization is of particular importance.
+However, the map may not include all valid measurements if processing the last one takes too long.
+This mode is advantageous when the quality of real-time localization is of particular importance.
 Both of these modes can be used for multi-session SLAM, the process of reloading a prior session and continuing to refine the pose-graph.
 \autoref{fig:circuit} shows a map of a large office building created by partially mapping in one session and completing the map in another session.
 This map has multiple loop closures between the two datasets and was later used with the pure-localization mode to navigate autonomously.
