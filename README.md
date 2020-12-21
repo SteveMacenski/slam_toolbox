@@ -43,10 +43,13 @@ The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/
 
 ![map_image](/images/circuit_launch.gif?raw=true "Map Image")
 
-# Support
+# Support and Contribution
 
 If you have any questions on use or configuration, please post your questions on [ROS Answers](answers.ros.org) and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
 
+If you're interested in contributing to this project in a substantial way, please file a public GitHub issue on your new feature / patch. If for some reason the development of this feature is sensitive, please email the maintainers at their email addresses listed in the `package.xml` file. 
+
+For all contributions, please properly fill in the GitHub issue and PR templates with all necessary context. All PRs must be passing CI and maintaining ABI compatibility within released ROS distributions. A maintainer will follow up shortly thereafter. 
 
 # LifeLong Mapping
 
