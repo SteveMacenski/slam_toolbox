@@ -300,8 +300,8 @@ bool SlamToolbox::shouldStartWithPoseGraph(
 {
   // if given a map to load at run time, do it.
   this->declare_parameter("map_file_name", std::string(""));
-  this->declare_parameter("map_start_pose", std::vector<double>());
-  this->declare_parameter("map_start_at_dock", false);
+  this->declare_parameter("map_start_pose");
+  this->declare_parameter("map_start_at_dock");
   filename = this->get_parameter("map_file_name").as_string();
   if (!filename.empty()) {
     std::vector<double> read_pose;
@@ -319,8 +319,15 @@ bool SlamToolbox::shouldStartWithPoseGraph(
         pose.y = read_pose[1];
         pose.theta = read_pose[2];
       }
-    } else {
+    } else if (this->get_parameter("map_start_at_dock", start_at_dock)) {
       start_at_dock = this->get_parameter("map_start_at_dock").as_bool();
+    } else {
+      start_at_dock = false;
+      RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Map starting "
+          "pose not specified. Starting at origin");
+      pose.x = 0.;
+      pose.y = 0.;
+      pose.theta = 0.;
     }
 
     return true;
