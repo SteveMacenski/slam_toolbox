@@ -19,6 +19,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <chrono>
 #include "slam_toolbox/slam_toolbox_common.hpp"
 #include "slam_toolbox/serialization.hpp"
 
@@ -39,8 +40,8 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
   processor_type_(PROCESS),
   first_measurement_(true),
   process_near_pose_(nullptr),
-  transform_timeout_(rclcpp::Duration(0.5 * 1000000000)),
-  minimum_time_interval_(0.)
+  transform_timeout_(rclcpp::Duration::from_nanoseconds(0.5 * 1000000000)),
+  minimum_time_interval_(std::chrono::nanoseconds(0))
 /*****************************************************************************/
 {
   smapper_ = std::make_unique<mapper_utils::SMapper>();
@@ -150,9 +151,9 @@ void SlamToolbox::setParams()
 
   double tmp_val = 0.5;
   tmp_val = this->declare_parameter("transform_timeout", tmp_val);
-  transform_timeout_ = rclcpp::Duration(tmp_val * 1000000000);
+  transform_timeout_ = rclcpp::Duration::from_nanoseconds(tmp_val * 1000000000);
   tmp_val = this->declare_parameter("minimum_time_interval", tmp_val);
-  minimum_time_interval_ = rclcpp::Duration(tmp_val * 1000000000);
+  minimum_time_interval_ = rclcpp::Duration::from_nanoseconds(tmp_val * 1000000000);
 
   bool debug = false;
   debug = this->declare_parameter("debug_logging", debug);
