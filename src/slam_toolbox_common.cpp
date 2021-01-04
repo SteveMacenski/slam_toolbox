@@ -322,12 +322,9 @@ bool SlamToolbox::shouldStartWithPoseGraph(
     } else if (this->get_parameter("map_start_at_dock", start_at_dock)) {
       start_at_dock = this->get_parameter("map_start_at_dock").as_bool();
     } else {
-      start_at_dock = false;
       RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Map starting "
-          "pose not specified. Starting at origin");
-      pose.x = 0.;
-      pose.y = 0.;
-      pose.theta = 0.;
+          "pose not specified. Set either map_start_pose or map_start_at_dock.");
+      return false;
     }
 
     return true;
