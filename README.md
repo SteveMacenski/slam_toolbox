@@ -43,6 +43,8 @@ The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/
 
 ![map_image](/images/circuit_launch.gif?raw=true "Map Image")
 
+An example simulated tutorial can be found at [navigation.ros.org](https://navigation.ros.org/tutorials/docs/navigation2_with_slam.html). A more basic tutorial can be found [here](http://wiki.ros.org/Robots/ARI/Tutorials/Navigation/Mapping).
+
 # Support and Contribution
 
 If you have any questions on use or configuration, please post your questions on [ROS Answers](answers.ros.org) and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
