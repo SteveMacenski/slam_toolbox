@@ -301,12 +301,13 @@ bool SlamToolbox::shouldStartWithPoseGraph(
 {
   // if given a map to load at run time, do it.
   this->declare_parameter("map_file_name", std::string(""));
-  this->declare_parameter("map_start_pose", std::vector<double>());
-  this->declare_parameter("map_start_at_dock", false);
+  auto map_start_pose = this->declare_parameter("map_start_pose");
+  auto map_start_at_dock = this->declare_parameter("map_start_at_dock");
   filename = this->get_parameter("map_file_name").as_string();
   if (!filename.empty()) {
     std::vector<double> read_pose;
-    if (this->get_parameter("map_start_pose", read_pose)) {
+    if (map_start_pose.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET) {
+      read_pose = map_start_pose.get<std::vector<double>>();
       start_at_dock = false;
       if (read_pose.size() != 3) {
         RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Incorrect "
@@ -320,8 +321,12 @@ bool SlamToolbox::shouldStartWithPoseGraph(
         pose.y = read_pose[1];
         pose.theta = read_pose[2];
       }
+    } else if (map_start_at_dock.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET) {
+      start_at_dock = map_start_at_dock.get<bool>();
     } else {
-      start_at_dock = this->get_parameter("map_start_at_dock").as_bool();
+      RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Map starting "
+          "pose not specified. Set either map_start_pose or map_start_at_dock.");
+      return false;
     }
 
     return true;
