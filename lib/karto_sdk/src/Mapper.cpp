@@ -1562,7 +1562,11 @@ void MapperGraph::LinkScans(
 
   // only attach link information if the edge is new
   if (isNewEdge == true) {
-    pEdge->SetLabel(new LinkInfo(pFromScan->GetSensorPose(), rMean, rCovariance));
+    auto corrected_pose=pToScan->GetCorrectedPose();
+    pToScan->SetSensorPose(rMean);
+    auto corrected_mean_pose=pToScan->GetCorrectedPose();
+    pToScan->SetCorrectedPose(corrected_pose);
+    pEdge->SetLabel(new LinkInfo(pFromScan->GetCorrectedPose(), corrected_mean_pose, rCovariance));
     if (m_pMapper->m_pScanOptimizer != NULL) {
       m_pMapper->m_pScanOptimizer->AddConstraint(pEdge);
     }
@@ -1955,7 +1959,7 @@ void MapperGraph::CorrectPoses()
       if (scan == NULL) {
         continue;
       }
-      scan->SetSensorPose(iter->second);
+      scan->SetCorrectedPose(iter->second);
     }
 
     pSolver->Clear();
