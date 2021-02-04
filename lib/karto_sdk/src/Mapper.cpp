@@ -1562,9 +1562,9 @@ void MapperGraph::LinkScans(
 
   // only attach link information if the edge is new
   if (isNewEdge == true) {
-    auto corrected_pose=pToScan->GetCorrectedPose();
+    Pose2 corrected_pose = pToScan->GetCorrectedPose();
     pToScan->SetSensorPose(rMean);
-    auto corrected_mean_pose=pToScan->GetCorrectedPose();
+    Pose2 corrected_mean_pose = pToScan->GetCorrectedPose();
     pToScan->SetCorrectedPose(corrected_pose);
     pEdge->SetLabel(new LinkInfo(pFromScan->GetCorrectedPose(), corrected_mean_pose, rCovariance));
     if (m_pMapper->m_pScanOptimizer != NULL) {
