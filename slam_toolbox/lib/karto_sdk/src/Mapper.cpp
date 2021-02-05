@@ -1607,11 +1607,7 @@ namespace karto
     // only attach link information if the edge is new
     if (isNewEdge == true)
     {
-      Pose2 corrected_pose = pToScan->GetCorrectedPose();
-      pToScan->SetSensorPose(rMean);
-      Pose2 corrected_mean_pose = pToScan->GetCorrectedPose();
-      pToScan->SetCorrectedPose(corrected_pose);
-      pEdge->SetLabel(new LinkInfo(pFromScan->GetCorrectedPose(), corrected_mean_pose, rCovariance));
+      pEdge->SetLabel(new LinkInfo(pFromScan->GetCorrectedPose(), pToScan->GetCorrectedAt(rMean), rCovariance));
       if (m_pMapper->m_pScanOptimizer != NULL)
       {
         m_pMapper->m_pScanOptimizer->AddConstraint(pEdge);
