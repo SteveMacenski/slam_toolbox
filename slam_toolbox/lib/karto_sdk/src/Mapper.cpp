@@ -1988,7 +1988,7 @@ namespace karto
         {
           continue;
         }
-        scan->SetCorrectedPose(iter->second);
+        scan->SetCorrectedPoseAndUpdate(iter->second);
       }
 
       pSolver->Clear();
