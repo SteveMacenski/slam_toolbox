@@ -5572,6 +5572,17 @@ namespace karto
 
       m_IsDirty = true;
     }
+    
+    /**
+     * Moves the scan by moving the robot pose to the given location and update point readings.
+     * @param rPose new pose of the robot of this scan
+     */
+    inline void SetCorrectedPoseAndUpdate(const Pose2& rPose)
+    {
+      SetCorrectedPose(rPose);
+
+      Update();
+    }
 
     /**
      * Gets barycenter of point readings
