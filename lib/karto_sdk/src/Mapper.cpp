@@ -1,4 +1,4 @@
-/*
+CorrectPoses/*
  * Copyright 2010 SRI International
  *
  * This program is free software: you can redistribute it and/or modify
@@ -1955,7 +1955,7 @@ void MapperGraph::CorrectPoses()
       if (scan == NULL) {
         continue;
       }
-      scan->SetCorrectedPose(iter->second);
+      scan->SetCorrectedPoseAndUpdate(iter->second);
     }
 
     pSolver->Clear();
