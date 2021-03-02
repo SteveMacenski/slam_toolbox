@@ -1603,6 +1603,18 @@ public:
   void SetLastScan(LocalizedRangeScan * pScan);
 
   /**
+   * Clears the laser scan of device
+   * @param pScan
+   */
+  void ClearLastScan(LocalizedRangeScan* pScan);
+
+  /**
+   * Clears the laser scan of device name
+   * @param pScan
+   */
+  void ClearLastScan(const Name& name);
+
+  /**
    * Gets the scan with the given unique id
    * @param id
    * @return scan
@@ -1964,6 +1976,7 @@ public:
   kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan);
   kt_bool ProcessLocalization(LocalizedRangeScan * pScan);
   kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan> *);
+  void ClearLocalizationBuffer();
 
   /**
    * Returns all processed scans added to the mapper.

@@ -113,6 +113,15 @@ public:
   }
 
   /**
+   * Clears last scan
+   * @param deviceId
+   */
+  inline void ClearLastScan()
+  {
+    m_pLastScan = NULL;
+  }
+
+  /**
    * Sets the last scan
    * @param pScan
    */
@@ -285,6 +294,24 @@ inline LocalizedRangeScan * MapperSensorManager::GetLastScan(const Name & rSenso
 void MapperSensorManager::SetLastScan(LocalizedRangeScan * pScan)
 {
   GetScanManager(pScan)->SetLastScan(pScan);
+}
+
+/**
+ * Clears the last scan of device of given scan
+ * @param pScan
+ */
+void MapperSensorManager::ClearLastScan(LocalizedRangeScan* pScan)
+{
+  GetScanManager(pScan)->ClearLastScan();
+}
+
+/**
+ * Clears the last scan of device name
+ * @param pScan
+ */
+void MapperSensorManager::ClearLastScan(const Name& name)
+{
+  GetScanManager(name)->ClearLastScan();
 }
 
 /**
@@ -2815,6 +2842,33 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
   m_LocalizationScanVertices.push(lsv);
 
   return true;
+}
+
+void Mapper::ClearLocalizationBuffer()
+{
+  while (!m_LocalizationScanVertices.empty())
+  {
+    LocalizationScanVertex& oldLSV = m_LocalizationScanVertices.front();
+    RemoveNodeFromGraph(oldLSV.vertex);
+    oldLSV.vertex->RemoveObject();
+    m_pMapperSensorManager->RemoveScan(oldLSV.scan);
+    if (oldLSV.scan)
+    {
+      delete oldLSV.scan;
+      oldLSV.scan = NULL;
+    }
+
+    m_LocalizationScanVertices.pop();
+  }
+
+  std::vector<Name> names = m_pMapperSensorManager->GetSensorNames();
+  for (uint i = 0; i != names.size(); i++)
+  {
+    m_pMapperSensorManager->ClearRunningScans(names[i]);
+    m_pMapperSensorManager->ClearLastScan(names[i]);
+  }
+
+  return;
 }
 
 kt_bool Mapper::RemoveNodeFromGraph(Vertex<LocalizedRangeScan> * vertex_to_remove)
