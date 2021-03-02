@@ -34,6 +34,10 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
     "/initialpose", 1,
     std::bind(&LocalizationSlamToolbox::localizePoseCallback,
     this, std::placeholders::_1));
+  clear_localization_ = this->create_service<std_srvs::srv::Empty>(
+    "clear_localization_buffer",
+    std::bind(&LocalizationSlamToolbox::clearLocalizationBuffer, this,
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   // in localization mode, we cannot allow for interactive mode
   enable_interactive_mode_ = false;
@@ -66,6 +70,19 @@ void LocalizationSlamToolbox::loadPoseGraphByParams()
 
     deserializePoseGraphCallback(nullptr, req, resp);
   }
+}
+
+/*****************************************************************************/
+bool LocalizationSlamToolbox::clearLocalizationBuffer(
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<std_srvs::srv::Empty::Request> req,
+  std::shared_ptr<std_srvs::srv::Empty::Response> resp)
+/*****************************************************************************/
+{
+  RCLCPP_INFO(get_logger(),
+    "LocalizationSlamToolbox: Clearing localization buffer.");
+  smapper_->clearLocalizationBuffer();
+  return true;
 }
 
 /*****************************************************************************/
@@ -202,6 +219,8 @@ void LocalizationSlamToolbox::localizePoseCallback(
   }
 
   first_measurement_ = true;
+
+  smapper_->clearLocalizationBuffer();
 
   RCLCPP_INFO(get_logger(),
     "LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
