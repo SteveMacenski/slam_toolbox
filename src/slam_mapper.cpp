@@ -64,8 +64,9 @@ karto::OccupancyGrid * SMapper::getOccupancyGrid(const double & resolution)
 /*****************************************************************************/
 {
   karto::OccupancyGrid * occ_grid = nullptr;
-  return karto::OccupancyGrid::CreateFromScans(mapper_->GetAllProcessedScans(),
-           resolution);
+  return karto::OccupancyGrid::CreateFromScans(
+    mapper_->GetAllProcessedScans(),
+    resolution);
 }
 
 /*****************************************************************************/
@@ -92,7 +93,7 @@ karto::Pose2 SMapper::toKartoPose(const tf2::Transform & pose) const
 }
 
 /*****************************************************************************/
-void SMapper::configure(const rclcpp::Node::SharedPtr &node)
+void SMapper::configure(const rclcpp::Node::SharedPtr & node)
 /*****************************************************************************/
 {
   bool use_scan_matching = true;
@@ -175,14 +176,18 @@ void SMapper::configure(const rclcpp::Node::SharedPtr &node)
 
   double loop_match_maximum_variance_coarse = 3.0;
   if (!node->has_parameter("loop_match_maximum_variance_coarse")) {
-    node->declare_parameter("loop_match_maximum_variance_coarse", loop_match_maximum_variance_coarse);
+    node->declare_parameter(
+      "loop_match_maximum_variance_coarse",
+      loop_match_maximum_variance_coarse);
   }
   node->get_parameter("loop_match_maximum_variance_coarse", loop_match_maximum_variance_coarse);
   mapper_->setParamLoopMatchMaximumVarianceCoarse(loop_match_maximum_variance_coarse);
 
   double loop_match_minimum_response_coarse = 0.35;
   if (!node->has_parameter("loop_match_minimum_response_coarse")) {
-    node->declare_parameter("loop_match_minimum_response_coarse", loop_match_minimum_response_coarse);
+    node->declare_parameter(
+      "loop_match_minimum_response_coarse",
+      loop_match_minimum_response_coarse);
   }
   node->get_parameter("loop_match_minimum_response_coarse", loop_match_minimum_response_coarse);
   mapper_->setParamLoopMatchMinimumResponseCoarse(loop_match_minimum_response_coarse);
@@ -197,24 +202,31 @@ void SMapper::configure(const rclcpp::Node::SharedPtr &node)
   // Setting Correlation Parameters
   double correlation_search_space_dimension = 0.5;
   if (!node->has_parameter("correlation_search_space_dimension")) {
-    node->declare_parameter("correlation_search_space_dimension", correlation_search_space_dimension);
+    node->declare_parameter(
+      "correlation_search_space_dimension",
+      correlation_search_space_dimension);
   }
   node->get_parameter("correlation_search_space_dimension", correlation_search_space_dimension);
   mapper_->setParamCorrelationSearchSpaceDimension(correlation_search_space_dimension);
 
   double correlation_search_space_resolution = 0.01;
   if (!node->has_parameter("correlation_search_space_resolution")) {
-    node->declare_parameter("correlation_search_space_resolution", correlation_search_space_resolution);
+    node->declare_parameter(
+      "correlation_search_space_resolution",
+      correlation_search_space_resolution);
   }
   node->get_parameter("correlation_search_space_resolution", correlation_search_space_resolution);
   mapper_->setParamCorrelationSearchSpaceResolution(correlation_search_space_resolution);
 
   double correlation_search_space_smear_deviation = 0.1;
   if (!node->has_parameter("correlation_search_space_smear_deviation")) {
-    node->declare_parameter("correlation_search_space_smear_deviation",
-    correlation_search_space_smear_deviation);
+    node->declare_parameter(
+      "correlation_search_space_smear_deviation",
+      correlation_search_space_smear_deviation);
   }
-  node->get_parameter("correlation_search_space_smear_deviation", correlation_search_space_smear_deviation);
+  node->get_parameter(
+    "correlation_search_space_smear_deviation",
+    correlation_search_space_smear_deviation);
   mapper_->setParamCorrelationSearchSpaceSmearDeviation(correlation_search_space_smear_deviation);
 
   // Setting Correlation Parameters, Loop Closure Parameters
