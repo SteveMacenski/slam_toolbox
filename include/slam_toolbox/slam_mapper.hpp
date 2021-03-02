@@ -51,6 +51,7 @@ public:
   // kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
   // kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
   // kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
+  void clearLocalizationBuffer();
 
   void setMapper(karto::Mapper * mapper);
   karto::Mapper * getMapper();
