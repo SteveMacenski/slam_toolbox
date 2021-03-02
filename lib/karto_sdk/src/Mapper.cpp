@@ -2832,6 +2832,11 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
 void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan *pScan, Vertex <LocalizedRangeScan> *scan_vertex)
 {
   // generate the info to store and later decay, outside of dataset
+  LocalizationScanVertex lsv;
+  lsv.scan = pScan;
+  lsv.vertex = scan_vertex;
+  m_LocalizationScanVertices.push(lsv);
+
   if (m_LocalizationScanVertices.size() > getParamScanBufferSize()) {
     LocalizationScanVertex & oldLSV = m_LocalizationScanVertices.front();
     RemoveNodeFromGraph(oldLSV.vertex);
@@ -2848,11 +2853,6 @@ void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan *pScan, Vertex <Loca
 
     m_LocalizationScanVertices.pop();
   }
-
-  LocalizationScanVertex lsv;
-  lsv.scan = pScan;
-  lsv.vertex = scan_vertex;
-  m_LocalizationScanVertices.push(lsv);
 }
 
 void Mapper::ClearLocalizationBuffer()
