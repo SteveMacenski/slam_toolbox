@@ -52,6 +52,13 @@ void SMapper::setMapper(karto::Mapper* mapper)
 }
 
 /*****************************************************************************/
+void SMapper::clearLocalizationBuffer()
+/*****************************************************************************/
+{
+  mapper_->ClearLocalizationBuffer();
+}
+
+/*****************************************************************************/
 karto::OccupancyGrid* SMapper::getOccupancyGrid(const double& resolution)
 /*****************************************************************************/
 {
