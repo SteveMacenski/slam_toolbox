@@ -21,6 +21,10 @@
 
 #include <string>
 
+#include "visualization_msgs/msg/marker.hpp"
+#include "visualization_msgs/msg/interactive_marker.hpp"
+#include "visualization_msgs/msg/interactive_marker_feedback.hpp"
+
 namespace vis_utils
 {
 
@@ -51,50 +55,50 @@ inline visualization_msgs::msg::Marker toMarker(
   return marker;
 }
 
-// TODO(stevemacenski): Need interactive markers ported to ROS2
-// inline visualization_msgs::msg::InteractiveMarker toInteractiveMarker(
-//   visualization_msgs::msg::Marker & marker,
-//   const double & scale)
-// {
-//   // marker basics
-//   visualization_msgs::msg::InteractiveMarker int_marker;
-//   int_marker.header.frame_id = marker.header.frame_id;
-//   int_marker.header.stamp = node->now();
-//   int_marker.name = std::to_string(marker.id);
-//   int_marker.pose.orientation.w = 1.;
-//   int_marker.pose.position.x = marker.pose.position.x;
-//   int_marker.pose.position.y = marker.pose.position.y;
-//   int_marker.scale = scale;
+inline visualization_msgs::msg::InteractiveMarker toInteractiveMarker(
+  visualization_msgs::msg::Marker & marker,
+  const double & scale,
+  rclcpp::Node::SharedPtr node)
+{
+  // marker basics
+  visualization_msgs::msg::InteractiveMarker int_marker;
+  int_marker.header.frame_id = marker.header.frame_id;
+  int_marker.header.stamp = node->now();
+  int_marker.name = std::to_string(marker.id);
+  int_marker.pose.orientation.w = 1.;
+  int_marker.pose.position.x = marker.pose.position.x;
+  int_marker.pose.position.y = marker.pose.position.y;
+  int_marker.scale = scale;
 
-//   // translate control
-//   visualization_msgs::msg::InteractiveMarkerControl control;
-//   control.orientation_mode =
-//     visualization_msgs::msg::InteractiveMarkerControl::FIXED;
-//   control.always_visible = true;
-//   control.orientation.w = 0;
-//   control.orientation.x = 0.7071;
-//   control.orientation.y = 0;
-//   control.orientation.z = 0.7071;
-//   control.interaction_mode =
-//     visualization_msgs::msg::InteractiveMarkerControl::MOVE_PLANE;
-//   control.markers.push_back( marker );
-//   int_marker.controls.push_back( control );
+  // translate control
+  visualization_msgs::msg::InteractiveMarkerControl control;
+  control.orientation_mode =
+    visualization_msgs::msg::InteractiveMarkerControl::FIXED;
+  control.always_visible = true;
+  control.orientation.w = 0;
+  control.orientation.x = 0.7071;
+  control.orientation.y = 0;
+  control.orientation.z = 0.7071;
+  control.interaction_mode =
+    visualization_msgs::msg::InteractiveMarkerControl::MOVE_PLANE;
+  control.markers.push_back( marker );
+  int_marker.controls.push_back( control );
 
-//   // rotate control
-//   visualization_msgs::msg::InteractiveMarkerControl control_rot;
-//   control_rot.orientation_mode =
-//     visualization_msgs::msg::InteractiveMarkerControl::FIXED;
-//   control_rot.always_visible = true;
-//   control_rot.orientation.w = 0;
-//   control_rot.orientation.x = 0.7071;
-//   control_rot.orientation.y = 0;
-//   control_rot.orientation.z = 0.7071;
-//   control_rot.interaction_mode =
-//     visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
-//   int_marker.controls.push_back( control_rot );
+  // rotate control
+  visualization_msgs::msg::InteractiveMarkerControl control_rot;
+  control_rot.orientation_mode =
+    visualization_msgs::msg::InteractiveMarkerControl::FIXED;
+  control_rot.always_visible = true;
+  control_rot.orientation.w = 0;
+  control_rot.orientation.x = 0.7071;
+  control_rot.orientation.y = 0;
+  control_rot.orientation.z = 0.7071;
+  control_rot.interaction_mode =
+    visualization_msgs::msg::InteractiveMarkerControl::ROTATE_AXIS;
+  int_marker.controls.push_back(control_rot);
 
-//   return int_marker;
-// }
+  return int_marker;
+}
 
 inline void toNavMap(
   const karto::OccupancyGrid * occ_grid,
