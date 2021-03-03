@@ -4443,7 +4443,7 @@ namespace karto
   {
     GridStates_Unknown = 0,
     GridStates_Occupied = 100,
-    GridStates_Free = 255
+    GridStates_Free = 200
   } GridStates;
 
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -6008,7 +6008,7 @@ namespace karto
         throw Exception("Resolution cannot be 0");
       }
 
-      m_pMinPassThrough = new Parameter<kt_int32u>("MinPassThrough", 2);
+      m_pMinPassThrough = new Parameter<kt_int32u>("MinPassThrough", 5);
       m_pOccupancyThreshold = new Parameter<kt_double>("OccupancyThreshold", 0.1);
 
       GetCoordinateConverter()->SetScale(1.0 / resolution);
@@ -6322,7 +6322,7 @@ namespace karto
 
           // increment cell pass through and hit count
           pCellPassCntPtr[index]++;
-          pCellHitCntPtr[index]++;
+          //pCellHitCntPtr[index]++;
 
           if (doUpdate)
           {
@@ -6345,15 +6345,10 @@ namespace karto
       if (cellPassCnt > m_pMinPassThrough->GetValue())
       {
         kt_double hitRatio = static_cast<kt_double>(cellHitCnt) / static_cast<kt_double>(cellPassCnt);
-
-        if (hitRatio > m_pOccupancyThreshold->GetValue())
-        {
-          *pCell = GridStates_Occupied;
-        }
-        else
-        {
-          *pCell = GridStates_Free;
-        }
+	
+	// hitRatio scaled between 100 and 200
+	hitRatio= (-100 * hitRatio + 200);
+	*pCell = (kt_int8u) hitRatio;
       }
     }
 
