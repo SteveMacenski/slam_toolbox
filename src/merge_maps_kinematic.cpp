@@ -42,18 +42,18 @@ void MergeMapsKinematic::configure()
   sstmS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
       "/map_metadata", rclcpp::QoS(1)));
 
-  ssMap_ = this->create_service<slam_toolbox::srv::MergeMaps>("merge_submaps",
+  ssMap_ = this->create_service<slam_toolbox::srv::MergeMaps>("/slam_toolbox/merge_submaps",
       std::bind(&MergeMapsKinematic::mergeMapCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
-  ssSubmap_ = this->create_service<slam_toolbox::srv::AddSubmap>("add_submap",
+  ssSubmap_ = this->create_service<slam_toolbox::srv::AddSubmap>("/slam_toolbox/add_submap",
       std::bind(&MergeMapsKinematic::addSubmapCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
 
   tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(shared_from_this());
 
-  // interactive_server_ =
-  //   std::make_unique<interactive_markers::InteractiveMarkerServer>(
-  //   "merge_maps_tool","",true);
+  interactive_server_ =
+    std::make_unique<interactive_markers::InteractiveMarkerServer>(
+    "merge_maps_tool", shared_from_this());
 }
 
 /*****************************************************************************/
@@ -146,12 +146,12 @@ bool MergeMapsKinematic::addSubmapCallback(
   m.pose.position.y = transform.getOrigin().getY();
   m.id = num_submaps_;
 
-  // TODO(stevemacenski): waiting on interactive markers to be ported
-  // visualization_msgs::InteractiveMarker int_marker =
-  //   vis_utils::toInteractiveMarker(m, 2.4);
-  // interactive_server_->insert(int_marker,
-  //   boost::bind(&MergeMapsKinematic::processInteractiveFeedback, this, _1));
-  // interactive_server_->applyChanges();
+  visualization_msgs::msg::InteractiveMarker int_marker =
+    vis_utils::toInteractiveMarker(m, 2.4, shared_from_this());
+  interactive_server_->insert(
+    int_marker,
+    std::bind(&MergeMapsKinematic::processInteractiveFeedback, this, std::placeholders::_1));
+  interactive_server_->applyChanges();
 
   RCLCPP_INFO(get_logger(),
     "Map %s was loaded into topic %s!", req->filename.c_str(),
@@ -304,8 +304,7 @@ void MergeMapsKinematic::kartoToROSOccupancyGrid(
 
 /*****************************************************************************/
 void MergeMapsKinematic::processInteractiveFeedback(
-  const
-  visualization_msgs::msg::InteractiveMarkerFeedback::SharedPtr feedback)
+  visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback)
 /*****************************************************************************/
 {
   const int id = std::stoi(feedback->marker_name, nullptr, 10);
