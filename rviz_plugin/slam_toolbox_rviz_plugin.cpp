@@ -550,8 +550,9 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
 {
   rclcpp::Rate r(1);
   bool paused_measure = false, interactive = false;
+  auto node = std::make_shared<rclcpp::Node>("SlamToolboxStateUpdateNode");
   auto parameters_client =
-    std::make_shared<rclcpp::SyncParametersClient>(ros_node_, "slam_toolbox");
+    std::make_shared<rclcpp::SyncParametersClient>(node, "slam_toolbox");
 
   while (rclcpp::ok()) {
     auto parameters = parameters_client->get_parameters(
