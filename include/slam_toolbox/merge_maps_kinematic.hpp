@@ -19,7 +19,7 @@
 #ifndef SLAM_TOOLBOX__MERGE_MAPS_KINEMATIC_HPP_
 #define SLAM_TOOLBOX__MERGE_MAPS_KINEMATIC_HPP_
 
-#include <boost/thread.hpp>
+#include <thread>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string>
@@ -29,8 +29,8 @@
 #include <fstream>
 
 #include "rclcpp/rclcpp.hpp"
-// #include "interactive_markers/interactive_marker_server.h"
-// #include "interactive_markers/menu_handler.h"
+#include "interactive_markers/interactive_marker_server.hpp"
+#include "interactive_markers/menu_handler.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/message_filter.h"
@@ -69,7 +69,7 @@ private:
     const std::shared_ptr<slam_toolbox::srv::AddSubmap::Request> req,
     std::shared_ptr<slam_toolbox::srv::AddSubmap::Response> resp);
   void processInteractiveFeedback(
-    const visualization_msgs::msg::InteractiveMarkerFeedback::SharedPtr feedback);
+    visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback);
   void kartoToROSOccupancyGrid(
     const karto::LocalizedRangeScanVector & scans,
     nav_msgs::srv::GetMap::Response & map);
@@ -95,7 +95,7 @@ private:
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
 
   // visualization
-  // std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
+  std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
 
   // state
   std::map<int, Eigen::Vector3d> submap_locations_;

@@ -35,7 +35,7 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
     std::bind(&LocalizationSlamToolbox::localizePoseCallback,
     this, std::placeholders::_1));
   clear_localization_ = this->create_service<std_srvs::srv::Empty>(
-    "clear_localization_buffer",
+    "/slam_toolbox/clear_localization_buffer",
     std::bind(&LocalizationSlamToolbox::clearLocalizationBuffer, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
