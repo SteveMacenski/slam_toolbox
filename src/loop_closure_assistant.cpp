@@ -39,7 +39,6 @@ LoopClosureAssistant::LoopClosureAssistant(
   node_->set_parameter(rclcpp::Parameter("paused_processing", false));
   node_->declare_parameter("interactive_mode", false);
   node_->set_parameter(rclcpp::Parameter("interactive_mode", false));
-  node_->declare_parameter("enable_interactive_mode", false);
   node_->get_parameter("enable_interactive_mode", enable_interactive_mode_);
 
   tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(node_);

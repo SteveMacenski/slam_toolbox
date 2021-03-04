@@ -2,11 +2,13 @@ cmake_minimum_required(VERSION 3.5)
 project(slam_toolbox)
 
 set(CMAKE_BUILD_TYPE Release) #None, Debug, Release, RelWithDebInfo, MinSizeRel
-add_compile_options(-std=c++14)
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
+endif()
+cmake_policy(SET CMP0077 NEW)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive -std=c++14")
-set(CMAKE_CXX_STANDARD 14)
 
 find_package(ament_cmake REQUIRED)
 find_package(message_filters REQUIRED)
@@ -36,7 +38,6 @@ set(BUILD_SHARED_LIBS ON)
 add_subdirectory(lib/karto_sdk)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOMOC ON)
 
 set(dependencies
   rclcpp
@@ -65,6 +66,10 @@ set(libraries
     toolbox_common
     SlamToolboxPlugin
     ceres_solver_plugin
+    async_slam_toolbox
+    sync_slam_toolbox
+    localization_slam_toolbox
+    lifelong_slam_toolbox
 )
 
 find_package(PkgConfig REQUIRED)
@@ -99,13 +104,14 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   srvs/AddSubmap.srv
   srvs/DeserializePoseGraph.srv
   srvs/SerializePoseGraph.srv
-  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs visualization_msgs
+  DEPENDENCIES builtin_interfaces geometry_msgs std_msgs nav_msgs visualization_msgs
 )
 
 #### rviz Plugin
+qt5_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
 add_library(SlamToolboxPlugin SHARED
   rviz_plugin/slam_toolbox_rviz_plugin.cpp
-  rviz_plugin/slam_toolbox_rviz_plugin.hpp)
+  ${MOC_FILES})
 ament_target_dependencies(SlamToolboxPlugin
  ${dependencies}
 )

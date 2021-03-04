@@ -530,7 +530,6 @@ void SlamToolboxPlugin::CurEstMatchCb()
   }
 }
 
-
 /*****************************************************************************/
 void SlamToolboxPlugin::LocalizeCb()
 /*****************************************************************************/
@@ -545,19 +544,20 @@ void SlamToolboxPlugin::LocalizeCb()
   }
 }
 
-
 /*****************************************************************************/
 void SlamToolboxPlugin::updateCheckStateIfExternalChange()
 /*****************************************************************************/
 {
   rclcpp::Rate r(1);
   bool paused_measure = false, interactive = false;
+  auto parameters_client =
+    std::make_shared<rclcpp::SyncParametersClient>(ros_node_, "slam_toolbox");
 
   while (rclcpp::ok()) {
-    paused_measure = ros_node_->get_parameter(
-      "/slam_toolbox/paused_new_measurements").as_bool();
-    interactive = ros_node_->get_parameter(
-      "/slam_toolbox/interactive_mode").as_bool();
+    auto parameters = parameters_client->get_parameters(
+      {"paused_new_measurements", "interactive_mode"});
+    paused_measure = parameters[0].as_bool();
+    interactive = parameters[1].as_bool();
 
     bool oldState = _check1->blockSignals(true);
     _check1->setChecked(interactive);
