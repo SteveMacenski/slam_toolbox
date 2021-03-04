@@ -20,6 +20,7 @@
 #include "rviz_plugin/slam_toolbox_rviz_plugin.hpp"
 // ROS
 #include <tf2_ros/transform_listener.h>
+#include <tf2/convert.h>
 // QT
 #include <QPushButton>
 #include <QCheckBox>
@@ -51,8 +52,10 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget * parent)
   interactive = ros_node_->declare_parameter(
     "/slam_toolbox/interactive_mode", interactive);
     
-  _initialposeSub = ros_node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "/initialpose", 10, std::bind(&SlamToolboxPlugin::InitialPoseCallback, this, _1));
+  _initialposeSub =
+    ros_node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "/initialpose", 10,
+    std::bind(&SlamToolboxPlugin::InitialPoseCallback, this, std::placeholders::_1));
 
   _serialize =
     ros_node_->create_client<slam_toolbox::srv::SerializePoseGraph>(
@@ -252,7 +255,7 @@ SlamToolboxPlugin::~SlamToolboxPlugin()
   
 /*****************************************************************************/
 void SlamToolboxPlugin::InitialPoseCallback(
-  const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr& msg)
+  const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 /*****************************************************************************/
 {
   _match_type = PROCESS_NEAR_REGION_CMT;
@@ -281,7 +284,7 @@ void SlamToolboxPlugin::SerializeMap()
 
   if (rclcpp::spin_until_future_complete(ros_node_, result_future,
     std::chrono::seconds(5)) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(ros_node_->get_logger(),
       "SlamToolbox: Failed to serialize"
@@ -337,7 +340,7 @@ void SlamToolboxPlugin::DeserializeMap()
 
   if (rclcpp::spin_until_future_complete(ros_node_, result_future,
     std::chrono::seconds(5)) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(
       ros_node_->get_logger(),
@@ -356,7 +359,7 @@ void SlamToolboxPlugin::LoadSubmap()
 
   if (rclcpp::spin_until_future_complete(ros_node_, result_future,
     std::chrono::seconds(5)) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(
       ros_node_->get_logger(),
@@ -372,7 +375,7 @@ void SlamToolboxPlugin::GenerateMap()
 
   if (rclcpp::spin_until_future_complete(ros_node_, result_future,
     std::chrono::seconds(5)) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(
       ros_node_->get_logger(),
@@ -389,7 +392,7 @@ void SlamToolboxPlugin::ClearChanges()
 
   if (rclcpp::spin_until_future_complete(ros_node_, result_future,
     std::chrono::seconds(5)) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(
       ros_node_->get_logger(),
@@ -406,7 +409,7 @@ void SlamToolboxPlugin::SaveChanges()
 
   if (rclcpp::spin_until_future_complete(ros_node_, result_future,
     std::chrono::seconds(5)) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(
       ros_node_->get_logger(),
@@ -424,7 +427,7 @@ void SlamToolboxPlugin::SaveMap()
 
   if (rclcpp::spin_until_future_complete(ros_node_, result_future,
     std::chrono::seconds(5)) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(
       ros_node_->get_logger(),
@@ -442,7 +445,7 @@ void SlamToolboxPlugin::ClearQueue()
 
   if (rclcpp::spin_until_future_complete(ros_node_, result_future,
     std::chrono::seconds(5)) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(
       ros_node_->get_logger(),
@@ -460,7 +463,7 @@ void SlamToolboxPlugin::InteractiveCb(int state)
 
   if (rclcpp::spin_until_future_complete(ros_node_, result_future,
     std::chrono::seconds(5)) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(
       ros_node_->get_logger(),
@@ -477,7 +480,7 @@ void SlamToolboxPlugin::PauseMeasurementsCb(int state)
 
   if (rclcpp::spin_until_future_complete(ros_node_, result_future,
     std::chrono::seconds(5)) !=
-    rclcpp::executor::FutureReturnCode::SUCCESS)
+    rclcpp::FutureReturnCode::SUCCESS)
   {
     RCLCPP_WARN(
       ros_node_->get_logger(),

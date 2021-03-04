@@ -25,12 +25,18 @@ find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(nav2_map_server REQUIRED)
 find_package(rviz_common REQUIRED)
+find_package(rviz_default_plugins REQUIRED)
+find_package(rviz_ogre_vendor REQUIRED)
+find_package(rviz_rendering REQUIRED)
 find_package(interactive_markers REQUIRED)
-find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
 
 #karto_sdk lib
 set(BUILD_SHARED_LIBS ON)
 add_subdirectory(lib/karto_sdk)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
 
 set(dependencies
   rclcpp
@@ -48,14 +54,14 @@ set(dependencies
   std_srvs
   builtin_interfaces
   rviz_common
+  rviz_default_plugins
+  rviz_ogre_vendor
+  rviz_rendering
   interactive_markers
+  Qt5
 )
 
 set(libraries
-    lifelong_slam_toolbox
-    localization_slam_toolbox
-    sync_slam_toolbox
-    async_slam_toolbox
     toolbox_common
     SlamToolboxPlugin
     ceres_solver_plugin
@@ -96,25 +102,18 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs visualization_msgs
 )
 
-set(CMAKE_AUTOMOC ON)
-find_package(Qt5 ${rviz_QT_VERSION} REQUIRED Core Widgets)
-set(QT_LIBRARIES Qt5::Widgets Qt5::Core)
-macro(qt_wrap_ui)
- qt5_wrap_ui(${ARGN})
-endmacro()
-macro(qt_wrap_cpp)
- qt5_wrap_cpp(${ARGN})
-endmacro()
-
 #### rviz Plugin
-qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.h)
-set(SOURCE_FILES rviz_plugin/slam_toolbox_rviz_plugin.cpp )
-set(HEADER_FILES rviz_plugin/slam_toolbox_rviz_plugin.h )
-add_library(SlamToolboxPlugin ${SOURCE_FILES} ${HEADER_FILES})
+add_library(SlamToolboxPlugin SHARED
+  rviz_plugin/slam_toolbox_rviz_plugin.cpp
+  rviz_plugin/slam_toolbox_rviz_plugin.hpp)
 ament_target_dependencies(SlamToolboxPlugin
  ${dependencies}
 )
-target_link_libraries(SlamToolboxPlugin kartoSlamToolbox ${rviz_DEFAULT_PLUGIN_LIBRARIES} ${QT_LIBRARIES})
+target_include_directories(SlamToolboxPlugin PUBLIC
+  ${Qt5Widgets_INCLUDE_DIRS}
+  ${OGRE_INCLUDE_DIRS}
+)
+target_link_libraries(SlamToolboxPlugin ${QT_LIBRARIES} rviz_common::rviz_common)
 rosidl_target_interfaces(SlamToolboxPlugin ${PROJECT_NAME} "rosidl_typesupport_cpp")
 target_compile_definitions(SlamToolboxPlugin PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 target_compile_definitions(SlamToolboxPlugin PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY")
@@ -186,6 +185,14 @@ install(TARGETS async_slam_toolbox_node
   RUNTIME DESTINATION lib/${PROJECT_NAME}
 )
 
+install(TARGETS SlamToolboxPlugin
+  EXPORT SlamToolboxPlugin
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+)
+
 install(DIRECTORY include/
   DESTINATION include
 )
@@ -205,4 +212,5 @@ install(FILES solver_plugins.xml rviz_plugins.xml
 ament_export_include_directories(include)
 ament_export_libraries(${libraries})
 ament_export_dependencies(${dependencies})
+ament_export_targets(SlamToolboxPlugin HAS_LIBRARY_TARGET)
 ament_package()

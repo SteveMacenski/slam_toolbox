@@ -37,7 +37,10 @@
   <build_depend>nav2_map_server</build_depend>
   <build_depend>builtin_interfaces</build_depend>
   <build_depend>rosidl_default_generators</build_depend>
-  <build_depend>rviz_common</build_depend>
+  <depend>rviz_common</depend>
+  <depend>rviz_default_plugins</depend>
+  <depend>rviz_ogre_vendor</depend>
+  <depend>rviz_rendering</depend>
   <exec_depend>eigen</exec_depend>
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>message_filters</exec_depend>
@@ -49,7 +52,6 @@
   <exec_depend>tf2_sensor_msgs</exec_depend>
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>std_srvs</exec_depend>
-  <exec_depend>rviz_common</exec_depend>
   <exec_depend>boost</exec_depend>
   <exec_depend>interactive_markers</exec_depend>
   <exec_depend>std_msgs</exec_depend>
