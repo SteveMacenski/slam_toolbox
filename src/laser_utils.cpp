@@ -120,7 +120,11 @@ karto::LaserRangeFinder * LaserAssistant::makeLaser(const double & mountingYaw)
   laser->SetIs360Laser(is_360_lidar);
 
   double max_laser_range = 25;
-  max_laser_range = node_->declare_parameter("max_laser_range", max_laser_range);
+  if (!node_->has_parameter("max_laser_range")) {
+    node_->declare_parameter("max_laser_range", max_laser_range);
+  }
+  max_laser_range = node_->get_parameter("max_laser_range");
+
   if (max_laser_range > scan_.range_max) {
     RCLCPP_WARN(node_->get_logger(),
       "maximum laser range setting (%.1f m) exceeds the capabilities "
