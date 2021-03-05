@@ -2723,7 +2723,7 @@ namespace karto
 	  return false;
   }
 
-  kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan, kt_bool localizationMode)
+  kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan, kt_bool addScanToLocalizationBuffer)
   {
     if (pScan != NULL)
     {
@@ -2777,7 +2777,7 @@ namespace karto
       if (m_pUseScanMatching->GetValue())
       {
         // add to graph
-        scan_vertex =m_pGraph->AddVertex(pScan);
+        scan_vertex = m_pGraph->AddVertex(pScan);
         m_pGraph->AddEdges(pScan, covariance);
 
         m_pMapperSensorManager->AddRunningScan(pScan);
@@ -2795,8 +2795,9 @@ namespace karto
 
       m_pMapperSensorManager->SetLastScan(pScan);
 
-      if (localizationMode){
-      AddScanToLocalizationBuffer(pScan, scan_vertex);
+      if (addScanToLocalizationBuffer)
+      {
+        AddScanToLocalizationBuffer(pScan, scan_vertex);
       }
 
       return true;
@@ -2889,7 +2890,7 @@ namespace karto
     return true;
   }
 
-  void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan *pScan, Vertex <LocalizedRangeScan> *scan_vertex)
+  void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex <LocalizedRangeScan> * scan_vertex)
   {
     // generate the info to store and later decay, outside of dataset
     LocalizationScanVertex lsv;
