@@ -2676,7 +2676,7 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan)
   return false;
 }
 
-kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool localizationMode)
+kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool addScanToLocalizationBuffer)
 {
   if (pScan != NULL) {
     karto::LaserRangeFinder * pLaserRangeFinder = pScan->GetLaserRangeFinder();
@@ -2742,7 +2742,7 @@ kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool lo
 
     m_pMapperSensorManager->SetLastScan(pScan);
 
-    if (localizationMode){
+    if (addScanToLocalizationBuffer) {
       AddScanToLocalizationBuffer(pScan, scan_vertex);
     }
 
@@ -2829,7 +2829,7 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
   return true;
 }
 
-void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan *pScan, Vertex <LocalizedRangeScan> *scan_vertex)
+void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex <LocalizedRangeScan> * scan_vertex)
 {
   // generate the info to store and later decay, outside of dataset
   LocalizationScanVertex lsv;
