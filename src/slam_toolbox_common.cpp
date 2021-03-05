@@ -748,6 +748,7 @@ void SlamToolbox::loadSerializedPoseGraph(
   if (pSensor)
   {
     SensorManager::GetInstance()->RegisterSensor(pSensor);
+    lasers_.clear();
   }
   else
   {
