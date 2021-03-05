@@ -123,7 +123,7 @@ karto::LaserRangeFinder * LaserAssistant::makeLaser(const double & mountingYaw)
   if (!node_->has_parameter("max_laser_range")) {
     node_->declare_parameter("max_laser_range", max_laser_range);
   }
-  max_laser_range = node_->get_parameter("max_laser_range");
+  node_->get_parameter("max_laser_range", max_laser_range);
 
   if (max_laser_range > scan_.range_max) {
     RCLCPP_WARN(node_->get_logger(),
