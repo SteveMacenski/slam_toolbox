@@ -699,6 +699,7 @@ void SlamToolbox::loadSerializedPoseGraph(
   Sensor * pSensor = dynamic_cast<Sensor *>(laser);
   if (pSensor) {
     SensorManager::GetInstance()->RegisterSensor(pSensor);
+    lasers_.clear();
   } else {
     RCLCPP_ERROR(get_logger(), "Invalid sensor pointer in dataset."
       " Unable to register sensor.");
