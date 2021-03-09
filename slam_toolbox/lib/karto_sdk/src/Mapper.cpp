@@ -2895,6 +2895,11 @@ namespace karto
   {
 
     // generate the info to store and later decay, outside of dataset
+    LocalizationScanVertex lsv;
+    lsv.scan = pScan;
+    lsv.vertex = scan_vertex;
+    m_LocalizationScanVertices.push(lsv);
+
     if (m_LocalizationScanVertices.size() > getParamScanBufferSize())
     {
       LocalizationScanVertex& oldLSV = m_LocalizationScanVertices.front();
@@ -2913,11 +2918,6 @@ namespace karto
 
       m_LocalizationScanVertices.pop();
     }
-
-    LocalizationScanVertex lsv;
-    lsv.scan = pScan;
-    lsv.vertex = scan_vertex;
-    m_LocalizationScanVertices.push(lsv);
   }
 
   void Mapper::ClearLocalizationBuffer()
