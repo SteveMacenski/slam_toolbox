@@ -2676,7 +2676,7 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan)
   return false;
 }
 
-kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan)
+kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool addScanToLocalizationBuffer)
 {
   if (pScan != NULL) {
     karto::LaserRangeFinder * pLaserRangeFinder = pScan->GetLaserRangeFinder();
@@ -2722,9 +2722,10 @@ kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan)
     // add scan to buffer and assign id
     m_pMapperSensorManager->AddScan(pScan);
 
+    Vertex<LocalizedRangeScan> * scan_vertex = NULL;
     if (m_pUseScanMatching->GetValue()) {
       // add to graph
-      m_pGraph->AddVertex(pScan);
+      scan_vertex = m_pGraph->AddVertex(pScan);
       m_pGraph->AddEdges(pScan, covariance);
 
       m_pMapperSensorManager->AddRunningScan(pScan);
@@ -2740,6 +2741,10 @@ kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan)
     }
 
     m_pMapperSensorManager->SetLastScan(pScan);
+
+    if (addScanToLocalizationBuffer) {
+      AddScanToLocalizationBuffer(pScan, scan_vertex);
+    }
 
     return true;
   }
@@ -2819,8 +2824,19 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
   }
 
   m_pMapperSensorManager->SetLastScan(pScan);
+  AddScanToLocalizationBuffer(pScan, scan_vertex);
 
+  return true;
+}
+
+void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex <LocalizedRangeScan> * scan_vertex)
+{
   // generate the info to store and later decay, outside of dataset
+  LocalizationScanVertex lsv;
+  lsv.scan = pScan;
+  lsv.vertex = scan_vertex;
+  m_LocalizationScanVertices.push(lsv);
+
   if (m_LocalizationScanVertices.size() > getParamScanBufferSize()) {
     LocalizationScanVertex & oldLSV = m_LocalizationScanVertices.front();
     RemoveNodeFromGraph(oldLSV.vertex);
@@ -2837,13 +2853,6 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
 
     m_LocalizationScanVertices.pop();
   }
-
-  LocalizationScanVertex lsv;
-  lsv.scan = pScan;
-  lsv.vertex = scan_vertex;
-  m_LocalizationScanVertices.push(lsv);
-
-  return true;
 }
 
 void Mapper::ClearLocalizationBuffer()
