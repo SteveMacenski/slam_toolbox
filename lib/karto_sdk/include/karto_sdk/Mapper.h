@@ -609,7 +609,7 @@ namespace karto
       }
       else
       {
-        std::cout << "RemoveVertex: Failed to remove vertex " << idx 
+        std::cout << "RemoveVertex: Failed to remove vertex " << idx
           << " because it doesnt exist in m_Vertices." << std::endl;
       }
     }
@@ -825,7 +825,7 @@ namespace karto
       }
       else
       {
-        std::cout << "GetVertex: Failed to get vertex, idx " << pScan->GetStateId() << 
+        std::cout << "GetVertex: Failed to get vertex, idx " << pScan->GetStateId() <<
           " is not in m_Vertices." << std::endl;
         return nullptr;
       }
@@ -1613,7 +1613,7 @@ namespace karto
       }
       else
       {
-        std::cout << "GetScan: id " << id << 
+        std::cout << "GetScan: id " << id <<
           " does not exist in m_scans, cannot retrieve it." << std::endl;
         return nullptr;
       }
@@ -1962,9 +1962,10 @@ namespace karto
     // processors
     kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
     kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
-    kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
+    kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan, kt_bool addScanToLocalizationBuffer = false);
     kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
     kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan>*);
+    void AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex<LocalizedRangeScan> * scan_vertex);
     void ClearLocalizationBuffer();
     /**
      * Returns all processed scans added to the mapper.
