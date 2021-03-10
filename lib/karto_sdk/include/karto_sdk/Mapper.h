@@ -1974,9 +1974,10 @@ public:
   // processors
   kt_bool ProcessAtDock(LocalizedRangeScan * pScan);
   kt_bool ProcessAgainstNode(LocalizedRangeScan * pScan, const int & nodeId);
-  kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan);
+  kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool addScanToLocalizationBuffer = false);
   kt_bool ProcessLocalization(LocalizedRangeScan * pScan);
   kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan> *);
+  void AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex<LocalizedRangeScan> * scan_vertex);
   void ClearLocalizationBuffer();
 
   /**
