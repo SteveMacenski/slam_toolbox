@@ -11,7 +11,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
 
 find_package(ament_cmake REQUIRED)
-find_package(ament_cmake_python REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -215,8 +214,6 @@ install(DIRECTORY config
 install(FILES solver_plugins.xml rviz_plugins.xml
   DESTINATION share
 )
-
-ament_python_install_package(slam_toolbox)
 
 ament_export_include_directories(include)
 ament_export_libraries(${libraries})

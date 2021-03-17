@@ -6,7 +6,7 @@ from launch.conditions import UnlessCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
-from slam_toolbox.launch import HasNodeParams
+from nav2_common.launch import HasNodeParams
 
 
 def generate_launch_description():
