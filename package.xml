@@ -62,6 +62,7 @@
   <exec_depend>tbb</exec_depend>
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-widgets</exec_depend>
+  <exec_depend>nav2_common</exec_depend>
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>rosidl_default_generators</exec_depend>
