@@ -5573,6 +5573,17 @@ namespace karto
     }
 
     /**
+     * Moves the scan by moving the robot pose to the given location and update point readings.
+     * @param rPose new pose of the robot of this scan
+     */
+    inline void SetCorrectedPoseAndUpdate(const Pose2& rPose)
+    {
+      SetCorrectedPose(rPose);
+
+      Update();
+    }
+
+    /**
      * Gets barycenter of point readings
      */
     inline const Pose2& GetBarycenterPose() const
@@ -5633,16 +5644,7 @@ namespace karto
      */
     void SetSensorPose(const Pose2& rScanPose)
     {
-      Pose2 deviceOffsetPose2 = GetLaserRangeFinder()->GetOffsetPose();
-      kt_double offsetLength = deviceOffsetPose2.GetPosition().Length();
-      kt_double offsetHeading = deviceOffsetPose2.GetHeading();
-      kt_double angleoffset = atan2(deviceOffsetPose2.GetY(), deviceOffsetPose2.GetX());
-      kt_double correctedHeading = math::NormalizeAngle(rScanPose.GetHeading());
-      Pose2 worldSensorOffset = Pose2(offsetLength * cos(correctedHeading + angleoffset - offsetHeading),
-                                      offsetLength * sin(correctedHeading + angleoffset - offsetHeading),
-                                      offsetHeading);
-
-      m_CorrectedPose = rScanPose - worldSensorOffset;
+      m_CorrectedPose = GetCorrectedAt(rScanPose);
 
       Update();
     }
@@ -5655,6 +5657,25 @@ namespace karto
     inline Pose2 GetSensorAt(const Pose2& rPose) const
     {
       return Transform(rPose).TransformPose(GetLaserRangeFinder()->GetOffsetPose());
+    }
+
+    /**
+     * @brief Computes the pose of the robot if the sensor were at the given pose
+     * @param sPose sensor pose
+     * @return robot pose
+     */
+    inline Pose2 GetCorrectedAt(const Pose2& sPose) const
+    {
+      Pose2 deviceOffsetPose2 = GetLaserRangeFinder()->GetOffsetPose();
+      kt_double offsetLength = deviceOffsetPose2.GetPosition().Length();
+      kt_double offsetHeading = deviceOffsetPose2.GetHeading();
+      kt_double angleoffset = atan2(deviceOffsetPose2.GetY(), deviceOffsetPose2.GetX());
+      kt_double correctedHeading = math::NormalizeAngle(sPose.GetHeading());
+      Pose2 worldSensorOffset = Pose2(offsetLength * cos(correctedHeading + angleoffset - offsetHeading),
+                                      offsetLength * sin(correctedHeading + angleoffset - offsetHeading),
+                                      offsetHeading);
+
+      return sPose - worldSensorOffset;
     }
 
     /**
