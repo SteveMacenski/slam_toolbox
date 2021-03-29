@@ -809,6 +809,12 @@ public:
     return m_pLoopScanMatcher;
   }
 
+  /**
+   * Create new scan matcher for graph
+   * @param rangeThreshold
+   */
+  void UpdateLoopScanMatcher(kt_double rangeThreshold);
+
 private:
   /**
    * Gets the vertex associated with the given scan
@@ -1670,9 +1676,21 @@ public:
   void ClearRunningScans(const Name & rSensorName);
 
   /**
-   * Gets the running scan buffer of device
+   * Gets the running scan buffer size of device
    */
   kt_int32u GetRunningScanBufferSize(const Name & rSensorName);
+
+  /**
+   * Sets the running scan buffer size for all devices
+   * @param rScanBufferSize
+   */
+  void SetRunningScanBufferSize(kt_int32u rScanBufferSize);
+
+  /**
+   * Sets the running scan buffer maximum distance for all devices
+   * @param rScanBufferMaxDistance
+   */
+  void SetRunningScanBufferMaximumDistance(kt_double rScanBufferMaxDistance);
 
   /**
    * Gets all scans of all devices
@@ -1936,6 +1954,12 @@ public:
   void Initialize(kt_double rangeThreshold);
 
   /**
+   * Updates parameters after deserializing from file
+   * @param rangeThreshold
+   */
+  void InitializeFromFile(kt_double rangeThreshold);
+
+  /**
    * Save map to file
    * @param filename
    */
@@ -2122,6 +2146,7 @@ public:
 
 protected:
   kt_bool m_Initialized;
+  kt_bool m_Deserialized;
 
   ScanMatcher * m_pSequentialScanMatcher;
 
