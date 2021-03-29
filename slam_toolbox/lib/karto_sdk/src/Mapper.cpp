@@ -152,6 +152,24 @@ namespace karto
     }
 
     /**
+     * Sets running scan buffer size
+     * @param rScanBufferSize
+     */
+    void SetRunningScanBufferSize(const kt_int32u & rScanBufferSize)
+    {
+      m_RunningBufferMaximumSize = rScanBufferSize;
+    }
+
+    /**
+     * Sets running scan buffer maximum distance
+     * @param rScanBufferMaxDistance
+     */
+    void SetRunningScanBufferMaximumDistance(const kt_int32u & rScanBufferMaxDistance)
+    {
+      m_RunningBufferMaximumDistance = rScanBufferMaxDistance;
+    }
+
+    /**
      * Adds scan to vector of running scans
      * @param pScan
      */
@@ -383,6 +401,26 @@ namespace karto
   inline kt_int32u MapperSensorManager::GetRunningScanBufferSize(const Name& rSensorName)
   {
     return GetScanManager(rSensorName)->GetRunningScanBufferSize();
+  }
+
+  void MapperSensorManager::SetRunningScanBufferSize(kt_int32u rScanBufferSize)
+  {
+    m_RunningBufferMaximumSize = rScanBufferSize;
+
+    std::vector<Name> names = GetSensorNames();
+    for (uint i = 0; i != names.size(); i++) {
+      GetScanManager(names[i])->SetRunningScanBufferSize(rScanBufferSize);
+    }
+  }
+
+  void MapperSensorManager::SetRunningScanBufferMaximumDistance(kt_double rScanBufferMaxDistance)
+  {
+    m_RunningBufferMaximumDistance = rScanBufferMaxDistance;
+
+    std::vector<Name> names = GetSensorNames();
+    for (uint i = 0; i != names.size(); i++) {
+      GetScanManager(names[i])->SetRunningScanBufferMaximumDistance(rScanBufferMaxDistance);
+    }
   }
 
   /**
@@ -2024,6 +2062,18 @@ namespace karto
     }
   }
 
+  void MapperGraph::UpdateLoopScanMatcher(kt_double rangeThreshold)
+  {
+    if (m_pLoopScanMatcher) {
+      delete m_pLoopScanMatcher;
+    }
+    m_pLoopScanMatcher = ScanMatcher::Create(m_pMapper,
+      m_pMapper->m_pLoopSearchSpaceDimension->GetValue(),
+      m_pMapper->m_pLoopSearchSpaceResolution->GetValue(),
+      m_pMapper->m_pLoopSearchSpaceSmearDeviation->GetValue(), rangeThreshold);
+    assert(m_pLoopScanMatcher);
+  }
+
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -2032,12 +2082,13 @@ namespace karto
    * Default constructor
    */
   Mapper::Mapper()
-    : Module("Mapper")
-    , m_Initialized(false)
-    , m_pSequentialScanMatcher(NULL)
-    , m_pMapperSensorManager(NULL)
-    , m_pGraph(NULL)
-    , m_pScanOptimizer(NULL)
+  : Module("Mapper"),
+    m_Initialized(false),
+    m_Deserialized(false),
+    m_pSequentialScanMatcher(NULL),
+    m_pMapperSensorManager(NULL),
+    m_pGraph(NULL),
+    m_pScanOptimizer(NULL)
   {
     InitializeParameters();
   }
@@ -2045,13 +2096,14 @@ namespace karto
   /**
    * Default constructor
    */
-  Mapper::Mapper(const std::string& rName)
-    : Module(rName)
-    , m_Initialized(false)
-    , m_pSequentialScanMatcher(NULL)
-    , m_pMapperSensorManager(NULL)
-    , m_pGraph(NULL)
-    , m_pScanOptimizer(NULL)
+  Mapper::Mapper(const std::string & rName)
+  : Module(rName),
+    m_Initialized(false),
+    m_Deserialized(false),
+    m_pSequentialScanMatcher(NULL),
+    m_pMapperSensorManager(NULL),
+    m_pGraph(NULL),
+    m_pScanOptimizer(NULL)
   {
     InitializeParameters();
   }
@@ -2584,23 +2636,35 @@ namespace karto
 
   void Mapper::Initialize(kt_double rangeThreshold)
   {
-    if (m_Initialized == false)
+    if (m_Initialized)
     {
-      // create sequential scan and loop matcher
-      m_pSequentialScanMatcher = ScanMatcher::Create(this,
-                                                    m_pCorrelationSearchSpaceDimension->GetValue(),
-                                                    m_pCorrelationSearchSpaceResolution->GetValue(),
-                                                    m_pCorrelationSearchSpaceSmearDeviation->GetValue(),
-                                                    rangeThreshold);
-      assert(m_pSequentialScanMatcher);
+      return;
+    }
+    // create sequential scan and loop matcher, update if deserialized
 
+    if (m_pSequentialScanMatcher) {
+      delete m_pSequentialScanMatcher;
+    }
+    m_pSequentialScanMatcher = ScanMatcher::Create(this,
+      m_pCorrelationSearchSpaceDimension->GetValue(),
+      m_pCorrelationSearchSpaceResolution->GetValue(),
+      m_pCorrelationSearchSpaceSmearDeviation->GetValue(),
+      rangeThreshold);
+    assert(m_pSequentialScanMatcher);
+
+    if (m_Deserialized) {
+      m_pMapperSensorManager->SetRunningScanBufferSize(m_pScanBufferSize->GetValue());
+      m_pMapperSensorManager->SetRunningScanBufferMaximumDistance(m_pScanBufferMaximumScanDistance->GetValue());
+
+      m_pGraph->UpdateLoopScanMatcher(rangeThreshold);
+    } else {
       m_pMapperSensorManager = new MapperSensorManager(m_pScanBufferSize->GetValue(),
-                                                       m_pScanBufferMaximumScanDistance->GetValue());
+        m_pScanBufferMaximumScanDistance->GetValue());
 
       m_pGraph = new MapperGraph(this, rangeThreshold);
+    }
 
-      m_Initialized = true;
-	}
+    m_Initialized = true;
   }
 
   void Mapper::SaveToFile(const std::string& filename)
@@ -2617,6 +2681,8 @@ namespace karto
     std::ifstream ifs(filename.c_str());
     boost::archive::binary_iarchive ia(ifs, boost::archive::no_codecvt);
     ia >> BOOST_SERIALIZATION_NVP(*this);
+    m_Deserialized = true;
+    m_Initialized = false;
   }
 
   void Mapper::Reset()
@@ -2637,6 +2703,7 @@ namespace karto
       m_pMapperSensorManager = NULL;
     }
 	  m_Initialized = false;
+    m_Deserialized = false;
     while (!m_LocalizationScanVertices.empty())
     {
       m_LocalizationScanVertices.pop();
