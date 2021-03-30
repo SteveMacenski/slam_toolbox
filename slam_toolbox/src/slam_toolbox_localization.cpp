@@ -42,7 +42,7 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
     slam_toolbox_msgs::DeserializePoseGraph::Response resp;
     req.initial_pose = pose;
     req.filename = filename;
-    req.match_type = 
+    req.match_type =
       slam_toolbox_msgs::DeserializePoseGraph::Request::LOCALIZE_AT_POSE;
     if (dock)
     {
@@ -67,6 +67,7 @@ bool LocalizationSlamToolbox::clearLocalizationBuffer(
   std_srvs::Empty::Response& resp)
 /*****************************************************************************/
 {
+  boost::mutex::scoped_lock lock(smapper_mutex_);
   ROS_INFO("LocalizationSlamToolbox: Clearing localization buffer.");
   smapper_->clearLocalizationBuffer();
   return true;
@@ -131,7 +132,7 @@ void LocalizationSlamToolbox::laserCallback(
 /*****************************************************************************/
 LocalizedRangeScan* LocalizationSlamToolbox::addScan(
   LaserRangeFinder* laser,
-  const sensor_msgs::LaserScan::ConstPtr& scan, 
+  const sensor_msgs::LaserScan::ConstPtr& scan,
   Pose2& karto_pose)
 /*****************************************************************************/
 {
@@ -219,6 +220,7 @@ void LocalizationSlamToolbox::localizePoseCallback(const
 
   first_measurement_ = true;
 
+  boost::mutex::scoped_lock lock(smapper_mutex_);
   smapper_->clearLocalizationBuffer();
 
   ROS_INFO("LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
