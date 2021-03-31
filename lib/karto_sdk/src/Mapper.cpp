@@ -342,7 +342,7 @@ void MapperSensorManager::RemoveScan(LocalizedRangeScan * pScan)
 {
   GetScanManager(pScan)->RemoveScan(pScan);
 
-  LocalizedRangeScanMap::iterator it = m_Scans.find(pScan->GetStateId());
+  LocalizedRangeScanMap::iterator it = m_Scans.find(pScan->GetUniqueId());
   if (it != m_Scans.end()) {
     it->second = NULL;
     m_Scans.erase(it);
