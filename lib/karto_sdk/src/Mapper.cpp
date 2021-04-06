@@ -2604,30 +2604,8 @@ void Mapper::Initialize(kt_double rangeThreshold)
   if (m_Initialized) {
     return;
   }
+  // create sequential scan and loop matcher, update if deserialized
 
-  if (m_Deserialized) {
-    InitializeFromFile(rangeThreshold);
-    return;
-  }
-
-  // create sequential scan and loop matcher
-  m_pSequentialScanMatcher = ScanMatcher::Create(this,
-      m_pCorrelationSearchSpaceDimension->GetValue(),
-      m_pCorrelationSearchSpaceResolution->GetValue(),
-      m_pCorrelationSearchSpaceSmearDeviation->GetValue(),
-      rangeThreshold);
-  assert(m_pSequentialScanMatcher);
-
-  m_pMapperSensorManager = new MapperSensorManager(m_pScanBufferSize->GetValue(),
-      m_pScanBufferMaximumScanDistance->GetValue());
-
-  m_pGraph = new MapperGraph(this, rangeThreshold);
-
-  m_Initialized = true;
-}
-
-void Mapper::InitializeFromFile(kt_double rangeThreshold){
-  // create new sequential and loop scan matcher based on current config
   if (m_pSequentialScanMatcher) {
     delete m_pSequentialScanMatcher;
   }
@@ -2635,13 +2613,20 @@ void Mapper::InitializeFromFile(kt_double rangeThreshold){
     m_pCorrelationSearchSpaceDimension->GetValue(),
     m_pCorrelationSearchSpaceResolution->GetValue(),
     m_pCorrelationSearchSpaceSmearDeviation->GetValue(),
-     rangeThreshold);
+    rangeThreshold);
   assert(m_pSequentialScanMatcher);
-  m_pGraph->UpdateLoopScanMatcher(rangeThreshold);
 
-  // update scan buffer parameters
-  m_pMapperSensorManager->SetRunningScanBufferSize(m_pScanBufferSize->GetValue());
-  m_pMapperSensorManager->SetRunningScanBufferMaximumDistance(m_pScanBufferMaximumScanDistance->GetValue());
+  if (m_Deserialized) {
+    m_pMapperSensorManager->SetRunningScanBufferSize(m_pScanBufferSize->GetValue());
+    m_pMapperSensorManager->SetRunningScanBufferMaximumDistance(m_pScanBufferMaximumScanDistance->GetValue());
+
+    m_pGraph->UpdateLoopScanMatcher(rangeThreshold);
+  } else {
+    m_pMapperSensorManager = new MapperSensorManager(m_pScanBufferSize->GetValue(),
+      m_pScanBufferMaximumScanDistance->GetValue());
+
+    m_pGraph = new MapperGraph(this, rangeThreshold);
+  }
 
   m_Initialized = true;
 }

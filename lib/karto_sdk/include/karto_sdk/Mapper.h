@@ -1954,12 +1954,6 @@ public:
   void Initialize(kt_double rangeThreshold);
 
   /**
-   * Updates parameters after deserializing from file
-   * @param rangeThreshold
-   */
-  void InitializeFromFile(kt_double rangeThreshold);
-
-  /**
    * Save map to file
    * @param filename
    */
