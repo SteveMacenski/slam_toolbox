@@ -35,6 +35,9 @@ void AsynchronousSlamToolbox::laserCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
+  // store scan timestamped
+  scan_timestamped = scan->header.stamp;
+  
   // no odom info
   Pose2 pose;
   if (!pose_helper_->getOdomPose(pose, scan->header.stamp)) {
