@@ -80,6 +80,7 @@ bool LocalizationSlamToolbox::clearLocalizationBuffer(
   std::shared_ptr<std_srvs::srv::Empty::Response> resp)
 /*****************************************************************************/
 {
+  boost::mutex::scoped_lock lock(smapper_mutex_);
   RCLCPP_INFO(get_logger(),
     "LocalizationSlamToolbox: Clearing localization buffer.");
   smapper_->clearLocalizationBuffer();
@@ -238,6 +239,7 @@ void LocalizationSlamToolbox::localizePoseCallback(const
 
   first_measurement_ = true;
 
+  boost::mutex::scoped_lock lock(smapper_mutex_);
   smapper_->clearLocalizationBuffer();
 
   RCLCPP_INFO(get_logger(),
