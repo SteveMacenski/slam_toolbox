@@ -808,6 +808,12 @@ namespace karto
       return m_pLoopScanMatcher;
     }
 
+    /**
+     * Create new scan matcher for graph
+     * @param rangeThreshold
+     */
+    void UpdateLoopScanMatcher(kt_double rangeThreshold);
+
   private:
     /**
      * Gets the vertex associated with the given scan
@@ -1659,6 +1665,18 @@ namespace karto
     kt_int32u GetRunningScanBufferSize(const Name& rSensorName);
 
     /**
+     * Sets the running scan buffer size for all devices
+     * @param rScanBufferSize
+     */
+    void SetRunningScanBufferSize(kt_int32u rScanBufferSize);
+
+    /**
+     * Sets the running scan buffer maximum distance for all devices
+     * @param rScanBufferMaxDistance
+     */
+    void SetRunningScanBufferMaximumDistance(kt_double rScanBufferMaxDistance);
+
+    /**
      * Gets all scans of all devices
      * @return all scans of all devices
      */
@@ -2107,6 +2125,7 @@ namespace karto
 
   protected:
     kt_bool m_Initialized;
+    kt_bool m_Deserialized;
 
     ScanMatcher* m_pSequentialScanMatcher;
 
