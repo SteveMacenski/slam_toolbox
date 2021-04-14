@@ -231,7 +231,7 @@ void SlamToolbox::publishTransformLoop(
       msg.transform = tf2::toMsg(map_to_odom_);
       msg.child_frame_id = odom_frame_;
       msg.header.frame_id = map_frame_;
-      msg.header.stamp = scan_timestamped + transform_timeout_; // 8 Apr.21 | remove this->now 
+      msg.header.stamp = scan_timestamped + transform_timeout_; 
       tfB_->sendTransform(msg);
     }
     r.sleep();
