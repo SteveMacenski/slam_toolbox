@@ -50,7 +50,7 @@ inline visualization_msgs::msg::Marker toMarker(
   marker.color.b = 0.0;
   marker.color.a = 1.;
   marker.action = visualization_msgs::msg::Marker::ADD;
-  marker.lifetime = rclcpp::Duration(0.);
+  marker.lifetime = rclcpp::Duration::from_nanoseconds(0);
 
   return marker;
 }
