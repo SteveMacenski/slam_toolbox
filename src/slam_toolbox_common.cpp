@@ -40,7 +40,7 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
   processor_type_(PROCESS),
   first_measurement_(true),
   process_near_pose_(nullptr),
-  transform_timeout_(rclcpp::Duration::from_seconds(0.5 )),
+  transform_timeout_(rclcpp::Duration::from_seconds(0.5)),
   minimum_time_interval_(std::chrono::nanoseconds(0))
 /*****************************************************************************/
 {
@@ -231,7 +231,7 @@ void SlamToolbox::publishTransformLoop(
       msg.transform = tf2::toMsg(map_to_odom_);
       msg.child_frame_id = odom_frame_;
       msg.header.frame_id = map_frame_;
-      msg.header.stamp = scan_timestamped + transform_timeout_; 
+      msg.header.stamp = scan_timestamped + transform_timeout_;
       tfB_->sendTransform(msg);
     }
     r.sleep();
