@@ -95,26 +95,26 @@ target_link_libraries(ceres_solver_plugin ${catkin_LIBRARIES}
 
 #### Tool lib for mapping
 add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)
-target_link_libraries(toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(toolbox_common kartoSlamToolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 #### Mapping executibles
 add_library(async_slam_toolbox src/slam_toolbox_async.cpp)
-target_link_libraries(async_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(async_slam_toolbox toolbox_common kartoSlamToolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_executable(async_slam_toolbox_node src/slam_toolbox_async_node.cpp )
 target_link_libraries(async_slam_toolbox_node async_slam_toolbox)
 
 add_library(sync_slam_toolbox src/slam_toolbox_sync.cpp)
-target_link_libraries(sync_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(sync_slam_toolbox toolbox_common kartoSlamToolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_executable(sync_slam_toolbox_node src/slam_toolbox_sync_node.cpp )
 target_link_libraries(sync_slam_toolbox_node sync_slam_toolbox)
 
 add_library(localization_slam_toolbox src/slam_toolbox_localization.cpp)
-target_link_libraries(localization_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(localization_slam_toolbox toolbox_common kartoSlamToolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_executable(localization_slam_toolbox_node src/slam_toolbox_localization_node.cpp )
 target_link_libraries(localization_slam_toolbox_node localization_slam_toolbox)
 
 add_library(lifelong_slam_toolbox src/experimental/slam_toolbox_lifelong.cpp)
-target_link_libraries(lifelong_slam_toolbox toolbox_common karto ${catkin_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(lifelong_slam_toolbox toolbox_common kartoSlamToolbox ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 add_executable(lifelong_slam_toolbox_node src/experimental/slam_toolbox_lifelong_node.cpp )
 target_link_libraries(lifelong_slam_toolbox_node lifelong_slam_toolbox)
 
