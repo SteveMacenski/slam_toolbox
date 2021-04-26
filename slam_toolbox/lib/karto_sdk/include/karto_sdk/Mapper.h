@@ -808,6 +808,12 @@ namespace karto
       return m_pLoopScanMatcher;
     }
 
+    /**
+     * Create new scan matcher for graph
+     * @param rangeThreshold
+     */
+    void UpdateLoopScanMatcher(kt_double rangeThreshold);
+
   private:
     /**
      * Gets the vertex associated with the given scan
@@ -1585,6 +1591,18 @@ namespace karto
     void SetLastScan(LocalizedRangeScan* pScan);
 
     /**
+     * Clears the laser scan of device
+     * @param pScan
+     */
+    void ClearLastScan(LocalizedRangeScan* pScan);
+
+    /**
+     * Clears the laser scan of device name
+     * @param pScan
+     */
+    void ClearLastScan(const Name& name);
+
+    /**
      * Gets the scan with the given unique id
      * @param id
      * @return scan
@@ -1645,6 +1663,18 @@ namespace karto
      * Gets the running scan buffer of device
      */
     kt_int32u GetRunningScanBufferSize(const Name& rSensorName);
+
+    /**
+     * Sets the running scan buffer size for all devices
+     * @param rScanBufferSize
+     */
+    void SetRunningScanBufferSize(kt_int32u rScanBufferSize);
+
+    /**
+     * Sets the running scan buffer maximum distance for all devices
+     * @param rScanBufferMaxDistance
+     */
+    void SetRunningScanBufferMaximumDistance(kt_double rScanBufferMaxDistance);
 
     /**
      * Gets all scans of all devices
@@ -1947,9 +1977,11 @@ namespace karto
     // processors
     kt_bool ProcessAtDock(LocalizedRangeScan* pScan);
     kt_bool ProcessAgainstNode(LocalizedRangeScan* pScan,  const int& nodeId);
-    kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan);
+    kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan, kt_bool addScanToLocalizationBuffer = false);
     kt_bool ProcessLocalization(LocalizedRangeScan* pScan);
     kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan>*);
+    void AddScanToLocalizationBuffer(LocalizedRangeScan* pScan, Vertex<LocalizedRangeScan>* scan_vertex);
+    void ClearLocalizationBuffer();
 
     /**
      * Returns all processed scans added to the mapper.
@@ -2093,6 +2125,7 @@ namespace karto
 
   protected:
     kt_bool m_Initialized;
+    kt_bool m_Deserialized;
 
     ScanMatcher* m_pSequentialScanMatcher;
 

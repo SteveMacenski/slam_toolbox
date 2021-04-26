@@ -29,6 +29,9 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
   processor_type_ = PROCESS_LOCALIZATION;
   localization_pose_sub_ = nh.subscribe("/initialpose", 1,
     &LocalizationSlamToolbox::localizePoseCallback, this);
+  clear_localization_ = nh.advertiseService(
+    "clear_localization_buffer",
+    &LocalizationSlamToolbox::clearLocalizationBuffer, this);
 
   std::string filename;
   geometry_msgs::Pose2D pose;
@@ -39,7 +42,7 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
     slam_toolbox_msgs::DeserializePoseGraph::Response resp;
     req.initial_pose = pose;
     req.filename = filename;
-    req.match_type = 
+    req.match_type =
       slam_toolbox_msgs::DeserializePoseGraph::Request::LOCALIZE_AT_POSE;
     if (dock)
     {
@@ -56,6 +59,18 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(ros::NodeHandle& nh)
   // in localization mode, disable map saver
   map_saver_.reset();
   return;
+}
+
+/*****************************************************************************/
+bool LocalizationSlamToolbox::clearLocalizationBuffer(
+  std_srvs::Empty::Request& req,
+  std_srvs::Empty::Response& resp)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(smapper_mutex_);
+  ROS_INFO("LocalizationSlamToolbox: Clearing localization buffer.");
+  smapper_->clearLocalizationBuffer();
+  return true;
 }
 
 /*****************************************************************************/
@@ -117,7 +132,7 @@ void LocalizationSlamToolbox::laserCallback(
 /*****************************************************************************/
 LocalizedRangeScan* LocalizationSlamToolbox::addScan(
   LaserRangeFinder* laser,
-  const sensor_msgs::LaserScan::ConstPtr& scan, 
+  const sensor_msgs::LaserScan::ConstPtr& scan,
   Pose2& karto_pose)
 /*****************************************************************************/
 {
@@ -147,7 +162,7 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
     range_scan->SetOdometricPose(*process_near_pose_);
     range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
     process_near_pose_.reset(nullptr);
-    processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan);
+    processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan, true);
 
     // reset to localization mode
     processor_type_ = PROCESS_LOCALIZATION;
@@ -204,6 +219,9 @@ void LocalizationSlamToolbox::localizePoseCallback(const
   }
 
   first_measurement_ = true;
+
+  boost::mutex::scoped_lock lock(smapper_mutex_);
+  smapper_->clearLocalizationBuffer();
 
   ROS_INFO("LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
     msg->pose.pose.position.x, msg->pose.pose.position.y,
