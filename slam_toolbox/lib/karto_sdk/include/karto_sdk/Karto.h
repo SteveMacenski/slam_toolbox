@@ -28,7 +28,6 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
-#include <shared_mutex>
 
 #include <math.h>
 #include <float.h>
@@ -5529,7 +5528,7 @@ namespace karto
     }
 
   private:
-    mutable std::shared_mutex m_Lock;
+    mutable boost::shared_mutex m_Lock;
 
   public:
     /**
@@ -5590,12 +5589,12 @@ namespace karto
      */
     inline const Pose2& GetBarycenterPose() const
     {
-      std::shared_lock<std::shared_mutex> lock(m_Lock);
+      boost::shared_lock<boost::shared_mutex> lock(m_Lock);
       if (m_IsDirty)
       {
         // throw away constness and do an update!
         lock.unlock();
-        std::unique_lock<std::shared_mutex> uniqueLock(m_Lock);
+        boost::unique_lock<boost::shared_mutex> uniqueLock(m_Lock);
         const_cast<LocalizedRangeScan*>(this)->Update();
       }
 
@@ -5614,12 +5613,12 @@ namespace karto
      */
     inline Pose2 GetReferencePose(kt_bool useBarycenter) const
     {
-      std::shared_lock<std::shared_mutex> lock(m_Lock);
+      boost::shared_lock<boost::shared_mutex> lock(m_Lock);
       if (m_IsDirty)
       {
         // throw away constness and do an update!
         lock.unlock();
-        std::unique_lock<std::shared_mutex> uniqueLock(m_Lock);
+        boost::unique_lock<boost::shared_mutex> uniqueLock(m_Lock);
         const_cast<LocalizedRangeScan*>(this)->Update();
       }
 
@@ -5686,12 +5685,12 @@ namespace karto
      */
     inline const BoundingBox2& GetBoundingBox() const
     {
-      std::shared_lock<std::shared_mutex> lock(m_Lock);
+      boost::shared_lock<boost::shared_mutex> lock(m_Lock);
       if (m_IsDirty)
       {
         // throw away constness and do an update!
         lock.unlock();
-        std::unique_lock<std::shared_mutex> uniqueLock(m_Lock);
+        boost::unique_lock<boost::shared_mutex> uniqueLock(m_Lock);
         const_cast<LocalizedRangeScan*>(this)->Update();
       }
 
@@ -5708,12 +5707,12 @@ namespace karto
      */
     inline const PointVectorDouble& GetPointReadings(kt_bool wantFiltered = false) const
     {
-      std::shared_lock<std::shared_mutex> lock(m_Lock);
+      boost::shared_lock<boost::shared_mutex> lock(m_Lock);
       if (m_IsDirty)
       {
         // throw away constness and do an update!
         lock.unlock();
-        std::unique_lock<std::shared_mutex> uniqueLock(m_Lock);
+        boost::unique_lock<boost::shared_mutex> uniqueLock(m_Lock);
         const_cast<LocalizedRangeScan*>(this)->Update();
       }
 

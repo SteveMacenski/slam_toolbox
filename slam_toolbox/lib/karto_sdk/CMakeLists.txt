@@ -9,7 +9,7 @@ find_package(catkin REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED system serialization filesystem thread)
 find_package(TBB REQUIRED)
-add_compile_options(-std=c++17)
+add_compile_options(-std=c++11)
 
 catkin_package(
   DEPENDS 
