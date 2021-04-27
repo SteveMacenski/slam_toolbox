@@ -4,10 +4,6 @@
 |-----|----|----|
 | **Build Farm** | [![Build Status](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/badge/icon)](http://build.ros2.org/job/Ddev__slam_toolbox__ubuntu_bionic_amd64/) | N/A |
 
-NOTE: ROS2 Port of Slam Toolbox is incomplete. Known on-going work:
-- Interactive markers need to be ported to ROS2 and integrated
-- Panel plugins need to be ported to ROS2 to test and ship the rviz plugin
-
 We've received feedback from users and have robots operating in the following environments with SLAM Toolbox:
 - Retail
 - Warehouses
@@ -50,6 +46,19 @@ If you have any questions on use or configuration, please post your questions on
 If you're interested in contributing to this project in a substantial way, please file a public GitHub issue on your new feature / patch. If for some reason the development of this feature is sensitive, please email the maintainers at their email addresses listed in the `package.xml` file. 
 
 For all contributions, please properly fill in the GitHub issue and PR templates with all necessary context. All PRs must be passing CI and maintaining ABI compatibility within released ROS distributions. A maintainer will follow up shortly thereafter. 
+
+# 03/23/2021 Note On Serialized Files
+
+As of 03/23/2021, the contents of the serialized files has changed. For all new users after this date, this regard this section it does not impact you.
+
+If you have previously existing serialized files (e.g. not `pgm` maps, but `.posegraph` serialized slam sessions), after this date, you may need to take some action to maintain current features. Unfortunately, an ABI breaking change was required to be made in order to fix a very large bug affecting any 360 or non-axially-mounted LIDAR system.
+
+[This Discourse post](https://discourse.ros.org/t/request-for-input-potential-existing-slam-toolbox-serialized-file-invalidation/19520) highlights the issues. The frame storing the scan data for the optimizer was incorrect leading to explosions or flipping of maps for 360 and non-axially-aligned robots when using conservative loss functions. This change permanently fixes this issue, however it changes the frame of reference that this data is stored and serialized in. If your system as a non-360 lidar and it is mounted with its frame aligned with the robot base frame, you're unlikely to notice a problem and can disregard this statement. For all others noticing issues, you have the following options:
+- Use the `<distro>-devel-unfixed` branch rather than `<distro>-devel`, which contains the unfixed version of this distribution's release which will be maintained in parallel to the main branches to have an option to continue with your working solution
+- Convert your serialized files into the new reference frame with an offline utility
+- Take the raw data and rerun the SLAM sessions to get a new serialized file with the right content
+
+More of the conversation can be seen on tickets #198 and #281. I apologize for the inconvenience, however this solves a very large bug that was impacting a large number of users. I've worked hard to make sure there's a viable path forward for everyone.
 
 # LifeLong Mapping
 

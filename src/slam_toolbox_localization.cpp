@@ -34,6 +34,10 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
     "/initialpose", 1,
     std::bind(&LocalizationSlamToolbox::localizePoseCallback,
     this, std::placeholders::_1));
+  clear_localization_ = this->create_service<std_srvs::srv::Empty>(
+    "/slam_toolbox/clear_localization_buffer",
+    std::bind(&LocalizationSlamToolbox::clearLocalizationBuffer, this,
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   // in localization mode, we cannot allow for interactive mode
   enable_interactive_mode_ = false;
@@ -69,6 +73,20 @@ void LocalizationSlamToolbox::loadPoseGraphByParams()
 }
 
 /*****************************************************************************/
+bool LocalizationSlamToolbox::clearLocalizationBuffer(
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<std_srvs::srv::Empty::Request> req,
+  std::shared_ptr<std_srvs::srv::Empty::Response> resp)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(smapper_mutex_);
+  RCLCPP_INFO(get_logger(),
+    "LocalizationSlamToolbox: Clearing localization buffer.");
+  smapper_->clearLocalizationBuffer();
+  return true;
+}
+
+/*****************************************************************************/
 bool LocalizationSlamToolbox::serializePoseGraphCallback(
   const std::shared_ptr<rmw_request_id_t> request_header,
   const std::shared_ptr<slam_toolbox::srv::SerializePoseGraph::Request> req,
@@ -100,6 +118,8 @@ void LocalizationSlamToolbox::laserCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
+  // store scan timestamped
+  scan_timestamped = scan->header.stamp;
   // no odom info
   Pose2 pose;
   if (!pose_helper_->getOdomPose(pose, scan->header.stamp)) {
@@ -152,7 +172,7 @@ LocalizedRangeScan * LocalizationSlamToolbox::addScan(
     range_scan->SetOdometricPose(*process_near_pose_);
     range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
     process_near_pose_.reset(nullptr);
-    processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan);
+    processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan, true);
 
     // reset to localization mode
     update_reprocessing_transform = true;
@@ -202,6 +222,9 @@ void LocalizationSlamToolbox::localizePoseCallback(
   }
 
   first_measurement_ = true;
+
+  boost::mutex::scoped_lock lock(smapper_mutex_);
+  smapper_->clearLocalizationBuffer();
 
   RCLCPP_INFO(get_logger(),
     "LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",

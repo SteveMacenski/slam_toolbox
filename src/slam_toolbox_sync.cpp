@@ -28,7 +28,7 @@ SynchronousSlamToolbox::SynchronousSlamToolbox(rclcpp::NodeOptions options)
 : SlamToolbox(options)
 /*****************************************************************************/
 {
-  ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>("clear_queue",
+  ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>("/slam_toolbox/clear_queue",
       std::bind(&SynchronousSlamToolbox::clearQueueCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
@@ -65,6 +65,8 @@ void SynchronousSlamToolbox::laserCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
+  // store scan timestamped
+  scan_timestamped = scan->header.stamp;
   // no odom info
   Pose2 pose;
   if (!pose_helper_->getOdomPose(pose, scan->header.stamp)) {

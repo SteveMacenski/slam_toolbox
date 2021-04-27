@@ -113,6 +113,15 @@ public:
   }
 
   /**
+   * Clears last scan
+   * @param deviceId
+   */
+  inline void ClearLastScan()
+  {
+    m_pLastScan = NULL;
+  }
+
+  /**
    * Sets the last scan
    * @param pScan
    */
@@ -146,6 +155,24 @@ public:
   inline kt_int32u & GetRunningScanBufferSize()
   {
     return m_RunningBufferMaximumSize;
+  }
+
+  /**
+   * Sets running scan buffer size
+   * @param rScanBufferSize
+   */
+  void SetRunningScanBufferSize(const kt_int32u & rScanBufferSize)
+  {
+    m_RunningBufferMaximumSize = rScanBufferSize;
+  }
+
+  /**
+   * Sets running scan buffer maximum distance
+   * @param rScanBufferMaxDistance
+   */
+  void SetRunningScanBufferMaximumDistance(const kt_int32u & rScanBufferMaxDistance)
+  {
+    m_RunningBufferMaximumDistance = rScanBufferMaxDistance;
   }
 
   /**
@@ -238,8 +265,9 @@ private:
 void MapperSensorManager::RegisterSensor(const Name & rSensorName)
 {
   if (GetScanManager(rSensorName) == NULL) {
-    m_ScanManagers[rSensorName] = new ScanManager(m_RunningBufferMaximumSize,
-        m_RunningBufferMaximumDistance);
+    m_ScanManagers[rSensorName] = new ScanManager(
+      m_RunningBufferMaximumSize,
+      m_RunningBufferMaximumDistance);
   }
 }
 
@@ -288,6 +316,24 @@ void MapperSensorManager::SetLastScan(LocalizedRangeScan * pScan)
 }
 
 /**
+ * Clears the last scan of device of given scan
+ * @param pScan
+ */
+void MapperSensorManager::ClearLastScan(LocalizedRangeScan* pScan)
+{
+  GetScanManager(pScan)->ClearLastScan();
+}
+
+/**
+ * Clears the last scan of device name
+ * @param pScan
+ */
+void MapperSensorManager::ClearLastScan(const Name& name)
+{
+  GetScanManager(name)->ClearLastScan();
+}
+
+/**
  * Adds scan to scan vector of device that recorded scan
  * @param pScan
  */
@@ -315,7 +361,7 @@ void MapperSensorManager::RemoveScan(LocalizedRangeScan * pScan)
 {
   GetScanManager(pScan)->RemoveScan(pScan);
 
-  LocalizedRangeScanMap::iterator it = m_Scans.find(pScan->GetStateId());
+  LocalizedRangeScanMap::iterator it = m_Scans.find(pScan->GetUniqueId());
   if (it != m_Scans.end()) {
     it->second = NULL;
     m_Scans.erase(it);
@@ -352,6 +398,26 @@ void MapperSensorManager::ClearRunningScans(const Name & rSensorName)
 inline kt_int32u MapperSensorManager::GetRunningScanBufferSize(const Name & rSensorName)
 {
   return GetScanManager(rSensorName)->GetRunningScanBufferSize();
+}
+
+void MapperSensorManager::SetRunningScanBufferSize(kt_int32u rScanBufferSize)
+{
+  m_RunningBufferMaximumSize = rScanBufferSize;
+
+  std::vector<Name> names = GetSensorNames();
+  for (uint i = 0; i != names.size(); i++) {
+    GetScanManager(names[i])->SetRunningScanBufferSize(rScanBufferSize);
+  }
+}
+
+void MapperSensorManager::SetRunningScanBufferMaximumDistance(kt_double rScanBufferMaxDistance)
+{
+  m_RunningBufferMaximumDistance = rScanBufferMaxDistance;
+
+  std::vector<Name> names = GetSensorNames();
+  for (uint i = 0; i != names.size(); i++) {
+    GetScanManager(names[i])->SetRunningScanBufferMaximumDistance(rScanBufferMaxDistance);
+  }
 }
 
 /**
@@ -1328,9 +1394,9 @@ MapperGraph::MapperGraph(Mapper * pMapper, kt_double rangeThreshold)
 : m_pMapper(pMapper)
 {
   m_pLoopScanMatcher = ScanMatcher::Create(pMapper,
-      m_pMapper->m_pLoopSearchSpaceDimension->GetValue(),
-      m_pMapper->m_pLoopSearchSpaceResolution->GetValue(),
-      m_pMapper->m_pLoopSearchSpaceSmearDeviation->GetValue(), rangeThreshold);
+    m_pMapper->m_pLoopSearchSpaceDimension->GetValue(),
+    m_pMapper->m_pLoopSearchSpaceResolution->GetValue(),
+    m_pMapper->m_pLoopSearchSpaceSmearDeviation->GetValue(), rangeThreshold);
   assert(m_pLoopScanMatcher);
 
   m_pTraversal = new BreadthFirstTraversal<LocalizedRangeScan>(this);
@@ -1562,7 +1628,7 @@ void MapperGraph::LinkScans(
 
   // only attach link information if the edge is new
   if (isNewEdge == true) {
-    pEdge->SetLabel(new LinkInfo(pFromScan->GetSensorPose(), rMean, rCovariance));
+    pEdge->SetLabel(new LinkInfo(pFromScan->GetCorrectedPose(), pToScan->GetCorrectedAt(rMean), rCovariance));
     if (m_pMapper->m_pScanOptimizer != NULL) {
       m_pMapper->m_pScanOptimizer->AddConstraint(pEdge);
     }
@@ -1955,11 +2021,23 @@ void MapperGraph::CorrectPoses()
       if (scan == NULL) {
         continue;
       }
-      scan->SetSensorPose(iter->second);
+      scan->SetCorrectedPoseAndUpdate(iter->second);
     }
 
     pSolver->Clear();
   }
+}
+
+void MapperGraph::UpdateLoopScanMatcher(kt_double rangeThreshold)
+{
+  if (m_pLoopScanMatcher) {
+    delete m_pLoopScanMatcher;
+  }
+  m_pLoopScanMatcher = ScanMatcher::Create(m_pMapper,
+    m_pMapper->m_pLoopSearchSpaceDimension->GetValue(),
+    m_pMapper->m_pLoopSearchSpaceResolution->GetValue(),
+    m_pMapper->m_pLoopSearchSpaceSmearDeviation->GetValue(), rangeThreshold);
+  assert(m_pLoopScanMatcher);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -1972,6 +2050,7 @@ void MapperGraph::CorrectPoses()
 Mapper::Mapper()
 : Module("Mapper"),
   m_Initialized(false),
+  m_Deserialized(false),
   m_pSequentialScanMatcher(NULL),
   m_pMapperSensorManager(NULL),
   m_pGraph(NULL),
@@ -1986,6 +2065,7 @@ Mapper::Mapper()
 Mapper::Mapper(const std::string & rName)
 : Module(rName),
   m_Initialized(false),
+  m_Deserialized(false),
   m_pSequentialScanMatcher(NULL),
   m_pMapperSensorManager(NULL),
   m_pGraph(NULL),
@@ -2521,22 +2601,34 @@ void Mapper::setParamUseResponseExpansion(bool b)
 
 void Mapper::Initialize(kt_double rangeThreshold)
 {
-  if (m_Initialized == false) {
-    // create sequential scan and loop matcher
-    m_pSequentialScanMatcher = ScanMatcher::Create(this,
-        m_pCorrelationSearchSpaceDimension->GetValue(),
-        m_pCorrelationSearchSpaceResolution->GetValue(),
-        m_pCorrelationSearchSpaceSmearDeviation->GetValue(),
-        rangeThreshold);
-    assert(m_pSequentialScanMatcher);
+  if (m_Initialized) {
+    return;
+  }
+  // create sequential scan and loop matcher, update if deserialized
 
+  if (m_pSequentialScanMatcher) {
+    delete m_pSequentialScanMatcher;
+  }
+  m_pSequentialScanMatcher = ScanMatcher::Create(this,
+    m_pCorrelationSearchSpaceDimension->GetValue(),
+    m_pCorrelationSearchSpaceResolution->GetValue(),
+    m_pCorrelationSearchSpaceSmearDeviation->GetValue(),
+    rangeThreshold);
+  assert(m_pSequentialScanMatcher);
+
+  if (m_Deserialized) {
+    m_pMapperSensorManager->SetRunningScanBufferSize(m_pScanBufferSize->GetValue());
+    m_pMapperSensorManager->SetRunningScanBufferMaximumDistance(m_pScanBufferMaximumScanDistance->GetValue());
+
+    m_pGraph->UpdateLoopScanMatcher(rangeThreshold);
+  } else {
     m_pMapperSensorManager = new MapperSensorManager(m_pScanBufferSize->GetValue(),
-        m_pScanBufferMaximumScanDistance->GetValue());
+      m_pScanBufferMaximumScanDistance->GetValue());
 
     m_pGraph = new MapperGraph(this, rangeThreshold);
-
-    m_Initialized = true;
   }
+
+  m_Initialized = true;
 }
 
 void Mapper::SaveToFile(const std::string & filename)
@@ -2553,6 +2645,8 @@ void Mapper::LoadFromFile(const std::string & filename)
   std::ifstream ifs(filename.c_str());
   boost::archive::binary_iarchive ia(ifs, boost::archive::no_codecvt);
   ia >> BOOST_SERIALIZATION_NVP(*this);
+  m_Deserialized = true;
+  m_Initialized = false;
 }
 
 void Mapper::Reset()
@@ -2570,6 +2664,7 @@ void Mapper::Reset()
     m_pMapperSensorManager = NULL;
   }
   m_Initialized = false;
+  m_Deserialized = false;
   while (!m_LocalizationScanVertices.empty()) {
     m_LocalizationScanVertices.pop();
   }
@@ -2649,7 +2744,7 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan)
   return false;
 }
 
-kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan)
+kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool addScanToLocalizationBuffer)
 {
   if (pScan != NULL) {
     karto::LaserRangeFinder * pLaserRangeFinder = pScan->GetLaserRangeFinder();
@@ -2695,9 +2790,10 @@ kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan)
     // add scan to buffer and assign id
     m_pMapperSensorManager->AddScan(pScan);
 
+    Vertex<LocalizedRangeScan> * scan_vertex = NULL;
     if (m_pUseScanMatching->GetValue()) {
       // add to graph
-      m_pGraph->AddVertex(pScan);
+      scan_vertex = m_pGraph->AddVertex(pScan);
       m_pGraph->AddEdges(pScan, covariance);
 
       m_pMapperSensorManager->AddRunningScan(pScan);
@@ -2713,6 +2809,10 @@ kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan)
     }
 
     m_pMapperSensorManager->SetLastScan(pScan);
+
+    if (addScanToLocalizationBuffer) {
+      AddScanToLocalizationBuffer(pScan, scan_vertex);
+    }
 
     return true;
   }
@@ -2792,8 +2892,19 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
   }
 
   m_pMapperSensorManager->SetLastScan(pScan);
+  AddScanToLocalizationBuffer(pScan, scan_vertex);
 
+  return true;
+}
+
+void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex <LocalizedRangeScan> * scan_vertex)
+{
   // generate the info to store and later decay, outside of dataset
+  LocalizationScanVertex lsv;
+  lsv.scan = pScan;
+  lsv.vertex = scan_vertex;
+  m_LocalizationScanVertices.push(lsv);
+
   if (m_LocalizationScanVertices.size() > getParamScanBufferSize()) {
     LocalizationScanVertex & oldLSV = m_LocalizationScanVertices.front();
     RemoveNodeFromGraph(oldLSV.vertex);
@@ -2810,13 +2921,33 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
 
     m_LocalizationScanVertices.pop();
   }
+}
 
-  LocalizationScanVertex lsv;
-  lsv.scan = pScan;
-  lsv.vertex = scan_vertex;
-  m_LocalizationScanVertices.push(lsv);
+void Mapper::ClearLocalizationBuffer()
+{
+  while (!m_LocalizationScanVertices.empty())
+  {
+    LocalizationScanVertex& oldLSV = m_LocalizationScanVertices.front();
+    RemoveNodeFromGraph(oldLSV.vertex);
+    oldLSV.vertex->RemoveObject();
+    m_pMapperSensorManager->RemoveScan(oldLSV.scan);
+    if (oldLSV.scan)
+    {
+      delete oldLSV.scan;
+      oldLSV.scan = NULL;
+    }
 
-  return true;
+    m_LocalizationScanVertices.pop();
+  }
+
+  std::vector<Name> names = m_pMapperSensorManager->GetSensorNames();
+  for (uint i = 0; i != names.size(); i++)
+  {
+    m_pMapperSensorManager->ClearRunningScans(names[i]);
+    m_pMapperSensorManager->ClearLastScan(names[i]);
+  }
+
+  return;
 }
 
 kt_bool Mapper::RemoveNodeFromGraph(Vertex<LocalizedRangeScan> * vertex_to_remove)
