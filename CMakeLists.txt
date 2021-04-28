@@ -3,7 +3,7 @@ project(slam_toolbox)
 
 set(CMAKE_BUILD_TYPE Release) #None, Debug, Release, RelWithDebInfo, MinSizeRel
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 cmake_policy(SET CMP0077 NEW)
 
