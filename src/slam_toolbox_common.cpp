@@ -206,11 +206,14 @@ void SlamToolbox::setROSInterfaces()
   scan_filter_sub_ =
     std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
     shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
+  scan_filter_sub_->unsubscribe();
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
     *scan_filter_sub_, *tf_, odom_frame_, 1, shared_from_this());
   scan_filter_->registerCallback(
     std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
+  scan_filter_->setTolerance(rclcpp::Duration::from_seconds(0.05));
+
 }
 
 /*****************************************************************************/
