@@ -54,9 +54,9 @@ An example map can be seen in \autoref{fig:store_map}.
 
 # Statement of Need
 
-This software package provides an approach for multi-session mapping and localization. It also utilizes modern graph-optimization techniques and provides first of its kind pose-graph manipulation tools and demo applications.
+This software package provides an approach for multi-session mapping and localization. It also utilizes modern graph-optimization techniques and provides first of its kind pose-graph manipulation tools and demo applications. Below we discuss related work and how `slam_toolbox` is meeting a currently unmet need in the community.
 
-# Related Work
+## Related Work
 SLAM algorithms can be classified into two groups: the earlier algorithms that use the Bayes-based filter approaches [@thrun2005probabilistic], and newer graph-based methods [@graphslam].
 Significant filter-based implementations available as ROS packages are GMapping [@gmapping] and HectorSLAM [@hector].
 Cartographer [@cartographer] and KartoSLAM [@karto] are the major graph-based implementations available.
