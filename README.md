@@ -12,6 +12,14 @@ We've received feedback from users and have robots operating in the following en
 
 It is also the currently supported ROS2-SLAM library. See tutorials for working with it in [ROS2 Navigation here](https://navigation.ros.org/tutorials/docs/navigation2_with_slam.html).
 
+### Cite This Work
+
+You can find this work [here](https://joss.theoj.org/papers/10.21105/joss.02783).
+
+```
+Macenski, S., Jambrecic I., "SLAM Toolbox: SLAM for the dynamic world", Journal of Open Source Software, 6(61), 2783, 2021. 
+```
+
 [![IMAGE ALT TEXT](https://user-images.githubusercontent.com/14944147/74176653-f69beb80-4bec-11ea-906a-a233541a6064.png)](https://vimeo.com/378682207)
 
 # Introduction
