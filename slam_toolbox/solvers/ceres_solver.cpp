@@ -358,6 +358,9 @@ void CeresSolver::RemoveNode(kt_int32s id)
   GraphIterator nodeit = nodes_->find(id);
   if (nodeit != nodes_->end())
   {
+    problem_->SetParameterBlockConstant(&first_node_->second(0));
+    problem_->SetParameterBlockConstant(&first_node_->second(1));
+    problem_->SetParameterBlockConstant(&first_node_->second(2));
     nodes_->erase(nodeit);
   }
   else
