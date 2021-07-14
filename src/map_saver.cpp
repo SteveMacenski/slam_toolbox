@@ -65,9 +65,6 @@ bool MapSaver::saveMapCallback(
     if (rc == 0) {
       response->result = response->RESULT_SUCCESS;
     }
-    else if (rc == 64000) {
-      response->result = response->RESULT_SEGMENTATION_FAULT;
-    }
     else {
       response->result = response->RESULT_UNDEFINED_FAILURE;
     }
@@ -78,9 +75,6 @@ bool MapSaver::saveMapCallback(
     int rc = system("ros2 run nav2_map_server map_saver_cli --ros-args -p map_subscribe_transient_local:=true");
     if (rc == 0) {
       response->result = response->RESULT_SUCCESS;
-    }
-    else if (rc == 64000) {
-      response->result = response->RESULT_SEGMENTATION_FAULT;
     }
     else {
       response->result = response->RESULT_UNDEFINED_FAILURE;
