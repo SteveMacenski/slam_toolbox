@@ -41,7 +41,7 @@
 #include "rviz_common/panel.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 class QLineEdit;
 class QSpinBox;
