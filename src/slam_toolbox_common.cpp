@@ -638,8 +638,12 @@ bool SlamToolbox::serializePoseGraphCallback(
   }
 
   boost::mutex::scoped_lock lock(smapper_mutex_);
-  serialization::write(filename, *smapper_->getMapper(),
-    *dataset_, shared_from_this());
+  if (serialization::write(filename, *smapper_->getMapper(), *dataset_, shared_from_this())) {
+    resp->result = resp->RESULT_SUCCESS;
+  } else {
+    resp->result = resp->RESULT_FAILED_TO_WRITE_FILE;
+  }
+
   return true;
 }
 
