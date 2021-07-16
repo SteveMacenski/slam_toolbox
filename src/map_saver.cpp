@@ -64,19 +64,16 @@ bool MapSaver::saveMapCallback(
     int rc = system(("ros2 run nav2_map_server map_saver_cli -f " + name  + " --ros-args -p map_subscribe_transient_local:=true").c_str());
     if (rc == 0) {
       response->result = response->RESULT_SUCCESS;
-    }
-    else {
+    } else {
       response->result = response->RESULT_UNDEFINED_FAILURE;
     }
-
   } else {
     RCLCPP_INFO(node_->get_logger(),
       "SlamToolbox: Saving map in current directory.");
     int rc = system("ros2 run nav2_map_server map_saver_cli --ros-args -p map_subscribe_transient_local:=true");
     if (rc == 0) {
       response->result = response->RESULT_SUCCESS;
-    }
-    else {
+    } else {
       response->result = response->RESULT_UNDEFINED_FAILURE;
     }
   }
