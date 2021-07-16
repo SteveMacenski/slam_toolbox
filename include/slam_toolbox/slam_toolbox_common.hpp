@@ -19,46 +19,45 @@
 #ifndef SLAM_TOOLBOX__SLAM_TOOLBOX_COMMON_HPP_
 #define SLAM_TOOLBOX__SLAM_TOOLBOX_COMMON_HPP_
 
-#include <sys/resource.h>
 #include <boost/thread.hpp>
-#include <string>
-#include <map>
-#include <vector>
-#include <queue>
 #include <cstdlib>
-#include <memory>
 #include <fstream>
+#include <map>
+#include <memory>
+#include <queue>
+#include <string>
+#include <sys/resource.h>
+#include <vector>
 
-#include "rclcpp/rclcpp.hpp"
 #include "message_filters/subscriber.h"
-#include "tf2_ros/transform_broadcaster.h"
-#include "tf2_ros/transform_listener.h"
-#include "tf2_ros/create_timer_ros.h"
-#include "tf2_ros/message_filter.h"
-#include "tf2/LinearMath/Matrix3x3.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include "std_srvs/srv/set_bool.hpp"
 #include "std_srvs/srv/trigger.hpp"
+#include "tf2/LinearMath/Matrix3x3.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2_ros/create_timer_ros.h"
+#include "tf2_ros/message_filter.h"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_listener.h"
 
 #include "pluginlib/class_loader.hpp"
 
 #include "maidbot_std_srvs/srv/get_compressed_map.hpp"
 
-#include "slam_toolbox/toolbox_types.hpp"
+#include "slam_toolbox/get_pose_helper.hpp"
+#include "slam_toolbox/laser_utils.hpp"
+#include "slam_toolbox/loop_closure_assistant.hpp"
 #include "slam_toolbox/slam_mapper.hpp"
 #include "slam_toolbox/snap_utils.hpp"
-#include "slam_toolbox/laser_utils.hpp"
-#include "slam_toolbox/get_pose_helper.hpp"
-#include "slam_toolbox/map_saver.hpp"
-#include "slam_toolbox/loop_closure_assistant.hpp"
+#include "slam_toolbox/toolbox_types.hpp"
 
 namespace slam_toolbox
 {
 
 // dirty, dirty cheat I love
-using namespace ::toolbox_types;  // NOLINT
-using namespace ::karto;  // NOLINT
+using namespace ::toolbox_types; // NOLINT
+using namespace ::karto;         // NOLINT
 
 class SlamToolbox : public rclcpp::Node
 {
@@ -72,7 +71,7 @@ public:
 protected:
   // threads
   void publishVisualizations();
-  void publishTransformLoop(const double & transform_publish_period);
+  void publishTransformLoop(const double& transform_publish_period);
 
   // setup
   void setParams();
@@ -83,10 +82,9 @@ protected:
   // callbacks
   virtual void laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan) = 0;
   void setInitialPoseCallback(geometry_msgs::msg::Pose2D::SharedPtr initial_pose);
-  bool mapCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<maidbot_std_srvs::srv::GetCompressedMap::Request> req,
-    std::shared_ptr<maidbot_std_srvs::srv::GetCompressedMap::Response> res);
+  bool mapCallback(const std::shared_ptr<rmw_request_id_t> request_header,
+                   const std::shared_ptr<maidbot_std_srvs::srv::GetCompressedMap::Request> req,
+                   std::shared_ptr<maidbot_std_srvs::srv::GetCompressedMap::Response> res);
   virtual bool serializePoseGraphCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::SerializePoseGraph::Request> req,
@@ -95,50 +93,41 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp);
-  void startSlamCallback(
-    const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
-    std::shared_ptr<std_srvs::srv::Trigger::Response> resp);
-  void stopSlamCallback(
-    const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
-    std::shared_ptr<std_srvs::srv::Trigger::Response> resp);
+  void startSlamCallback(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+                         std::shared_ptr<std_srvs::srv::Trigger::Response> resp);
+  void stopSlamCallback(const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+                        std::shared_ptr<std_srvs::srv::Trigger::Response> resp);
 
   // Loaders
-  void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper> &, std::unique_ptr<karto::Dataset> &);
+  void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper>&, std::unique_ptr<karto::Dataset>&);
 
   // functional bits
-  karto::LaserRangeFinder * getLaser(const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan);
-  virtual karto::LocalizedRangeScan * addScan(
-    karto::LaserRangeFinder * laser, const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
-    karto::Pose2 & karto_pose);
-  karto::LocalizedRangeScan * addScan(karto::LaserRangeFinder * laser, PosedScan & scanWPose);
+  karto::LaserRangeFinder* getLaser(const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan);
+  virtual karto::LocalizedRangeScan* addScan(
+    karto::LaserRangeFinder* laser, const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan,
+    karto::Pose2& karto_pose);
+  karto::LocalizedRangeScan* addScan(karto::LaserRangeFinder* laser, PosedScan& scanWPose);
   bool updateMap();
   bool waitForTransform(const std::string& scan_frame, const rclcpp::Time& stamp);
-  tf2::Stamped<tf2::Transform> setTransformFromPoses(
-    const karto::Pose2 & pose,
-    const karto::Pose2 & karto_pose, const rclcpp::Time & t,
-    const bool & update_reprocessing_transform);
-  karto::LocalizedRangeScan * getLocalizedRangeScan(
-    karto::LaserRangeFinder * laser,
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
-    karto::Pose2 & karto_pose);
-  bool shouldStartWithPoseGraph(
-    std::string & filename, geometry_msgs::msg::Pose2D & pose,
-    bool & start_at_dock);
-  bool shouldProcessScan(
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
-    const karto::Pose2 & pose);
-  void publishPose(
-    const Pose2 & pose,
-    const Matrix3 & cov,
-    const rclcpp::Time & t);
+  tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2& pose,
+                                                     const karto::Pose2& karto_pose,
+                                                     const rclcpp::Time& t,
+                                                     const bool& update_reprocessing_transform);
+  karto::LocalizedRangeScan* getLocalizedRangeScan(
+    karto::LaserRangeFinder* laser, const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan,
+    karto::Pose2& karto_pose);
+  bool shouldStartWithPoseGraph(std::string& filename, geometry_msgs::msg::Pose2D& pose,
+                                bool& start_at_dock);
+  bool shouldProcessScan(const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan,
+                         const karto::Pose2& pose);
+  void publishPose(const Pose2& pose, const Matrix3& cov, const rclcpp::Time& t);
   void toggleScanProcessing();
 
   // pausing bits
-  bool isPaused(const PausedApplication & app);
-  bool pauseNewMeasurementsCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
-    std::shared_ptr<std_srvs::srv::Trigger::Response> resp);
+  bool isPaused(const PausedApplication& app);
+  bool pauseNewMeasurementsCallback(const std::shared_ptr<rmw_request_id_t> request_header,
+                                    const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+                                    std::shared_ptr<std_srvs::srv::Trigger::Response> resp);
 
   // ROS-y-ness
   std::unique_ptr<tf2_ros::Buffer> tf_;
@@ -195,6 +184,6 @@ protected:
   std::shared_ptr<karto::ScanSolver> solver_;
 };
 
-}  // namespace slam_toolbox
+} // namespace slam_toolbox
 
-#endif   // SLAM_TOOLBOX__SLAM_TOOLBOX_COMMON_HPP_
+#endif // SLAM_TOOLBOX__SLAM_TOOLBOX_COMMON_HPP_
