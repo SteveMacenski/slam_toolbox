@@ -100,7 +100,11 @@ bool MergeMapsKinematic::addSubmapCallback(
       "/map_" + std::to_string(num_submaps_), rclcpp::QoS(1)));
   sstmS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
       "/map_metadata_" + std::to_string(num_submaps_), rclcpp::QoS(1)));
+#ifdef _WIN32
+  Sleep(1000);
+#else
   sleep(1.0);
+#endif
 
   nav_msgs::srv::GetMap::Response map;
   nav_msgs::msg::OccupancyGrid & og = map.map;
