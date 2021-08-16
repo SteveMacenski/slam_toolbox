@@ -21,6 +21,8 @@
 
 #include "slam_toolbox/loop_closure_assistant.hpp"
 
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+
 namespace loop_closure_assistant
 {
 
