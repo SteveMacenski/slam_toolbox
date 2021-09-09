@@ -125,6 +125,13 @@ karto::LaserRangeFinder * LaserAssistant::makeLaser(const double & mountingYaw)
   }
   node_->get_parameter("max_laser_range", max_laser_range);
 
+  if (max_laser_range <= 0) {
+    RCLCPP_WARN(node_->get_logger(),
+      "You've set maximum_laser_range to be negative,"
+      "this isn't allowed so it will be set to (%.1f).", scan_.range_max);
+    max_laser_range = scan_.range_max;
+  }
+
   if (max_laser_range > scan_.range_max) {
     RCLCPP_WARN(node_->get_logger(),
       "maximum laser range setting (%.1f m) exceeds the capabilities "
