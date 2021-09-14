@@ -27,7 +27,7 @@ int main(int argc, char ** argv)
   int stack_size = 40000000;
   {
     auto temp_node = std::make_shared<rclcpp::Node>("slam_toolbox");
-    temp_node->declare_parameter("stack_size_to_use");
+    temp_node->declare_parameter("stack_size_to_use",rclcpp::ParameterType::PARAMETER_INTEGER);
     if (temp_node->get_parameter("stack_size_to_use", stack_size)) {
       RCLCPP_INFO(temp_node->get_logger(), "Node using stack size %i", (int)stack_size);
       const rlim_t max_stack_size = stack_size;

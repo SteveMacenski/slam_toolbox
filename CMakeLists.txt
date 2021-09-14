@@ -25,7 +25,6 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-find_package(nav2_map_server REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
@@ -48,7 +47,6 @@ set(dependencies
   tf2_ros
   visualization_msgs
   pluginlib
-  nav2_map_server
   tf2_geometry_msgs
   tf2_sensor_msgs
   std_msgs
