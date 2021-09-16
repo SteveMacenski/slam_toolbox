@@ -11,6 +11,7 @@ odom_frame: odom
 map_frame: map
 base_frame: base_footprint
 scan_topic: /scan
+no_tcpdelay_on_scan_topic: false
 mode: mapping #localization
 
 # if you'd like to immediately start continuing a map at a given pose

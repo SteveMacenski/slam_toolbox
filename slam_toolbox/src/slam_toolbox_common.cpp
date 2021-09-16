@@ -115,6 +115,7 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh)
   private_nh.param("resolution", resolution_, 0.05);
   private_nh.param("map_name", map_name_, std::string("/map"));
   private_nh.param("scan_topic", scan_topic_, std::string("/scan"));
+  private_nh.param("no_tcpdelay_on_scan_topic", no_tcpdelay_on_scan_topic_, false);
   private_nh.param("throttle_scans", throttle_scans_, 1);
   private_nh.param("enable_interactive_mode", enable_interactive_mode_, false);
 
@@ -153,6 +154,9 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   ssPauseMeasurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::serializePoseGraphCallback, this);
   ssDesserialize_ = node.advertiseService("deserialize_map", &SlamToolbox::deserializePoseGraphCallback, this);
+  ros::TransportHints transport_hints{};
+  transport_hints.tcpNoDelay(no_tcpdelay_on_scan_topic_);
+  scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan>>(node, scan_topic_, 5, transport_hints);
   scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, scan_topic_, 5);
   scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_sub_, *tf_, odom_frame_, 5, node);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::laserCallback, this, _1));
