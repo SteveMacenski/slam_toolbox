@@ -2171,6 +2171,15 @@ namespace karto
       return m_Position.SquaredDistance(rOther.m_Position);
     }
 
+    /**
+     * Return the heading difference between two Pose2 (in radians)
+     * @return heading difference
+     */
+    inline kt_double HeadingDifference(const Pose2& rOther) const
+    {
+      return fabs(m_Heading - rOther.m_Heading) < M_PI ? fabs(m_Heading - rOther.m_Heading) : 2*M_PI - fabs(m_Heading - rOther.m_Heading);
+    }
+    
   public:
     /**
      * Assignment operator

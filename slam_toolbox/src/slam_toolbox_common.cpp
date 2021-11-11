@@ -447,9 +447,8 @@ bool SlamToolbox::shouldProcessScan(
 
   // check moved enough, within 10% for correction error
   const double sq_dist_to_last_accepted_pose = last_pose.SquaredDistance(pose);
-  const double head_to_last_accepted_pose = fmod(fabs(pose.GetHeading() - last_pose.GetHeading()), M_PI) / M_PI * 180;
-
-  if((sq_dist_to_last_accepted_pose < 0.8 * dist_thresh_sq &&  head_to_last_accepted_pose < head_thresh)|| scan->header.seq < 5)
+  const double head_to_last_accepted_pose = last_pose.HeadingDifference(pose) / M_PI * 180;
+  if((sq_dist_to_last_accepted_pose < 0.8 * dist_thresh_sq && head_to_last_accepted_pose < head_thresh) || scan->header.seq < 5)
   {
     return false;
   }
