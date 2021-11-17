@@ -45,15 +45,15 @@ LoopClosureAssistant::LoopClosureAssistant(
   solver_ = mapper_->getScanSolver();
 
   ssClear_manual_ = node_->create_service<slam_toolbox::srv::Clear>(
-    "/slam_toolbox/clear_changes", std::bind(&LoopClosureAssistant::clearChangesCallback, 
+    "slam_toolbox/clear_changes", std::bind(&LoopClosureAssistant::clearChangesCallback, 
     this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   
   ssLoopClosure_ = node_->create_service<slam_toolbox::srv::LoopClosure>(
-    "/slam_toolbox/manual_loop_closure", std::bind(&LoopClosureAssistant::manualLoopClosureCallback,
+    "slam_toolbox/manual_loop_closure", std::bind(&LoopClosureAssistant::manualLoopClosureCallback,
     this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
   
   scan_publisher_ = node_->create_publisher<sensor_msgs::msg::LaserScan>(
-    "/slam_toolbox/scan_visualization",10);
+    "slam_toolbox/scan_visualization",10);
   interactive_server_ = std::make_unique<interactive_markers::InteractiveMarkerServer>(
     "slam_toolbox",
     node_->get_node_base_interface(),
@@ -62,12 +62,12 @@ LoopClosureAssistant::LoopClosureAssistant(
     node_->get_node_topics_interface(),
     node_->get_node_services_interface());
   ssInteractive_ = node_->create_service<slam_toolbox::srv::ToggleInteractive>(
-    "/slam_toolbox/toggle_interactive_mode", std::bind(&LoopClosureAssistant::interactiveModeCallback,
+    "slam_toolbox/toggle_interactive_mode", std::bind(&LoopClosureAssistant::interactiveModeCallback,
     this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
 
   marker_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
-    "/slam_toolbox/graph_visualization", rclcpp::QoS(1));
+    "slam_toolbox/graph_visualization", rclcpp::QoS(1));
   map_frame_ = node->get_parameter("map_frame").as_string();
 }
 
