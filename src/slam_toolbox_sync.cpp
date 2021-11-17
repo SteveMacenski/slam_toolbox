@@ -28,7 +28,7 @@ SynchronousSlamToolbox::SynchronousSlamToolbox(rclcpp::NodeOptions options)
 : SlamToolbox(options)
 /*****************************************************************************/
 {
-  ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>("/slam_toolbox/clear_queue",
+  ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>("slam_toolbox/clear_queue",
       std::bind(&SynchronousSlamToolbox::clearQueueCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 

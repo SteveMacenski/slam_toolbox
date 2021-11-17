@@ -31,11 +31,11 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
   processor_type_ = PROCESS_LOCALIZATION;
   localization_pose_sub_ =
     this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "/initialpose", 1,
+    "initialpose", 1,
     std::bind(&LocalizationSlamToolbox::localizePoseCallback,
     this, std::placeholders::_1));
   clear_localization_ = this->create_service<std_srvs::srv::Empty>(
-    "/slam_toolbox/clear_localization_buffer",
+    "slam_toolbox/clear_localization_buffer",
     std::bind(&LocalizationSlamToolbox::clearLocalizationBuffer, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
