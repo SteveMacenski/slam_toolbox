@@ -42,10 +42,10 @@ void MergeMapsKinematic::configure()
   sstmS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
       "/map_metadata", rclcpp::QoS(1)));
 
-  ssMap_ = this->create_service<slam_toolbox::srv::MergeMaps>("/slam_toolbox/merge_submaps",
+  ssMap_ = this->create_service<slam_toolbox::srv::MergeMaps>("slam_toolbox/merge_submaps",
       std::bind(&MergeMapsKinematic::mergeMapCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
-  ssSubmap_ = this->create_service<slam_toolbox::srv::AddSubmap>("/slam_toolbox/add_submap",
+  ssSubmap_ = this->create_service<slam_toolbox::srv::AddSubmap>("slam_toolbox/add_submap",
       std::bind(&MergeMapsKinematic::addSubmapCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
 
