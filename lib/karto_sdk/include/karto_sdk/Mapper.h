@@ -1483,6 +1483,7 @@ protected:
     m_pCorrelationGrid(NULL),
     m_pSearchSpaceProbs(NULL),
     m_pGridLookup(NULL),
+    m_pPoseResponse(NULL),
     m_doPenalize(false)
   {
   }
@@ -1519,13 +1520,26 @@ private:
     ar & BOOST_SERIALIZATION_NVP(m_nAngles);
     ar & BOOST_SERIALIZATION_NVP(m_searchAngleResolution);
     ar & BOOST_SERIALIZATION_NVP(m_doPenalize);
+
+    // Note - m_pPoseResponse is generally only ever defined within the
+    // execution of ScanMatcher::CorrelateScan and used as a temporary
+    // accumulator for multithreaded matching results. It would normally
+    // not make sense to serialize, but we don't want to break compatibility
+    // with previously serialized data. Gen some dummy data that we free
+    // immediately after so that we don't alloc here and leak.
     kt_int32u poseResponseSize =
       static_cast<kt_int32u>(m_xPoses.size() * m_yPoses.size() * m_nAngles);
-    if (Archive::is_loading::value) {
-      m_pPoseResponse = new std::pair<kt_double, Pose2>[poseResponseSize];
-    }
+
+    // We could check first if m_pPoseResponse == nullptr for good measure, but
+    // based on the codepaths it should always be freed and set to null outside of
+    // any execution of ScanMatcher::CorrelateScan, so go ahead and alloc here.
+    m_pPoseResponse = new std::pair<kt_double, Pose2>[poseResponseSize];
     ar & boost::serialization::make_array<std::pair<kt_double, Pose2>>(m_pPoseResponse,
       poseResponseSize);
+
+    // Aaaand now, clean up the dummy data
+    delete[] m_pPoseResponse;
+    m_pPoseResponse = nullptr;
   }
 };    // ScanMatcher
 
