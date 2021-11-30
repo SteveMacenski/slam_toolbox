@@ -830,6 +830,7 @@ kt_double ScanMatcher::CorrelateScan(
 
   // delete pose response array
   delete[] m_pPoseResponse;
+  m_pPoseResponse = nullptr;
 
 #ifdef KARTO_DEBUG
   std::cout << "bestPose: " << averagePose << std::endl;
