@@ -125,48 +125,93 @@ void LoopClosureAssistant::publishGraph()
 /*****************************************************************************/
 {
   interactive_server_->clear();
-  std::unordered_map<int, Eigen::Vector3d>* graph = solver_->getGraph();
+  karto::MapperGraph * graph = mapper_->GetGraph();
 
-  if (graph->size() == 0)
+  if (!graph || graph->GetVertices().empty())
   {
     return;
   }
 
-  ROS_DEBUG("Graph size: %i",(int)graph->size());
   bool interactive_mode = false;
   {
     boost::mutex::scoped_lock lock(interactive_mutex_);
     interactive_mode = interactive_mode_;
   }
 
-  visualization_msgs::MarkerArray marray;
-  visualization_msgs::Marker m = vis_utils::toMarker(map_frame_,
-    "slam_toolbox", 0.1);
+  // schedule all existing markers for removal
+  for (auto it = markers_.begin(); it != markers_.end(); ++it) {
+    it->second.action = visualization_msgs::Marker::DELETE;
+  }
 
-  for (ConstGraphIterator it = graph->begin(); it != graph->end(); ++it)
+  visualization_msgs::Marker vertex_marker =
+    vis_utils::toVertexMarker(map_frame_, "slam_toolbox", 0.1);
+
+  for (const auto & vertices_per_sensor : graph->GetVertices())
   {
-    m.id = it->first + 1;
-    m.pose.position.x = it->second(0);
-    m.pose.position.y = it->second(1);
-
-    if (interactive_mode && enable_interactive_mode_)
+    for (const auto & id_and_vertex : vertices_per_sensor.second)
     {
-      visualization_msgs::InteractiveMarker int_marker =
-        vis_utils::toInteractiveMarker(m, 0.3);
-      interactive_server_->insert(int_marker,
-        boost::bind(
-        &LoopClosureAssistant::processInteractiveFeedback,
-        this, _1));
+      karto::LocalizedRangeScan * scan = id_and_vertex.second->GetObject();
+
+      vertex_marker.id = scan->GetUniqueId() + 1;
+      vertex_marker.pose.position.x = scan->GetCorrectedPose().GetX();
+      vertex_marker.pose.position.y = scan->GetCorrectedPose().GetY();
+
+      if (interactive_mode && enable_interactive_mode_)
+      {
+        visualization_msgs::InteractiveMarker int_marker =
+          vis_utils::toInteractiveMarker(vertex_marker, 0.3);
+        interactive_server_->insert(int_marker,
+          boost::bind(
+          &LoopClosureAssistant::processInteractiveFeedback,
+          this, _1));
+      }
+      else
+      {
+        markers_[vertex_marker.id] = vertex_marker;
+      }
+    }
+  }
+
+  if (!interactive_mode)
+  {
+    visualization_msgs::Marker edge_marker =
+      vis_utils::toEdgeMarker(map_frame_, "slam_toolbox", 0.05);
+
+    for (auto * edge : graph->GetEdges()) {
+      karto::LocalizedRangeScan * source_scan = edge->GetSource()->GetObject();
+      karto::LocalizedRangeScan * target_scan = edge->GetTarget()->GetObject();
+      const karto::Pose2 source_pose = source_scan->GetCorrectedPose();
+      const karto::Pose2 target_pose = target_scan->GetCorrectedPose();
+
+      edge_marker.id =
+          (source_scan->GetUniqueId() << 16) + target_scan->GetUniqueId();
+      edge_marker.points[0].x = source_pose.GetX();
+      edge_marker.points[0].y = source_pose.GetY();
+      edge_marker.points[1].x = target_pose.GetX();
+      edge_marker.points[1].y = target_pose.GetY();
+      markers_[edge_marker.id] = edge_marker;
+    }
+  }
+
+  visualization_msgs::MarkerArray marker_array;
+  for (auto it = markers_.begin(); it != markers_.end();)
+  {
+    marker_array.markers.push_back(it->second);
+    // drop deleted markers
+    if (it->second.action == visualization_msgs::Marker::DELETE)
+    {
+      it = markers_.erase(it);
     }
     else
     {
-      marray.markers.push_back(m);
+      ++it;
     }
   }
 
   // if disabled, clears out old markers
   interactive_server_->applyChanges();
-  marker_publisher_.publish(marray);
+  marker_publisher_.publish(marker_array);
+
   return;
 }
 
