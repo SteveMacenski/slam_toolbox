@@ -132,6 +132,17 @@ void LoopClosureAssistant::publishGraph()
     return;
   }
 
+  using ConstVertexMapIterator =
+      karto::MapperGraph::VertexMap::const_iterator;
+  const karto::MapperGraph::VertexMap& vertices = graph->GetVertices();
+
+  int graph_size = 0;
+  for (ConstVertexMapIterator it = vertices.begin(); it != vertices.end(); ++it)
+  {
+    graph_size += it->second.size();
+  }
+  ROS_DEBUG("Graph size: %i", graph_size);
+
   bool interactive_mode = false;
   {
     boost::mutex::scoped_lock lock(interactive_mutex_);
@@ -139,18 +150,24 @@ void LoopClosureAssistant::publishGraph()
   }
 
   // schedule all existing markers for removal
-  for (auto it = markers_.begin(); it != markers_.end(); ++it) {
+  using MarkerMapIterator = std::map<int, visualization_msgs::Marker>::iterator;
+  for (MarkerMapIterator it = markers_.begin(); it != markers_.end(); ++it)
+  {
     it->second.action = visualization_msgs::Marker::DELETE;
   }
 
   visualization_msgs::Marker vertex_marker =
     vis_utils::toVertexMarker(map_frame_, "slam_toolbox", 0.1);
 
-  for (const auto & vertices_per_sensor : graph->GetVertices())
+  for (ConstVertexMapIterator outer_it = vertices.begin();
+       outer_it != vertices.end(); ++outer_it)
   {
-    for (const auto & id_and_vertex : vertices_per_sensor.second)
+    using ConstVertexMapValueIterator =
+        karto::MapperGraph::VertexMap::mapped_type::const_iterator;
+    for (ConstVertexMapValueIterator inner_it = outer_it->second.begin();
+         inner_it != outer_it->second.end(); ++inner_it)
     {
-      karto::LocalizedRangeScan * scan = id_and_vertex.second->GetObject();
+      karto::LocalizedRangeScan * scan = inner_it->second->GetObject();
 
       vertex_marker.id = scan->GetUniqueId() + 1;
       vertex_marker.pose.position.x = scan->GetCorrectedPose().GetX();
