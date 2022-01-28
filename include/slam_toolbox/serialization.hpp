@@ -23,7 +23,7 @@
 #include <vector>
 #include <string>
 #include "rclcpp/rclcpp.hpp"
-#include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
+#include "karto_sdk/Mapper.h"
 
 namespace serialization
 {
