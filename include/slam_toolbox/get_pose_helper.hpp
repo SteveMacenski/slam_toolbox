@@ -22,7 +22,7 @@
 #include <string>
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
-#include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
+#include "karto_sdk/Mapper.h"
 
 namespace pose_utils
 {
