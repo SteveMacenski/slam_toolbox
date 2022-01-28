@@ -84,7 +84,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_definitions(-DQT_NO_KEYWORDS)
 find_package(Boost REQUIRED system serialization filesystem thread)
 
-include_directories(include ${EIGEN3_INCLUDE_DIRS}
+include_directories(include lib/karto_sdk/include
+                            ${EIGEN3_INCLUDE_DIRS}
                             ${CHOLMOD_INCLUDE_DIR}
                             ${Boost_INCLUDE_DIRS}
                             ${TBB_INCLUDE_DIRS}

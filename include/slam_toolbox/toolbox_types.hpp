@@ -27,8 +27,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2/transform_datatypes.h"
 
-// god... getting this to work in ROS2 was a real pain
-#include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
+#include "karto_sdk/Mapper.h"
 #include "slam_toolbox/toolbox_msgs.hpp"
 
 // compute linear index for given map coords
