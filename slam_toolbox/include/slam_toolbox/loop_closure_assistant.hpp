@@ -64,7 +64,7 @@ private:
   karto::Mapper* mapper_;
   karto::ScanSolver* solver_;
   std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
-  std::map<int, visualization_msgs::Marker> markers_;
+  visualization_msgs::MarkerArray marker_array_;
   boost::mutex interactive_mutex_;
   bool interactive_mode_, enable_interactive_mode_;
   ros::NodeHandle& nh_;

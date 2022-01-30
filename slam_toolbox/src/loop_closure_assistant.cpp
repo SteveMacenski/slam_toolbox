@@ -149,12 +149,8 @@ void LoopClosureAssistant::publishGraph()
     interactive_mode = interactive_mode_;
   }
 
-  // schedule all existing markers for removal
-  using MarkerMapIterator = std::map<int, visualization_msgs::Marker>::iterator;
-  for (MarkerMapIterator it = markers_.begin(); it != markers_.end(); ++it)
-  {
-    it->second.action = visualization_msgs::Marker::DELETE;
-  }
+  const size_t current_marker_count = marker_array_.markers.size();
+  marker_array_.markers.clear();  // restart the marker count
 
   visualization_msgs::Marker vertex_marker =
     vis_utils::toVertexMarker(map_frame_, "slam_toolbox", 0.1);
@@ -169,12 +165,14 @@ void LoopClosureAssistant::publishGraph()
     {
       karto::LocalizedRangeScan * scan = inner_it->second->GetObject();
 
-      vertex_marker.id = scan->GetUniqueId() + 1;
       vertex_marker.pose.position.x = scan->GetCorrectedPose().GetX();
       vertex_marker.pose.position.y = scan->GetCorrectedPose().GetY();
 
       if (interactive_mode && enable_interactive_mode_)
       {
+        // need a 1-to-1 mapping between marker IDs and
+        // scan unique IDs to process interactive feedback
+        vertex_marker.id = scan->GetUniqueId() + 1;
         visualization_msgs::InteractiveMarker int_marker =
           vis_utils::toInteractiveMarker(vertex_marker, 0.3);
         interactive_server_->insert(int_marker,
@@ -184,51 +182,57 @@ void LoopClosureAssistant::publishGraph()
       }
       else
       {
-        markers_[vertex_marker.id] = vertex_marker;
+        // use monotonically increasing vertex marker IDs to
+        // make room for edge marker IDs
+        vertex_marker.id = marker_array_.markers.size();
+        marker_array_.markers.push_back(vertex_marker);
       }
     }
   }
 
   if (!interactive_mode)
   {
+    using EdgeList = std::vector<karto::Edge<karto::LocalizedRangeScan>*>;
+    using ConstEdgeListIterator = EdgeList::const_iterator;
+
     visualization_msgs::Marker edge_marker =
       vis_utils::toEdgeMarker(map_frame_, "slam_toolbox", 0.05);
 
-    for (auto * edge : graph->GetEdges()) {
+    const EdgeList& edges = graph->GetEdges();
+    for (ConstEdgeListIterator it = edges.begin(); it != edges.end(); ++it)
+    {
+      const karto::Edge<karto::LocalizedRangeScan> * edge = *it;
       karto::LocalizedRangeScan * source_scan = edge->GetSource()->GetObject();
       karto::LocalizedRangeScan * target_scan = edge->GetTarget()->GetObject();
       const karto::Pose2 source_pose = source_scan->GetCorrectedPose();
       const karto::Pose2 target_pose = target_scan->GetCorrectedPose();
 
-      edge_marker.id =
-          (source_scan->GetUniqueId() << 16) + target_scan->GetUniqueId();
+      edge_marker.id = marker_array_.markers.size();
       edge_marker.points[0].x = source_pose.GetX();
       edge_marker.points[0].y = source_pose.GetY();
       edge_marker.points[1].x = target_pose.GetX();
       edge_marker.points[1].y = target_pose.GetY();
-      markers_[edge_marker.id] = edge_marker;
+      marker_array_.markers.push_back(edge_marker);
     }
   }
 
-  visualization_msgs::MarkerArray marker_array;
-  for (auto it = markers_.begin(); it != markers_.end();)
+  const size_t next_marker_count = marker_array_.markers.size();
+
+  // append preexisting markers to force deletion
+  while (marker_array_.markers.size() < current_marker_count)
   {
-    marker_array.markers.push_back(it->second);
-    // drop deleted markers
-    if (it->second.action == visualization_msgs::Marker::DELETE)
-    {
-      it = markers_.erase(it);
-    }
-    else
-    {
-      ++it;
-    }
+    visualization_msgs::Marker deleted_marker;
+    deleted_marker.id = marker_array_.markers.size();
+    deleted_marker.action = visualization_msgs::Marker::DELETE;
+    marker_array_.markers.push_back(deleted_marker);
   }
 
   // if disabled, clears out old markers
   interactive_server_->applyChanges();
-  marker_publisher_.publish(marker_array);
+  marker_publisher_.publish(marker_array_);
 
+  // drop trailing deleted markers
+  marker_array_.markers.resize(next_marker_count);
   return;
 }
 
