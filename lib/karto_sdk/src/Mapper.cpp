@@ -405,7 +405,7 @@ void MapperSensorManager::SetRunningScanBufferSize(kt_int32u rScanBufferSize)
   m_RunningBufferMaximumSize = rScanBufferSize;
 
   std::vector<Name> names = GetSensorNames();
-  for (uint i = 0; i != names.size(); i++) {
+  for (unsigned int i = 0; i != names.size(); i++) {
     GetScanManager(names[i])->SetRunningScanBufferSize(rScanBufferSize);
   }
 }
@@ -415,7 +415,7 @@ void MapperSensorManager::SetRunningScanBufferMaximumDistance(kt_double rScanBuf
   m_RunningBufferMaximumDistance = rScanBufferMaxDistance;
 
   std::vector<Name> names = GetSensorNames();
-  for (uint i = 0; i != names.size(); i++) {
+  for (unsigned int i = 0; i != names.size(); i++) {
     GetScanManager(names[i])->SetRunningScanBufferMaximumDistance(rScanBufferMaxDistance);
   }
 }
@@ -1868,7 +1868,7 @@ std::vector<Vertex<LocalizedRangeScan> *> MapperGraph::FindNearByVertices(
 
   std::vector<Vertex<LocalizedRangeScan> *> rtn_vertices;
   rtn_vertices.reserve(ret_matches.size());
-  for (uint i = 0; i != ret_matches.size(); i++) {
+  for (unsigned int i = 0; i != ret_matches.size(); i++) {
     rtn_vertices.push_back(vertices_to_search[ret_matches[i].first]);
   }
   return rtn_vertices;
@@ -2942,7 +2942,7 @@ void Mapper::ClearLocalizationBuffer()
   }
 
   std::vector<Name> names = m_pMapperSensorManager->GetSensorNames();
-  for (uint i = 0; i != names.size(); i++)
+  for (unsigned int i = 0; i != names.size(); i++)
   {
     m_pMapperSensorManager->ClearRunningScans(names[i]);
     m_pMapperSensorManager->ClearLastScan(names[i]);

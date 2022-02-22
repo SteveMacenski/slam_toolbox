@@ -32,6 +32,7 @@
 #include <QLabel>
 #include <QFrame>
 #include <QRadioButton>
+#undef NO_ERROR
 // STL
 #include <thread>
 #include <chrono>
