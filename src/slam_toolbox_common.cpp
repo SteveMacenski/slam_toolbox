@@ -39,7 +39,7 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
   processor_type_(PROCESS),
   first_measurement_(true),
   process_near_pose_(nullptr),
-  transform_timeout_(rclcpp::Duration(0.5 * 1000000000)),
+  transform_timeout_(rclcpp::Duration::from_seconds(0.5)),
   minimum_time_interval_(0.)
 /*****************************************************************************/
 {
@@ -150,9 +150,9 @@ void SlamToolbox::setParams()
 
   double tmp_val = 0.5;
   tmp_val = this->declare_parameter("transform_timeout", tmp_val);
-  transform_timeout_ = rclcpp::Duration(tmp_val * 1000000000);
+  transform_timeout_ = rclcpp::Duration::from_seconds(tmp_val);
   tmp_val = this->declare_parameter("minimum_time_interval", tmp_val);
-  minimum_time_interval_ = rclcpp::Duration(tmp_val * 1000000000);
+  minimum_time_interval_ = rclcpp::Duration::from_seconds(tmp_val);
 
   bool debug = false;
   debug = this->declare_parameter("debug_logging", debug);
@@ -230,7 +230,7 @@ void SlamToolbox::publishTransformLoop(
       msg.transform = tf2::toMsg(map_to_odom_);
       msg.child_frame_id = odom_frame_;
       msg.header.frame_id = map_frame_;
-      msg.header.stamp = this->now() + transform_timeout_;
+      msg.header.stamp = scan_timestamped + transform_timeout_;
       tfB_->sendTransform(msg);
     }
     r.sleep();
@@ -371,7 +371,7 @@ bool SlamToolbox::updateMap()
   vis_utils::toNavMap(occ_grid, map_.map);
 
   // publish map as current
-  map_.map.header.stamp = this->now();
+  map_.map.header.stamp = scan_timestamped;
   sst_->publish(
     std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
   sstm_->publish(
