@@ -227,12 +227,15 @@ void SlamToolbox::publishTransformLoop(
   while (rclcpp::ok()) {
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      geometry_msgs::msg::TransformStamped msg;
-      msg.transform = tf2::toMsg(map_to_odom_);
-      msg.child_frame_id = odom_frame_;
-      msg.header.frame_id = map_frame_;
-      msg.header.stamp = scan_timestamped + transform_timeout_;
-      tfB_->sendTransform(msg);
+      // Avoids publishing tf with initial 0.0 scan timestamp
+      if (scan_timestamped.seconds() > 0.0) {
+        geometry_msgs::msg::TransformStamped msg;
+        msg.transform = tf2::toMsg(map_to_odom_);
+        msg.child_frame_id = odom_frame_;
+        msg.header.frame_id = map_frame_;
+        msg.header.stamp = scan_timestamped + transform_timeout_;
+        tfB_->sendTransform(msg);
+      }
     }
     r.sleep();
   }
