@@ -125,48 +125,114 @@ void LoopClosureAssistant::publishGraph()
 /*****************************************************************************/
 {
   interactive_server_->clear();
-  std::unordered_map<int, Eigen::Vector3d>* graph = solver_->getGraph();
+  karto::MapperGraph * graph = mapper_->GetGraph();
 
-  if (graph->size() == 0)
+  if (!graph || graph->GetVertices().empty())
   {
     return;
   }
 
-  ROS_DEBUG("Graph size: %i",(int)graph->size());
+  using ConstVertexMapIterator =
+      karto::MapperGraph::VertexMap::const_iterator;
+  const karto::MapperGraph::VertexMap& vertices = graph->GetVertices();
+
+  int graph_size = 0;
+  for (ConstVertexMapIterator it = vertices.begin(); it != vertices.end(); ++it)
+  {
+    graph_size += it->second.size();
+  }
+  ROS_DEBUG("Graph size: %i", graph_size);
+
   bool interactive_mode = false;
   {
     boost::mutex::scoped_lock lock(interactive_mutex_);
     interactive_mode = interactive_mode_;
   }
 
-  visualization_msgs::MarkerArray marray;
-  visualization_msgs::Marker m = vis_utils::toMarker(map_frame_,
-    "slam_toolbox", 0.1);
+  const size_t current_marker_count = marker_array_.markers.size();
+  marker_array_.markers.clear();  // restart the marker count
 
-  for (ConstGraphIterator it = graph->begin(); it != graph->end(); ++it)
+  visualization_msgs::Marker vertex_marker =
+    vis_utils::toVertexMarker(map_frame_, "slam_toolbox", 0.1);
+
+  for (ConstVertexMapIterator outer_it = vertices.begin();
+       outer_it != vertices.end(); ++outer_it)
   {
-    m.id = it->first + 1;
-    m.pose.position.x = it->second(0);
-    m.pose.position.y = it->second(1);
+    using ConstVertexMapValueIterator =
+        karto::MapperGraph::VertexMap::mapped_type::const_iterator;
+    for (ConstVertexMapValueIterator inner_it = outer_it->second.begin();
+         inner_it != outer_it->second.end(); ++inner_it)
+    {
+      karto::LocalizedRangeScan * scan = inner_it->second->GetObject();
 
-    if (interactive_mode && enable_interactive_mode_)
-    {
-      visualization_msgs::InteractiveMarker int_marker =
-        vis_utils::toInteractiveMarker(m, 0.3);
-      interactive_server_->insert(int_marker,
-        boost::bind(
-        &LoopClosureAssistant::processInteractiveFeedback,
-        this, _1));
+      vertex_marker.pose.position.x = scan->GetCorrectedPose().GetX();
+      vertex_marker.pose.position.y = scan->GetCorrectedPose().GetY();
+
+      if (interactive_mode && enable_interactive_mode_)
+      {
+        // need a 1-to-1 mapping between marker IDs and
+        // scan unique IDs to process interactive feedback
+        vertex_marker.id = scan->GetUniqueId() + 1;
+        visualization_msgs::InteractiveMarker int_marker =
+          vis_utils::toInteractiveMarker(vertex_marker, 0.3);
+        interactive_server_->insert(int_marker,
+          boost::bind(
+          &LoopClosureAssistant::processInteractiveFeedback,
+          this, _1));
+      }
+      else
+      {
+        // use monotonically increasing vertex marker IDs to
+        // make room for edge marker IDs
+        vertex_marker.id = marker_array_.markers.size();
+        marker_array_.markers.push_back(vertex_marker);
+      }
     }
-    else
+  }
+
+  if (!interactive_mode)
+  {
+    using EdgeList = std::vector<karto::Edge<karto::LocalizedRangeScan>*>;
+    using ConstEdgeListIterator = EdgeList::const_iterator;
+
+    visualization_msgs::Marker edge_marker =
+      vis_utils::toEdgeMarker(map_frame_, "slam_toolbox", 0.05);
+
+    const EdgeList& edges = graph->GetEdges();
+    for (ConstEdgeListIterator it = edges.begin(); it != edges.end(); ++it)
     {
-      marray.markers.push_back(m);
+      const karto::Edge<karto::LocalizedRangeScan> * edge = *it;
+      karto::LocalizedRangeScan * source_scan = edge->GetSource()->GetObject();
+      karto::LocalizedRangeScan * target_scan = edge->GetTarget()->GetObject();
+      const karto::Pose2 source_pose = source_scan->GetCorrectedPose();
+      const karto::Pose2 target_pose = target_scan->GetCorrectedPose();
+
+      edge_marker.id = marker_array_.markers.size();
+      edge_marker.points[0].x = source_pose.GetX();
+      edge_marker.points[0].y = source_pose.GetY();
+      edge_marker.points[1].x = target_pose.GetX();
+      edge_marker.points[1].y = target_pose.GetY();
+      marker_array_.markers.push_back(edge_marker);
     }
+  }
+
+  const size_t next_marker_count = marker_array_.markers.size();
+
+  // append preexisting markers to force deletion
+  while (marker_array_.markers.size() < current_marker_count)
+  {
+    visualization_msgs::Marker deleted_marker;
+    deleted_marker.id = marker_array_.markers.size();
+    deleted_marker.action = visualization_msgs::Marker::DELETE;
+    marker_array_.markers.push_back(deleted_marker);
   }
 
   // if disabled, clears out old markers
   interactive_server_->applyChanges();
-  marker_publisher_.publish(marray);
+  marker_publisher_.publish(marker_array_);
+
+  // drop trailing deleted markers
+  marker_array_.markers.resize(next_marker_count);
   return;
 }
 

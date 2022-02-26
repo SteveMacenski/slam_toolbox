@@ -22,7 +22,7 @@
 namespace vis_utils
 {
 
-inline visualization_msgs::Marker toMarker(
+inline visualization_msgs::Marker toVertexMarker(
   const std::string& frame,
   const std::string& ns,
   const double& scale)
@@ -41,6 +41,33 @@ inline visualization_msgs::Marker toMarker(
   marker.color.r = 1.0;
   marker.color.g = 0;
   marker.color.b = 0.0;
+  marker.color.a = 1.;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.lifetime = ros::Duration(0.);
+
+  return marker;
+}
+
+inline visualization_msgs::Marker toEdgeMarker(
+  const std::string& frame,
+  const std::string& ns,
+  const double& width)
+{
+  visualization_msgs::Marker marker;
+
+  marker.header.frame_id = frame;
+  marker.header.stamp = ros::Time::now();
+  marker.ns = ns;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
+  marker.pose.position.z = 0.0;
+  marker.pose.orientation.w = 1.;
+  marker.points.resize(2);
+  marker.scale.x = width;
+  marker.scale.y = 0;
+  marker.scale.z = 0;
+  marker.color.r = 0.0;
+  marker.color.g = 0;
+  marker.color.b = 1.0;
   marker.color.a = 1.;
   marker.action = visualization_msgs::Marker::ADD;
   marker.lifetime = ros::Duration(0.);

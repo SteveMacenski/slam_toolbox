@@ -133,7 +133,7 @@ bool MergeMapsKinematic::addSubmapCallback(
 
   // create an interactive marker for the base of this frame and attach it
   visualization_msgs::Marker m = 
-    vis_utils::toMarker("map", "merge_maps_tool", 2.0);
+    vis_utils::toVertexMarker("map", "merge_maps_tool", 2.0);
   m.pose.position.x =  transform.getOrigin().getX();
   m.pose.position.y =  transform.getOrigin().getY();
   m.id = num_submaps_;
