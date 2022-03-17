@@ -182,7 +182,6 @@ target_link_libraries(merge_maps_kinematic kartoSlamToolbox toolbox_common)
 install(TARGETS async_slam_toolbox_node
                 sync_slam_toolbox_node
                 localization_slam_toolbox_node
-                lifelong_slam_toolbox_node
                 merge_maps_kinematic
                 ${libraries}
   ARCHIVE DESTINATION lib
