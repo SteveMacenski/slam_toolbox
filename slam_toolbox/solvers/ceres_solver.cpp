@@ -163,9 +163,17 @@ CeresSolver::~CeresSolver()
   {
     delete nodes_;
   }
+  if (nodes_inverted_ != NULL)
+  {
+    delete nodes_inverted_;
+  }
   if (problem_ != NULL)
   {
     delete problem_;  
+  }
+  if (local_parameterization_ != NULL)
+  {
+    delete local_parameterization_;
   }
 }
 
@@ -277,6 +285,11 @@ void CeresSolver::Reset()
   if (problem_)
   {
     delete problem_;
+  }
+
+  if (local_parameterization_)
+  {
+    delete local_parameterization_;
   }
 
   if (nodes_inverted_)
