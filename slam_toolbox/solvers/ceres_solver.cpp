@@ -325,13 +325,14 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   Eigen::Vector3d pose2d(diff.GetX(), diff.GetY(), diff.GetHeading());
 
   karto::Matrix3 precisionMatrix = pLinkInfo->GetCovariance().Inverse();
-  Eigen::Matrix3d sqrt_information;
-  sqrt_information(0,0) = precisionMatrix(0,0);
-  sqrt_information(0,1) = sqrt_information(1,0) = precisionMatrix(0,1);
-  sqrt_information(0,2) = sqrt_information(2,0) = precisionMatrix(0,2);
-  sqrt_information(1,1) = precisionMatrix(1,1);
-  sqrt_information(1,2) = sqrt_information(2,1) = precisionMatrix(1,2);
-  sqrt_information(2,2) = precisionMatrix(2,2);
+  Eigen::Matrix3d information;
+  information(0, 0) = precisionMatrix(0, 0);
+  information(0, 1) = information(1, 0) = precisionMatrix(0, 1);
+  information(0, 2) = information(2, 0) = precisionMatrix(0, 2);
+  information(1, 1) = precisionMatrix(1, 1);
+  information(1, 2) = information(2, 1) = precisionMatrix(1, 2);
+  information(2, 2) = precisionMatrix(2, 2);
+  Eigen::Matrix3d sqrt_information = information.llt().matrixU();
 
   // populate residual and parameterization for heading normalization
   ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create(pose2d(0), 
