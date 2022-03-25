@@ -1682,18 +1682,6 @@ namespace karto
       return false;
     }
 
-    // see if edge already exists
-    for (Edge<LocalizedRangeScan> * pOtherEdge : GetEdges()) {
-      if (pEdge->GetSource() == pOtherEdge->GetSource() &&
-          pEdge->GetTarget() == pOtherEdge->GetTarget()) {
-        return false;
-      }
-      if (pEdge->GetTarget() == pOtherEdge->GetSource() &&
-          pEdge->GetSource() == pOtherEdge->GetTarget()) {
-        return false;
-      }
-    }
-
     Graph<LocalizedRangeScan>::AddEdge(pEdge);
     return true;
   }
