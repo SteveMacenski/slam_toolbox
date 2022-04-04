@@ -1072,10 +1072,10 @@ namespace karto
     /**
      * Get graph stored
      */
-    virtual std::unordered_map<int, Eigen::Vector3d>* getGraph()
+    virtual std::unordered_map<int, Eigen::Map<Eigen::Vector3d>> GetGraph()
     {
       std::cout << "getGraph method not implemented for this solver type. Graph visualization unavailable." << std::endl;
-      return nullptr;
+      return {};
     }
 
     /**
