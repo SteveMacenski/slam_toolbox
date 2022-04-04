@@ -3150,6 +3150,7 @@ namespace karto
               edge->GetTarget()->GetObject()->GetUniqueId());
           m_pGraph->RemoveEdge(edge);
           delete edge;
+          edge = nullptr;
           found = true;
         }
       }
