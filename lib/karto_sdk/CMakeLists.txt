@@ -12,7 +12,10 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED system serialization filesystem thread)
-find_package(TBB REQUIRED)
+find_package(TBB REQUIRED NO_CMAKE_PACKAGE_REGISTRY)
+if(NOT ${TBB_FOUND})
+  find_package(TBB REQUIRED)
+endif()
 
 set(dependencies
   rclcpp
@@ -29,7 +32,12 @@ add_definitions(${EIGEN3_DEFINITIONS})
 include_directories(include ${EIGEN3_INCLUDE_DIRS} ${TBB_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 add_library(kartoSlamToolbox SHARED src/Karto.cpp src/Mapper.cpp)
 ament_target_dependencies(kartoSlamToolbox ${dependencies})
-target_link_libraries(kartoSlamToolbox ${Boost_LIBRARIES} ${TBB_LIBRARIES})
+if(${TBB_VERSION} VERSION_GREATER_EQUAL 2021.1)
+  target_link_libraries(kartoSlamToolbox ${Boost_LIBRARIES} TBB::tbb)
+else()
+  target_link_libraries(kartoSlamToolbox ${Boost_LIBRARIES} ${TBB_LIBRARIES})
+  add_compile_definitions(USE_DEPRECATED_TBB_API)
+endif()
 
 install(DIRECTORY include/
 	DESTINATION include/

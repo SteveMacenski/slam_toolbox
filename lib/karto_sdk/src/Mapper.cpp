@@ -770,7 +770,11 @@ kt_double ScanMatcher::CorrelateScan(
   m_nAngles = nAngles;
   m_searchAngleResolution = searchAngleResolution;
   m_doPenalize = doPenalize;
-  tbb::parallel_do(m_yPoses, (*this) );
+#ifdef USE_DEPRECATED_TBB_API
+  tbb::parallel_do(m_yPoses, (*this));
+#else
+  tbb::parallel_for_each(m_yPoses, (*this));
+#endif
 
   // find value of best response (in [0; 1])
   kt_double bestResponse = -1;
