@@ -72,10 +72,8 @@ set(libraries
 
 find_package(PkgConfig REQUIRED)
 find_package(Eigen3 REQUIRED)
-set(FPHSA_NAME_MISMATCHED 1) # Suppress warnings, see https://cmake.org/cmake/help/v3.17/module/FindPackageHandleStandardArgs.html
-find_package(Cholmod REQUIRED)
+find_package(CHOLMOD REQUIRED)
 find_package(CSparse REQUIRED)
-unset(FPHSA_NAME_MISMATCHED)
 find_package(G2O REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
