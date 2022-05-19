@@ -27,11 +27,7 @@
 #include <utility>
 #include <string>
 
-#ifdef USE_DEPRECATED_TBB_API
-#include "tbb/parallel_do.h"
-#else
 #include "tbb/parallel_for_each.h"
-#endif
 #include "tbb/parallel_for.h"
 #include "tbb/blocked_range.h"
 

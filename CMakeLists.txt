@@ -121,12 +121,8 @@ target_include_directories(SlamToolboxPlugin PUBLIC
   ${OGRE_INCLUDE_DIRS}
 )
 target_link_libraries(SlamToolboxPlugin ${QT_LIBRARIES} rviz_common::rviz_common)
-if(${rosidl_cmake_VERSION} VERSION_LESS 2.5.0)
-  rosidl_target_interfaces(SlamToolboxPlugin ${PROJECT_NAME} "rosidl_typesupport_cpp")
-else()
-  rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-  target_link_libraries(SlamToolboxPlugin "${cpp_typesupport_target}")
-endif()
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(SlamToolboxPlugin "${cpp_typesupport_target}")
 target_compile_definitions(SlamToolboxPlugin PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 target_compile_definitions(SlamToolboxPlugin PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY")
 pluginlib_export_plugin_description_file(rviz_common rviz_plugins.xml) 
@@ -139,12 +135,8 @@ target_link_libraries(ceres_solver_plugin ${CERES_LIBRARIES}
                                           ${TBB_LIBRARIES}
                                           kartoSlamToolbox
 )
-if(${rosidl_cmake_VERSION} VERSION_LESS 2.5.0)
-  rosidl_target_interfaces(ceres_solver_plugin ${PROJECT_NAME} "rosidl_typesupport_cpp")
-else()
-  rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-  target_link_libraries(ceres_solver_plugin "${cpp_typesupport_target}")
-endif()
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(ceres_solver_plugin "${cpp_typesupport_target}")
 pluginlib_export_plugin_description_file(slam_toolbox solver_plugins.xml)
 
 #### Tool lib for mapping
@@ -153,12 +145,8 @@ ament_target_dependencies(toolbox_common
   ${dependencies}
 )
 target_link_libraries(toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
-if(${rosidl_cmake_VERSION} VERSION_LESS 2.5.0)
-  rosidl_target_interfaces(toolbox_common ${PROJECT_NAME} "rosidl_typesupport_cpp")
-else()
-  rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-  target_link_libraries(toolbox_common "${cpp_typesupport_target}")
-endif()
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(toolbox_common "${cpp_typesupport_target}")
 
 #### Mapping executibles
 add_library(async_slam_toolbox src/slam_toolbox_async.cpp)
