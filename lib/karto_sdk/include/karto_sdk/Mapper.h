@@ -27,7 +27,7 @@
 #include <utility>
 #include <string>
 
-#include "tbb/parallel_do.h"
+#include "tbb/parallel_for_each.h"
 #include "tbb/parallel_for.h"
 #include "tbb/blocked_range.h"
 
