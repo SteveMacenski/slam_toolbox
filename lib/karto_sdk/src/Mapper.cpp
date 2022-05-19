@@ -800,6 +800,8 @@ kt_double ScanMatcher::CorrelateScan(LocalizedRangeScan* pScan, const Pose2& rSe
   {
     (*this)(y);
   }
+  // NOTE: NOT parallelizing scan matching b/c it didn't seem to improve CPU resources
+  // tbb::parallel_for_each(m_yPoses, (*this));
 
   // find value of best response (in [0; 1])
   kt_double bestResponse = -1;
