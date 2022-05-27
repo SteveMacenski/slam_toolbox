@@ -177,7 +177,10 @@ void CeresSolver::Compute()
   }
 
   // populate contraint for static initial pose
-  if (!was_constant_set_ && first_node_ != nodes_->end()) {
+  if (!was_constant_set_ && first_node_ != nodes_->end() &&
+      problem_->HasParameterBlock(&first_node_->second(0)) &&
+      problem_->HasParameterBlock(&first_node_->second(1)) &&
+      problem_->HasParameterBlock(&first_node_->second(2))) {
     RCLCPP_DEBUG(node_->get_logger(),
       "CeresSolver: Setting first node as a constant pose:"
       "%0.2f, %0.2f, %0.2f.", first_node_->second(0),
