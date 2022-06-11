@@ -24,7 +24,7 @@ You can find this work [here](https://joss.theoj.org/papers/10.21105/joss.02783)
 
 # Introduction
 
-Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/), maintained whil at Samsung Research, and largely in his free time. 
+Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/), maintained while at Samsung Research, and largely in his free time. 
 
 This project contains the ability to do most everything any other available SLAM library, both free and paid, and more. This includes:
 - Ordinary point-and-shoot 2D SLAM mobile robotics folks expect (start, map, save pgm file) with some nice built in utilities like saving maps
