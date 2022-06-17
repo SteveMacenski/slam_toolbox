@@ -114,6 +114,7 @@ protected:
   bool shouldProcessScan(
     const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
     const karto::Pose2 & pose);
+  void publishPose(karto::LocalizedRangeScan * scan, const rclcpp::Time & t);
 
   // pausing bits
   bool isPaused(const PausedApplication & app);
@@ -130,6 +131,7 @@ protected:
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> scan_filter_;
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>> sst_;
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>> sstm_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub_;
   std::shared_ptr<rclcpp::Service<nav_msgs::srv::GetMap>> ssMap_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::Pause>> ssPauseMeasurements_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::SerializePoseGraph>> ssSerialize_;
@@ -140,9 +142,11 @@ protected:
   rclcpp::Duration transform_timeout_, minimum_time_interval_;
   std_msgs::msg::Header scan_header;
   int throttle_scans_;
-
+  double position_covariance_scale_;
+  double yaw_covariance_scale_;
   double resolution_;
   bool first_measurement_, enable_interactive_mode_;
+  bool enable_continuous_matching_;
 
   // Book keeping
   std::unique_ptr<mapper_utils::SMapper> smapper_;

@@ -145,9 +145,18 @@ void SlamToolbox::setParams()
   throttle_scans_ = 1;
   throttle_scans_ = this->declare_parameter("throttle_scans", throttle_scans_);
 
+  position_covariance_scale_ = 1.0;
+  position_covariance_scale_ = this->declare_parameter("position_covariance_scale", position_covariance_scale_);
+
+  yaw_covariance_scale_ = 1.0;
+  yaw_covariance_scale_ = this->declare_parameter("yaw_covariance_scale", yaw_covariance_scale_);
+
   enable_interactive_mode_ = false;
   enable_interactive_mode_ = this->declare_parameter("enable_interactive_mode",
       enable_interactive_mode_);
+
+  enable_continuous_matching_ = false;
+  enable_continuous_matching_ = this->declare_parameter("enable_continuous_matching", enable_continuous_matching_);
 
   double tmp_val = 0.5;
   tmp_val = this->declare_parameter("transform_timeout", tmp_val);
@@ -182,6 +191,8 @@ void SlamToolbox::setROSInterfaces()
   tfL_ = std::make_unique<tf2_ros::TransformListener>(*tf_);
   tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(shared_from_this());
 
+  pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("map_pose", 10);
+
   sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
     map_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
@@ -209,7 +220,7 @@ void SlamToolbox::setROSInterfaces()
     shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-    *scan_filter_sub_, *tf_, odom_frame_, 1, shared_from_this());
+    *scan_filter_sub_, *tf_, odom_frame_, 20, shared_from_this());
   scan_filter_->registerCallback(
     std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
 }
@@ -535,6 +546,7 @@ LocalizedRangeScan * SlamToolbox::addScan(
   Pose2 & odom_pose)
 /*****************************************************************************/
 {
+  RCLCPP_INFO(get_logger(), "addScan");
   // get our localized range scan
   LocalizedRangeScan * range_scan = getLocalizedRangeScan(
     laser, scan, odom_pose);
@@ -542,9 +554,18 @@ LocalizedRangeScan * SlamToolbox::addScan(
   // Add the localized range scan to the smapper
   boost::mutex::scoped_lock lock(smapper_mutex_);
   bool processed = false, update_reprocessing_transform = false;
+  bool match_only = false;
 
   if (processor_type_ == PROCESS) {
     processed = smapper_->getMapper()->Process(range_scan);
+    if (!processed && enable_continuous_matching_) {
+      RCLCPP_INFO(get_logger(), "match_only");
+      match_only = true;
+      auto start_time = now();
+      processed = smapper_->getMapper()->Process(range_scan, true);
+      auto elapsed = now() - start_time;
+      RCLCPP_INFO(get_logger(), "match time: %.2lf ms", static_cast<double>(elapsed.nanoseconds()) / 1e6);
+    }
   } else if (processor_type_ == PROCESS_FIRST_NODE) {
     processed = smapper_->getMapper()->ProcessAtDock(range_scan);
     processor_type_ = PROCESS;
@@ -571,19 +592,50 @@ LocalizedRangeScan * SlamToolbox::addScan(
   // if successfully processed, create odom to map transformation
   // and add our scan to storage
   if (processed) {
-    if (enable_interactive_mode_) {
+    if (enable_interactive_mode_ && !match_only) {
       scan_holder_->addScan(*scan);
     }
 
     setTransformFromPoses(range_scan->GetCorrectedPose(), odom_pose,
       scan->header.stamp, update_reprocessing_transform);
-    dataset_->Add(range_scan);
-  } else {
+
+    if (!match_only) {
+      dataset_->Add(range_scan);
+    }
+
+    publishPose(range_scan, scan->header.stamp);
+
+  }
+
+  if (!processed || match_only) {
     delete range_scan;
     range_scan = nullptr;
   }
 
   return range_scan;
+}
+
+void SlamToolbox::publishPose(karto::LocalizedRangeScan * scan, const rclcpp::Time & t)
+{
+  auto pose = scan->GetCorrectedPose();
+  auto cov = scan->GetCovariance();
+
+  geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
+  pose_msg.header.stamp = t;
+  pose_msg.header.frame_id = map_frame_;
+
+  tf2::Quaternion q(0., 0., 0., 1.0);
+  q.setRPY(0., 0., pose.GetHeading());
+  tf2::Transform transform(q, tf2::Vector3(pose.GetX(), pose.GetY(), 0.0));
+  tf2::toMsg(transform, pose_msg.pose.pose);
+
+  pose_msg.pose.covariance[0] = cov(0, 0) * position_covariance_scale_;  // x
+  pose_msg.pose.covariance[1] = cov(0, 1) * position_covariance_scale_;  // xy
+  pose_msg.pose.covariance[6] = cov(1, 0) * position_covariance_scale_;  // xy
+  pose_msg.pose.covariance[7] = cov(1, 1) * position_covariance_scale_;  // y
+  pose_msg.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;      // yaw
+
+  pose_pub_->publish(pose_msg);
 }
 
 /*****************************************************************************/

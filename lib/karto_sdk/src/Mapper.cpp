@@ -2676,7 +2676,7 @@ kt_bool Mapper::Process(Object *  /*pObject*/)  // NOLINT
   return true;
 }
 
-kt_bool Mapper::Process(LocalizedRangeScan * pScan)
+kt_bool Mapper::Process(LocalizedRangeScan * pScan, bool match_only)
 {
   if (pScan != NULL) {
     karto::LaserRangeFinder * pLaserRangeFinder = pScan->GetLaserRangeFinder();
@@ -2701,7 +2701,7 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan)
     }
 
     // test if scan is outside minimum boundary or if heading is larger then minimum heading
-    if (!HasMovedEnough(pScan, pLastScan)) {
+    if (!match_only && !HasMovedEnough(pScan, pLastScan)) {
       return false;
     }
 
@@ -2718,27 +2718,30 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan)
       pScan->SetSensorPose(bestPose);
     }
 
-    // add scan to buffer and assign id
-    m_pMapperSensorManager->AddScan(pScan);
+    if (!match_only) {
+      // add scan to buffer and assign id
+      m_pMapperSensorManager->AddScan(pScan);
 
-    if (m_pUseScanMatching->GetValue()) {
-      // add to graph
-      m_pGraph->AddVertex(pScan);
-      m_pGraph->AddEdges(pScan, covariance);
+      if (m_pUseScanMatching->GetValue()) {
+        // add to graph
+        m_pGraph->AddVertex(pScan);
+        m_pGraph->AddEdges(pScan, covariance);
 
-      m_pMapperSensorManager->AddRunningScan(pScan);
+        m_pMapperSensorManager->AddRunningScan(pScan);
 
-      if (m_pDoLoopClosing->GetValue()) {
-        std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
-        const_forEach(std::vector<Name>, &deviceNames)
-        {
-          m_pGraph->TryCloseLoop(pScan, *iter);
+        if (m_pDoLoopClosing->GetValue()) {
+          std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+          const_forEach(std::vector<Name>, &deviceNames)
+          {
+            m_pGraph->TryCloseLoop(pScan, *iter);
+          }
         }
       }
+
+      m_pMapperSensorManager->SetLastScan(pScan);
     }
 
-    m_pMapperSensorManager->SetLastScan(pScan);
-
+    pScan->SetCovariance(covariance);
     return true;
   }
 
