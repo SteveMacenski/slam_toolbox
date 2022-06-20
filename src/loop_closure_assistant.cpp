@@ -158,6 +158,13 @@ void LoopClosureAssistant::publishGraph()
   }
 
   visualization_msgs::msg::MarkerArray marray;
+
+  // clear existing markers to account for any removed nodes
+  visualization_msgs::msg::Marker clear;
+  clear.header.stamp = node_->now();
+  clear.action = visualization_msgs::msg::Marker::DELETEALL;
+  marray.markers.push_back(clear);
+
   visualization_msgs::msg::Marker m = vis_utils::toMarker(map_frame_,
       "slam_toolbox", 0.1, node_);
 
