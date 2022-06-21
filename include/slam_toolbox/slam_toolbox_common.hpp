@@ -143,6 +143,7 @@ protected:
 
   double resolution_;
   bool first_measurement_, enable_interactive_mode_;
+  bool enable_continuous_matching_;
 
   // Book keeping
   std::unique_ptr<mapper_utils::SMapper> smapper_;

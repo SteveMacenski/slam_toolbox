@@ -1994,9 +1994,12 @@ public:
    * is that of the range device originating the scan.  Note that the mapper will set corrected pose
    * information in the scan object.
    *
+   * @param force_match_only Flag to force a scan match regardless of distance or angle traveled and to only return
+   * the resulting pose instead of adding the scan to the map.
+   *
    * @return true if the scan was added successfully, false otherwise
    */
-  virtual kt_bool Process(LocalizedRangeScan * pScan);
+  virtual kt_bool Process(LocalizedRangeScan * pScan, bool force_match_only);
 
   /**
    * Process an Object
