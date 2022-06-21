@@ -551,10 +551,13 @@ LocalizedRangeScan * SlamToolbox::addScan(
   boost::mutex::scoped_lock lock(smapper_mutex_);
   bool processed = false, update_reprocessing_transform = false;
 
+  Matrix3 covariance;
+  covariance.SetToIdentity();
+
   if (processor_type_ == PROCESS) {
-    processed = smapper_->getMapper()->Process(range_scan);
+    processed = smapper_->getMapper()->Process(range_scan, &covariance);
   } else if (processor_type_ == PROCESS_FIRST_NODE) {
-    processed = smapper_->getMapper()->ProcessAtDock(range_scan);
+    processed = smapper_->getMapper()->ProcessAtDock(range_scan, &covariance);
     processor_type_ = PROCESS;
     update_reprocessing_transform = true;
   } else if (processor_type_ == PROCESS_NEAR_REGION) {
@@ -567,7 +570,8 @@ LocalizedRangeScan * SlamToolbox::addScan(
     range_scan->SetOdometricPose(*process_near_pose_);
     range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
     process_near_pose_.reset(nullptr);
-    processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan);
+    processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(
+      range_scan, false, &covariance);
     update_reprocessing_transform = true;
     processor_type_ = PROCESS;
   } else {
@@ -587,7 +591,7 @@ LocalizedRangeScan * SlamToolbox::addScan(
       scan->header.stamp, update_reprocessing_transform);
     dataset_->Add(range_scan);
 
-    publishPose(range_scan, scan->header.stamp);
+    publishPose(range_scan->GetCorrectedPose(), covariance, scan->header.stamp);
   } else {
     delete range_scan;
     range_scan = nullptr;
@@ -598,13 +602,11 @@ LocalizedRangeScan * SlamToolbox::addScan(
 
 /*****************************************************************************/
 void SlamToolbox::publishPose(
-  karto::LocalizedRangeScan * scan,
+  const Pose2 & pose,
+  const Matrix3 & cov,
   const rclcpp::Time & t)
 /*****************************************************************************/
 {
-  auto pose = scan->GetCorrectedPose();
-  auto cov = scan->GetCovariance();
-
   geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
   pose_msg.header.stamp = t;
   pose_msg.header.frame_id = map_frame_;
