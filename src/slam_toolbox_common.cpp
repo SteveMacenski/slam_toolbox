@@ -145,6 +145,12 @@ void SlamToolbox::setParams()
   throttle_scans_ = 1;
   throttle_scans_ = this->declare_parameter("throttle_scans", throttle_scans_);
 
+  position_covariance_scale_ = 1.0;
+  position_covariance_scale_ = this->declare_parameter("position_covariance_scale", position_covariance_scale_);
+
+  yaw_covariance_scale_ = 1.0;
+  yaw_covariance_scale_ = this->declare_parameter("yaw_covariance_scale", yaw_covariance_scale_);
+
   enable_interactive_mode_ = false;
   enable_interactive_mode_ = this->declare_parameter("enable_interactive_mode",
       enable_interactive_mode_);
@@ -182,6 +188,8 @@ void SlamToolbox::setROSInterfaces()
   tfL_ = std::make_unique<tf2_ros::TransformListener>(*tf_);
   tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(shared_from_this());
 
+  pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "pose", 10);
   sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
     map_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
@@ -578,12 +586,41 @@ LocalizedRangeScan * SlamToolbox::addScan(
     setTransformFromPoses(range_scan->GetCorrectedPose(), odom_pose,
       scan->header.stamp, update_reprocessing_transform);
     dataset_->Add(range_scan);
+
+    publishPose(range_scan, scan->header.stamp);
   } else {
     delete range_scan;
     range_scan = nullptr;
   }
 
   return range_scan;
+}
+
+/*****************************************************************************/
+void SlamToolbox::publishPose(
+  karto::LocalizedRangeScan * scan,
+  const rclcpp::Time & t)
+/*****************************************************************************/
+{
+  auto pose = scan->GetCorrectedPose();
+  auto cov = scan->GetCovariance();
+
+  geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
+  pose_msg.header.stamp = t;
+  pose_msg.header.frame_id = map_frame_;
+
+  tf2::Quaternion q(0., 0., 0., 1.0);
+  q.setRPY(0., 0., pose.GetHeading());
+  tf2::Transform transform(q, tf2::Vector3(pose.GetX(), pose.GetY(), 0.0));
+  tf2::toMsg(transform, pose_msg.pose.pose);
+
+  pose_msg.pose.covariance[0] = cov(0, 0) * position_covariance_scale_;  // x
+  pose_msg.pose.covariance[1] = cov(0, 1) * position_covariance_scale_;  // xy
+  pose_msg.pose.covariance[6] = cov(1, 0) * position_covariance_scale_;  // xy
+  pose_msg.pose.covariance[7] = cov(1, 1) * position_covariance_scale_;  // y
+  pose_msg.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;      // yaw
+
+  pose_pub_->publish(pose_msg);
 }
 
 /*****************************************************************************/

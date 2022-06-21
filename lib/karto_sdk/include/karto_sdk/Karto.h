@@ -5606,6 +5606,16 @@ public:
     m_BoundingBox = bbox;
   }
 
+  inline void SetCovariance(const Matrix3& covariance)
+  {
+    m_Covariance = covariance;
+  }
+
+  inline const Matrix3 GetCovariance() const
+  {
+    return m_Covariance;
+  }
+
   /**
    * Get point readings in local coordinates
    */
@@ -5733,6 +5743,17 @@ private:
    * Corrected pose of robot calculated by mapper (or localizer)
    */
   Pose2 m_CorrectedPose;
+
+  /**
+   * Covariance of corrected pose.
+   *
+   *   | var-x   cov-xy    0    |
+   *   |                        |
+   *   | cov-xy  var-y     0    |
+   *   |                        |
+   *   |  0        0    var-yaw |
+   */
+  Matrix3 m_Covariance;
 
 protected:
   /**

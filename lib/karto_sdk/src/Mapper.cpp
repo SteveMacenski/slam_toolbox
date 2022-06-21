@@ -2716,6 +2716,7 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan)
         bestPose,
         covariance);
       pScan->SetSensorPose(bestPose);
+      pScan->SetCovariance(covariance);
     }
 
     // add scan to buffer and assign id
