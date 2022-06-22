@@ -248,17 +248,17 @@ The following settings and options are exposed to you. My default configuration 
 
 `stack_size_to_use` - The number of bytes to reset the stack size to, to enable serialization/deserialization of files. A liberal default is 40000000, but less is fine.
 
-`minimum_travel_distance` - Minimum distance of travel before processing a new scan into the map
-
-`minimum_travel_heading` - Minimum changing in heading before processing a new scan into the map
-
-`enable_continuous_matching` - Perform scan matching to update the transform and pose even when the minimum travel distance or heading have not been reached for adding the scan into the map
+`minimum_travel_distance` - Minimum distance of travel before processing a new scan into the map, or adding a scan to the queue for processing in sync or localization modes.
 
 ## Matcher Params
 
 `use_scan_matching` - whether to use scan matching to refine odometric pose (uh, why would you not?)
 
 `use_scan_barycenter` - Whether to use the barycenter or scan pose
+
+`minimum_travel_heading` - Minimum changing in heading before processing a new scan into the map
+
+`enable_continuous_matching` - Perform scan matching to update the transform and pose even when the minimum travel distance or heading have not been reached for adding the scan into the map
 
 `scan_buffer_size` - The number of scans to buffer into a chain, also used as the number of scans in the circular buffer of localization mode
 
