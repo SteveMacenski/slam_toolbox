@@ -41,7 +41,8 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
   first_measurement_(true),
   process_near_pose_(nullptr),
   transform_timeout_(rclcpp::Duration::from_seconds(0.5)),
-  minimum_time_interval_(std::chrono::nanoseconds(0))
+  minimum_time_interval_(std::chrono::nanoseconds(0)),
+  maximum_match_interval_(rclcpp::Duration::from_seconds(-1.0))
 /*****************************************************************************/
 {
   smapper_ = std::make_unique<mapper_utils::SMapper>();
@@ -155,14 +156,14 @@ void SlamToolbox::setParams()
   enable_interactive_mode_ = this->declare_parameter("enable_interactive_mode",
       enable_interactive_mode_);
 
-  enable_continuous_matching_ = false;
-  enable_continuous_matching_ = this->declare_parameter("enable_continuous_matching", enable_continuous_matching_);
 
   double tmp_val = 0.5;
   tmp_val = this->declare_parameter("transform_timeout", tmp_val);
   transform_timeout_ = rclcpp::Duration::from_seconds(tmp_val);
   tmp_val = this->declare_parameter("minimum_time_interval", tmp_val);
   minimum_time_interval_ = rclcpp::Duration::from_seconds(tmp_val);
+  tmp_val = this->declare_parameter("maximum_match_interval", -1.0);
+  maximum_match_interval_ = rclcpp::Duration::from_seconds(tmp_val);
 
   bool debug = false;
   debug = this->declare_parameter("debug_logging", debug);
@@ -546,6 +547,8 @@ LocalizedRangeScan * SlamToolbox::addScan(
   Pose2 & odom_pose)
 /*****************************************************************************/
 {
+  static rclcpp::Time last_match_time = rclcpp::Time(0.);
+
   // get our localized range scan
   LocalizedRangeScan * range_scan = getLocalizedRangeScan(
     laser, scan, odom_pose);
@@ -553,6 +556,9 @@ LocalizedRangeScan * SlamToolbox::addScan(
   // Add the localized range scan to the smapper
   boost::mutex::scoped_lock lock(smapper_mutex_);
   bool processed = false, update_reprocessing_transform = false;
+
+  // whether or not the scan was processed as only a scan match without updating
+  // the graph and scan buffer
   bool match_only = false;
 
   Matrix3 covariance;
@@ -561,10 +567,14 @@ LocalizedRangeScan * SlamToolbox::addScan(
   if (processor_type_ == PROCESS) {
     processed = smapper_->getMapper()->Process(range_scan, &covariance);
 
-    // if continuos mapping is enabled, force a scan match without adding it to
-    // the graph or scan buffer
-    if (!processed && enable_continuous_matching_) {
-      match_only = true;
+    // if the scan was not processed into the map because of insuffcient travel
+    // distance, then check if enough time as passed to just perform a scan
+    // match without updating the graph or scan buffer
+    rclcpp::Time stamp = scan->header.stamp;
+    bool match_only = !processed
+      && maximum_match_interval_ >= rclcpp::Duration(0.)
+      && stamp - last_match_time > maximum_match_interval_;
+    if (match_only) {
       processed = smapper_->getMapper()->Process(range_scan, &covariance, true);
     }
   } else if (processor_type_ == PROCESS_FIRST_NODE) {
@@ -594,6 +604,7 @@ LocalizedRangeScan * SlamToolbox::addScan(
   // if successfully processed, create odom to map transformation
   // and add our scan to storage
   if (processed) {
+    last_match_time = scan->header.stamp;
     if (enable_interactive_mode_ && !match_only) {
       scan_holder_->addScan(*scan);
     }
