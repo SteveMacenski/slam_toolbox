@@ -2748,7 +2748,7 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan, Matrix3 * covariance)
   return false;
 }
 
-kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool addScanToLocalizationBuffer, Matrix3* covariance)
+kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool addScanToLocalizationBuffer, Matrix3 * covariance)
 {
   if (pScan != NULL) {
     karto::LaserRangeFinder * pLaserRangeFinder = pScan->GetLaserRangeFinder();
@@ -3020,7 +3020,7 @@ kt_bool Mapper::RemoveNodeFromGraph(Vertex<LocalizedRangeScan> * vertex_to_remov
 kt_bool Mapper::ProcessAgainstNode(
   LocalizedRangeScan * pScan,
   const int & nodeId,
-  Matrix3* covariance)
+  Matrix3 * covariance)
 {
   if (pScan != NULL) {
     karto::LaserRangeFinder * pLaserRangeFinder = pScan->GetLaserRangeFinder();
@@ -3092,7 +3092,7 @@ kt_bool Mapper::ProcessAgainstNode(
   return false;
 }
 
-kt_bool Mapper::ProcessAtDock(LocalizedRangeScan * pScan, Matrix3* covariance)
+kt_bool Mapper::ProcessAtDock(LocalizedRangeScan * pScan, Matrix3 * covariance)
 {
   // Special case of processing against node where node is the starting point
   return ProcessAgainstNode(pScan, 0, covariance);
