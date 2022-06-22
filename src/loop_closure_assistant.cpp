@@ -158,6 +158,13 @@ void LoopClosureAssistant::publishGraph()
   }
 
   visualization_msgs::msg::MarkerArray marray;
+
+  // clear existing markers to account for any removed nodes
+  visualization_msgs::msg::Marker clear;
+  clear.header.stamp = node_->now();
+  clear.action = visualization_msgs::msg::Marker::DELETEALL;
+  marray.markers.push_back(clear);
+
   visualization_msgs::msg::Marker m = vis_utils::toMarker(map_frame_,
       "slam_toolbox", 0.1, node_);
 
@@ -177,6 +184,35 @@ void LoopClosureAssistant::publishGraph()
       marray.markers.push_back(m);
     }
   }
+
+  // add line markers for graph edges
+  auto edges = mapper_->GetGraph()->GetEdges();
+  visualization_msgs::msg::Marker edges_marker;
+  edges_marker.header.frame_id = map_frame_;
+  edges_marker.header.stamp = node_->now();
+  edges_marker.ns = "slam_toolbox_edges";
+  edges_marker.action = visualization_msgs::msg::Marker::ADD;
+  edges_marker.type = visualization_msgs::msg::Marker::LINE_LIST;
+  edges_marker.pose.orientation.w = 1;
+  edges_marker.scale.x = 0.05;
+  edges_marker.color.b = 1;
+  edges_marker.color.a = 1;
+  edges_marker.lifetime = rclcpp::Duration::from_seconds(0);
+  edges_marker.points.reserve(edges.size() * 2);
+  for (const auto& edge: edges) {
+      const auto& pose0 = edge->GetSource()->GetObject()->GetCorrectedPose();
+      geometry_msgs::msg::Point p0;
+      p0.x = pose0.GetX();
+      p0.y = pose0.GetY();
+      edges_marker.points.push_back(p0);
+
+      const auto& pose1 = edge->GetTarget()->GetObject()->GetCorrectedPose();
+      geometry_msgs::msg::Point p1;
+      p1.x = pose1.GetX();
+      p1.y = pose1.GetY();
+      edges_marker.points.push_back(p1);
+  }
+  marray.markers.push_back(edges_marker);
 
   // if disabled, clears out old markers
   interactive_server_->applyChanges();

@@ -114,6 +114,10 @@ protected:
   bool shouldProcessScan(
     const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
     const karto::Pose2 & pose);
+  void publishPose(
+    const Pose2 & pose,
+    const Matrix3 & cov,
+    const rclcpp::Time & t);
 
   // pausing bits
   bool isPaused(const PausedApplication & app);
@@ -130,6 +134,7 @@ protected:
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> scan_filter_;
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>> sst_;
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>> sstm_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub_;
   std::shared_ptr<rclcpp::Service<nav_msgs::srv::GetMap>> ssMap_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::Pause>> ssPauseMeasurements_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::SerializePoseGraph>> ssSerialize_;
@@ -142,6 +147,8 @@ protected:
   int throttle_scans_;
 
   double resolution_;
+  double position_covariance_scale_;
+  double yaw_covariance_scale_;
   bool first_measurement_, enable_interactive_mode_;
   bool enable_continuous_matching_;
 
