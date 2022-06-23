@@ -114,7 +114,10 @@ protected:
   bool shouldProcessScan(
     const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
     const karto::Pose2 & pose);
-  void publishPose(karto::LocalizedRangeScan * scan, const rclcpp::Time & t);
+  void publishPose(
+    const Pose2 & pose,
+    const Matrix3 & cov,
+    const rclcpp::Time & t);
 
   // pausing bits
   bool isPaused(const PausedApplication & app);
@@ -140,13 +143,14 @@ protected:
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_;
   rclcpp::Duration transform_timeout_, minimum_time_interval_;
+  rclcpp::Duration maximum_match_interval_;
   std_msgs::msg::Header scan_header;
   int throttle_scans_;
+
+  double resolution_;
   double position_covariance_scale_;
   double yaw_covariance_scale_;
-  double resolution_;
   bool first_measurement_, enable_interactive_mode_;
-  bool enable_continuous_matching_;
 
   // Book keeping
   std::unique_ptr<mapper_utils::SMapper> smapper_;

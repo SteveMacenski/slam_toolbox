@@ -174,8 +174,10 @@ The following are the services/topics that are exposed for use. See the rviz plu
 
 ## Published topics
 
-| map  | `nav_msgs/OccupancyGrid` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
+| Topic  | Type | Description | 
 |-----|----|----|
+| map  | `nav_msgs/OccupancyGrid` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
+| pose | `geometry_msgs/PoseWithCovarianceStamped` | pose of the base_frame in the configured map_frame along with the covariance calculated from the scan match |
 
 ## Exposed Services
 
@@ -236,11 +238,17 @@ The following settings and options are exposed to you. My default configuration 
 
 `enable_interactive_mode` - Whether or not to allow for interactive mode to be enabled. Interactive mode will retain a cache of laser scans mapped to their ID for visualization in interactive mode. As a result the memory for the process will increase. This is manually disabled in localization and lifelong modes since they would increase the memory utilization over time. Valid for either mapping or continued mapping modes.
 
+`position_covariance_scale` - Amount to scale position covariance when publishing pose from scan match.  This can be used to tune the influence of the pose position in a downstream localization filter.  The covariance represents the uncertainty of the measurement, so scaling up the covariance will result in the pose position having less influence on downstream filters.  Default: 1.0
+
+`yaw_covariance_scale` - Amount to scale yaw covariance when publishing pose from scan match.  See description of position_covariance_scale.  Default: 1.0
+
 `resolution` - Resolution of the 2D occupancy map to generate
 
 `max_laser_range` - Maximum laser range to use for 2D occupancy map rastering
 
 `minimum_time_interval` - The minimum duration of time between scans to be processed in synchronous mode
+
+`maximum_match_interval` - Max interval in seconds between scan matches in async mode.  Note: Scan matches triggered by this condition won't update the map or scan buffer.  Default: -1 (infinity).
 
 `transform_timeout` - TF timeout for looking up transforms
 
@@ -248,7 +256,7 @@ The following settings and options are exposed to you. My default configuration 
 
 `stack_size_to_use` - The number of bytes to reset the stack size to, to enable serialization/deserialization of files. A liberal default is 40000000, but less is fine.
 
-`minimum_travel_distance` - Minimum distance of travel before processing a new scan
+`minimum_travel_distance` - Minimum distance of travel before processing a new scan into the map, or adding a scan to the queue for processing in sync or localization modes.
 
 ## Matcher Params
 
@@ -256,7 +264,7 @@ The following settings and options are exposed to you. My default configuration 
 
 `use_scan_barycenter` - Whether to use the barycenter or scan pose
 
-`minimum_travel_heading` - Minimum changing in heading to justify an update
+`minimum_travel_heading` - Minimum changing in heading before processing a new scan into the map
 
 `scan_buffer_size` - The number of scans to buffer into a chain, also used as the number of scans in the circular buffer of localization mode
 
