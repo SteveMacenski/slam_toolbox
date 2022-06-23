@@ -66,6 +66,7 @@ set(libraries
     toolbox_common
     SlamToolboxPlugin
     ceres_solver_plugin
+    async_pruned_slam_toolbox
     async_slam_toolbox
     sync_slam_toolbox
     localization_slam_toolbox
