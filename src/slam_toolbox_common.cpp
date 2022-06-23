@@ -194,6 +194,8 @@ void SlamToolbox::setROSInterfaces()
 
   pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "pose", 10);
+  status_pub_ = this->create_publisher<std_msgs::msg::Bool>(
+    "localization/status", 10);
   sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
     map_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
@@ -645,6 +647,10 @@ void SlamToolbox::publishPose(
   pose_msg.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;      // yaw
 
   pose_pub_->publish(pose_msg);
+
+  std_msgs::msg::Bool status;
+  status.data = true;
+  status_pub_->publish(status);
 }
 
 /*****************************************************************************/
