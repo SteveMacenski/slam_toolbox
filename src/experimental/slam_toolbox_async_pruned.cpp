@@ -76,7 +76,7 @@ void AsynchronousSlamToolboxPruned::laserCallback(sensor_msgs::msg::LaserScan::C
 void AsynchronousSlamToolboxPruned::prune(LocalizedRangeScan* range_scan)
 /*****************************************************************************/
 {
-  RCLCPP_INFO(get_logger(), "pruning nearby nodes ...");
+  RCLCPP_DEBUG(get_logger(), "pruning nearby nodes ...");
   boost::mutex::scoped_lock lock(smapper_mutex_);
 
   const BoundingBox2& bb      = range_scan->GetBoundingBox();
@@ -85,7 +85,7 @@ void AsynchronousSlamToolboxPruned::prune(LocalizedRangeScan* range_scan)
     sqrt(bb_size.GetWidth() * bb_size.GetWidth() + bb_size.GetHeight() * bb_size.GetHeight()) / 2.0;
   Vertices near_scan_vertices = smapper_->getMapper()->GetGraph()->FindNearByVertices(
     range_scan->GetSensorName(), range_scan->GetBarycenterPose(), radius);
-  RCLCPP_INFO(get_logger(), "  found %zu nearby", near_scan_vertices.size());
+  RCLCPP_DEBUG(get_logger(), "  found %zu nearby", near_scan_vertices.size());
 
   for (const auto& node : near_scan_vertices)
   {
@@ -100,12 +100,12 @@ void AsynchronousSlamToolboxPruned::prune(LocalizedRangeScan* range_scan)
     double iou = computeIntersectOverUnion(range_scan, node->GetObject());
     if (iou >= iou_threshold_)
     {
-      RCLCPP_INFO(get_logger(), "  pruning <%d>, iou = %lf", id, iou);
+      RCLCPP_DEBUG(get_logger(), "  pruning <%d>, iou = %lf", id, iou);
       removeFromSlamGraph(node);
     }
     else
     {
-      RCLCPP_INFO(get_logger(), "  keeping <%d>, iou = %lf", id, iou);
+      RCLCPP_DEBUG(get_logger(), "  keeping <%d>, iou = %lf", id, iou);
     }
   }
 }
