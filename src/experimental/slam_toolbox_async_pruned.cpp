@@ -17,99 +17,105 @@
 
 /* Author: Steven Macenski */
 
-#include <memory>
 #include "slam_toolbox/experimental/slam_toolbox_async_pruned.hpp"
+#include <memory>
 
 namespace slam_toolbox
 {
 
 /*****************************************************************************/
 AsynchronousSlamToolboxPruned::AsynchronousSlamToolboxPruned(rclcpp::NodeOptions options)
-: SlamToolbox(options)
+  : SlamToolbox(options)
 /*****************************************************************************/
 {
   iou_threshold_ = this->declare_parameter("iou_threshold", iou_threshold_);
 }
 
 /*****************************************************************************/
-void AsynchronousSlamToolboxPruned::laserCallback(
-  sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
+void AsynchronousSlamToolboxPruned::laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
   // store scan header
   scan_header = scan->header;
   // no odom info
   Pose2 pose;
-  if (!pose_helper_->getOdomPose(pose, scan->header.stamp)) {
+  if (!pose_helper_->getOdomPose(pose, scan->header.stamp))
+  {
     RCLCPP_WARN(get_logger(), "Failed to compute odom pose");
     return;
   }
 
   // ensure the laser can be used
-  LaserRangeFinder * laser = getLaser(scan);
+  LaserRangeFinder* laser = getLaser(scan);
 
-  if (!laser) {
-    RCLCPP_WARN(get_logger(), "Failed to create laser device for"
-      " %s; discarding scan", scan->header.frame_id.c_str());
+  if (!laser)
+  {
+    RCLCPP_WARN(get_logger(),
+                "Failed to create laser device for"
+                " %s; discarding scan",
+                scan->header.frame_id.c_str());
     return;
   }
 
   static int scan_ctr = 0;
   scan_ctr++;
   // throttled out
-  if ((scan_ctr % throttle_scans_) != 0) {
+  if ((scan_ctr % throttle_scans_) != 0)
+  {
     return;
   }
 
-  LocalizedRangeScan * range_scan = addScan(laser, scan, pose);
-  if (range_scan) {
+  LocalizedRangeScan* range_scan = addScan(laser, scan, pose);
+  if (range_scan)
+  {
     prune(range_scan);
   }
 }
 
 /*****************************************************************************/
-void AsynchronousSlamToolboxPruned::prune(
-  LocalizedRangeScan * range_scan)
+void AsynchronousSlamToolboxPruned::prune(LocalizedRangeScan* range_scan)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "pruning nearby nodes ...");
   boost::mutex::scoped_lock lock(smapper_mutex_);
 
-  const BoundingBox2 & bb = range_scan->GetBoundingBox();
+  const BoundingBox2& bb      = range_scan->GetBoundingBox();
   const Size2<double> bb_size = bb.GetSize();
-  double radius = sqrt(bb_size.GetWidth() * bb_size.GetWidth() +
-      bb_size.GetHeight() * bb_size.GetHeight()) / 2.0;
+  double radius =
+    sqrt(bb_size.GetWidth() * bb_size.GetWidth() + bb_size.GetHeight() * bb_size.GetHeight()) / 2.0;
   Vertices near_scan_vertices = smapper_->getMapper()->GetGraph()->FindNearByVertices(
     range_scan->GetSensorName(), range_scan->GetBarycenterPose(), radius);
   RCLCPP_INFO(get_logger(), "  found %zu nearby", near_scan_vertices.size());
 
-  for (const auto& node: near_scan_vertices) {
-    int id = node->GetObject()->GetUniqueId();
+  for (const auto& node : near_scan_vertices)
+  {
+    int id                   = node->GetObject()->GetUniqueId();
     bool critical_lynchpoint = id == 0 || id == 1;
-    int id_diff = range_scan->GetUniqueId() - id;
-    if (id_diff < smapper_->getMapper()->getParamScanBufferSize() || critical_lynchpoint) {
+    int id_diff              = range_scan->GetUniqueId() - id;
+    if (id_diff < smapper_->getMapper()->getParamScanBufferSize() || critical_lynchpoint)
+    {
       continue;
     }
 
     double iou = computeIntersectOverUnion(range_scan, node->GetObject());
-    if (iou >= iou_threshold_) {
+    if (iou >= iou_threshold_)
+    {
       RCLCPP_INFO(get_logger(), "  pruning <%d>, iou = %lf", id, iou);
       removeFromSlamGraph(node);
     }
-    else {
+    else
+    {
       RCLCPP_INFO(get_logger(), "  keeping <%d>, iou = %lf", id, iou);
     }
   }
 }
 
 /*****************************************************************************/
-void AsynchronousSlamToolboxPruned::removeFromSlamGraph(
-  Vertex<LocalizedRangeScan> * vertex)
+void AsynchronousSlamToolboxPruned::removeFromSlamGraph(Vertex<LocalizedRangeScan>* vertex)
 /*****************************************************************************/
 {
   smapper_->getMapper()->RemoveNodeFromGraph(vertex);
-  smapper_->getMapper()->GetMapperSensorManager()->RemoveScan(
-    vertex->GetObject());
+  smapper_->getMapper()->GetMapperSensorManager()->RemoveScan(vertex->GetObject());
   dataset_->RemoveData(vertex->GetObject());
   vertex->RemoveObject();
   delete vertex;
@@ -123,9 +129,10 @@ bool AsynchronousSlamToolboxPruned::deserializePoseGraphCallback(
   std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp)
 /*****************************************************************************/
 {
-  if (req->match_type == procType::LOCALIZE_AT_POSE) {
+  if (req->match_type == procType::LOCALIZE_AT_POSE)
+  {
     RCLCPP_WARN(get_logger(), "Requested a localization deserialization "
-      "in non-localization mode.");
+                              "in non-localization mode.");
     return false;
   }
 
@@ -133,15 +140,15 @@ bool AsynchronousSlamToolboxPruned::deserializePoseGraphCallback(
 }
 
 /*****************************************************************************/
-void AsynchronousSlamToolboxPruned::computeIntersectBounds(
-  LocalizedRangeScan * s1, LocalizedRangeScan * s2,
-  double & x_l, double & x_u, double & y_l, double & y_u)
+void AsynchronousSlamToolboxPruned::computeIntersectBounds(LocalizedRangeScan* s1,
+                                                           LocalizedRangeScan* s2, double& x_l,
+                                                           double& x_u, double& y_l, double& y_u)
 /*****************************************************************************/
 {
   Size2<double> bb1 = s1->GetBoundingBox().GetSize();
   Size2<double> bb2 = s2->GetBoundingBox().GetSize();
-  Pose2 pose1 = s1->GetBarycenterPose();
-  Pose2 pose2 = s2->GetBarycenterPose();
+  Pose2 pose1       = s1->GetBarycenterPose();
+  Pose2 pose2       = s2->GetBarycenterPose();
 
   const double s1_upper_x = pose1.GetX() + (bb1.GetWidth() / 2.0);
   const double s1_upper_y = pose1.GetY() + (bb1.GetHeight() / 2.0);
@@ -160,16 +167,16 @@ void AsynchronousSlamToolboxPruned::computeIntersectBounds(
 }
 
 /*****************************************************************************/
-double AsynchronousSlamToolboxPruned::computeIntersect(
-  LocalizedRangeScan * s1,
-  LocalizedRangeScan * s2)
+double AsynchronousSlamToolboxPruned::computeIntersect(LocalizedRangeScan* s1,
+                                                       LocalizedRangeScan* s2)
 /*****************************************************************************/
 {
   double x_l, x_u, y_l, y_u;
   computeIntersectBounds(s1, s2, x_l, x_u, y_l, y_u);
   const double intersect = (y_u - y_l) * (x_u - x_l);
 
-  if (intersect < 0.0) {
+  if (intersect < 0.0)
+  {
     return 0.0;
   }
 
@@ -177,9 +184,8 @@ double AsynchronousSlamToolboxPruned::computeIntersect(
 }
 
 /*****************************************************************************/
-double AsynchronousSlamToolboxPruned::computeIntersectOverUnion(
-  LocalizedRangeScan * s1,
-  LocalizedRangeScan * s2)
+double AsynchronousSlamToolboxPruned::computeIntersectOverUnion(LocalizedRangeScan* s1,
+                                                                LocalizedRangeScan* s2)
 /*****************************************************************************/
 {
   // this is a common metric in machine learning used to determine
@@ -190,11 +196,10 @@ double AsynchronousSlamToolboxPruned::computeIntersectOverUnion(
 
   Size2<double> bb1 = s1->GetBoundingBox().GetSize();
   Size2<double> bb2 = s2->GetBoundingBox().GetSize();
-  const double uni = (bb1.GetWidth() * bb1.GetHeight()) +
-    (bb2.GetWidth() * bb2.GetHeight()) - intersect;
+  const double uni =
+    (bb1.GetWidth() * bb1.GetHeight()) + (bb2.GetWidth() * bb2.GetHeight()) - intersect;
 
   return intersect / uni;
 }
 
-
-}  // namespace slam_toolbox
+} // namespace slam_toolbox
