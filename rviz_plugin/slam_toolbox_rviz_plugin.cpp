@@ -74,7 +74,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget * parent)
   _interactive =
     ros_node_->create_client<slam_toolbox::srv::ToggleInteractive>(
     "/slam_toolbox/toggle_interactive_mode");
-  _pause_measurements = ros_node_->create_client<slam_toolbox::srv::Pause>(
+  _pause_measurements = ros_node_->create_client<std_srvs::srv::Trigger>(
     "/slam_toolbox/pause_new_measurements");
   _load_submap_for_merging =
     ros_node_->create_client<slam_toolbox::srv::AddSubmap>(
@@ -475,7 +475,7 @@ void SlamToolboxPlugin::InteractiveCb(int state)
 void SlamToolboxPlugin::PauseMeasurementsCb(int state)
 /*****************************************************************************/
 {
-  auto request = std::make_shared<slam_toolbox::srv::Pause::Request>();
+  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
   auto result_future = _pause_measurements->async_send_request(request);
 
   if (rclcpp::spin_until_future_complete(ros_node_, result_future,

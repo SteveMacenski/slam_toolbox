@@ -52,6 +52,7 @@ public:
   void processInteractiveFeedback(
     const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback);
   void publishGraph();
+  void setMapper(karto::Mapper * mapper);
 
 private:
   bool manualLoopClosureCallback(

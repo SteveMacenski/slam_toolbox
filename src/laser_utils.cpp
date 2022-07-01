@@ -191,4 +191,8 @@ void ScanHolder::addScan(const sensor_msgs::msg::LaserScan scan)
   current_scans_->push_back(scan);
 }
 
+void ScanHolder::clearScans(){
+  current_scans_->clear();
+}
+
 }  // namespace laser_utils

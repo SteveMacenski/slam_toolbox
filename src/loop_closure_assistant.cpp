@@ -143,6 +143,10 @@ void LoopClosureAssistant::processInteractiveFeedback(const
 void LoopClosureAssistant::publishGraph()
 /*****************************************************************************/
 {
+  if(marker_publisher_->get_subscription_count() == 0){
+    return;
+  }
+  
   interactive_server_->clear();
   std::unordered_map<int, Eigen::Vector3d> * graph = solver_->getGraph();
 
@@ -353,6 +357,13 @@ void LoopClosureAssistant::addMovedNodes(const int & id, Eigen::Vector3d vec)
     "pose has been recorded.",id);
   boost::mutex::scoped_lock lock(moved_nodes_mutex_);
   moved_nodes_[id] = vec;
+}
+
+/*****************************************************************************/
+void LoopClosureAssistant::setMapper(karto::Mapper * mapper)
+/*****************************************************************************/
+{
+  mapper_ = mapper;
 }
 
 }  // namespace loop_closure_assistant

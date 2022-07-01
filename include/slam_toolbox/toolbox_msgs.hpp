@@ -29,7 +29,6 @@
 #include "visualization_msgs/msg/interactive_marker_control.hpp"
 #include "visualization_msgs/msg/interactive_marker_feedback.hpp"
 
-#include "slam_toolbox/srv/pause.hpp"
 #include "slam_toolbox/srv/clear_queue.hpp"
 #include "slam_toolbox/srv/toggle_interactive.hpp"
 #include "slam_toolbox/srv/clear.hpp"

@@ -145,6 +145,10 @@ void CeresSolver::Configure(rclcpp::Node::SharedPtr node)
     options_problem_.enable_fast_removal = true;
   }
 
+  // we do not want the problem definition to own these objects, otherwise they get
+  // deleted along with the problem 
+  options_problem_.loss_function_ownership = ceres::Ownership::DO_NOT_TAKE_OWNERSHIP;
+
   problem_ = new ceres::Problem(options_problem_);
 }
 

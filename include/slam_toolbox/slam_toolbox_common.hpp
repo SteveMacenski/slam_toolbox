@@ -39,6 +39,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.h"
 #include "std_msgs/msg/bool.hpp"
+#include "std_srvs/srv/trigger.hpp"
 
 #include "pluginlib/class_loader.hpp"
 
@@ -75,6 +76,7 @@ protected:
   void setParams();
   void setSolver();
   void setROSInterfaces();
+  void resetSlam();
 
   // callbacks
   virtual void laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan) = 0;
@@ -90,6 +92,12 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp);
+  void startSlamCallback(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> resp);
+  void stopSlamCallback(
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> resp);
 
   // Loaders
   void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper> &, std::unique_ptr<karto::Dataset> &);
@@ -119,13 +127,14 @@ protected:
     const Pose2 & pose,
     const Matrix3 & cov,
     const rclcpp::Time & t);
+  void toggleScanProcessing();
 
   // pausing bits
   bool isPaused(const PausedApplication & app);
   bool pauseNewMeasurementsCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<slam_toolbox::srv::Pause::Request> req,
-    std::shared_ptr<slam_toolbox::srv::Pause::Response> resp);
+    const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
+    std::shared_ptr<std_srvs::srv::Trigger::Response> resp);
 
   // ROS-y-ness
   std::unique_ptr<tf2_ros::Buffer> tf_;
@@ -138,9 +147,10 @@ protected:
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub_;
   std::shared_ptr<rclcpp::Publisher<std_msgs::msg::Bool>> status_pub_;
   std::shared_ptr<rclcpp::Service<nav_msgs::srv::GetMap>> ssMap_;
-  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::Pause>> ssPauseMeasurements_;
+  std::shared_ptr<rclcpp::Service<std_srvs::srv::Trigger>> ssPauseMeasurements_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::SerializePoseGraph>> ssSerialize_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::DeserializePoseGraph>> ssDesserialize_;
+  std::shared_ptr<rclcpp::Service<std_srvs::srv::Trigger>> ssStart_, ssStop_;
 
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_;
@@ -152,9 +162,10 @@ protected:
   double resolution_;
   double position_covariance_scale_;
   double yaw_covariance_scale_;
-  bool first_measurement_, enable_interactive_mode_;
+  bool first_measurement_, enable_interactive_mode_, paused_at_startup_;
 
   // Book keeping
+  bool slam_running_;
   std::unique_ptr<mapper_utils::SMapper> smapper_;
   std::unique_ptr<karto::Dataset> dataset_;
   std::map<std::string, laser_utils::LaserMetadata> lasers_;

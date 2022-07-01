@@ -100,6 +100,7 @@ public:
   ~ScanHolder();
   sensor_msgs::msg::LaserScan getCorrectedScan(const int & id);
   void addScan(const sensor_msgs::msg::LaserScan scan);
+  void clearScans();
 
 private:
   std::unique_ptr<std::vector<sensor_msgs::msg::LaserScan>> current_scans_;

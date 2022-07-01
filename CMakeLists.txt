@@ -96,7 +96,6 @@ include_directories(include lib/karto_sdk/include
 add_definitions(${EIGEN3_DEFINITIONS})
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  srvs/Pause.srv
   srvs/ClearQueue.srv
   srvs/ToggleInteractive.srv
   srvs/Clear.srv

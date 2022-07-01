@@ -42,6 +42,7 @@
 #include "slam_toolbox/toolbox_msgs.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include "std_srvs/srv/trigger.hpp"
 
 class QLineEdit;
 class QSpinBox;
@@ -144,7 +145,7 @@ protected:
   rclcpp::Client<slam_toolbox::srv::SaveMap>::SharedPtr _saveMap;
   rclcpp::Client<slam_toolbox::srv::ClearQueue>::SharedPtr _clearQueue;
   rclcpp::Client<slam_toolbox::srv::ToggleInteractive>::SharedPtr _interactive;
-  rclcpp::Client<slam_toolbox::srv::Pause>::SharedPtr _pause_measurements;
+  rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr _pause_measurements;
   rclcpp::Client<slam_toolbox::srv::AddSubmap>::SharedPtr _load_submap_for_merging;
   rclcpp::Client<slam_toolbox::srv::MergeMaps>::SharedPtr _merge;
   rclcpp::Client<slam_toolbox::srv::SerializePoseGraph>::SharedPtr _serialize;
