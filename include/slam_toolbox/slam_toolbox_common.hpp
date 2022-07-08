@@ -39,6 +39,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.h"
 #include "std_msgs/msg/bool.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 #include "std_srvs/srv/trigger.hpp"
 
 #include "pluginlib/class_loader.hpp"
@@ -92,6 +93,10 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp);
+  virtual bool setLocalizationModeCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
+    std::shared_ptr<std_srvs::srv::SetBool::Response> resp);
   void startSlamCallback(
     const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
     std::shared_ptr<std_srvs::srv::Trigger::Response> resp);
@@ -140,8 +145,7 @@ protected:
   std::unique_ptr<tf2_ros::Buffer> tf_;
   std::unique_ptr<tf2_ros::TransformListener> tfL_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
-  std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> scan_filter_sub_;
-  std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> scan_filter_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>> sst_;
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>> sstm_;
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub_;
@@ -150,6 +154,7 @@ protected:
   std::shared_ptr<rclcpp::Service<std_srvs::srv::Trigger>> ssPauseMeasurements_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::SerializePoseGraph>> ssSerialize_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::DeserializePoseGraph>> ssDesserialize_;
+  std::shared_ptr<rclcpp::Service<std_srvs::srv::SetBool>> ssSetLocalizationMode_;
   std::shared_ptr<rclcpp::Service<std_srvs::srv::Trigger>> ssStart_, ssStop_;
 
   // Storage for ROS parameters

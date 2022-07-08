@@ -83,6 +83,12 @@ void LifelongSlamToolbox::laserCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
+  //                                                                                      10 milliseconds
+  if (!tf_->canTransform(odom_frame_, scan->header.frame_id, scan->header.stamp, rclcpp::Duration(10000000))) {
+    RCLCPP_WARN(get_logger(), "Failed to get transform %s -> %s.", scan->header.frame_id.c_str(), odom_frame_.c_str());
+    return;
+  }
+
   // store scan header
   scan_header = scan->header;
   // no odom info

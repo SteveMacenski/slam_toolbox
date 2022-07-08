@@ -2666,9 +2666,7 @@ void Mapper::Reset()
   }
   m_Initialized = false;
   m_Deserialized = false;
-  while (!m_LocalizationScanVertices.empty()) {
-    m_LocalizationScanVertices.pop();
-  }
+  m_LocalizationScanVertices.clear();
 }
 
 kt_bool Mapper::Process(Object *  /*pObject*/)  // NOLINT
@@ -2833,7 +2831,7 @@ kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool ad
   return false;
 }
 
-kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
+kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan, Matrix3 * covariance, bool force_match_only)
 {
   if (pScan == NULL) {
     return false;
@@ -2867,12 +2865,12 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
 
   // test if scan is outside minimum boundary
   // or if heading is larger then minimum heading
-  if (!HasMovedEnough(pScan, pLastScan)) {
+  if (!force_match_only && !HasMovedEnough(pScan, pLastScan)) {
     return false;
   }
 
-  Matrix3 covariance;
-  covariance.SetToIdentity();
+  Matrix3 cov;
+  cov.SetToIdentity();
 
   // correct scan (if not first scan)
   if (m_pUseScanMatching->GetValue() && pLastScan != NULL) {
@@ -2880,32 +2878,37 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
     m_pSequentialScanMatcher->MatchScan(pScan,
       m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
       bestPose,
-      covariance);
+      cov);
     pScan->SetSensorPose(bestPose);
-  }
-
-  // add scan to buffer and assign id
-  m_pMapperSensorManager->AddScan(pScan);
-
-  Vertex<LocalizedRangeScan> * scan_vertex = NULL;
-  if (m_pUseScanMatching->GetValue()) {
-    // add to graph
-    scan_vertex = m_pGraph->AddVertex(pScan);
-    m_pGraph->AddEdges(pScan, covariance);
-
-    m_pMapperSensorManager->AddRunningScan(pScan);
-
-    if (m_pDoLoopClosing->GetValue()) {
-      std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
-      const_forEach(std::vector<Name>, &deviceNames)
-      {
-        m_pGraph->TryCloseLoop(pScan, *iter);
-      }
+    if (covariance) {
+      *covariance = cov;
     }
   }
 
-  m_pMapperSensorManager->SetLastScan(pScan);
-  AddScanToLocalizationBuffer(pScan, scan_vertex);
+  if (!force_match_only) {
+    // add scan to buffer and assign id
+    m_pMapperSensorManager->AddScan(pScan);
+
+    Vertex<LocalizedRangeScan> * scan_vertex = NULL;
+    if (m_pUseScanMatching->GetValue()) {
+      // add to graph
+      scan_vertex = m_pGraph->AddVertex(pScan);
+      m_pGraph->AddEdges(pScan, cov);
+
+      m_pMapperSensorManager->AddRunningScan(pScan);
+
+      if (m_pDoLoopClosing->GetValue()) {
+        std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+        const_forEach(std::vector<Name>, &deviceNames)
+        {
+          m_pGraph->TryCloseLoop(pScan, *iter);
+        }
+      }
+    }
+
+    m_pMapperSensorManager->SetLastScan(pScan);
+    AddScanToLocalizationBuffer(pScan, scan_vertex);
+  }
 
   return true;
 }
@@ -2916,7 +2919,7 @@ void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex <Loc
   LocalizationScanVertex lsv;
   lsv.scan = pScan;
   lsv.vertex = scan_vertex;
-  m_LocalizationScanVertices.push(lsv);
+  m_LocalizationScanVertices.push_back(lsv);
 
   if (m_LocalizationScanVertices.size() > getParamScanBufferSize()) {
     LocalizationScanVertex & oldLSV = m_LocalizationScanVertices.front();
@@ -2932,7 +2935,7 @@ void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex <Loc
       oldLSV.scan = NULL;
     }
 
-    m_LocalizationScanVertices.pop();
+    m_LocalizationScanVertices.pop_front();
   }
 }
 
@@ -2950,7 +2953,7 @@ void Mapper::ClearLocalizationBuffer()
       oldLSV.scan = NULL;
     }
 
-    m_LocalizationScanVertices.pop();
+    m_LocalizationScanVertices.pop_front();
   }
 
   std::vector<Name> names = m_pMapperSensorManager->GetSensorNames();

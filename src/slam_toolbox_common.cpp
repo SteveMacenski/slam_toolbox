@@ -165,7 +165,6 @@ void SlamToolbox::setParams()
   enable_interactive_mode_ = this->declare_parameter("enable_interactive_mode",
       enable_interactive_mode_);
 
-
   double tmp_val = 0.5;
   tmp_val = this->declare_parameter("transform_timeout", tmp_val);
   transform_timeout_ = rclcpp::Duration::from_seconds(tmp_val);
@@ -231,6 +230,11 @@ void SlamToolbox::setROSInterfaces()
     "slam_toolbox/deserialize_map",
     std::bind(&SlamToolbox::deserializePoseGraphCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  ssSetLocalizationMode_ = this->create_service<std_srvs::srv::SetBool>(
+    "slam_toolbox/set_localization_mode",
+    std::bind(&SlamToolbox::setLocalizationModeCallback, this,
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
   ssStart_ = this->create_service<std_srvs::srv::Trigger>(
     "slam_toolbox/start",
     std::bind(&SlamToolbox::startSlamCallback, this,
@@ -240,16 +244,8 @@ void SlamToolbox::setROSInterfaces()
     std::bind(&SlamToolbox::stopSlamCallback, this,
     std::placeholders::_1, std::placeholders::_2));
 
-
-  scan_filter_sub_ =
-    std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
-    shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
-  scan_filter_ =
-    std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-    *scan_filter_sub_, *tf_, odom_frame_, 1, shared_from_this());
-  scan_filter_->registerCallback(
-    std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
-  scan_filter_->clear();
+  scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
+    scan_topic_, 1, std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
 }
 
 /*****************************************************************************/
@@ -608,7 +604,7 @@ LocalizedRangeScan * SlamToolbox::addScan(
     processed = smapper_->getMapper()->ProcessAtDock(range_scan, &covariance);
     processor_type_ = PROCESS;
     update_reprocessing_transform = true;
-  } else if (processor_type_ == PROCESS_NEAR_REGION) {
+  } else if (processor_type_ == PROCESS_NEAR_REGION || (processor_type_ == PROCESS_LOCALIZATION && process_near_pose_)) {
     boost::mutex::scoped_lock l(pose_mutex_);
     if (!process_near_pose_) {
       RCLCPP_ERROR(get_logger(), "Process near region called without a "
@@ -621,7 +617,20 @@ LocalizedRangeScan * SlamToolbox::addScan(
     processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(
       range_scan, false, &covariance);
     update_reprocessing_transform = true;
-    processor_type_ = PROCESS;
+
+    if (processor_type_ != PROCESS_LOCALIZATION) {
+      processor_type_ = PROCESS;
+    }
+  } else if (processor_type_ == PROCESS_LOCALIZATION) {
+    processed = smapper_->getMapper()->ProcessLocalization(range_scan, &covariance, match_only);
+
+    rclcpp::Time stamp = scan->header.stamp;
+    bool match_only = !processed
+          && maximum_match_interval_ >= rclcpp::Duration(0.)
+          && stamp - last_match_time > maximum_match_interval_;
+    if (match_only) {
+      processed = smapper_->getMapper()->ProcessLocalization(range_scan, &covariance, true);
+    }
   } else {
     RCLCPP_FATAL(get_logger(),
       "SlamToolbox: No valid processor type set! Exiting.");
@@ -860,6 +869,69 @@ bool SlamToolbox::deserializePoseGraphCallback(
 
   return true;
 }
+
+/*****************************************************************************/
+bool SlamToolbox::setLocalizationModeCallback(
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
+  std::shared_ptr<std_srvs::srv::SetBool::Response> resp)
+/*****************************************************************************/
+{
+  bool in_localization_mode = processor_type_ == PROCESS_LOCALIZATION;
+
+  RCLCPP_INFO(get_logger(), "setLocalizationModeCallback: req.data=%d in_localization_mode=%d", (int)req->data, (int)in_localization_mode);
+
+
+  if (req->data != in_localization_mode) {
+    // Set near pose to most recent pose
+
+    /*
+    auto stamp = now();
+
+    //                                                                100 milliseconds
+    if (!tf_->canTransform(odom_frame_, base_frame_, stamp, rclcpp::Duration(100000000))) {
+      RCLCPP_WARN(get_logger(), "Failed to get transform %s -> %s.", base_frame_.c_str(), odom_frame_.c_str());
+      resp->success = false;
+      resp->message = "Failed to get odom transform.";
+      return true;
+    }
+
+    Pose2 map_pose;
+    tf2::Transform map_to_odom;
+    {
+      boost::mutex::scoped_lock lock(map_to_odom_mutex_);
+      map_to_odom = map_to_odom_;
+    }
+    if (!pose_helper_->getMapPose(map_pose, stamp, map_to_odom.inverse())) {
+      RCLCPP_WARN(get_logger(), "Failed to compute map pose");
+      resp->success = false;
+      resp->message = "Failed to compute map pose.";
+      return true;
+    }
+
+    RCLCPP_INFO(get_logger(), "Setting 'near pose' to: x=%lf, y=%lf, yaw=%lf", map_pose.GetX(), map_pose.GetY(), map_pose.GetHeading());
+    process_near_pose_ = std::make_unique<Pose2>(map_pose);
+    */
+
+    if (!req->data) {
+      // clear localization buffer
+      boost::mutex::scoped_lock lock(smapper_mutex_);
+      RCLCPP_INFO(get_logger(), "Clearing localization buffer.");
+      smapper_->clearLocalizationBuffer();
+
+      RCLCPP_INFO(get_logger(), "Entering mapping mode.");
+      processor_type_ = PROCESS;
+    }
+    else {
+      RCLCPP_INFO(get_logger(), "Entering localization mode.");
+      processor_type_ = PROCESS_LOCALIZATION;
+    }
+  }
+
+  resp->success = true;
+  return true;
+}
+
 /*****************************************************************************/
 void SlamToolbox::toggleScanProcessing()
 /*****************************************************************************/
@@ -868,16 +940,10 @@ void SlamToolbox::toggleScanProcessing()
   state_.set(NEW_MEASUREMENTS, !curr_state);
 
   if(isPaused(NEW_MEASUREMENTS)){
-    scan_filter_sub_->unsubscribe();
-    scan_filter_.reset();
+    scan_sub_.reset();
   }else{
-    scan_filter_sub_->subscribe(shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
-    scan_filter_ =
-      std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-      *scan_filter_sub_, *tf_, odom_frame_, 1, shared_from_this());
-    scan_filter_->registerCallback(
-      std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
-    scan_filter_->clear();
+    scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
+    scan_topic_, 1, std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
   }
 
   this->set_parameter({"paused_new_measurements", !curr_state});

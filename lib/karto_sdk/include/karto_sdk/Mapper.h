@@ -21,7 +21,7 @@
 #include <map>
 #include <vector>
 #include <unordered_map>
-#include <queue>
+#include <deque>
 #include <algorithm>
 #include <chrono>
 #include <utility>
@@ -1936,7 +1936,7 @@ struct LocalizationScanVertex
   Vertex<LocalizedRangeScan> * vertex;
 };
 
-typedef std::queue<LocalizationScanVertex> LocalizationScanVertices;
+typedef std::deque<LocalizationScanVertex> LocalizationScanVertices;
 
 class KARTO_EXPORT Mapper : public Module
 {
@@ -2013,7 +2013,7 @@ public:
   kt_bool ProcessAtDock(LocalizedRangeScan * pScan, Matrix3 * covariance = nullptr);
   kt_bool ProcessAgainstNode(LocalizedRangeScan * pScan, const int & nodeId, Matrix3 * covariance = nullptr);
   kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool addScanToLocalizationBuffer = false, Matrix3 * covariance = nullptr);
-  kt_bool ProcessLocalization(LocalizedRangeScan * pScan);
+  kt_bool ProcessLocalization(LocalizedRangeScan * pScan, Matrix3 * covariance = nullptr, bool force_match_only = false);
   kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan> *);
   void AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex<LocalizedRangeScan> * scan_vertex);
   void ClearLocalizationBuffer();
@@ -2090,6 +2090,11 @@ public:
   inline void CorrectPoses()
   {
     m_pGraph->CorrectPoses();
+  }
+
+  const LocalizationScanVertices& GetLocalizationVertices()
+  {
+    return m_LocalizationScanVertices;
   }
 
 protected:

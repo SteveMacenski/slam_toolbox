@@ -59,6 +59,29 @@ public:
     return true;
   }
 
+  bool getMapPose(karto::Pose2 & karto_pose, const rclcpp::Time & t, const tf2::Transform& odom_to_map) {
+    geometry_msgs::msg::TransformStamped base_ident, odom_pose, map_pose;
+    base_ident.header.stamp = t;
+    base_ident.header.frame_id = base_frame_;
+    base_ident.transform.rotation.w = 1.0;
+
+    try {
+      odom_pose = tf_->transform(base_ident, odom_frame_);
+    } catch (tf2::TransformException & e) {
+      return false;
+    }
+
+    geometry_msgs::msg::TransformStamped odom_to_map_msg;
+    odom_to_map_msg.transform = tf2::toMsg(odom_to_map);
+    tf2::doTransform(odom_pose, map_pose, odom_to_map_msg);
+
+    const double yaw = tf2::getYaw(map_pose.transform.rotation);
+    karto_pose = karto::Pose2(map_pose.transform.translation.x,
+        map_pose.transform.translation.y, yaw);
+
+    return true;
+  }
+
 private:
   tf2_ros::Buffer * tf_;
   std::string base_frame_, odom_frame_;
