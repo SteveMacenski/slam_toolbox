@@ -245,7 +245,7 @@ void SlamToolbox::setROSInterfaces()
     std::placeholders::_1, std::placeholders::_2));
 
   scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
-    scan_topic_, 1, std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
+    scan_topic_, rclcpp::SensorDataQoS().keep_last(1), std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
 }
 
 /*****************************************************************************/
@@ -943,7 +943,7 @@ void SlamToolbox::toggleScanProcessing()
     scan_sub_.reset();
   }else{
     scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
-    scan_topic_, 1, std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
+    scan_topic_, rclcpp::SensorDataQoS().keep_last(1), std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
   }
 
   this->set_parameter({"paused_new_measurements", !curr_state});
