@@ -2828,7 +2828,7 @@ kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool ad
   return false;
 }
 
-kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
+kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan, Matrix3 * covariance)
 {
   if (pScan == NULL) {
     return false;
@@ -2866,8 +2866,8 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
     return false;
   }
 
-  Matrix3 covariance;
-  covariance.SetToIdentity();
+  Matrix3 cov;
+  cov.SetToIdentity();
 
   // correct scan (if not first scan)
   if (m_pUseScanMatching->GetValue() && pLastScan != NULL) {
@@ -2875,8 +2875,11 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
     m_pSequentialScanMatcher->MatchScan(pScan,
       m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
       bestPose,
-      covariance);
+      cov);
     pScan->SetSensorPose(bestPose);
+    if (covariance) {
+      *covariance = cov;
+    }
   }
 
   // add scan to buffer and assign id
@@ -2886,7 +2889,7 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan)
   if (m_pUseScanMatching->GetValue()) {
     // add to graph
     scan_vertex = m_pGraph->AddVertex(pScan);
-    m_pGraph->AddEdges(pScan, covariance);
+    m_pGraph->AddEdges(pScan, cov);
 
     m_pMapperSensorManager->AddRunningScan(pScan);
 
