@@ -144,17 +144,26 @@ void LoopClosureAssistant::publishGraph()
 /*****************************************************************************/
 {
   interactive_server_->clear();
-  std::unordered_map<int, Eigen::Vector3d> * graph = solver_->getGraph();
+  auto graph = solver_->getGraph();
 
   if (graph->size() == 0) {
     return;
   }
 
-  RCLCPP_DEBUG(node_->get_logger(), "Graph size: %i", (int)graph->size());
+  RCLCPP_DEBUG(node_->get_logger(), "Graph size: %zu", graph->size());
   bool interactive_mode = false;
   {
     boost::mutex::scoped_lock lock(interactive_mutex_);
     interactive_mode = interactive_mode_;
+  }
+
+  const auto & vertices = mapper_->GetGraph()->GetVertices();
+  const auto & edges = mapper_->GetGraph()->GetEdges();
+  const auto & localization_vertices = mapper_->GetLocalizationVertices();
+
+  int first_localization_id = std::numeric_limits<int>::max();
+  if (!localization_vertices.empty()) {
+    first_localization_id = localization_vertices.front().vertex->GetObject()->GetUniqueId();
   }
 
   visualization_msgs::msg::MarkerArray marray;
@@ -165,31 +174,35 @@ void LoopClosureAssistant::publishGraph()
   clear.action = visualization_msgs::msg::Marker::DELETEALL;
   marray.markers.push_back(clear);
 
-  visualization_msgs::msg::Marker m = vis_utils::toMarker(map_frame_,
-      "slam_toolbox", 0.1, node_);
+  visualization_msgs::msg::Marker m = vis_utils::toMarker(map_frame_, "slam_toolbox", 0.1, node_);
 
-  for (ConstGraphIterator it = graph->begin(); it != graph->end(); ++it) {
-    m.id = it->first + 1;
-    m.pose.position.x = it->second(0);
-    m.pose.position.y = it->second(1);
+  // add map nodes
+  for (const auto & sensor_name : vertices) {
+    for (const auto & vertex : sensor_name.second) {
+      m.color.g = vertex.first < first_localization_id ? 0.0 : 1.0;
+      const auto & pose = vertex.second->GetObject()->GetCorrectedPose();
+      m.id = vertex.first;
+      m.pose.position.x = pose.GetX();
+      m.pose.position.y = pose.GetY();
 
-    if (interactive_mode && enable_interactive_mode_) {
-      visualization_msgs::msg::InteractiveMarker int_marker =
-        vis_utils::toInteractiveMarker(m, 0.3, node_);
-      interactive_server_->insert(int_marker,
-        std::bind(
-        &LoopClosureAssistant::processInteractiveFeedback,
-        this, std::placeholders::_1));
-    } else {
-      marray.markers.push_back(m);
+      if (interactive_mode && enable_interactive_mode_) {
+        visualization_msgs::msg::InteractiveMarker int_marker =
+          vis_utils::toInteractiveMarker(m, 0.3, node_);
+        interactive_server_->insert(int_marker,
+          std::bind(
+          &LoopClosureAssistant::processInteractiveFeedback,
+          this, std::placeholders::_1));
+      } else {
+        marray.markers.push_back(m);
+      }
     }
   }
 
   // add line markers for graph edges
-  auto edges = mapper_->GetGraph()->GetEdges();
   visualization_msgs::msg::Marker edges_marker;
   edges_marker.header.frame_id = map_frame_;
   edges_marker.header.stamp = node_->now();
+  edges_marker.id = 0;
   edges_marker.ns = "slam_toolbox_edges";
   edges_marker.action = visualization_msgs::msg::Marker::ADD;
   edges_marker.type = visualization_msgs::msg::Marker::LINE_LIST;
@@ -199,20 +212,46 @@ void LoopClosureAssistant::publishGraph()
   edges_marker.color.a = 1;
   edges_marker.lifetime = rclcpp::Duration::from_seconds(0);
   edges_marker.points.reserve(edges.size() * 2);
-  for (const auto& edge: edges) {
-      const auto& pose0 = edge->GetSource()->GetObject()->GetCorrectedPose();
-      geometry_msgs::msg::Point p0;
-      p0.x = pose0.GetX();
-      p0.y = pose0.GetY();
-      edges_marker.points.push_back(p0);
 
-      const auto& pose1 = edge->GetTarget()->GetObject()->GetCorrectedPose();
-      geometry_msgs::msg::Point p1;
-      p1.x = pose1.GetX();
-      p1.y = pose1.GetY();
+  visualization_msgs::msg::Marker localization_edges_marker;
+  localization_edges_marker.header.frame_id = map_frame_;
+  localization_edges_marker.header.stamp = node_->now();
+  localization_edges_marker.id = 1;
+  localization_edges_marker.ns = "slam_toolbox_edges";
+  localization_edges_marker.action = visualization_msgs::msg::Marker::ADD;
+  localization_edges_marker.type = visualization_msgs::msg::Marker::LINE_LIST;
+  localization_edges_marker.pose.orientation.w = 1;
+  localization_edges_marker.scale.x = 0.05;
+  localization_edges_marker.color.g = 1;
+  localization_edges_marker.color.b = 1;
+  localization_edges_marker.color.a = 1;
+  localization_edges_marker.lifetime = rclcpp::Duration::from_seconds(0);
+  localization_edges_marker.points.reserve(localization_vertices.size() * 3);
+
+  for (const auto & edge : edges) {
+    int source_id = edge->GetSource()->GetObject()->GetUniqueId();
+    const auto & pose0 = edge->GetSource()->GetObject()->GetCorrectedPose();
+    geometry_msgs::msg::Point p0;
+    p0.x = pose0.GetX();
+    p0.y = pose0.GetY();
+
+    int target_id = edge->GetTarget()->GetObject()->GetUniqueId();
+    const auto & pose1 = edge->GetTarget()->GetObject()->GetCorrectedPose();
+    geometry_msgs::msg::Point p1;
+    p1.x = pose1.GetX();
+    p1.y = pose1.GetY();
+
+    if (source_id >= first_localization_id || target_id >= first_localization_id) {
+      localization_edges_marker.points.push_back(p0);
+      localization_edges_marker.points.push_back(p1);
+    } else {
+      edges_marker.points.push_back(p0);
       edges_marker.points.push_back(p1);
+    }
   }
+
   marray.markers.push_back(edges_marker);
+  marray.markers.push_back(localization_edges_marker);
 
   // if disabled, clears out old markers
   interactive_server_->applyChanges();
