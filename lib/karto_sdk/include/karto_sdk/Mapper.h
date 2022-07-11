@@ -2007,7 +2007,7 @@ public:
   kt_bool ProcessAtDock(LocalizedRangeScan * pScan, Matrix3 * covariance = nullptr);
   kt_bool ProcessAgainstNode(LocalizedRangeScan * pScan, const int & nodeId, Matrix3 * covariance = nullptr);
   kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool addScanToLocalizationBuffer = false, Matrix3 * covariance = nullptr);
-  kt_bool ProcessLocalization(LocalizedRangeScan * pScan);
+  kt_bool ProcessLocalization(LocalizedRangeScan * pScan, Matrix3 * covariance = nullptr);
   kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan> *);
   void AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex<LocalizedRangeScan> * scan_vertex);
   void ClearLocalizationBuffer();
