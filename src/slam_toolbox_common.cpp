@@ -246,6 +246,8 @@ void SlamToolbox::setROSInterfaces()
 
   scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
     scan_topic_, rclcpp::SensorDataQoS().keep_last(1), std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
+  initial_pose_sub_ = create_subscription<geometry_msgs::msg::Pose2D>(
+    "slam_toolbox/set_initial_pose", 1, std::bind(&SlamToolbox::setInitialPoseCallback, this, std::placeholders::_1));
 }
 
 /*****************************************************************************/
@@ -964,7 +966,6 @@ void SlamToolbox::startSlamCallback(const std::shared_ptr<std_srvs::srv::Trigger
   if(isPaused(NEW_MEASUREMENTS)){
     toggleScanProcessing();
   }
-  resetSlam();
   slam_running_ = true;
   resp->success = true;
 }
@@ -981,6 +982,7 @@ void SlamToolbox::stopSlamCallback(const std::shared_ptr<std_srvs::srv::Trigger:
   if(!isPaused(NEW_MEASUREMENTS)){
     toggleScanProcessing();
   }
+  resetSlam();
   slam_running_ = false;
   resp->success = true;  
 }
@@ -1024,6 +1026,24 @@ void SlamToolbox::resetSlam()
     toggleScanProcessing();
   }
   RCLCPP_WARN(get_logger(), "Finished SLAM reset.");
+}
+
+/*****************************************************************************/
+void SlamToolbox::setInitialPoseCallback(geometry_msgs::msg::Pose2D::SharedPtr initial_pose)
+/*****************************************************************************/
+{
+  // no-op if this callback somehow gets hit when slam is active
+  if(slam_running_){
+    RCLCPP_WARN(get_logger(), "Cannot set initial pose when SLAM is running!");
+    return;
+  }
+
+  // set the initial pose for slam
+  processor_type_ = PROCESS_NEAR_REGION;
+  process_near_pose_ = std::make_unique<Pose2>(initial_pose->x,
+      initial_pose->y, initial_pose->theta);
+  RCLCPP_INFO(get_logger(), "Setting initial pose to: x: %d, y: %d, theta: %d", initial_pose->x,
+      initial_pose->y, initial_pose->theta);
 }
 
 }  // namespace slam_toolbox
