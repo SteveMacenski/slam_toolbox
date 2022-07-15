@@ -202,7 +202,7 @@ void LoopClosureAssistant::publishGraph()
   visualization_msgs::msg::Marker edges_marker;
   edges_marker.header.frame_id = map_frame_;
   edges_marker.header.stamp = node_->now();
-  edges_marker.id = 1;
+  edges_marker.id = 0;
   edges_marker.ns = "slam_toolbox_edges";
   edges_marker.action = visualization_msgs::msg::Marker::ADD;
   edges_marker.type = visualization_msgs::msg::Marker::LINE_LIST;
