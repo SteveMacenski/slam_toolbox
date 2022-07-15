@@ -244,14 +244,13 @@ void LoopClosureAssistant::publishGraph()
     if (source_id >= first_localization_id || target_id >= first_localization_id) {
       localization_edges_marker.points.push_back(p0);
       localization_edges_marker.points.push_back(p1);
+      marray.markers.push_back(localization_edges_marker);
     } else {
       edges_marker.points.push_back(p0);
       edges_marker.points.push_back(p1);
+      marray.markers.push_back(edges_marker);
     }
   }
-
-  marray.markers.push_back(edges_marker);
-  marray.markers.push_back(localization_edges_marker);
 
   // if disabled, clears out old markers
   interactive_server_->applyChanges();
