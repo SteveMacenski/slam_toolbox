@@ -118,6 +118,10 @@ void LocalizationSlamToolbox::laserCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
+  if (!waitForTransform(scan->header.frame_id, scan->header.stamp)) {
+    return;
+  }
+
   // store scan header
   scan_header = scan->header;
   // no odom info
