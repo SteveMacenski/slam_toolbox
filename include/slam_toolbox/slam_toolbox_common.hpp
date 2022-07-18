@@ -61,8 +61,8 @@ class SlamToolbox : public rclcpp::Node
 public:
   explicit SlamToolbox(rclcpp::NodeOptions);
   SlamToolbox();
-  ~SlamToolbox();
-  void configure();
+  virtual ~SlamToolbox();
+  virtual void configure();
   virtual void loadPoseGraphByParams();
 
 protected:
