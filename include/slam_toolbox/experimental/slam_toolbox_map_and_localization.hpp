@@ -1,6 +1,6 @@
 /*
  * slam_toolbox
- * Copyright Work Modifications (c) 2019, Steve Macenski
+ * Copyright (c) 2022, Steve Macenski
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
@@ -14,54 +14,48 @@
  *
  */
 
-/* Author: Steven Macenski */
-
-#ifndef SLAM_TOOLBOX__SLAM_TOOLBOX_LOCALIZATION_HPP_
-#define SLAM_TOOLBOX__SLAM_TOOLBOX_LOCALIZATION_HPP_
+#ifndef SLAM_TOOLBOX__SLAM_TOOLBOX_MAP_AND_LOCALIZATION_HPP_
+#define SLAM_TOOLBOX__SLAM_TOOLBOX_MAP_AND_LOCALIZATION_HPP_
 
 #include <memory>
-#include "slam_toolbox/slam_toolbox_common.hpp"
-#include "std_srvs/srv/empty.hpp"
+#include "slam_toolbox/slam_toolbox_localization.hpp"
+#include "std_srvs/srv/set_bool.hpp"
 
 namespace slam_toolbox
 {
 
-class LocalizationSlamToolbox : public SlamToolbox
+class MapAndLocalizationSlamToolbox : public LocalizationSlamToolbox
 {
 public:
-  explicit LocalizationSlamToolbox(rclcpp::NodeOptions options);
-  virtual ~LocalizationSlamToolbox() {}
-  virtual void loadPoseGraphByParams();
+  explicit MapAndLocalizationSlamToolbox(rclcpp::NodeOptions options);
+  virtual ~MapAndLocalizationSlamToolbox() {}
+  void loadPoseGraphByParams() override;
+  void configure() override;
 
 protected:
-  virtual void laserCallback(
+  void laserCallback(
     sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override;
-  void localizePoseCallback(
-    const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
-  bool clearLocalizationBuffer(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<std_srvs::srv::Empty::Request> req,
-    std::shared_ptr<std_srvs::srv::Empty::Response> resp);
-
-  virtual bool serializePoseGraphCallback(
+  bool serializePoseGraphCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::SerializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::SerializePoseGraph::Response> resp) override;
-  virtual bool deserializePoseGraphCallback(
+  bool deserializePoseGraphCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override;
-
-  virtual LocalizedRangeScan * addScan(
+  bool setLocalizationModeCallback(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
+    std::shared_ptr<std_srvs::srv::SetBool::Response> resp);
+  LocalizedRangeScan * addScan(
     LaserRangeFinder * laser,
     const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
     Pose2 & pose) override;
+  void toggleMode(bool enable_localization);
 
-  std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>>
-  localization_pose_sub_;
-  std::shared_ptr<rclcpp::Service<std_srvs::srv::Empty> > clear_localization_;
+  std::shared_ptr<rclcpp::Service<std_srvs::srv::SetBool>> ssSetLocalizationMode_;
 };
 
 }  // namespace slam_toolbox
 
-#endif  // SLAM_TOOLBOX__SLAM_TOOLBOX_LOCALIZATION_HPP_
+#endif  // SLAM_TOOLBOX__SLAM_TOOLBOX_MAP_AND_LOCALIZATION_HPP_
