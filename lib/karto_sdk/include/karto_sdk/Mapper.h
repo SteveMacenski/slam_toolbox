@@ -1057,6 +1057,16 @@ public:
     std::cout << "GetNodeOrientation method not implemented for this solver type." << std::endl;
   }
 
+  virtual void SetNodeConstant(const int & unique_id)
+  {
+    std::cout << "SetNodeConstant method not implemented for this solver type." << std::endl;
+  }
+
+  virtual void SetNodeVariable(const int & unique_id)
+  {
+    std::cout << "SetNodeVariable method not implemented for this solver type." << std::endl;
+  }
+
   friend class boost::serialization::access;
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
@@ -2017,6 +2027,12 @@ public:
   kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan> *);
   void AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex<LocalizedRangeScan> * scan_vertex);
   void ClearLocalizationBuffer();
+
+  /**
+   * Checks if removing the given vertex would disconnect the localization graph from the mapping graph.
+   * @param localization_vertex
+   */
+  bool cutsLocalizationAndMappingGraphs(const LocalizationScanVertex & localization_vertex);
 
   /**
    * Returns all processed scans added to the mapper.

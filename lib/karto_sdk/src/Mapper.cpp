@@ -2921,8 +2921,10 @@ void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex <Loc
   lsv.vertex = scan_vertex;
   m_LocalizationScanVertices.push_back(lsv);
 
-  if (m_LocalizationScanVertices.size() > getParamScanBufferSize()) {
-    LocalizationScanVertex & oldLSV = m_LocalizationScanVertices.front();
+  while (m_LocalizationScanVertices.size() > getParamScanBufferSize() &&
+         !cutsLocalizationAndMappingGraphs(m_LocalizationScanVertices.front()))
+  {
+    LocalizationScanVertex& oldLSV = m_LocalizationScanVertices.front();
     RemoveNodeFromGraph(oldLSV.vertex);
 
     // delete node and scans
@@ -2937,6 +2939,54 @@ void Mapper::AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex <Loc
 
     m_LocalizationScanVertices.pop_front();
   }
+}
+
+bool Mapper::cutsLocalizationAndMappingGraphs(const LocalizationScanVertex & localization_vertex){
+  // Tarjan’s algorithm would likely perform better if we expect the localization graph to get,
+  // really big. but for now I use a simpler, but naive, approach where I check the localization vertices 
+  // to see if both of these conditions are true:
+  // 1. the given localization vertex connects to the mapping graph
+  // 2. no other localization vertex connects to the mapping graph
+  const int query_id = localization_vertex.vertex->GetObject()->GetUniqueId();
+
+  // figure out where the mapping vertices stop and localization vertices start
+  int first_localization_id = std::numeric_limits<int>::max();
+  if (!m_LocalizationScanVertices.empty()) {
+    first_localization_id = m_LocalizationScanVertices.front().vertex->GetObject()->GetUniqueId();
+  }
+
+  // Make sure we were not given a mapping vertex...
+  if(query_id < first_localization_id){
+    std::cout << "isMapArticulationPoint: WARNING - user provided mapping vertex!" << std::endl;
+    return false;
+  }
+  // Check for Condition 1: the given localization vertex connects to the mapping graph
+  bool query_connects_to_map_graph = false;
+  for(const auto& adj_vertex : localization_vertex.vertex->GetAdjacentVertices()){
+    // is adj_vertex a mapping vertex? 
+    if(adj_vertex != nullptr && adj_vertex->GetObject()->GetUniqueId() < first_localization_id){
+      query_connects_to_map_graph = true;
+      break;
+    }
+  }
+  if(!query_connects_to_map_graph){
+    return false;
+  }
+
+  // Check for Condition 2: no other localization vertex connects to the mapping graph
+  for(const auto& vertex : m_LocalizationScanVertices){
+    const int id = vertex.vertex->GetObject()->GetUniqueId();
+    if(id == query_id){
+      continue;
+    }
+    for(const auto& adj_vertex : vertex.vertex->GetAdjacentVertices()){
+      // is adj_vertex a mapping vertex? 
+      if(adj_vertex != nullptr && adj_vertex->GetObject()->GetUniqueId() < first_localization_id){
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 void Mapper::ClearLocalizationBuffer()

@@ -162,6 +162,9 @@ CeresSolver::~CeresSolver()
   if (nodes_ != NULL) {
     delete nodes_;
   }
+  if (blocks_ != NULL) {
+    delete blocks_;
+  }
   if (problem_ != NULL) {
     delete problem_;
   }
@@ -281,6 +284,46 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan> * pVertex)
 
   if (nodes_->size() == 1) {
     first_node_ = nodes_->find(id);
+  }
+}
+
+/*****************************************************************************/
+void CeresSolver::SetNodeConstant(const int & unique_id)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+  GraphIterator nodeit = nodes_->find(unique_id);
+  if (nodeit != nodes_->end()) {
+    if(!problem_->HasParameterBlock(&nodeit->second(0))){
+      // node is not constrained yet
+      return;
+    }
+    problem_->SetParameterBlockConstant(&nodeit->second(0));
+    problem_->SetParameterBlockConstant(&nodeit->second(1));
+    problem_->SetParameterBlockConstant(&nodeit->second(2));
+  } else {
+    RCLCPP_ERROR(node_->get_logger(), "SetNodeConstant: Failed to find node matching id %i",
+      unique_id);
+  }
+}
+
+/*****************************************************************************/
+void CeresSolver::SetNodeVariable(const int & unique_id)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(nodes_mutex_);
+  GraphIterator nodeit = nodes_->find(unique_id);
+  if (nodeit != nodes_->end()) {
+    if(!problem_->HasParameterBlock(&nodeit->second(0))){
+      // node is not constrained yet
+      return;
+    }
+    problem_->SetParameterBlockVariable(&nodeit->second(0));
+    problem_->SetParameterBlockVariable(&nodeit->second(1));
+    problem_->SetParameterBlockVariable(&nodeit->second(2));
+  } else {
+    RCLCPP_ERROR(node_->get_logger(), "SetNodeVariable: Failed to find node matching id %i",
+      unique_id);
   }
 }
 

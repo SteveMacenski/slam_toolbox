@@ -55,6 +55,10 @@ public:
   virtual void ModifyNode(const int & unique_id, Eigen::Vector3d pose);
   // get a node's current pose yaw
   virtual void GetNodeOrientation(const int & unique_id, double & pose);
+  // fix the value of a node
+  virtual void SetNodeConstant(const int & unique_id);
+  // make the value of a node variable
+  virtual void SetNodeVariable(const int & unique_id);
 
 private:
   // karto

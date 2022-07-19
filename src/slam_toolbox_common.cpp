@@ -597,7 +597,7 @@ LocalizedRangeScan * SlamToolbox::addScan(
     // match without updating the graph or scan buffer
     rclcpp::Time stamp = scan->header.stamp;
     bool match_only = !processed
-      && maximum_match_interval_ >= rclcpp::Duration::from_seconds(0.)
+      && maximum_match_interval_.seconds() >= 0.0
       && stamp - last_match_time > maximum_match_interval_;
     if (match_only) {
       processed = smapper_->getMapper()->Process(range_scan, &covariance, true);
@@ -628,7 +628,7 @@ LocalizedRangeScan * SlamToolbox::addScan(
 
     rclcpp::Time stamp = scan->header.stamp;
     bool match_only = !processed
-          && maximum_match_interval_ >= rclcpp::Duration(0.)
+          && maximum_match_interval_.seconds() >= 0.0
           && stamp - last_match_time > maximum_match_interval_;
     if (match_only) {
       processed = smapper_->getMapper()->ProcessLocalization(range_scan, &covariance, true);
@@ -649,7 +649,12 @@ LocalizedRangeScan * SlamToolbox::addScan(
 
     setTransformFromPoses(range_scan->GetCorrectedPose(), odom_pose,
       scan->header.stamp, update_reprocessing_transform);
-    dataset_->Add(range_scan);
+    if (processor_type_ != PROCESS_LOCALIZATION)
+    {
+      // localization bookkeeping clashes with dataset bookkeeping, so best to
+      // avoid using them together.
+      dataset_->Add(range_scan);
+    }
 
     publishPose(range_scan->GetCorrectedPose(), covariance, scan->header.stamp);
   } else {
@@ -915,18 +920,41 @@ bool SlamToolbox::setLocalizationModeCallback(
     process_near_pose_ = std::make_unique<Pose2>(map_pose);
     */
 
+    boost::mutex::scoped_lock lock(smapper_mutex_);
+
     if (!req->data) {
       // clear localization buffer
-      boost::mutex::scoped_lock lock(smapper_mutex_);
       RCLCPP_INFO(get_logger(), "Clearing localization buffer.");
       smapper_->clearLocalizationBuffer();
-
+      // unfreeze vertices (note that since we just cleared the localization buffer,
+      // all the remaining nodes are mapping nodes)
+      const auto& vertices = smapper_->getMapper()->GetGraph()->GetVertices();
+      for (const auto& sensor_name: vertices) {
+        for (const auto& vertex: sensor_name.second) {
+          solver_->SetNodeVariable(vertex.first);
+        }
+      }
       RCLCPP_INFO(get_logger(), "Entering mapping mode.");
       processor_type_ = PROCESS;
     }
     else {
       RCLCPP_INFO(get_logger(), "Entering localization mode.");
       processor_type_ = PROCESS_LOCALIZATION;
+      // freeze all the non-localization nodes
+      const auto& localization_vertices = smapper_->getMapper()->GetLocalizationVertices();
+      int first_localization_id = std::numeric_limits<int>::max();
+      if (!localization_vertices.empty()) {
+        first_localization_id = localization_vertices.front().vertex->GetObject()->GetUniqueId();
+      }
+      const auto& vertices = smapper_->getMapper()->GetGraph()->GetVertices();
+      for (const auto& sensor_name: vertices) {
+        for (const auto& vertex: sensor_name.second) {
+          if (vertex.first >= first_localization_id) {
+            continue;
+          }
+          solver_->SetNodeConstant(vertex.first);
+        }
+      }
     }
   }
 
@@ -998,28 +1026,31 @@ void SlamToolbox::resetSlam()
   }
 
   RCLCPP_WARN(get_logger(), "Starting SLAM reset.");
-  std::unique_ptr<Dataset> dataset = std::make_unique<Dataset>();
+  boost::mutex::scoped_lock lock(smapper_mutex_);
+  if(processor_type_ == ProcessType::PROCESS_LOCALIZATION){
+    smapper_->clearLocalizationBuffer();
+  }
+
+  dataset_->Clear();
+
   std::unique_ptr<Mapper> mapper = std::make_unique<Mapper>();
 
-  boost::mutex::scoped_lock lock(smapper_mutex_);
   solver_->Reset();
   mapper->SetScanSolver(solver_.get());
 
   // move the memory to our working dataset
   smapper_->setMapper(mapper.release());
   smapper_->configure(shared_from_this());
-  dataset_.reset(dataset.release());
+  // reset the closure_assistant's mapper (since its address just changed)
+  closure_assistant_->setMapper(smapper_->getMapper());
 
   // reset slam_toolbox bookkeeping
   lasers_.clear();
   scan_holder_->clearScans();
   first_measurement_ = true;
-  boost::mutex::scoped_lock l(pose_mutex_);
+  // no need to lock since we paused scan callbacks
   processor_type_ = PROCESS;
   process_near_pose_.reset();
-
-  // reset the closure_assistant's mapper (since its address just changed)
-  closure_assistant_->setMapper(smapper_->getMapper());
 
   // resume new scan processing (unless it was already paused)
   if(isPaused(NEW_MEASUREMENTS) && !paused_before_reset){
@@ -1039,10 +1070,11 @@ void SlamToolbox::setInitialPoseCallback(geometry_msgs::msg::Pose2D::SharedPtr i
   }
 
   // set the initial pose for slam
+  boost::mutex::scoped_lock l(pose_mutex_);
   processor_type_ = PROCESS_NEAR_REGION;
   process_near_pose_ = std::make_unique<Pose2>(initial_pose->x,
       initial_pose->y, initial_pose->theta);
-  RCLCPP_INFO(get_logger(), "Setting initial pose to: x: %d, y: %d, theta: %d", initial_pose->x,
+  RCLCPP_INFO(get_logger(), "Setting initial pose to: x: %f, y: %f, theta: %f", initial_pose->x,
       initial_pose->y, initial_pose->theta);
 }
 
