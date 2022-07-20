@@ -246,6 +246,8 @@ void CeresSolver::Reset()
   was_constant_set_ = false;
 
   if (problem_) {
+    // Note that this also frees anything the problem owns (i.e. local parameterization, cost
+    // function)
     delete problem_;
   }
 

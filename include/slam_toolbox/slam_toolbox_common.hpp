@@ -64,8 +64,8 @@ class SlamToolbox : public rclcpp::Node
 public:
   explicit SlamToolbox(rclcpp::NodeOptions);
   SlamToolbox();
-  ~SlamToolbox();
-  void configure();
+  virtual ~SlamToolbox();
+  virtual void configure();
   virtual void loadPoseGraphByParams();
 
 protected:
@@ -94,10 +94,6 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp);
-  virtual bool setLocalizationModeCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
-    std::shared_ptr<std_srvs::srv::SetBool::Response> resp);
   void startSlamCallback(
     const std::shared_ptr<std_srvs::srv::Trigger::Request> req,
     std::shared_ptr<std_srvs::srv::Trigger::Response> resp);
@@ -115,6 +111,7 @@ protected:
     karto::Pose2 & karto_pose);
   karto::LocalizedRangeScan * addScan(karto::LaserRangeFinder * laser, PosedScan & scanWPose);
   bool updateMap();
+  bool waitForTransform(const std::string& scan_frame, const rclcpp::Time& stamp);
   tf2::Stamped<tf2::Transform> setTransformFromPoses(
     const karto::Pose2 & pose,
     const karto::Pose2 & karto_pose, const rclcpp::Time & t,
@@ -147,7 +144,6 @@ protected:
   std::unique_ptr<tf2_ros::TransformListener> tfL_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::Pose2D>::SharedPtr initial_pose_sub_;
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>> sst_;
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>> sstm_;
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub_;
@@ -156,7 +152,6 @@ protected:
   std::shared_ptr<rclcpp::Service<std_srvs::srv::Trigger>> ssPauseMeasurements_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::SerializePoseGraph>> ssSerialize_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::DeserializePoseGraph>> ssDesserialize_;
-  std::shared_ptr<rclcpp::Service<std_srvs::srv::SetBool>> ssSetLocalizationMode_;
   std::shared_ptr<rclcpp::Service<std_srvs::srv::Trigger>> ssStart_, ssStop_;
 
   // Storage for ROS parameters

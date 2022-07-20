@@ -230,11 +230,6 @@ void SlamToolbox::setROSInterfaces()
     "slam_toolbox/deserialize_map",
     std::bind(&SlamToolbox::deserializePoseGraphCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  ssSetLocalizationMode_ = this->create_service<std_srvs::srv::SetBool>(
-    "slam_toolbox/set_localization_mode",
-    std::bind(&SlamToolbox::setLocalizationModeCallback, this,
-    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-
   ssStart_ = this->create_service<std_srvs::srv::Trigger>(
     "slam_toolbox/start",
     std::bind(&SlamToolbox::startSlamCallback, this,
@@ -245,9 +240,8 @@ void SlamToolbox::setROSInterfaces()
     std::placeholders::_1, std::placeholders::_2));
 
   scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
-    scan_topic_, rclcpp::SensorDataQoS().keep_last(1), std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
-  initial_pose_sub_ = create_subscription<geometry_msgs::msg::Pose2D>(
-    "slam_toolbox/set_initial_pose", 1, std::bind(&SlamToolbox::setInitialPoseCallback, this, std::placeholders::_1));
+    scan_topic_,
+    rclcpp::SensorDataQoS().keep_last(1), std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
 }
 
 /*****************************************************************************/
@@ -395,6 +389,28 @@ LaserRangeFinder * SlamToolbox::getLaser(
   }
 
   return lasers_[frame].getLaser();
+}
+
+/*****************************************************************************/
+bool SlamToolbox::waitForTransform(const std::string& scan_frame, const rclcpp::Time& stamp)
+/*****************************************************************************/
+{
+  if (!tf_->_frameExists(odom_frame_)) {
+    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "tf frame [%s] doesn't exist yet.'", odom_frame_.c_str());
+    return false;
+  }
+
+  if (!tf_->_frameExists(scan_frame)) {
+    RCLCPP_WARN_THROTTLE(get_logger(), *get_clock(), 2000, "tf frame [%s] doesn't exist yet.'", scan_frame.c_str());
+    return false;
+  }
+
+  if (!tf_->canTransform(odom_frame_, scan_frame, stamp, transform_timeout_)) {
+    RCLCPP_WARN(get_logger(), "Failed to get transform %s -> %s.", scan_frame.c_str(), odom_frame_.c_str());
+    return false;
+  }
+
+  return true;
 }
 
 /*****************************************************************************/
@@ -582,12 +598,12 @@ LocalizedRangeScan * SlamToolbox::addScan(
   boost::mutex::scoped_lock lock(smapper_mutex_);
   bool processed = false, update_reprocessing_transform = false;
 
+  Matrix3 covariance;
+  covariance.SetToIdentity();
+
   // whether or not the scan was processed as only a scan match without updating
   // the graph and scan buffer
   bool match_only = false;
-
-  Matrix3 covariance;
-  covariance.SetToIdentity();
 
   if (processor_type_ == PROCESS) {
     processed = smapper_->getMapper()->Process(range_scan, &covariance);
@@ -878,91 +894,6 @@ bool SlamToolbox::deserializePoseGraphCallback(
 }
 
 /*****************************************************************************/
-bool SlamToolbox::setLocalizationModeCallback(
-  const std::shared_ptr<rmw_request_id_t> request_header,
-  const std::shared_ptr<std_srvs::srv::SetBool::Request> req,
-  std::shared_ptr<std_srvs::srv::SetBool::Response> resp)
-/*****************************************************************************/
-{
-  bool in_localization_mode = processor_type_ == PROCESS_LOCALIZATION;
-
-  RCLCPP_INFO(get_logger(), "setLocalizationModeCallback: req.data=%d in_localization_mode=%d", (int)req->data, (int)in_localization_mode);
-
-
-  if (req->data != in_localization_mode) {
-    // Set near pose to most recent pose
-
-    /*
-    auto stamp = now();
-
-    //                                                                100 milliseconds
-    if (!tf_->canTransform(odom_frame_, base_frame_, stamp, rclcpp::Duration(100000000))) {
-      RCLCPP_WARN(get_logger(), "Failed to get transform %s -> %s.", base_frame_.c_str(), odom_frame_.c_str());
-      resp->success = false;
-      resp->message = "Failed to get odom transform.";
-      return true;
-    }
-
-    Pose2 map_pose;
-    tf2::Transform map_to_odom;
-    {
-      boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      map_to_odom = map_to_odom_;
-    }
-    if (!pose_helper_->getMapPose(map_pose, stamp, map_to_odom.inverse())) {
-      RCLCPP_WARN(get_logger(), "Failed to compute map pose");
-      resp->success = false;
-      resp->message = "Failed to compute map pose.";
-      return true;
-    }
-
-    RCLCPP_INFO(get_logger(), "Setting 'near pose' to: x=%lf, y=%lf, yaw=%lf", map_pose.GetX(), map_pose.GetY(), map_pose.GetHeading());
-    process_near_pose_ = std::make_unique<Pose2>(map_pose);
-    */
-
-    boost::mutex::scoped_lock lock(smapper_mutex_);
-
-    if (!req->data) {
-      // clear localization buffer
-      RCLCPP_INFO(get_logger(), "Clearing localization buffer.");
-      smapper_->clearLocalizationBuffer();
-      // unfreeze vertices (note that since we just cleared the localization buffer,
-      // all the remaining nodes are mapping nodes)
-      const auto& vertices = smapper_->getMapper()->GetGraph()->GetVertices();
-      for (const auto& sensor_name: vertices) {
-        for (const auto& vertex: sensor_name.second) {
-          solver_->SetNodeVariable(vertex.first);
-        }
-      }
-      RCLCPP_INFO(get_logger(), "Entering mapping mode.");
-      processor_type_ = PROCESS;
-    }
-    else {
-      RCLCPP_INFO(get_logger(), "Entering localization mode.");
-      processor_type_ = PROCESS_LOCALIZATION;
-      // freeze all the non-localization nodes
-      const auto& localization_vertices = smapper_->getMapper()->GetLocalizationVertices();
-      int first_localization_id = std::numeric_limits<int>::max();
-      if (!localization_vertices.empty()) {
-        first_localization_id = localization_vertices.front().vertex->GetObject()->GetUniqueId();
-      }
-      const auto& vertices = smapper_->getMapper()->GetGraph()->GetVertices();
-      for (const auto& sensor_name: vertices) {
-        for (const auto& vertex: sensor_name.second) {
-          if (vertex.first >= first_localization_id) {
-            continue;
-          }
-          solver_->SetNodeConstant(vertex.first);
-        }
-      }
-    }
-  }
-
-  resp->success = true;
-  return true;
-}
-
-/*****************************************************************************/
 void SlamToolbox::toggleScanProcessing()
 /*****************************************************************************/
 {
@@ -1057,25 +988,6 @@ void SlamToolbox::resetSlam()
     toggleScanProcessing();
   }
   RCLCPP_WARN(get_logger(), "Finished SLAM reset.");
-}
-
-/*****************************************************************************/
-void SlamToolbox::setInitialPoseCallback(geometry_msgs::msg::Pose2D::SharedPtr initial_pose)
-/*****************************************************************************/
-{
-  // no-op if this callback somehow gets hit when slam is active
-  if(slam_running_){
-    RCLCPP_WARN(get_logger(), "Cannot set initial pose when SLAM is running!");
-    return;
-  }
-
-  // set the initial pose for slam
-  boost::mutex::scoped_lock l(pose_mutex_);
-  processor_type_ = PROCESS_NEAR_REGION;
-  process_near_pose_ = std::make_unique<Pose2>(initial_pose->x,
-      initial_pose->y, initial_pose->theta);
-  RCLCPP_INFO(get_logger(), "Setting initial pose to: x: %f, y: %f, theta: %f", initial_pose->x,
-      initial_pose->y, initial_pose->theta);
 }
 
 }  // namespace slam_toolbox
