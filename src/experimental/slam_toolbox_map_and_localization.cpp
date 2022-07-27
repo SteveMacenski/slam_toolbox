@@ -56,38 +56,86 @@ bool MapAndLocalizationSlamToolbox::setLocalizationModeCallback(
   return true;
 }
 
-void MapAndLocalizationSlamToolbox::toggleMode(bool enable_localization) {
+void MapAndLocalizationSlamToolbox::toggleMode(bool enable_localization)
+{
   bool in_localization_mode = processor_type_ == PROCESS_LOCALIZATION;
-  if (in_localization_mode == enable_localization) {
+  if (in_localization_mode == enable_localization)
+  {
     return;
   }
 
-  if (enable_localization) {
+  boost::mutex::scoped_lock lock(smapper_mutex_);
+  if (enable_localization)
+  {
     RCLCPP_INFO(get_logger(), "Enabling localization ...");
     processor_type_ = PROCESS_LOCALIZATION;
 
-    localization_pose_sub_ =
-      create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-      "initialpose", 1, std::bind(&MapAndLocalizationSlamToolbox::localizePoseCallback, this, std::placeholders::_1));
+    localization_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+      "initialpose", 1,
+      std::bind(&MapAndLocalizationSlamToolbox::localizePoseCallback, this, std::placeholders::_1));
     clear_localization_ = create_service<std_srvs::srv::Empty>(
       "slam_toolbox/clear_localization_buffer",
       std::bind(&MapAndLocalizationSlamToolbox::clearLocalizationBuffer, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+                std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
     // in localization mode, disable map saver
     map_saver_.reset();
+
+    if(!smapper_ || !solver_){
+      RCLCPP_INFO(get_logger(), "Mapper not configured yet. Will not modify graph.");
+      return;
+    }
+
+    // freeze all the non-localization nodes
+    const auto& localization_vertices = smapper_->getMapper()->GetLocalizationVertices();
+    int first_localization_id         = std::numeric_limits<int>::max();
+    if (!localization_vertices.empty())
+    {
+      first_localization_id = localization_vertices.front().vertex->GetObject()->GetUniqueId();
+    }
+    const auto& vertices = smapper_->getMapper()->GetGraph()->GetVertices();
+    for (const auto& sensor_name : vertices)
+    {
+      for (const auto& vertex : sensor_name.second)
+      {
+        if (vertex.first >= first_localization_id)
+        {
+          continue;
+        }
+        solver_->SetNodeConstant(vertex.first);
+      }
+    }
   }
-  else {
+  else
+  {
     RCLCPP_INFO(get_logger(), "Enabling mapping ...");
     processor_type_ = PROCESS;
     localization_pose_sub_.reset();
     clear_localization_.reset();
-    map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(), map_name_);
+    if(!map_saver_){
+      map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(), map_name_);
+    }
 
-    boost::mutex::scoped_lock lock(smapper_mutex_);
-    if (smapper_ && !smapper_->getMapper()->GetLocalizationVertices().empty()) {
+    if(!smapper_ || !solver_){
+      RCLCPP_INFO(get_logger(), "Mapper not configured yet. Will not modify graph.");
+      return;
+    }
+
+    if (!smapper_->getMapper()->GetLocalizationVertices().empty())
+    {
       smapper_->clearLocalizationBuffer();
     }
+    // TODO: We should do this if we ever wanted to be able to resume mapping
+    // // unfreeze vertices (note that since we just cleared the localization buffer,
+    // // all the remaining nodes are mapping nodes)
+    // const auto& vertices = smapper_->getMapper()->GetGraph()->GetVertices();
+    // for (const auto& sensor_name : vertices)
+    // {
+    //   for (const auto& vertex : sensor_name.second)
+    //   {
+    //     solver_->SetNodeVariable(vertex.first);
+    //   }
+    // }
   }
 }
 

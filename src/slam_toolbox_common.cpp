@@ -972,7 +972,7 @@ void SlamToolbox::resetSlam()
 
   RCLCPP_WARN(get_logger(), "Starting SLAM reset.");
   boost::mutex::scoped_lock lock(smapper_mutex_);
-  if(processor_type_ == ProcessType::PROCESS_LOCALIZATION){
+  if(smapper_ && processor_type_ == ProcessType::PROCESS_LOCALIZATION){
     smapper_->clearLocalizationBuffer();
   }
 
