@@ -752,6 +752,12 @@ bool SlamToolbox::serializePoseGraphCallback(
   std::shared_ptr<slam_toolbox::srv::SerializePoseGraph::Response> resp)
 /*****************************************************************************/
 {
+  if (!slam_running_)
+  {
+    RCLCPP_WARN(get_logger(), "serializePoseGraphCallback: Ignoring request to serialize pose "
+                              "graph because SLAM is not running.");
+    return false;
+  }
   std::string filename = req->filename;
 
   // if we're inside the snap, we need to write to commonly accessible space
@@ -800,6 +806,7 @@ void SlamToolbox::loadSerializedPoseGraph(
   // move the memory to our working dataset
   smapper_->setMapper(mapper.release());
   smapper_->configure(shared_from_this());
+  closure_assistant_->setMapper(smapper_->getMapper());
   dataset_.reset(dataset.release());
 
   if (!smapper_->getMapper()) {
@@ -844,6 +851,13 @@ bool SlamToolbox::deserializePoseGraphCallback(
     return false;
   }
 
+  if (slam_running_)
+  {
+    RCLCPP_WARN(get_logger(), "deserializePoseGraphCallback: Ignoring request to deserialize pose "
+                              "graph because SLAM is running.");
+    return false;
+  }
+
   std::string filename = req->filename;
 
   if (filename.empty()) {
@@ -864,7 +878,7 @@ bool SlamToolbox::deserializePoseGraphCallback(
       "file: %s.", filename.c_str());
     return true;
   }
-  RCLCPP_DEBUG(get_logger(), "DeserializePoseGraph: Successfully read file.");
+  RCLCPP_INFO(get_logger(), "DeserializePoseGraph: Successfully read file.");
 
   loadSerializedPoseGraph(mapper, dataset);
   updateMap();

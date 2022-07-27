@@ -6578,6 +6578,7 @@ public:
       }
     }
 
+    m_SensorNameLookup.clear();
     m_Lasers.clear();
     m_Data.clear();
 
@@ -6599,16 +6600,16 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    std::cout << "**Serializing Dataset**\n";
-    std::cout << "Dataset <- m_SensorNameLookup\n";
+    // std::cout << "**Serializing Dataset**\n";
+    // std::cout << "Dataset <- m_SensorNameLookup\n";
     ar & BOOST_SERIALIZATION_NVP(m_SensorNameLookup);
-    std::cout << "Dataset <- m_Data\n";
+    // std::cout << "Dataset <- m_Data\n";
     ar & BOOST_SERIALIZATION_NVP(m_Data);
-    std::cout << "Dataset <- m_Lasers\n";
+    // std::cout << "Dataset <- m_Lasers\n";
     ar & BOOST_SERIALIZATION_NVP(m_Lasers);
-    std::cout << "Dataset <- m_pDatasetInfo\n";
+    // std::cout << "Dataset <- m_pDatasetInfo\n";
     ar & BOOST_SERIALIZATION_NVP(m_pDatasetInfo);
-    std::cout << "**Finished serializing Dataset**\n";
+    // std::cout << "**Finished serializing Dataset**\n";
   }
 };    // Dataset
 BOOST_SERIALIZATION_ASSUME_ABSTRACT(Dataset)

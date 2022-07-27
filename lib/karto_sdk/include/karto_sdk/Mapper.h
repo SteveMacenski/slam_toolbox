@@ -2383,16 +2383,16 @@ protected:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    std::cout << "Mapper <- Module\n";
+    // std::cout << "Mapper <- Module\n";
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Module);
     ar & BOOST_SERIALIZATION_NVP(m_Initialized);
-    std::cout << "Mapper <- m_pSequentialScanMatcher\n";
+    // std::cout << "Mapper <- m_pSequentialScanMatcher\n";
     ar & BOOST_SERIALIZATION_NVP(m_pSequentialScanMatcher);
-    std::cout << "Mapper <- m_pGraph\n";
+    // std::cout << "Mapper <- m_pGraph\n";
     ar & BOOST_SERIALIZATION_NVP(m_pGraph);
-    std::cout << "Mapper <- m_pMapperSensorManager\n";
+    // std::cout << "Mapper <- m_pMapperSensorManager\n";
     ar & BOOST_SERIALIZATION_NVP(m_pMapperSensorManager);
-    std::cout << "Mapper <- m_Listeners\n";
+    // std::cout << "Mapper <- m_Listeners\n";
     ar & BOOST_SERIALIZATION_NVP(m_Listeners);
     ar & BOOST_SERIALIZATION_NVP(m_pUseScanMatching);
     ar & BOOST_SERIALIZATION_NVP(m_pUseScanBarycenter);
@@ -2423,7 +2423,7 @@ protected:
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumAnglePenalty);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumDistancePenalty);
     ar & BOOST_SERIALIZATION_NVP(m_pUseResponseExpansion);
-    std::cout << "**Finished serializing Mapper**\n";
+    // std::cout << "**Finished serializing Mapper**\n";
   }
 
 public:
