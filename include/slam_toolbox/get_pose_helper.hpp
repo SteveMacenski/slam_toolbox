@@ -19,10 +19,11 @@
 #ifndef SLAM_TOOLBOX__GET_POSE_HELPER_HPP_
 #define SLAM_TOOLBOX__GET_POSE_HELPER_HPP_
 
-#include <string>
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
-#include "slam_toolbox/toolbox_types.hpp"
 #include "karto_sdk/Mapper.h"
+#include "slam_toolbox/toolbox_types.hpp"
+#include <string>
+#include <tf2/utils.h>
 
 namespace pose_utils
 {
@@ -31,43 +32,48 @@ namespace pose_utils
 class GetPoseHelper
 {
 public:
-  GetPoseHelper(
-    tf2_ros::Buffer * tf,
-    const std::string & base_frame,
-    const std::string & odom_frame)
-  : tf_(tf), base_frame_(base_frame), odom_frame_(odom_frame)
+  GetPoseHelper(tf2_ros::Buffer* tf, const std::string& base_frame, const std::string& odom_frame)
+    : tf_(tf), base_frame_(base_frame), odom_frame_(odom_frame)
   {
   }
 
-  bool getOdomPose(karto::Pose2 & karto_pose, const rclcpp::Time & t)
+  bool getOdomPose(karto::Pose2& karto_pose, const rclcpp::Time& t)
   {
     geometry_msgs::msg::TransformStamped base_ident, odom_pose;
-    base_ident.header.stamp = t;
-    base_ident.header.frame_id = base_frame_;
+    base_ident.header.stamp         = t;
+    base_ident.header.frame_id      = base_frame_;
     base_ident.transform.rotation.w = 1.0;
 
-    try {
+    try
+    {
       odom_pose = tf_->transform(base_ident, odom_frame_);
-    } catch (tf2::TransformException & e) {
+    }
+    catch (tf2::TransformException& e)
+    {
       return false;
     }
 
     const double yaw = tf2::getYaw(odom_pose.transform.rotation);
-    karto_pose = karto::Pose2(odom_pose.transform.translation.x,
-        odom_pose.transform.translation.y, yaw);
+    karto_pose =
+      karto::Pose2(odom_pose.transform.translation.x, odom_pose.transform.translation.y, yaw);
 
     return true;
   }
 
-  bool getMapPose(karto::Pose2 & karto_pose, const rclcpp::Time & t, const tf2::Transform& odom_to_map) {
+  bool getMapPose(karto::Pose2& karto_pose, const rclcpp::Time& t,
+                  const tf2::Transform& odom_to_map)
+  {
     geometry_msgs::msg::TransformStamped base_ident, odom_pose, map_pose;
-    base_ident.header.stamp = t;
-    base_ident.header.frame_id = base_frame_;
+    base_ident.header.stamp         = t;
+    base_ident.header.frame_id      = base_frame_;
     base_ident.transform.rotation.w = 1.0;
 
-    try {
+    try
+    {
       odom_pose = tf_->transform(base_ident, odom_frame_);
-    } catch (tf2::TransformException & e) {
+    }
+    catch (tf2::TransformException& e)
+    {
       return false;
     }
 
@@ -76,17 +82,17 @@ public:
     tf2::doTransform(odom_pose, map_pose, odom_to_map_msg);
 
     const double yaw = tf2::getYaw(map_pose.transform.rotation);
-    karto_pose = karto::Pose2(map_pose.transform.translation.x,
-        map_pose.transform.translation.y, yaw);
+    karto_pose =
+      karto::Pose2(map_pose.transform.translation.x, map_pose.transform.translation.y, yaw);
 
     return true;
   }
 
 private:
-  tf2_ros::Buffer * tf_;
+  tf2_ros::Buffer* tf_;
   std::string base_frame_, odom_frame_;
 };
 
-}  // namespace pose_utils
+} // namespace pose_utils
 
-#endif  // SLAM_TOOLBOX__GET_POSE_HELPER_HPP_
+#endif // SLAM_TOOLBOX__GET_POSE_HELPER_HPP_
