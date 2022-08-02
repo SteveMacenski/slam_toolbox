@@ -43,6 +43,8 @@
 
 #include "pluginlib/class_loader.hpp"
 
+#include "maidbot_std_srvs/srv/get_compressed_map.hpp"
+
 #include "slam_toolbox/toolbox_types.hpp"
 #include "slam_toolbox/slam_mapper.hpp"
 #include "slam_toolbox/snap_utils.hpp"
@@ -83,8 +85,8 @@ protected:
   void setInitialPoseCallback(geometry_msgs::msg::Pose2D::SharedPtr initial_pose);
   bool mapCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<nav_msgs::srv::GetMap::Request> req,
-    std::shared_ptr<nav_msgs::srv::GetMap::Response> res);
+    const std::shared_ptr<maidbot_std_srvs::srv::GetCompressedMap::Request> req,
+    std::shared_ptr<maidbot_std_srvs::srv::GetCompressedMap::Response> res);
   virtual bool serializePoseGraphCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::SerializePoseGraph::Request> req,
@@ -147,7 +149,7 @@ protected:
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>> sstm_;
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub_;
   std::shared_ptr<rclcpp::Publisher<std_msgs::msg::Bool>> status_pub_;
-  std::shared_ptr<rclcpp::Service<nav_msgs::srv::GetMap>> ssMap_;
+  std::shared_ptr<rclcpp::Service<maidbot_std_srvs::srv::GetCompressedMap>> ssMap_;
   std::shared_ptr<rclcpp::Service<std_srvs::srv::Trigger>> ssPauseMeasurements_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::SerializePoseGraph>> ssSerialize_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::DeserializePoseGraph>> ssDesserialize_;

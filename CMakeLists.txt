@@ -11,6 +11,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
 
 find_package(ament_cmake REQUIRED)
+find_package(maidbot_msg_utils REQUIRED)
+find_package(maidbot_std_srvs REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -40,6 +42,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 set(dependencies
   rclcpp
+  maidbot_msg_utils
+  maidbot_std_srvs
   message_filters
   nav_msgs
   sensor_msgs

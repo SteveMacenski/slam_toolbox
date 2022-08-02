@@ -14,6 +14,8 @@
 
   <build_depend>pluginlib</build_depend>
   <build_depend>eigen</build_depend>
+  <build_depend>maidbot_msg_utils</build_depend>
+  <build_depend>maidbot_std_srvs</build_depend>
   <build_depend>message_filters</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>rclcpp</build_depend>

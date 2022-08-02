@@ -23,6 +23,8 @@
 #include "slam_toolbox/slam_toolbox_common.hpp"
 #include "slam_toolbox/serialization.hpp"
 
+#include "maidbot_msg_utils/occupancy_grid_compression.h"
+
 namespace slam_toolbox
 {
 
@@ -214,7 +216,7 @@ void SlamToolbox::setROSInterfaces()
   sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
     map_name_ + "_metadata",
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
-  ssMap_ = this->create_service<nav_msgs::srv::GetMap>("slam_toolbox/dynamic_map",
+  ssMap_ = this->create_service<maidbot_std_srvs::srv::GetCompressedMap>("slam_toolbox/dynamic_map",
       std::bind(&SlamToolbox::mapCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
   ssPauseMeasurements_ = this->create_service<std_srvs::srv::Trigger>(
@@ -713,15 +715,17 @@ void SlamToolbox::publishPose(
 /*****************************************************************************/
 bool SlamToolbox::mapCallback(
   const std::shared_ptr<rmw_request_id_t> request_header,
-  const std::shared_ptr<nav_msgs::srv::GetMap::Request> req,
-  std::shared_ptr<nav_msgs::srv::GetMap::Response> res)
+  const std::shared_ptr<maidbot_std_srvs::srv::GetCompressedMap::Request> req,
+  std::shared_ptr<maidbot_std_srvs::srv::GetCompressedMap::Response> res)
 /*****************************************************************************/
 {
   if (map_.map.info.width && map_.map.info.height) {
     boost::mutex::scoped_lock lock(smapper_mutex_);
-    *res = map_;
+    maidbot_msg_utils::compressOccupancyGrid(map_.map, res->map);
+    res->success = true;
     return true;
   } else {
+    res->success = false;
     return false;
   }
 }
