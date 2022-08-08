@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 
+#include "maidbot_msg_utils/occupancy_grid_compression.h"
+
 namespace slam_toolbox
 {
 

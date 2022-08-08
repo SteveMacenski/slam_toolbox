@@ -48,6 +48,7 @@
 #include "slam_toolbox/get_pose_helper.hpp"
 #include "slam_toolbox/laser_utils.hpp"
 #include "slam_toolbox/loop_closure_assistant.hpp"
+#include "slam_toolbox/map_saver.hpp"
 #include "slam_toolbox/slam_mapper.hpp"
 #include "slam_toolbox/snap_utils.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
