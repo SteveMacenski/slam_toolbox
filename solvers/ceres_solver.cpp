@@ -285,6 +285,7 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan> * pVertex)
   nodes_->insert(std::pair<int, Eigen::Vector3d>(id, pose2d));
 
   if (nodes_->size() == 1) {
+    std::cout << "Intializing solver at node: " << pose2d.transpose() << std::endl;
     first_node_ = nodes_->find(id);
   }
 }

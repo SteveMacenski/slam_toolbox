@@ -56,6 +56,9 @@ protected:
   void toggleMode(bool enable_localization);
 
   std::shared_ptr<rclcpp::Service<std_srvs::srv::SetBool>> ssSetLocalizationMode_;
+  std::shared_ptr<rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>>
+  map_and_localization_pose_sub_;
+
 };
 
 }  // namespace slam_toolbox

@@ -29,6 +29,11 @@ MapAndLocalizationSlamToolbox::MapAndLocalizationSlamToolbox(rclcpp::NodeOptions
   // disable interactive mode
   enable_interactive_mode_ = false;
 
+  localization_pose_sub_.reset();
+  map_and_localization_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "initialpose", 1,
+    std::bind(&MapAndLocalizationSlamToolbox::localizePoseCallback, this, std::placeholders::_1));
+
   ssSetLocalizationMode_ = create_service<std_srvs::srv::SetBool>(
     "slam_toolbox/set_localization_mode",
     std::bind(&MapAndLocalizationSlamToolbox::setLocalizationModeCallback, this,
@@ -70,9 +75,6 @@ void MapAndLocalizationSlamToolbox::toggleMode(bool enable_localization)
     RCLCPP_INFO(get_logger(), "Enabling localization ...");
     processor_type_ = PROCESS_LOCALIZATION;
 
-    localization_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-      "initialpose", 1,
-      std::bind(&MapAndLocalizationSlamToolbox::localizePoseCallback, this, std::placeholders::_1));
     clear_localization_ = create_service<std_srvs::srv::Empty>(
       "slam_toolbox/clear_localization_buffer",
       std::bind(&MapAndLocalizationSlamToolbox::clearLocalizationBuffer, this,
@@ -110,7 +112,6 @@ void MapAndLocalizationSlamToolbox::toggleMode(bool enable_localization)
   {
     RCLCPP_INFO(get_logger(), "Enabling mapping ...");
     processor_type_ = PROCESS;
-    localization_pose_sub_.reset();
     clear_localization_.reset();
     if(!map_saver_){
       map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(), map_name_);
@@ -195,12 +196,22 @@ void MapAndLocalizationSlamToolbox::localizePoseCallback(
       "LocalizePoseCallback: Received initial pose callback "
       "outside of localization mode. will start processing near pose.");
 
-    resetSlam();
-
     boost::mutex::scoped_lock l(pose_mutex_);
-    processor_type_ = PROCESS_NEAR_REGION;
-    process_near_pose_ = std::make_unique<Pose2>(msg->pose.pose.position.x,
-      msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation));
+    processor_type_ = PROCESS;
+    if (process_near_pose_) {
+      process_near_pose_.reset(new Pose2(msg->pose.pose.position.x,
+        msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation)));
+    } else {
+      process_near_pose_ = std::make_unique<Pose2>(msg->pose.pose.position.x,
+          msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation));
+    }
+    first_measurement_ = true;
+
+    RCLCPP_INFO(get_logger(),
+      "LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
+      msg->pose.pose.position.x, msg->pose.pose.position.y,
+      tf2::getYaw(msg->pose.pose.orientation));
+
   }
 }
 

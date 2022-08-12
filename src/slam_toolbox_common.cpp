@@ -608,6 +608,12 @@ LocalizedRangeScan * SlamToolbox::addScan(
   bool match_only = false;
 
   if (processor_type_ == PROCESS) {
+    boost::mutex::scoped_lock l(pose_mutex_);
+    if(process_near_pose_){
+      range_scan->SetOdometricPose(*process_near_pose_);
+      range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
+      process_near_pose_.reset(nullptr);
+    }
     processed = smapper_->getMapper()->Process(range_scan, &covariance);
 
     // if the scan was not processed into the map because of insuffcient travel
