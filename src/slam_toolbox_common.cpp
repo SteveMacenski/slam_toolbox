@@ -728,6 +728,8 @@ void SlamToolbox::loadSerializedPoseGraph(
   smapper_->configure(shared_from_this());
   dataset_.reset(dataset.release());
 
+  closure_assistant_->setMapper(smapper_->getMapper());
+
   if (!smapper_->getMapper()) {
     RCLCPP_FATAL(get_logger(),
       "loadSerializedPoseGraph: Could not properly load "
