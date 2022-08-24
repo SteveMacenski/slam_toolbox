@@ -142,6 +142,9 @@ void SlamToolbox::setParams()
   scan_topic_ = std::string("/scan");
   scan_topic_ = this->declare_parameter("scan_topic", scan_topic_);
 
+  scan_queue_size_ = 1.0;
+  scan_queue_size_ = this->declare_parameter("scan_queue_size", scan_queue_size_);
+
   throttle_scans_ = 1;
   throttle_scans_ = this->declare_parameter("throttle_scans", throttle_scans_);
 
@@ -217,7 +220,7 @@ void SlamToolbox::setROSInterfaces()
     shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-    *scan_filter_sub_, *tf_, odom_frame_, 1, shared_from_this(),
+    *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_, shared_from_this(),
     tf2::durationFromSec(transform_timeout_.seconds()));
   scan_filter_->registerCallback(
     std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
