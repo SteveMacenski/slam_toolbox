@@ -72,6 +72,14 @@ LoopClosureAssistant::LoopClosureAssistant(
 }
 
 /*****************************************************************************/
+void LoopClosureAssistant::setMapper(karto::Mapper * mapper)
+/*****************************************************************************/
+{
+  mapper_ = mapper;
+}
+
+
+/*****************************************************************************/
 void LoopClosureAssistant::processInteractiveFeedback(const
   visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback)
 /*****************************************************************************/
