@@ -145,6 +145,10 @@ void CeresSolver::Configure(rclcpp::Node::SharedPtr node)
     options_problem_.enable_fast_removal = true;
   }
 
+  // we do not want the problem definition to own these objects, otherwise they get
+  // deleted along with the problem 
+  options_problem_.loss_function_ownership = ceres::Ownership::DO_NOT_TAKE_OWNERSHIP;
+
   problem_ = new ceres::Problem(options_problem_);
 }
 
@@ -157,6 +161,9 @@ CeresSolver::~CeresSolver()
   }
   if (nodes_ != NULL) {
     delete nodes_;
+  }
+  if (blocks_ != NULL) {
+    delete blocks_;
   }
   if (problem_ != NULL) {
     delete problem_;
@@ -242,6 +249,8 @@ void CeresSolver::Reset()
   was_constant_set_ = false;
 
   if (problem_) {
+    // Note that this also frees anything the problem owns (i.e. local parameterization, cost
+    // function)
     delete problem_;
   }
 

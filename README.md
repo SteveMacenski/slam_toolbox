@@ -222,6 +222,8 @@ The following settings and options are exposed to you. My default configuration 
 
 `scan_topic` - scan topic, *absolute* path, ei `/scan` not `scan`
 
+`scan_queue_size` - The number of scan messages to queue up before throwing away old ones. Should always be set to 1 in async mode
+
 `map_file_name` - Name of the pose-graph file to load on startup if available
 
 `map_start_pose` - Pose to start pose-graph mapping/localization in, if available
