@@ -30,11 +30,9 @@
 #include <fstream>
 
 #include "rclcpp/rclcpp.hpp"
-#include "message_filters/subscriber.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
-#include "tf2_ros/message_filter.h"
 #include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.hpp"
@@ -100,6 +98,7 @@ protected:
     karto::Pose2 & karto_pose);
   karto::LocalizedRangeScan * addScan(karto::LaserRangeFinder * laser, PosedScan & scanWPose);
   bool updateMap();
+  bool waitForTransform(const std::string& scan_frame, const rclcpp::Time& stamp);
   tf2::Stamped<tf2::Transform> setTransformFromPoses(
     const karto::Pose2 & pose,
     const karto::Pose2 & karto_pose, const rclcpp::Time & t,
@@ -130,8 +129,7 @@ protected:
   std::unique_ptr<tf2_ros::Buffer> tf_;
   std::unique_ptr<tf2_ros::TransformListener> tfL_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
-  std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> scan_filter_sub_;
-  std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> scan_filter_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr scan_sub_;
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>> sst_;
   std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>> sstm_;
   std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub_;
