@@ -144,7 +144,7 @@ protected:
   std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_;
   rclcpp::Duration transform_timeout_, minimum_time_interval_;
   std_msgs::msg::Header scan_header;
-  int throttle_scans_;
+  int throttle_scans_, scan_queue_size_;
 
   double resolution_;
   double position_covariance_scale_;
