@@ -295,7 +295,14 @@ void SlamToolbox::publishVisualizations()
   rclcpp::Rate r(1.0 / map_update_interval);
 
   while (rclcpp::ok()) {
-    updateMap();
+    if (sst_->get_subscription_count() > 0) {
+      updateMap();
+      sst_->publish(
+        std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
+      sstm_->publish(
+        std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
+    }
+
     if (!isPaused(VISUALIZING_GRAPH)) {
       boost::mutex::scoped_lock lock(smapper_mutex_);
       closure_assistant_->publishGraph();
@@ -419,23 +426,16 @@ bool SlamToolbox::waitForTransform(const std::string& scan_frame, const rclcpp::
 bool SlamToolbox::updateMap()
 /*****************************************************************************/
 {
-  if (sst_->get_subscription_count() == 0) {
-    return false;
-  }
   boost::mutex::scoped_lock lock(smapper_mutex_);
   OccupancyGrid * occ_grid = smapper_->getOccupancyGrid(resolution_);
   if (!occ_grid) {
     return false;
   }
 
-  vis_utils::toNavMap(occ_grid, map_.map);
-
   // publish map as current
   map_.map.header.stamp = scan_header.stamp;
-  sst_->publish(
-    std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
-  sstm_->publish(
-    std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
+
+  vis_utils::toNavMap(occ_grid, map_.map);
 
   delete occ_grid;
   occ_grid = nullptr;
@@ -725,8 +725,7 @@ bool SlamToolbox::mapCallback(
   std::shared_ptr<maidbot_std_srvs::srv::GetCompressedMap::Response> res)
 /*****************************************************************************/
 {
-  if (map_.map.info.width && map_.map.info.height) {
-    boost::mutex::scoped_lock lock(smapper_mutex_);
+  if (map_.map.info.width && map_.map.info.height && updateMap()) {
     maidbot_msg_utils::compressOccupancyGrid(map_.map, res->map);
     res->success = true;
     return true;
@@ -1006,6 +1005,17 @@ void SlamToolbox::resetSlam()
   // no need to lock since we paused scan callbacks
   processor_type_ = PROCESS;
   process_near_pose_.reset();
+
+  nav_msgs::msg::OccupancyGrid & og = map_.map;
+  og.info.resolution = resolution_;
+  og.info.origin.position.x = 0.0;
+  og.info.origin.position.y = 0.0;
+  og.info.origin.position.z = 0.0;
+  og.info.origin.orientation.x = 0.0;
+  og.info.origin.orientation.y = 0.0;
+  og.info.origin.orientation.z = 0.0;
+  og.info.origin.orientation.w = 1.0;
+  og.header.frame_id = map_frame_;
 
   // resume new scan processing (unless it was already paused)
   if(isPaused(NEW_MEASUREMENTS) && !paused_before_reset){
