@@ -689,9 +689,9 @@ protected:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    std::cout << "Graph <- m_Edges; ";
+    // std::cout << "Graph <- m_Edges; ";
     ar & BOOST_SERIALIZATION_NVP(m_Edges);
-    std::cout << "Graph <- m_Vertices\n";
+    // std::cout << "Graph <- m_Vertices\n";
     ar & BOOST_SERIALIZATION_NVP(m_Vertices);
   }
 };    // Graph<T>
@@ -933,13 +933,13 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    std::cout << "MapperGraph <- Graph; ";
+    // std::cout << "MapperGraph <- Graph; ";
     ar & BOOST_SERIALIZATION_BASE_OBJECT_NVP(Graph<LocalizedRangeScan>);
-    std::cout << "MapperGraph <- m_pMapper; ";
+    // std::cout << "MapperGraph <- m_pMapper; ";
     ar & BOOST_SERIALIZATION_NVP(m_pMapper);
-    std::cout << "MapperGraph <- m_pLoopScanMatcher; ";
+    // std::cout << "MapperGraph <- m_pLoopScanMatcher; ";
     ar & BOOST_SERIALIZATION_NVP(m_pLoopScanMatcher);
-    std::cout << "MapperGraph <- m_pTraversal\n";
+    // std::cout << "MapperGraph <- m_pTraversal\n";
     ar & BOOST_SERIALIZATION_NVP(m_pTraversal);
   }
 };    // MapperGraph
