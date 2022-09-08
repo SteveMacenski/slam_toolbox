@@ -1,8 +1,0 @@
-<library path="SlamToolboxPlugin">
-  <class 
-    name="slam_toolbox::SlamToolboxPlugin" 
-    type="slam_toolbox::SlamToolboxPlugin" 
-    base_class_type="rviz_common::Panel">
-    <description> Panel to assist in Mapping and SLAM with the slam_toolbox </description>
-  </class>
-</library>

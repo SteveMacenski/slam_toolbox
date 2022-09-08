@@ -165,7 +165,7 @@ protected:
   double resolution_;
   double position_covariance_scale_;
   double yaw_covariance_scale_;
-  bool first_measurement_, enable_interactive_mode_, paused_at_startup_;
+  bool first_measurement_, paused_at_startup_;
 
   // Book keeping
   bool slam_running_;

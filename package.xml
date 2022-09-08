@@ -25,23 +25,15 @@
   <build_depend>visualization_msgs</build_depend>
   <build_depend>std_srvs</build_depend>
   <build_depend>boost</build_depend>
-  <build_depend>interactive_markers</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>suitesparse</build_depend>
   <build_depend>liblapack-dev</build_depend>
   <build_depend>libceres-dev</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>tbb</build_depend>
-  <build_depend>libqt5-core</build_depend>
-  <build_depend>libqt5-widgets</build_depend>
-  <build_depend>qtbase5-dev</build_depend>
   <!--<build_depend>nav2_map_server</build_depend>-->
   <build_depend>builtin_interfaces</build_depend>
   <build_depend>rosidl_default_generators</build_depend>
-  <depend>rviz_common</depend>
-  <depend>rviz_default_plugins</depend>
-  <depend>rviz_ogre_vendor</depend>
-  <depend>rviz_rendering</depend>
   <exec_depend>eigen</exec_depend>
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>message_filters</exec_depend>
@@ -53,23 +45,14 @@
   <exec_depend>visualization_msgs</exec_depend>
   <exec_depend>std_srvs</exec_depend>
   <exec_depend>boost</exec_depend>
-  <exec_depend>interactive_markers</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>suitesparse</exec_depend>
   <exec_depend>liblapack-dev</exec_depend>
   <exec_depend>libceres-dev</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>tbb</exec_depend>
-  <exec_depend>libqt5-core</exec_depend>
-  <exec_depend>libqt5-widgets</exec_depend>
-  <!--<exec_depend>nav2_map_server</exec_depend>-->
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>rosidl_default_generators</exec_depend>
-
-  <exec_depend>libqt5-core</exec_depend>
-  <exec_depend>libqt5-gui</exec_depend>
-  <exec_depend>libqt5-opengl</exec_depend>
-  <exec_depend>libqt5-widgets</exec_depend>
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>launch</test_depend>
@@ -84,7 +67,6 @@
   <export>
     <build_type>ament_cmake</build_type>
     <slam_toolbox plugin="${prefix}/solver_plugins.xml" />
-    <rviz_common plugin="${prefix}/rviz_plugins.xml"/>
   </export>
 
 </package>

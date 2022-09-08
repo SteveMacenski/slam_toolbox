@@ -39,9 +39,6 @@ LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
     std::bind(&LocalizationSlamToolbox::clearLocalizationBuffer, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
-  // in localization mode, we cannot allow for interactive mode
-  enable_interactive_mode_ = false;
-
   // in localization mode, disable map saver
   map_saver_.reset();
 }

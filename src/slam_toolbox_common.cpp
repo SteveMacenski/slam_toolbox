@@ -163,10 +163,6 @@ void SlamToolbox::setParams()
   yaw_covariance_scale_ = 1.0;
   yaw_covariance_scale_ = this->declare_parameter("yaw_covariance_scale", yaw_covariance_scale_);
 
-  enable_interactive_mode_ = false;
-  enable_interactive_mode_ = this->declare_parameter("enable_interactive_mode",
-      enable_interactive_mode_);
-
   double tmp_val = 0.5;
   tmp_val = this->declare_parameter("transform_timeout", tmp_val);
   transform_timeout_ = rclcpp::Duration::from_seconds(tmp_val);
@@ -345,8 +341,8 @@ bool SlamToolbox::shouldStartWithPoseGraph(
 {
   // if given a map to load at run time, do it.
   this->declare_parameter("map_file_name", std::string(""));
-  auto map_start_pose = this->declare_parameter("map_start_pose");
-  auto map_start_at_dock = this->declare_parameter("map_start_at_dock");
+  auto map_start_pose = this->declare_parameter("map_start_pose",rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY);
+  auto map_start_at_dock = this->declare_parameter("map_start_at_dock",rclcpp::ParameterType::PARAMETER_BOOL);
   filename = this->get_parameter("map_file_name").as_string();
   if (!filename.empty()) {
     std::vector<double> read_pose;
@@ -667,9 +663,6 @@ LocalizedRangeScan * SlamToolbox::addScan(
   // and add our scan to storage
   if (processed) {
     last_match_time = scan->header.stamp;
-    if (enable_interactive_mode_ && !match_only) {
-      scan_holder_->addScan(*scan);
-    }
 
     setTransformFromPoses(range_scan->GetCorrectedPose(), odom_pose,
       scan->header.stamp, update_reprocessing_transform);

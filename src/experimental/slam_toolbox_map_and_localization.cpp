@@ -26,8 +26,6 @@ MapAndLocalizationSlamToolbox::MapAndLocalizationSlamToolbox(rclcpp::NodeOptions
 : LocalizationSlamToolbox(options)
 /*****************************************************************************/
 {
-  // disable interactive mode
-  enable_interactive_mode_ = false;
 
   localization_pose_sub_.reset();
   map_and_localization_pose_sub_ = create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(

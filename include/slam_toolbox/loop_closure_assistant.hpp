@@ -28,8 +28,6 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2/utils.h"
 #include "rclcpp/rclcpp.hpp"
-#include "interactive_markers/interactive_marker_server.hpp"
-#include "interactive_markers/menu_handler.hpp"
 
 #include "slam_toolbox/toolbox_types.hpp"
 #include "slam_toolbox/laser_utils.hpp"
@@ -49,24 +47,10 @@ public:
     ProcessType & processor_type);
 
   void clearMovedNodes();
-  void processInteractiveFeedback(
-    const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback);
   void publishGraph();
   void setMapper(karto::Mapper * mapper);
 
 private:
-  bool manualLoopClosureCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<slam_toolbox::srv::LoopClosure::Request> req, 
-    std::shared_ptr<slam_toolbox::srv::LoopClosure::Response> resp);
-  bool clearChangesCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<slam_toolbox::srv::Clear::Request> req, 
-    std::shared_ptr<slam_toolbox::srv::Clear::Response> resp);
-  bool interactiveModeCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<slam_toolbox::srv::ToggleInteractive::Request>  req,
-    std::shared_ptr<slam_toolbox::srv::ToggleInteractive::Response> resp);
 
   void moveNode(const int& id, const Eigen::Vector3d& pose);
   void addMovedNodes(const int& id, Eigen::Vector3d vec);
@@ -75,16 +59,10 @@ private:
   laser_utils::ScanHolder * scan_holder_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_publisher_;
-  rclcpp::Service<slam_toolbox::srv::Clear>::SharedPtr ssClear_manual_;
-  rclcpp::Service<slam_toolbox::srv::LoopClosure>::SharedPtr ssLoopClosure_;
-  rclcpp::Service<slam_toolbox::srv::ToggleInteractive>::SharedPtr ssInteractive_;
   boost::mutex moved_nodes_mutex_;
   std::map<int, Eigen::Vector3d> moved_nodes_;
   karto::Mapper * mapper_;
   karto::ScanSolver * solver_;
-  std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
-  boost::mutex interactive_mutex_;
-  bool interactive_mode_, enable_interactive_mode_;
   rclcpp::Node::SharedPtr node_;
   std::string map_frame_;
   PausedState & state_;

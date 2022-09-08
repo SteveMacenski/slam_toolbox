@@ -74,8 +74,6 @@ LifelongSlamToolbox::LifelongSlamToolbox(rclcpp::NodeOptions options)
     "https://github.com/SteveMacenski/slam_toolbox/wiki/"
     "Experimental-Lifelong-Mapping-Node for more information.");
 
-  // in lifelong mode, we cannot have interactive mode enabled
-  enable_interactive_mode_ = false;
 }
 
 /*****************************************************************************/
