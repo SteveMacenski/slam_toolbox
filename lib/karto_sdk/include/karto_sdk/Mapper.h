@@ -910,6 +910,19 @@ private:
     const Name & rSensorName,
     kt_int32u & rStartNum);
 
+  /**
+   * Finds the shortest distance through the graph from the source to the
+   * target vertex (assumes each node to node traversal is one unit of distance).
+   * @param source vertex to start at
+   * @param target vertex to stop at
+   * @param vertex_map map from vertex id's to vertex objects
+   * @return minimum distance from source to target, INT_MAX if they aren't connected
+   */
+  int FindShortestDistanceBetweenVertices(
+    karto::Vertex<karto::LocalizedRangeScan>* source,
+    karto::Vertex<karto::LocalizedRangeScan>* target,
+    const std::map<int, Vertex<LocalizedRangeScan>*>& vertex_map);
+
 private:
   /**
    * Mapper of this graph

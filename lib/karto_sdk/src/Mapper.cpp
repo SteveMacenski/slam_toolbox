@@ -1616,6 +1616,67 @@ Edge<LocalizedRangeScan> * MapperGraph::AddEdge(
   return pEdge;
 }
 
+int MapperGraph::FindShortestDistanceBetweenVertices(
+  karto::Vertex<karto::LocalizedRangeScan>* source,
+  karto::Vertex<karto::LocalizedRangeScan>* target,
+  const std::map<int, Vertex<LocalizedRangeScan>*>& vertex_map)
+{
+  // straight-forward Dijkstra's algorithm:
+  // https://www.geeksforgeeks.org/dijkstras-shortest-path-algorithm-greedy-algo-7/
+  const int V         = vertex_map.size();
+  const int source_id = source->GetObject()->GetUniqueId();
+  const int target_id = target->GetObject()->GetUniqueId();
+  if(std::abs(source_id - target_id) <= 1){
+    return 0;
+  }
+
+  // Using maps instead of vectors since we don't seem to be guaranteed that the vertex ids
+  // are nicely ordered.
+  std::unordered_map<int, int> dist;     // distance from each vertex to the source
+  std::set<int> unvisited; // set of vertices we need to visit
+  for (const auto& pair : vertex_map)
+  {
+    dist[pair.first]    = INT_MAX;
+    unvisited.insert(pair.first);
+  }
+
+  // Distance of source vertex from itself is always 0
+  dist[source_id] = 0;
+
+  // Find shortest path for all vertices
+  for (int count = 0; count < V - 1; count++)
+  {
+    // Pick the minimum distance vertex from the set of
+    // vertices not yet visited.
+    int min_dist = INT_MAX, min_id = -1;
+    for (const int vertex_id : unvisited)
+    {
+      if (dist[vertex_id] <= min_dist)
+      {
+        min_dist = dist[vertex_id], min_id = vertex_id;
+      }
+    }
+
+    // Remove the picked vertex
+    unvisited.erase(min_id);
+
+    // Update dist value of the adjacent vertices of the
+    // picked vertex.
+    for (const auto& adj_vertex : vertex_map.at(min_id)->GetAdjacentVertices())
+    {
+      const int adj_vertex_id = adj_vertex->GetObject()->GetUniqueId();
+      // vertex hasn't been visited, has a valid distance to the source, and
+      // going to that vertex has a shorter distance.
+      if (unvisited.count(adj_vertex_id) > 0 && dist[min_id] != INT_MAX &&
+          dist[min_id] + 1 < dist[adj_vertex_id])
+      {
+        dist[adj_vertex_id] = dist[min_id] + 1;
+      }
+    }
+  }
+  return dist[target_id];
+}
+
 void MapperGraph::LinkScans(
   LocalizedRangeScan * pFromScan, LocalizedRangeScan * pToScan,
   const Pose2 & rMean, const Matrix3 & rCovariance)
@@ -2011,6 +2072,12 @@ LocalizedRangeScanVector MapperGraph::FindPossibleLoopClosure(
 
 void MapperGraph::CorrectPoses()
 {
+  // tracking for how much the graph changed
+  double totalCorrectionX = 0.0;
+  double totalCorrectionY = 0.0;
+  double totalCorrectionHeading = 0.0;
+  std::size_t numberOfScans = 0.0;
+
   // optimize scans!
   ScanSolver * pSolver = m_pMapper->m_pScanOptimizer;
   if (pSolver != NULL) {
@@ -2022,10 +2089,28 @@ void MapperGraph::CorrectPoses()
       if (scan == NULL) {
         continue;
       }
+      auto old_pose = scan->GetCorrectedPose();
+      totalCorrectionX += std::abs(iter->second.GetX() - old_pose.GetX());
+      totalCorrectionY += std::abs(iter->second.GetY() - old_pose.GetY());
+      totalCorrectionHeading += std::abs(math::NormalizeAngleDifference(iter->second.GetHeading(), old_pose.GetHeading()));
+      numberOfScans++;
+
       scan->SetCorrectedPoseAndUpdate(iter->second);
     }
 
     pSolver->Clear();
+  }
+  if (numberOfScans > 0)
+  {
+    double averageHeadingCorrection = totalCorrectionHeading / numberOfScans;
+    if (totalCorrectionX > 0.6 || totalCorrectionY > 0.6 || averageHeadingCorrection > 0.3)
+    {
+      std::cout << "MapperGraph::CorrectPoses - Loop closure resulted in large pose change"
+                << std::endl;
+      std::cout << "Graph size: " << numberOfScans << std::endl;
+      std::cout << "Total Pose Correction: \nX: " << totalCorrectionX << "\nY:" << totalCorrectionY
+                << "\nHeading: " << totalCorrectionHeading << std::endl;
+    }
   }
 }
 
