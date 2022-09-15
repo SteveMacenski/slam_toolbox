@@ -16,28 +16,25 @@
 
 /* Author: Steven Macenski */
 
+#include "slam_toolbox/slam_toolbox_localization.hpp"
 #include <memory>
 #include <string>
-#include "slam_toolbox/slam_toolbox_localization.hpp"
 
 namespace slam_toolbox
 {
 
 /*****************************************************************************/
-LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options)
-: SlamToolbox(options)
+LocalizationSlamToolbox::LocalizationSlamToolbox(rclcpp::NodeOptions options) : SlamToolbox(options)
 /*****************************************************************************/
 {
-  processor_type_ = PROCESS_LOCALIZATION;
-  localization_pose_sub_ =
-    this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+  processor_type_        = PROCESS_LOCALIZATION;
+  localization_pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", 1,
-    std::bind(&LocalizationSlamToolbox::localizePoseCallback,
-    this, std::placeholders::_1));
+    std::bind(&LocalizationSlamToolbox::localizePoseCallback, this, std::placeholders::_1));
   clear_localization_ = this->create_service<std_srvs::srv::Empty>(
     "slam_toolbox/clear_localization_buffer",
-    std::bind(&LocalizationSlamToolbox::clearLocalizationBuffer, this,
-    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    std::bind(&LocalizationSlamToolbox::clearLocalizationBuffer, this, std::placeholders::_1,
+              std::placeholders::_2, std::placeholders::_3));
 
   // in localization mode, disable map saver
   map_saver_.reset();
@@ -50,19 +47,19 @@ void LocalizationSlamToolbox::loadPoseGraphByParams()
   std::string filename;
   geometry_msgs::msg::Pose2D pose;
   bool dock = false;
-  if (shouldStartWithPoseGraph(filename, pose, dock)) {
+  if (shouldStartWithPoseGraph(filename, pose, dock))
+  {
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req =
       std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Request>();
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp =
       std::make_shared<slam_toolbox::srv::DeserializePoseGraph::Response>();
     req->initial_pose = pose;
-    req->filename = filename;
-    req->match_type =
-      slam_toolbox::srv::DeserializePoseGraph::Request::LOCALIZE_AT_POSE;
-    if (dock) {
-      RCLCPP_WARN(get_logger(),
-        "LocalizationSlamToolbox: Starting localization "
-        "at first node (dock) is correctly not supported.");
+    req->filename     = filename;
+    req->match_type   = slam_toolbox::srv::DeserializePoseGraph::Request::LOCALIZE_AT_POSE;
+    if (dock)
+    {
+      RCLCPP_WARN(get_logger(), "LocalizationSlamToolbox: Starting localization "
+                                "at first node (dock) is correctly not supported.");
     }
 
     deserializePoseGraphCallback(nullptr, req, resp);
@@ -77,8 +74,7 @@ bool LocalizationSlamToolbox::clearLocalizationBuffer(
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock lock(smapper_mutex_);
-  RCLCPP_INFO(get_logger(),
-    "LocalizationSlamToolbox: Clearing localization buffer.");
+  RCLCPP_INFO(get_logger(), "LocalizationSlamToolbox: Clearing localization buffer.");
   smapper_->clearLocalizationBuffer();
   return true;
 }
@@ -91,7 +87,7 @@ bool LocalizationSlamToolbox::serializePoseGraphCallback(
 /*****************************************************************************/
 {
   RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Cannot call serialize map "
-    "in localization mode!");
+                             "in localization mode!");
   return false;
 }
 
@@ -102,20 +98,21 @@ bool LocalizationSlamToolbox::deserializePoseGraphCallback(
   std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp)
 /*****************************************************************************/
 {
-  if (req->match_type != procType::LOCALIZE_AT_POSE) {
+  if (req->match_type != procType::LOCALIZE_AT_POSE)
+  {
     RCLCPP_ERROR(get_logger(), "Requested a non-localization deserialization "
-      "in localization mode.");
+                               "in localization mode.");
     return false;
   }
   return SlamToolbox::deserializePoseGraphCallback(request_header, req, resp);
 }
 
 /*****************************************************************************/
-void LocalizationSlamToolbox::laserCallback(
-  sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
+void LocalizationSlamToolbox::laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
-  if (!waitForTransform(scan->header.frame_id, scan->header.stamp)) {
+  if (!waitForTransform(scan->header.frame_id, scan->header.stamp))
+  {
     return;
   }
 
@@ -123,40 +120,44 @@ void LocalizationSlamToolbox::laserCallback(
   scan_header = scan->header;
   // no odom info
   Pose2 pose;
-  if (!pose_helper_->getOdomPose(pose, scan->header.stamp)) {
+  if (!pose_helper_->getOdomPose(pose, scan->header.stamp))
+  {
     RCLCPP_WARN(get_logger(), "Failed to compute odom pose");
     return;
   }
 
   // ensure the laser can be used
-  LaserRangeFinder * laser = getLaser(scan);
+  LaserRangeFinder* laser = getLaser(scan);
 
-  if (!laser) {
-    RCLCPP_WARN(get_logger(), "SynchronousSlamToolbox: Failed to create laser"
-      " device for %s; discarding scan", scan->header.frame_id.c_str());
+  if (!laser)
+  {
+    RCLCPP_WARN(get_logger(),
+                "SynchronousSlamToolbox: Failed to create laser"
+                " device for %s; discarding scan",
+                scan->header.frame_id.c_str());
     return;
   }
 
-  if (shouldProcessScan(scan, pose)) {
+  if (shouldProcessScan(scan, pose))
+  {
     addScan(laser, scan, pose);
   }
 }
 
 /*****************************************************************************/
-LocalizedRangeScan * LocalizationSlamToolbox::addScan(
-  LaserRangeFinder * laser,
-  const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
-  Pose2 & odom_pose)
+LocalizedRangeScan* LocalizationSlamToolbox::addScan(
+  LaserRangeFinder* laser, const sensor_msgs::msg::LaserScan::ConstSharedPtr& scan,
+  Pose2& odom_pose)
 /*****************************************************************************/
 {
   boost::mutex::scoped_lock l(pose_mutex_);
 
-  if (PROCESS_LOCALIZATION && process_near_pose_) {
+  if (PROCESS_LOCALIZATION && process_near_pose_)
+  {
     processor_type_ = PROCESS_NEAR_REGION;
   }
 
-  LocalizedRangeScan * range_scan = getLocalizedRangeScan(
-    laser, scan, odom_pose);
+  LocalizedRangeScan* range_scan = getLocalizedRangeScan(laser, scan, odom_pose);
 
   // Add the localized range scan to the smapper
   boost::mutex::scoped_lock lock(smapper_mutex_);
@@ -165,11 +166,12 @@ LocalizedRangeScan * LocalizationSlamToolbox::addScan(
   Matrix3 covariance;
   covariance.SetToIdentity();
 
-  if (processor_type_ == PROCESS_NEAR_REGION) {
-    if (!process_near_pose_) {
-      RCLCPP_ERROR(get_logger(),
-        "Process near region called without a "
-        "valid region request. Ignoring scan.");
+  if (processor_type_ == PROCESS_NEAR_REGION)
+  {
+    if (!process_near_pose_)
+    {
+      RCLCPP_ERROR(get_logger(), "Process near region called without a "
+                                 "valid region request. Ignoring scan.");
       return nullptr;
     }
 
@@ -181,24 +183,31 @@ LocalizedRangeScan * LocalizationSlamToolbox::addScan(
 
     // reset to localization mode
     update_reprocessing_transform = true;
-    processor_type_ = PROCESS_LOCALIZATION;
-  } else if (processor_type_ == PROCESS_LOCALIZATION) {
+    processor_type_               = PROCESS_LOCALIZATION;
+  }
+  else if (processor_type_ == PROCESS_LOCALIZATION)
+  {
     processed = smapper_->getMapper()->ProcessLocalization(range_scan, &covariance);
     update_reprocessing_transform = false;
-  } else {
+  }
+  else
+  {
     RCLCPP_FATAL(get_logger(), "LocalizationSlamToolbox: "
-      "No valid processor type set! Exiting.");
+                               "No valid processor type set! Exiting.");
     exit(-1);
   }
 
   // if successfully processed, create odom to map transformation
-  if (!processed) {
+  if (!processed)
+  {
     delete range_scan;
     range_scan = nullptr;
-  } else {
+  }
+  else
+  {
     // compute our new transform
-    setTransformFromPoses(range_scan->GetCorrectedPose(), odom_pose,
-      scan->header.stamp, update_reprocessing_transform);
+    setTransformFromPoses(range_scan->GetCorrectedPose(), odom_pose, scan->header.stamp,
+                          update_reprocessing_transform);
 
     publishPose(range_scan->GetCorrectedPose(), covariance, scan->header.stamp);
   }
@@ -208,24 +217,27 @@ LocalizedRangeScan * LocalizationSlamToolbox::addScan(
 
 /*****************************************************************************/
 void LocalizationSlamToolbox::localizePoseCallback(
-  const
-  geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
+  const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 /*****************************************************************************/
 {
-  if (processor_type_ != PROCESS_LOCALIZATION) {
-    RCLCPP_ERROR(get_logger(),
-      "LocalizePoseCallback: Cannot process localization command "
-      "if not in localization mode.");
+  if (processor_type_ != PROCESS_LOCALIZATION)
+  {
+    RCLCPP_ERROR(get_logger(), "LocalizePoseCallback: Cannot process localization command "
+                               "if not in localization mode.");
     return;
   }
 
   boost::mutex::scoped_lock l(pose_mutex_);
-  if (process_near_pose_) {
-    process_near_pose_.reset(new Pose2(msg->pose.pose.position.x,
-      msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation)));
-  } else {
-    process_near_pose_ = std::make_unique<Pose2>(msg->pose.pose.position.x,
-        msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation));
+  if (process_near_pose_)
+  {
+    process_near_pose_.reset(new Pose2(msg->pose.pose.position.x, msg->pose.pose.position.y,
+                                       tf2::getYaw(msg->pose.pose.orientation)));
+  }
+  else
+  {
+    process_near_pose_ =
+      std::make_unique<Pose2>(msg->pose.pose.position.x, msg->pose.pose.position.y,
+                              tf2::getYaw(msg->pose.pose.orientation));
   }
 
   first_measurement_ = true;
@@ -233,10 +245,9 @@ void LocalizationSlamToolbox::localizePoseCallback(
   boost::mutex::scoped_lock lock(smapper_mutex_);
   smapper_->clearLocalizationBuffer();
 
-  RCLCPP_INFO(get_logger(),
-    "LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
-    msg->pose.pose.position.x, msg->pose.pose.position.y,
-    tf2::getYaw(msg->pose.pose.orientation));
+  RCLCPP_INFO(get_logger(), "LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
+              msg->pose.pose.position.x, msg->pose.pose.position.y,
+              tf2::getYaw(msg->pose.pose.orientation));
 }
 
-}  // namespace slam_toolbox
+} // namespace slam_toolbox
