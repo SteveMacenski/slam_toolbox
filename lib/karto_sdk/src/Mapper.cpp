@@ -3088,6 +3088,15 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan* pScan, Matrix3* covarian
 
     m_pMapperSensorManager->SetLastScan(pScan);
     AddScanToLocalizationBuffer(pScan, scan_vertex);
+    // if a localization vertex is a bridge between the mapping and localization graphs, convert it to a mapping
+    // vertex
+    if(m_LocalizationScanVertices.size() > 3 && cutsLocalizationAndMappingGraphs(m_LocalizationScanVertices.front())){
+      karto::LocalizationScanVertex& cut_vertex = m_LocalizationScanVertices.front();
+      // remove from localization buffer
+      m_LocalizationScanVertices.pop_front();
+      // TODO (john.dangelo@tailos.com): Is it really that easy to convert a node from a localizatoin to a mapping node?
+      // should we also freeze it in the scan solver?
+    }
   }
 
   return true;
