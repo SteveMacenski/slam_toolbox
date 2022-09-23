@@ -47,6 +47,7 @@ public:
   void clearMovedNodes();
   void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void publishGraph();
+  void setMapper(karto::Mapper * mapper);
 
 private:
   bool manualLoopClosureCallback(slam_toolbox_msgs::LoopClosure::Request& req, slam_toolbox_msgs::LoopClosure::Response& resp);
