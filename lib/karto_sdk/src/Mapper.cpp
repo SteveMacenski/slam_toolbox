@@ -2676,7 +2676,10 @@ kt_bool Mapper::Process(Object *  /*pObject*/)  // NOLINT
   return true;
 }
 
-kt_bool Mapper::Process(LocalizedRangeScan * pScan, Matrix3 * covariance)
+kt_bool Mapper::Process(
+  LocalizedRangeScan * pScan,
+  Matrix3 * covariance,
+  bool force_match_only)
 {
   if (pScan != NULL) {
     karto::LaserRangeFinder * pLaserRangeFinder = pScan->GetLaserRangeFinder();
@@ -2701,7 +2704,7 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan, Matrix3 * covariance)
     }
 
     // test if scan is outside minimum boundary or if heading is larger then minimum heading
-    if (!HasMovedEnough(pScan, pLastScan)) {
+    if (!force_match_only && !HasMovedEnough(pScan, pLastScan)) {
       return false;
     }
 
@@ -2721,26 +2724,28 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan, Matrix3 * covariance)
       }
     }
 
-    // add scan to buffer and assign id
-    m_pMapperSensorManager->AddScan(pScan);
+    if (!force_match_only) {
+      // add scan to buffer and assign id
+      m_pMapperSensorManager->AddScan(pScan);
 
-    if (m_pUseScanMatching->GetValue()) {
-      // add to graph
-      m_pGraph->AddVertex(pScan);
-      m_pGraph->AddEdges(pScan, cov);
+      if (m_pUseScanMatching->GetValue()) {
+        // add to graph
+        m_pGraph->AddVertex(pScan);
+        m_pGraph->AddEdges(pScan, cov);
 
-      m_pMapperSensorManager->AddRunningScan(pScan);
+        m_pMapperSensorManager->AddRunningScan(pScan);
 
-      if (m_pDoLoopClosing->GetValue()) {
-        std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
-        const_forEach(std::vector<Name>, &deviceNames)
-        {
-          m_pGraph->TryCloseLoop(pScan, *iter);
+        if (m_pDoLoopClosing->GetValue()) {
+          std::vector<Name> deviceNames = m_pMapperSensorManager->GetSensorNames();
+          const_forEach(std::vector<Name>, &deviceNames)
+          {
+            m_pGraph->TryCloseLoop(pScan, *iter);
+          }
         }
       }
-    }
 
-    m_pMapperSensorManager->SetLastScan(pScan);
+      m_pMapperSensorManager->SetLastScan(pScan);
+    }
 
     return true;
   }

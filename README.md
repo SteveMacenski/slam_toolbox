@@ -248,13 +248,15 @@ The following settings and options are exposed to you. My default configuration 
 
 `minimum_time_interval` - The minimum duration of time between scans to be processed in synchronous mode
 
+`maximum_match_interval` - Max interval in seconds between scan matches in async mode.  Note: Scan matches triggered by this condition won't update the map or scan buffer.  Default: -1 (infinity).
+
 `transform_timeout` - TF timeout for looking up transforms
 
 `tf_buffer_duration` - Duration to store TF messages for lookup. Set high if running offline at multiple times speed in synchronous mode. 
 
 `stack_size_to_use` - The number of bytes to reset the stack size to, to enable serialization/deserialization of files. A liberal default is 40000000, but less is fine.
 
-`minimum_travel_distance` - Minimum distance of travel before processing a new scan
+`minimum_travel_distance` - Minimum distance of travel before processing a new scan into the map, or adding a scan to the queue for processing in sync or localization modes.
 
 ## Matcher Params
 
@@ -262,7 +264,7 @@ The following settings and options are exposed to you. My default configuration 
 
 `use_scan_barycenter` - Whether to use the barycenter or scan pose
 
-`minimum_travel_heading` - Minimum changing in heading to justify an update
+`minimum_travel_heading` - Minimum changing in heading before processing a new scan into the map
 
 `scan_buffer_size` - The number of scans to buffer into a chain, also used as the number of scans in the circular buffer of localization mode
 

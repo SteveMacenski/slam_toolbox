@@ -143,6 +143,7 @@ protected:
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_;
   rclcpp::Duration transform_timeout_, minimum_time_interval_;
+  rclcpp::Duration maximum_match_interval_;
   std_msgs::msg::Header scan_header;
   int throttle_scans_;
 
