@@ -457,17 +457,26 @@ bool SlamToolbox::shouldProcessScan(
   const karto::Pose2& pose)
 /*****************************************************************************/
 {
-  static karto::Pose2 last_pose;
-  static ros::Time last_scan_time = ros::Time(0.);
+  static std::vector<std::string> scan_frame_ids;
+  static std::map<std::string, karto::Pose2> last_poses;
+  static std::map<std::string, ros::Time> last_scan_times;
   static double min_dist2 =
     smapper_->getMapper()->getParamMinimumTravelDistance() *
     smapper_->getMapper()->getParamMinimumTravelDistance();
-
+  // Check if frame_id of current scan is new
+  bool new_scan_frame_id = false;
+  std::string cur_frame_id = scan->header.frame_id;
+  if (std::find(scan_frame_ids.begin(), scan_frame_ids.end(), cur_frame_id) == scan_frame_ids.end()){
+    // New scan
+    new_scan_frame_id = true;
+    scan_frame_ids.push_back(cur_frame_id);
+    last_scan_times[cur_frame_id] = ros::Time(0.);
+  }
   // we give it a pass on the first measurement to get the ball rolling
-  if (first_measurement_)
+  if (first_measurement_ || new_scan_frame_id)
   {
-    last_scan_time = scan->header.stamp;
-    last_pose = pose;
+    last_scan_times[cur_frame_id] = scan->header.stamp;
+    last_poses[cur_frame_id] = pose;
     first_measurement_ = false;
     return true;
   }
@@ -485,20 +494,20 @@ bool SlamToolbox::shouldProcessScan(
   }
 
   // not enough time
-  if (scan->header.stamp - last_scan_time < minimum_time_interval_)
+  if (scan->header.stamp - last_scan_times[cur_frame_id] < minimum_time_interval_)
   {
     return false;
   }
 
   // check moved enough, within 10% for correction error
-  const double dist2 = last_pose.SquaredDistance(pose);
+  const double dist2 = last_poses[cur_frame_id].SquaredDistance(pose);
   if(dist2 < 0.8 * min_dist2 || scan->header.seq < 5)
   {
     return false;
   }
 
-  last_pose = pose;
-  last_scan_time = scan->header.stamp; 
+  last_poses[cur_frame_id] = pose;
+  last_scan_times[cur_frame_id] = scan->header.stamp; 
 
   return true;
 }
