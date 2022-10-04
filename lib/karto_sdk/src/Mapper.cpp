@@ -1473,7 +1473,7 @@ void MapperGraph::AddEdges(LocalizedRangeScan * pScan, const Matrix3 & rCovarian
         pScan,
         pSensorManager->GetScans(rCandidateSensorName),
         bestPose, covariance);
-      LinkScans(pScan, pSensorManager->GetScan(rCandidateSensorName, 0), bestPose, covariance);
+      LinkScans(pSensorManager->GetScan(rCandidateSensorName, 0), pScan, bestPose, covariance);
 
       // only add to means and covariances if response was high "enough"
       if (response > m_pMapper->m_pLinkMatchMinimumResponseFine->GetValue()) {
