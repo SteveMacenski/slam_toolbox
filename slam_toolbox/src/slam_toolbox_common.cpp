@@ -43,11 +43,10 @@ SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
   assert(base_frames_.size() == laser_topics_.size());
   assert(base_frames_.size() == odom_frames_.size());
 
-  laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(
-    nh_, tf_.get(), base_frame_);
   for(size_t idx = 0; idx < base_frames_.size(); idx++)
   {
     pose_helpers_.push_back(std::make_unique<pose_utils::GetPoseHelper>(tf_.get(), base_frames_[idx], odom_frames_[idx]));
+    laser_assistants_[base_frames_[idx]] = std::make_unique<laser_utils::LaserAssistant>(nh_, tf_.get(), base_frames_[idx]); // Assumes base frame = laser frame
   }
   scan_holder_ = std::make_unique<laser_utils::ScanHolder>(lasers_);
   map_saver_ = std::make_unique<map_saver::MapSaver>(nh_, map_name_);
@@ -82,8 +81,12 @@ SlamToolbox::~SlamToolbox()
   for(size_t idx = 0; idx < pose_helpers_.size(); idx++)
   {
     pose_helpers_[idx].reset();
+    // laser_assistants_.reset();
   }
-  laser_assistant_.reset();
+  for(std::map<std::string,std::unique_ptr<laser_utils::LaserAssistant>>::iterator it = laser_assistants_.begin(); it != laser_assistants_.end(); it++)
+  {
+    it->second.reset();
+  }
   scan_holder_.reset();
 }
 
@@ -317,7 +320,7 @@ karto::LaserRangeFinder* SlamToolbox::getLaser(const
   {
     try
     {
-      lasers_[frame] = laser_assistant_->toLaserMetadata(*scan);
+      lasers_[frame] = laser_assistants_[frame]->toLaserMetadata(*scan);
       dataset_->Add(lasers_[frame].getLaser(), true);
     }
     catch (tf2::TransformException& e)
@@ -703,7 +706,7 @@ void SlamToolbox::loadSerializedPoseGraph(
         try
         {
           lasers_[scan->header.frame_id] =
-            laser_assistant_->toLaserMetadata(*scan);
+            laser_assistants_[scan->header.frame_id]->toLaserMetadata(*scan);
           break;
         }
         catch (tf2::TransformException& e)

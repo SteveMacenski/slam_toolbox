@@ -124,7 +124,7 @@ protected:
   std::map<std::string, laser_utils::LaserMetadata> lasers_;
 
   // helpers
-  std::unique_ptr<laser_utils::LaserAssistant> laser_assistant_;
+  std::map<std::string,std::unique_ptr<laser_utils::LaserAssistant>> laser_assistants_;
   std::vector<std::unique_ptr<pose_utils::GetPoseHelper>> pose_helpers_;
   std::unique_ptr<map_saver::MapSaver> map_saver_;
   std::unique_ptr<loop_closure_assistant::LoopClosureAssistant> closure_assistant_;
