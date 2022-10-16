@@ -203,12 +203,20 @@ void SlamToolbox::publishTransformLoop(const double& transform_publish_period)
   {
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      geometry_msgs::TransformStamped msg;
-      tf2::convert(map_to_odom_, msg.transform);
-      msg.child_frame_id = map_to_odom_child_frame_id_;
-      msg.header.frame_id = map_frame_;
-      msg.header.stamp = ros::Time::now() + transform_timeout_;
-      tfB_->sendTransform(msg);
+      // Update with / add latest transform
+      if(map_to_odom_child_frame_id_.length() > 0)
+        m_map_to_odoms_[map_to_odom_child_frame_id_] = map_to_odom_;
+      // Publish all past and current transforms so none of them go stale
+      std::map<std::string, tf2::Transform>::iterator iter;
+      for(iter = m_map_to_odoms_.begin(); iter != m_map_to_odoms_.end(); iter++)
+      {
+        geometry_msgs::TransformStamped msg;
+        tf2::convert(iter->second, msg.transform);
+        msg.child_frame_id = iter->first;
+        msg.header.frame_id = map_frame_;
+        msg.header.stamp = ros::Time::now() + transform_timeout_;
+        tfB_->sendTransform(msg);
+      }
     }
     r.sleep();
   }

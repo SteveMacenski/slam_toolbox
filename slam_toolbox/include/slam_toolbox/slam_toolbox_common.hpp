@@ -122,6 +122,7 @@ protected:
   std::unique_ptr<mapper_utils::SMapper> smapper_;
   std::unique_ptr<karto::Dataset> dataset_;
   std::map<std::string, laser_utils::LaserMetadata> lasers_;
+  std::map<std::string, tf2::Transform> m_map_to_odoms_;
 
   // helpers
   std::map<std::string,std::unique_ptr<laser_utils::LaserAssistant>> laser_assistants_;
