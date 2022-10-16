@@ -369,11 +369,12 @@ bool SlamToolbox::updateMap()
 tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
   const karto::Pose2& corrected_pose,
   const karto::Pose2& karto_pose,
-  const ros::Time& t,
+  const std_msgs::Header& header,
   const bool& update_reprocessing_transform)
 /*****************************************************************************/
 {
   // Compute the map->odom transform
+  const ros::Time& t = header.stamp;
   tf2::Stamped<tf2::Transform> odom_to_map;
   tf2::Quaternion q(0.,0.,0.,1.0);
   q.setRPY(0., 0., corrected_pose.GetHeading());
@@ -558,7 +559,7 @@ karto::LocalizedRangeScan* SlamToolbox::addScan(
     }
 
     setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
-      scan->header.stamp, update_reprocessing_transform);
+      scan->header, update_reprocessing_transform);
     dataset_->Add(range_scan);
   }
   else

@@ -193,7 +193,7 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
   } else {
     // compute our new transform
     setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
-      scan->header.stamp, update_reprocessing_transform);
+      scan->header, update_reprocessing_transform);
   }
 
   return range_scan;

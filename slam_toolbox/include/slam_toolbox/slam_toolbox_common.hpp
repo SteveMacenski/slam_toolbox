@@ -87,7 +87,7 @@ protected:
   karto::LocalizedRangeScan* addScan(karto::LaserRangeFinder* laser, PosedScan& scanWPose);
   bool updateMap();
   tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2& pose,
-    const karto::Pose2& karto_pose, const ros::Time& t, const bool& update_reprocessing_transform);
+    const karto::Pose2& karto_pose, const std_msgs::Header& header, const bool& update_reprocessing_transform);
   karto::LocalizedRangeScan* getLocalizedRangeScan(karto::LaserRangeFinder* laser,
     const sensor_msgs::LaserScan::ConstPtr& scan,
     karto::Pose2& karto_pose);
