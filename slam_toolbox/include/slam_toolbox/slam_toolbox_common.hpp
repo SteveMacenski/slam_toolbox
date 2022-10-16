@@ -110,7 +110,7 @@ protected:
   ros::ServiceServer ssMap_, ssPauseMeasurements_, ssSerialize_, ssDesserialize_;
 
   // Storage for ROS parameters
-  std::string odom_frame_, map_frame_, base_frame_, map_name_;
+  std::string map_frame_, map_name_;
   std::vector<std::string> odom_frames_, base_frames_, laser_topics_;
   ros::Duration transform_timeout_, tf_buffer_dur_, minimum_time_interval_;
   int throttle_scans_;
@@ -133,6 +133,7 @@ protected:
   // Internal state
   std::vector<std::unique_ptr<boost::thread> > threads_;
   tf2::Transform map_to_odom_;
+  std::string map_to_odom_child_frame_id_;
   boost::mutex map_to_odom_mutex_, smapper_mutex_, pose_mutex_;
   PausedState state_;
   nav_msgs::GetMap::Response map_;
