@@ -40,6 +40,10 @@ SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
   setROSInterfaces(nh_);
   setSolver(nh_);
 
+  if(base_frames_.size() != laser_topics_.size())
+    ROS_FATAL("[RoboSAR:slam_toolbox_common:SlamToolbox] base_frames_.size() != laser_topics_.size()");
+  if(base_frames_.size() != odom_frames_.size())
+    ROS_FATAL("[RoboSAR:slam_toolbox_common:SlamToolbox] base_frames_.size() != odom_frames_.size()");
   assert(base_frames_.size() == laser_topics_.size());
   assert(base_frames_.size() == odom_frames_.size());
 
