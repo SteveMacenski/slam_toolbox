@@ -45,6 +45,7 @@
 #include <fstream>
 #include <boost/thread.hpp>
 #include <sys/resource.h>
+#include <assert.h>
 
 namespace slam_toolbox
 {
@@ -110,7 +111,7 @@ protected:
 
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_;
-  std::vector<std::string> laser_topics_;
+  std::vector<std::string> odom_frames_, base_frames_, laser_topics_;
   ros::Duration transform_timeout_, tf_buffer_dur_, minimum_time_interval_;
   int throttle_scans_;
 
@@ -124,7 +125,7 @@ protected:
 
   // helpers
   std::unique_ptr<laser_utils::LaserAssistant> laser_assistant_;
-  std::unique_ptr<pose_utils::GetPoseHelper> pose_helper_;
+  std::vector<std::unique_ptr<pose_utils::GetPoseHelper>> pose_helpers_;
   std::unique_ptr<map_saver::MapSaver> map_saver_;
   std::unique_ptr<loop_closure_assistant::LoopClosureAssistant> closure_assistant_;
   std::unique_ptr<laser_utils::ScanHolder> scan_holder_;

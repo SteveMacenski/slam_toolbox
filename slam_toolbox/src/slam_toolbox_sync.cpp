@@ -68,12 +68,17 @@ void SynchronousSlamToolbox::laserCallback(
   const sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
 {
-  // no odom info
+  // no odom info on any pose helper
   karto::Pose2 pose;
-  if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
+  bool found_odom = false;
+  for(size_t idx = 0; idx < pose_helpers_.size(); idx++)
   {
-    return;
+    found_odom = pose_helpers_[idx]->getOdomPose(pose, scan->header.stamp, scan->header.frame_id);
+    if(found_odom)
+      break;
   }
+  if(!found_odom)
+    return;
 
   // ensure the laser can be used
   karto::LaserRangeFinder* laser = getLaser(scan);

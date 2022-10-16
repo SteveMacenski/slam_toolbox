@@ -40,10 +40,15 @@ SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
   setROSInterfaces(nh_);
   setSolver(nh_);
 
+  assert(base_frames_.size() == laser_topics_.size());
+  assert(base_frames_.size() == odom_frames_.size());
+
   laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(
     nh_, tf_.get(), base_frame_);
-  pose_helper_ = std::make_unique<pose_utils::GetPoseHelper>(
-    tf_.get(), base_frame_, odom_frame_);
+  for(size_t idx = 0; idx < base_frames_.size(); idx++)
+  {
+    pose_helpers_.push_back(std::make_unique<pose_utils::GetPoseHelper>(tf_.get(), base_frames_[idx], odom_frames_[idx]));
+  }
   scan_holder_ = std::make_unique<laser_utils::ScanHolder>(lasers_);
   map_saver_ = std::make_unique<map_saver::MapSaver>(nh_, map_name_);
   closure_assistant_ =
@@ -74,7 +79,10 @@ SlamToolbox::~SlamToolbox()
   dataset_.reset();
   closure_assistant_.reset();
   map_saver_.reset();
-  pose_helper_.reset();
+  for(size_t idx = 0; idx < pose_helpers_.size(); idx++)
+  {
+    pose_helpers_[idx].reset();
+  }
   laser_assistant_.reset();
   scan_holder_.reset();
 }
@@ -109,15 +117,25 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh)
 /*****************************************************************************/
 {
   map_to_odom_.setIdentity();
-  private_nh.param("odom_frame", odom_frame_, std::string("odom"));
+  private_nh.param("odom_frame", odom_frame_, std::string("odom")); // TODO: Remove, use odom_frames_ instead
   private_nh.param("map_frame", map_frame_, std::string("map"));
-  private_nh.param("base_frame", base_frame_, std::string("base_footprint"));
+  private_nh.param("base_frame", base_frame_, std::string("base_footprint")); // TODO: Remove, use base_frames_ instead
   private_nh.param("resolution", resolution_, 0.05);
   private_nh.param("map_name", map_name_, std::string("/map"));
   std::vector<std::string> default_laser = {"/scan"};
   if (!private_nh.getParam("laser_topics", laser_topics_))
   {
     laser_topics_ = default_laser;
+  }
+  std::vector<std::string> default_base_frame = {"base_footprint"};
+  if (!private_nh.getParam("base_frames", base_frames_))
+  {
+    base_frames_ = default_base_frame;
+  }
+  std::vector<std::string> default_odom_frame = {"odom"};
+  if (!private_nh.getParam("odom_frames", odom_frames_))
+  {
+    odom_frames_ = default_odom_frame;
   }
   private_nh.param("throttle_scans", throttle_scans_, 1);
   private_nh.param("enable_interactive_mode", enable_interactive_mode_, false);
@@ -157,12 +175,11 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   ssPauseMeasurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::serializePoseGraphCallback, this);
   ssDesserialize_ = node.advertiseService("deserialize_map", &SlamToolbox::deserializePoseGraphCallback, this);
-  std::vector<std::string>::const_iterator it;
-  for (it = laser_topics_.begin(); it != laser_topics_.end(); ++it)
+  for(size_t idx = 0; idx < laser_topics_.size(); idx++)
   {
-    ROS_INFO("Subscribing to scan: %s", it->c_str());
-    scan_filter_subs_.push_back(std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, *it, 5));
-    scan_filters_.push_back(std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_subs_.back(), *tf_, odom_frame_, 5, node));
+    ROS_INFO("Subscribing to scan: %s", laser_topics_[idx].c_str());
+    scan_filter_subs_.push_back(std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, laser_topics_[idx], 5));
+    scan_filters_.push_back(std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_subs_.back(), *tf_, odom_frames_[idx], 5, node));
     scan_filters_.back()->registerCallback(boost::bind(&SlamToolbox::laserCallback, this, _1));
   }
 }
