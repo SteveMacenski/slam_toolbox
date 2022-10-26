@@ -10,3 +10,4 @@ string filename
 int8 match_type
 geometry_msgs/Pose2D initial_pose
 ---
+bool success

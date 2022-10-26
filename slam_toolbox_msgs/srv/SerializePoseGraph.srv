@@ -1,2 +1,3 @@
 string filename
 ---
+bool success
