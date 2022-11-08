@@ -129,14 +129,25 @@ void SMapper::configure(const rclcpp::Node::SharedPtr & node)
     node->declare_parameter("scan_buffer_size", scan_buffer_size);
   }
   node->get_parameter("scan_buffer_size", scan_buffer_size);
+  if (scan_buffer_size <= 0) {
+    RCLCPP_WARN(node->get_logger(),
+      "You've set scan_buffer_size to be a value smaller than zero,"
+      "this isn't allowed so it will be set to default value 10.");
+    scan_buffer_size = 10;
+  }
   mapper_->setParamScanBufferSize(scan_buffer_size);
-
 
   double scan_buffer_maximum_scan_distance = 10;
   if (!node->has_parameter("scan_buffer_maximum_scan_distance")) {
     node->declare_parameter("scan_buffer_maximum_scan_distance", scan_buffer_maximum_scan_distance);
   }
   node->get_parameter("scan_buffer_maximum_scan_distance", scan_buffer_maximum_scan_distance);
+  if (math::Square(scan_buffer_maximum_scan_distance) <= 1e-06) {
+    RCLCPP_WARN(node->get_logger(),
+      "You've set scan_buffer_maximum_scan_distance to be a value whose square is smaller than 1e-06,"
+      "this isn't allowed so it will be set to default value 10.");
+    scan_buffer_maximum_scan_distance = 10;
+  }
   mapper_->setParamScanBufferMaximumScanDistance(scan_buffer_maximum_scan_distance);
 
   double link_match_minimum_response_fine = 0.1;
