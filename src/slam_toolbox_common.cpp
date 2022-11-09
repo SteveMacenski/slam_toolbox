@@ -136,7 +136,7 @@ void SlamToolbox::setParams()
   resolution_ = 0.05;
   resolution_ = this->declare_parameter("resolution", resolution_);
   if (resolution_ <= 0.0) {
-    RCLCPP_WARN(node->get_logger(),
+    RCLCPP_WARN(this->get_logger(),
       "You've set resolution of map to be zero or negative,"
       "this isn't allowed so it will be set to default value 0.05.");
     resolution_ = 0.05;
@@ -153,7 +153,7 @@ void SlamToolbox::setParams()
   throttle_scans_ = 1;
   throttle_scans_ = this->declare_parameter("throttle_scans", throttle_scans_);
   if (throttle_scans_ == 0) {
-    RCLCPP_WARN(node->get_logger(),
+    RCLCPP_WARN(this->get_logger(),
       "You've set throttle_scans to be zero,"
       "this isn't allowed so it will be set to default value 1.");
     throttle_scans_ = 1;
