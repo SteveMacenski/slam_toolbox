@@ -47,13 +47,16 @@ public:
   void clearMovedNodes();
   void processInteractiveFeedback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
   void publishGraph();
-
+  void setMapper(karto::Mapper * mapper);
 private:
   bool manualLoopClosureCallback(slam_toolbox_msgs::LoopClosure::Request& req, slam_toolbox_msgs::LoopClosure::Response& resp);
   bool clearChangesCallback(slam_toolbox_msgs::Clear::Request& req, slam_toolbox_msgs::Clear::Response& resp);
   bool interactiveModeCallback(slam_toolbox_msgs::ToggleInteractive::Request  &req, slam_toolbox_msgs::ToggleInteractive::Response &resp);
   void moveNode(const int& id, const Eigen::Vector3d& pose);
   void addMovedNodes(const int& id, Eigen::Vector3d vec);
+  std_msgs::ColorRGBA getColor(float r, float g, float b);
+  visualization_msgs::Marker getMarker( std::string name,int reserve);
+
 
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   laser_utils::ScanHolder* scan_holder_;
@@ -70,6 +73,7 @@ private:
   std::string map_frame_;
   PausedState& state_;
   ProcessType& processor_type_;
+  bool isInter = false;
 };
 
 }  // end namespace
