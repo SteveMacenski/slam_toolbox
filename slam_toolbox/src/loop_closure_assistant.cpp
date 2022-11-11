@@ -168,7 +168,7 @@ void LoopClosureAssistant::publishGraph()
   ROS_DEBUG("Graph size: %i",(int)graph->size());
   bool interactive_mode = false;
   {
-     boost::mutex::scoped_lock lock(interactive_mutex_);
+    boost::mutex::scoped_lock lock(interactive_mutex_);
     interactive_mode = interactive_mode_;
   }
 
