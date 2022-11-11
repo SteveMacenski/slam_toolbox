@@ -196,7 +196,7 @@ void LoopClosureAssistant::publishGraph()
     marray.markers.push_back(clear);
 
     visualization_msgs::Marker slam_node = vis_utils::toMarker(map_frame_, "slam_nodes", 0.05);
-    visualization_msgs::Marker loc_node = vis_utils::toMarker(map_frame_, "loc_node", 0.05);
+    visualization_msgs::Marker loc_node = vis_utils::toMarker(map_frame_, "loc_nodes", 0.05);
 
     // add map nodes
     for (const auto &sensor_name : vertices)
@@ -242,6 +242,7 @@ void LoopClosureAssistant::publishGraph()
     visualization_msgs::Marker inter_loc_edges_marker = getMarker("inter_loc_edges", localization_vertices.size() * 3);
 
     geometry_msgs::Point prevSourcePoint, prevTargetPoint;
+    
     for (const auto &edge : edges)
     {
       bool isInter = false;
@@ -255,21 +256,20 @@ void LoopClosureAssistant::publishGraph()
       geometry_msgs::Point sourcePoint;
       sourcePoint.x = pose0.GetX();
       sourcePoint.y = pose0.GetY();
-      // if (prevTargetPoint == sourcePoint)
 
       int target_id = edge->GetTarget()->GetObject()->GetUniqueId();
       const auto &pose1 = edge->GetTarget()->GetObject()->GetCorrectedPose();
       geometry_msgs::Point targetPoint;
       targetPoint.x = pose1.GetX();
       targetPoint.y = pose1.GetY();
-      if (prevTargetPoint == targetPoint)
+      if (prevTargetPoint == targetPoint) //checking for inter constraints
       {
         isInter = true;
         color = (source_id >= first_localization_id) ? getColor(1, 0, 1) : getColor(0, 1, 1);
       }
       else
       {
-        color = getColor(1, 1, 0); // yello
+        color = getColor(1, 1, 0); 
       }
 
       prevSourcePoint = sourcePoint;
@@ -279,7 +279,7 @@ void LoopClosureAssistant::publishGraph()
       {
         if (isInter)
         {
-          inter_loc_edges_marker.colors.push_back(color);
+          inter_loc_edges_marker.colors.push_back(color); 
           inter_loc_edges_marker.colors.push_back(color);
           inter_loc_edges_marker.points.push_back(sourcePoint);
           inter_loc_edges_marker.points.push_back(targetPoint);
