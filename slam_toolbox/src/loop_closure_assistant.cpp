@@ -21,144 +21,142 @@
 namespace loop_closure_assistant
 {
 
-  /*****************************************************************************/
-  LoopClosureAssistant::LoopClosureAssistant(
+/*****************************************************************************/
+LoopClosureAssistant::LoopClosureAssistant(
   ros::NodeHandle& node,
   karto::Mapper* mapper,
   laser_utils::ScanHolder* scan_holder,
   PausedState& state, ProcessType & processor_type)
-      : mapper_(mapper), scan_holder_(scan_holder),
-        interactive_mode_(false), nh_(node), state_(state),
-        processor_type_(processor_type)
-  /*****************************************************************************/
-  {
-    node.setParam("paused_processing", false);
-    tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>();
-    ssClear_manual_ = node.advertiseService("clear_changes",
-                                            &LoopClosureAssistant::clearChangesCallback, this);
-    ssLoopClosure_ = node.advertiseService("manual_loop_closure",
-                                           &LoopClosureAssistant::manualLoopClosureCallback, this);
-    scan_publisher_ = node.advertise<sensor_msgs::LaserScan>(
+: mapper_(mapper), scan_holder_(scan_holder),
+  interactive_mode_(false), nh_(node), state_(state),
+  processor_type_(processor_type)
+/*****************************************************************************/
+{
+  node.setParam("paused_processing", false);
+  tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>();
+  ssClear_manual_ = node.advertiseService("clear_changes",
+    &LoopClosureAssistant::clearChangesCallback, this);
+  ssLoopClosure_ = node.advertiseService("manual_loop_closure",
+    &LoopClosureAssistant::manualLoopClosureCallback, this);
+  scan_publisher_ = node.advertise<sensor_msgs::LaserScan>(
     "karto_scan_visualization",10);
-    solver_ = mapper_->getScanSolver();
-    interactive_server_ =
-        std::make_unique<interactive_markers::InteractiveMarkerServer>(
+  solver_ = mapper_->getScanSolver();
+  interactive_server_ =
+    std::make_unique<interactive_markers::InteractiveMarkerServer>(
     "slam_toolbox","",true);
-    ssInteractive_ = node.advertiseService("toggle_interactive_mode",
+  ssInteractive_ = node.advertiseService("toggle_interactive_mode",
     &LoopClosureAssistant::interactiveModeCallback,this);
-    node.setParam("interactive_mode", interactive_mode_);
-    marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>(
+  node.setParam("interactive_mode", interactive_mode_);
+  marker_publisher_ = node.advertise<visualization_msgs::MarkerArray>(
     "karto_graph_visualization",1);
-    node.param("map_frame", map_frame_, std::string("map"));
-    node.param("enable_interactive_mode", enable_interactive_mode_, false);
-  }
-  /*****************************************************************************/
-  void LoopClosureAssistant::setMapper(karto::Mapper *mapper)
-  /*****************************************************************************/
-  {
-    mapper_ = mapper;
-  }
+  node.param("map_frame", map_frame_, std::string("map"));
+  node.param("enable_interactive_mode", enable_interactive_mode_, false);
+}
 
-  /*****************************************************************************/
+/*****************************************************************************/
 void LoopClosureAssistant::processInteractiveFeedback(const
   visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
-  /*****************************************************************************/
+/*****************************************************************************/
+{
+  if (processor_type_ != PROCESS)
   {
-    if (processor_type_ != PROCESS)
-    {
-      ROS_ERROR_THROTTLE(5.,
-                         "Interactive mode is invalid outside processing mode.");
-      return;
-    }
+    ROS_ERROR_THROTTLE(5.,
+      "Interactive mode is invalid outside processing mode.");
+    return;
+  }
 
-    const int id = std::stoi(feedback->marker_name, nullptr, 10) - 1;
+  const int id = std::stoi(feedback->marker_name, nullptr, 10) - 1;
 
-    // was depressed, something moved, and now released
-    if (feedback->event_type ==
-            visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP &&
-        feedback->mouse_point_valid)
-    {
-      addMovedNodes(id, Eigen::Vector3d(feedback->mouse_point.x,
-                                        feedback->mouse_point.y, tf2::getYaw(feedback->pose.orientation)));
-    }
+  // was depressed, something moved, and now released
+  if (feedback->event_type ==
+      visualization_msgs::InteractiveMarkerFeedback::MOUSE_UP && 
+      feedback->mouse_point_valid)
+  {
+    addMovedNodes(id, Eigen::Vector3d(feedback->mouse_point.x,
+      feedback->mouse_point.y, tf2::getYaw(feedback->pose.orientation)));
+  }
 
-    // is currently depressed, being moved before release
-    if (feedback->event_type ==
-        visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
-    {
-      // get scan
-      sensor_msgs::LaserScan scan = scan_holder_->getCorrectedScan(id);
+  // is currently depressed, being moved before release
+  if (feedback->event_type ==
+      visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE)
+  {
+    // get scan
+    sensor_msgs::LaserScan scan = scan_holder_->getCorrectedScan(id);
 
-      // get correct orientation
+    // get correct orientation
     tf2::Quaternion quat(0.,0.,0.,1.0), msg_quat(0.,0.,0.,1.0);
-      double node_yaw, first_node_yaw;
-      solver_->GetNodeOrientation(id, node_yaw);
-      solver_->GetNodeOrientation(0, first_node_yaw);
+    double node_yaw, first_node_yaw;
+    solver_->GetNodeOrientation(id, node_yaw);
+    solver_->GetNodeOrientation(0, first_node_yaw);
     tf2::Quaternion q1(0.,0.,0.,1.0);
-      q1.setEuler(0., 0., node_yaw - 3.14159);
+    q1.setEuler(0., 0., node_yaw - 3.14159);
     tf2::Quaternion q2(0.,0.,0.,1.0);
-      q2.setEuler(0., 0., 3.14159);
-      quat *= q1;
-      quat *= q2;
+    q2.setEuler(0., 0., 3.14159); 
+    quat *= q1;
+    quat *= q2;
 
-      // interactive move
-      tf2::convert(feedback->pose.orientation, msg_quat);
-      quat *= msg_quat;
-      quat.normalize();
+    // interactive move
+    tf2::convert(feedback->pose.orientation, msg_quat);
+    quat *= msg_quat;
+    quat.normalize();
 
-      // create correct transform
-      tf2::Transform transform;
-      transform.setOrigin(tf2::Vector3(feedback->pose.position.x,
-                                       feedback->pose.position.y, 0.));
-      transform.setRotation(quat);
+    // create correct transform
+    tf2::Transform transform;
+    transform.setOrigin(tf2::Vector3(feedback->pose.position.x,
+      feedback->pose.position.y, 0.));
+    transform.setRotation(quat);
 
-      // publish the scan visualization with transform
-      geometry_msgs::TransformStamped msg;
-      tf2::convert(transform, msg.transform);
-      msg.child_frame_id = "karto_scan_visualization";
-      msg.header.frame_id = feedback->header.frame_id;
-      msg.header.stamp = ros::Time::now();
-      tfB_->sendTransform(msg);
+    // publish the scan visualization with transform
+    geometry_msgs::TransformStamped msg;
+    tf2::convert(transform, msg.transform);
+    msg.child_frame_id = "karto_scan_visualization";
+    msg.header.frame_id = feedback->header.frame_id;
+    msg.header.stamp = ros::Time::now();
+    tfB_->sendTransform(msg);
 
-      scan.header.frame_id = "karto_scan_visualization";
-      scan.header.stamp = ros::Time::now();
-      scan_publisher_.publish(scan);
-    }
+    scan.header.frame_id = "karto_scan_visualization";
+    scan.header.stamp = ros::Time::now();
+    scan_publisher_.publish(scan);
   }
+}
+/*****************************************************************************/
+void LoopClosureAssistant::setMapper(karto::Mapper *mapper)
+/*****************************************************************************/
+{
+  mapper_ = mapper;
+}
 
-  std_msgs::ColorRGBA LoopClosureAssistant::getColor(float r, float g, float b)
-  {
-    std_msgs::ColorRGBA color;
-    color.r = r;
-    color.g = g;
-    color.b = b;
-    return color;
-  }
-
-  visualization_msgs::Marker LoopClosureAssistant::getMarker(std::string name, int reserve)
-  {
-    visualization_msgs::Marker edges_marker;
-    edges_marker.header.frame_id = map_frame_;
-    edges_marker.header.stamp = ros::Time::now();
-    edges_marker.id = 0;
-    edges_marker.ns = name;
-    edges_marker.action = visualization_msgs::Marker::ADD;
-    edges_marker.type = visualization_msgs::Marker::LINE_LIST;
-    edges_marker.pose.orientation.w = 1;
-    edges_marker.scale.x = 0.01;
-    edges_marker.color.r = 0.0;
-    edges_marker.color.g = 0.0;
-    edges_marker.color.b = 0.0;
-    edges_marker.color.a = 1;
-    edges_marker.lifetime = ros::Duration(0.0);
-    edges_marker.points.reserve(reserve);
-    return edges_marker;
-  }
-
-  /*****************************************************************************/
-  void LoopClosureAssistant::publishGraph()
-  /*****************************************************************************/
-  {
+std_msgs::ColorRGBA LoopClosureAssistant::getColor(float r, float g, float b)
+{
+  std_msgs::ColorRGBA color;
+  color.r = r;
+  color.g = g;
+  color.b = b;
+  return color;
+}
+visualization_msgs::Marker LoopClosureAssistant::getMarker(std::string name, int reserve)
+{
+  visualization_msgs::Marker edges_marker;
+  edges_marker.header.frame_id = map_frame_;
+  edges_marker.header.stamp = ros::Time::now();
+  edges_marker.id = 0;
+  edges_marker.ns = name;
+  edges_marker.action = visualization_msgs::Marker::ADD;
+  edges_marker.type = visualization_msgs::Marker::LINE_LIST;
+  edges_marker.pose.orientation.w = 1;
+  edges_marker.scale.x = 0.01;
+  edges_marker.color.r = 0.0;
+  edges_marker.color.g = 0.0;
+  edges_marker.color.b = 0.0;
+  edges_marker.color.a = 1;
+  edges_marker.lifetime = ros::Duration(0.0);
+  edges_marker.points.reserve(reserve);
+  return edges_marker;
+}
+/*****************************************************************************/
+void LoopClosureAssistant::publishGraph()
+/*****************************************************************************/
+{
     interactive_server_->clear();
   std::unordered_map<int, Eigen::Vector3d>* graph = solver_->getGraph();
 
@@ -313,134 +311,137 @@ void LoopClosureAssistant::processInteractiveFeedback(const
         }
       }
     }
+   
     marray.markers.push_back(edges_marker_inter);
     marray.markers.push_back(edges_marker);
+     if(inter_loc_edges_marker.points.size() > 0)  // to avoid error when mapping
     marray.markers.push_back(inter_loc_edges_marker);
+     if (loc_edges_marker.points.size() > 0)
     marray.markers.push_back(loc_edges_marker);
 
     // if disabled, clears out old markers
     interactive_server_->applyChanges();
     marker_publisher_.publish(marray);
   return;
-  }
+}
 
-  /*****************************************************************************/
-  bool LoopClosureAssistant::manualLoopClosureCallback(
+/*****************************************************************************/
+bool LoopClosureAssistant::manualLoopClosureCallback(
   slam_toolbox_msgs::LoopClosure::Request& req,
   slam_toolbox_msgs::LoopClosure::Response& resp)
-  /*****************************************************************************/
-  {
+/*****************************************************************************/
+{
   if(!enable_interactive_mode_)
+  {
+    ROS_WARN("Called manual loop closure"
+      " with interactive mode disabled. Ignoring.");
+    return false;
+  }
+
+  {
+    boost::mutex::scoped_lock lock(moved_nodes_mutex_);
+
+    if (moved_nodes_.size() == 0)
     {
-      ROS_WARN("Called manual loop closure"
-               " with interactive mode disabled. Ignoring.");
-      return false;
+      ROS_WARN("No moved nodes to attempt manual loop closure.");
+      return true;
     }
 
-    {
-      boost::mutex::scoped_lock lock(moved_nodes_mutex_);
-
-      if (moved_nodes_.size() == 0)
-      {
-        ROS_WARN("No moved nodes to attempt manual loop closure.");
-        return true;
-      }
-
-      ROS_INFO("LoopClosureAssistant: Attempting to manual "
+    ROS_INFO("LoopClosureAssistant: Attempting to manual "
       "loop close with %i moved nodes.", (int)moved_nodes_.size());
-      // for each in node map
-      std::map<int, Eigen::Vector3d>::const_iterator it = moved_nodes_.begin();
-      for (it; it != moved_nodes_.end(); ++it)
-      {
-        moveNode(it->first,
+    // for each in node map
+    std::map<int, Eigen::Vector3d>::const_iterator it = moved_nodes_.begin();
+    for (it; it != moved_nodes_.end(); ++it)
+    {
+      moveNode(it->first,
         Eigen::Vector3d(it->second(0),it->second(1), it->second(2)));
-      }
     }
-
-    // optimize
-    mapper_->CorrectPoses();
-
-    // update visualization and clear out nodes completed
-    publishGraph();
-    clearMovedNodes();
-    return true;
   }
 
-  /*****************************************************************************/
-  bool LoopClosureAssistant::interactiveModeCallback(
+  // optimize
+  mapper_->CorrectPoses();
+
+  // update visualization and clear out nodes completed
+  publishGraph();  
+  clearMovedNodes();
+  return true;
+}
+
+/*****************************************************************************/
+bool LoopClosureAssistant::interactiveModeCallback(
   slam_toolbox_msgs::ToggleInteractive::Request  &req,
-      slam_toolbox_msgs::ToggleInteractive::Response &resp)
-  /*****************************************************************************/
-  {
+  slam_toolbox_msgs::ToggleInteractive::Response &resp)
+/*****************************************************************************/
+{
   if(!enable_interactive_mode_)
-    {
-      ROS_WARN("Called toggle interactive mode with "
-               "interactive mode disabled. Ignoring.");
-      return false;
-    }
-
-    bool interactive_mode;
-    {
-      boost::mutex::scoped_lock lock_i(interactive_mutex_);
-      interactive_mode_ = !interactive_mode_;
-      interactive_mode = interactive_mode_;
-      nh_.setParam("interactive_mode", interactive_mode_);
-    }
-
-    ROS_INFO("SlamToolbox: Toggling %s interactive mode.",
-             interactive_mode ? "on" : "off");
-    publishGraph();
-    clearMovedNodes();
-
-    // set state so we don't overwrite changes in rviz while loop closing
-    state_.set(PROCESSING, interactive_mode);
-    state_.set(VISUALIZING_GRAPH, interactive_mode);
-    nh_.setParam("paused_processing", interactive_mode);
-    return true;
-  }
-
-  /*****************************************************************************/
-  void LoopClosureAssistant::moveNode(
-  const int& id, const Eigen::Vector3d& pose)
-  /*****************************************************************************/
   {
-    solver_->ModifyNode(id, pose);
+    ROS_WARN("Called toggle interactive mode with "
+      "interactive mode disabled. Ignoring.");
+    return false;
   }
 
-  /*****************************************************************************/
-  bool LoopClosureAssistant::clearChangesCallback(
+  bool interactive_mode;
+  {
+    boost::mutex::scoped_lock lock_i(interactive_mutex_);
+    interactive_mode_ = !interactive_mode_;   
+    interactive_mode = interactive_mode_;
+    nh_.setParam("interactive_mode", interactive_mode_);
+  }
+
+  ROS_INFO("SlamToolbox: Toggling %s interactive mode.", 
+    interactive_mode ? "on" : "off");
+  publishGraph();
+  clearMovedNodes();
+
+  // set state so we don't overwrite changes in rviz while loop closing
+  state_.set(PROCESSING, interactive_mode);
+  state_.set(VISUALIZING_GRAPH, interactive_mode);
+  nh_.setParam("paused_processing", interactive_mode);
+  return true;
+}
+
+/*****************************************************************************/
+void LoopClosureAssistant::moveNode(
+  const int& id, const Eigen::Vector3d& pose)
+/*****************************************************************************/
+{
+  solver_->ModifyNode(id, pose);
+}
+
+/*****************************************************************************/
+bool LoopClosureAssistant::clearChangesCallback(
   slam_toolbox_msgs::Clear::Request& req,
   slam_toolbox_msgs::Clear::Response& resp)
-  /*****************************************************************************/
-  {
+/*****************************************************************************/
+{
   if(!enable_interactive_mode_)
-    {
-      ROS_WARN("Called Clear changes with interactive mode disabled. Ignoring.");
-      return false;
-    }
-
-    ROS_INFO("LoopClosureAssistant: Clearing manual loop closure nodes.");
-    publishGraph();
-    clearMovedNodes();
-    return true;
+  {
+    ROS_WARN("Called Clear changes with interactive mode disabled. Ignoring.");
+    return false;
   }
 
-  /*****************************************************************************/
+  ROS_INFO("LoopClosureAssistant: Clearing manual loop closure nodes.");
+  publishGraph();
+  clearMovedNodes();
+  return true;
+}
+
+/*****************************************************************************/
 void  LoopClosureAssistant::clearMovedNodes()
-  /*****************************************************************************/
-  {
-    boost::mutex::scoped_lock lock(moved_nodes_mutex_);
-    moved_nodes_.clear();
-  }
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(moved_nodes_mutex_);
+  moved_nodes_.clear();
+}
 
-  /*****************************************************************************/
+/*****************************************************************************/
 void LoopClosureAssistant::addMovedNodes(const int& id, Eigen::Vector3d vec)
-  /*****************************************************************************/
-  {
-    ROS_INFO("LoopClosureAssistant: Node %i new manual loop closure "
+/*****************************************************************************/
+{
+  ROS_INFO("LoopClosureAssistant: Node %i new manual loop closure "
     "pose has been recorded.",id);
-    boost::mutex::scoped_lock lock(moved_nodes_mutex_);
-    moved_nodes_[id] = vec;
-  }
+  boost::mutex::scoped_lock lock(moved_nodes_mutex_);
+  moved_nodes_[id] = vec;
+}
 
 } // end namespace

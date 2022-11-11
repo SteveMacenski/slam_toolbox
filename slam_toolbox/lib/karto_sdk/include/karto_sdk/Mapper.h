@@ -2064,7 +2064,6 @@ namespace karto
     {
       return m_LocalizationScanVertices;
     }
-
     /**
      * Tries to close a loop using the given scan with the scans from the given sensor
      * @param pScan

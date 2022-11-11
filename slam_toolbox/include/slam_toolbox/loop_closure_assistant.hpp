@@ -54,9 +54,9 @@ private:
   bool interactiveModeCallback(slam_toolbox_msgs::ToggleInteractive::Request  &req, slam_toolbox_msgs::ToggleInteractive::Response &resp);
   void moveNode(const int& id, const Eigen::Vector3d& pose);
   void addMovedNodes(const int& id, Eigen::Vector3d vec);
+
   std_msgs::ColorRGBA getColor(float r, float g, float b);
   visualization_msgs::Marker getMarker( std::string name,int reserve);
-
 
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   laser_utils::ScanHolder* scan_holder_;
