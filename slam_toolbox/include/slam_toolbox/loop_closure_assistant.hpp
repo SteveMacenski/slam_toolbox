@@ -73,7 +73,6 @@ private:
   std::string map_frame_;
   PausedState& state_;
   ProcessType& processor_type_;
-  bool isInter = false;
 };
 
 }  // end namespace

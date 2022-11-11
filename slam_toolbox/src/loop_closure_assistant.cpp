@@ -244,7 +244,7 @@ void LoopClosureAssistant::publishGraph()
     geometry_msgs::Point prevSourcePoint, prevTargetPoint;
     for (const auto &edge : edges)
     {
-      isInter = false;
+      bool isInter = false;
 
       std_msgs::ColorRGBA color;
 
