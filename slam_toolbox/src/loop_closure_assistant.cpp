@@ -157,20 +157,20 @@ visualization_msgs::Marker LoopClosureAssistant::getMarker(std::string name, int
 void LoopClosureAssistant::publishGraph()
 /*****************************************************************************/
 {
-    interactive_server_->clear();
+  interactive_server_->clear();
   std::unordered_map<int, Eigen::Vector3d>* graph = solver_->getGraph();
 
-    if (graph->size() == 0)
-    {
-      return;
-    }
+  if (graph->size() == 0)
+  {
+    return;
+  }
 
   ROS_DEBUG("Graph size: %i",(int)graph->size());
-    bool interactive_mode = false;
-    {
-      boost::mutex::scoped_lock lock(interactive_mutex_);
-      interactive_mode = interactive_mode_;
-    }
+  bool interactive_mode = false;
+  {
+     boost::mutex::scoped_lock lock(interactive_mutex_);
+    interactive_mode = interactive_mode_;
+  }
 
     if (!mapper_->GetGraph())
       ROS_ERROR_STREAM("Invalid pointer");
@@ -225,7 +225,7 @@ void LoopClosureAssistant::publishGraph()
               vis_utils::toInteractiveMarker(m, 0.3);
           interactive_server_->insert(int_marker,
         boost::bind(
-                                          &LoopClosureAssistant::processInteractiveFeedback,
+        &LoopClosureAssistant::processInteractiveFeedback,
         this, _1));
         }
         else
