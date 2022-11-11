@@ -126,33 +126,6 @@ void LoopClosureAssistant::setMapper(karto::Mapper *mapper)
   mapper_ = mapper;
 }
 
-std_msgs::ColorRGBA LoopClosureAssistant::getColor(float r, float g, float b)
-{
-  std_msgs::ColorRGBA color;
-  color.r = r;
-  color.g = g;
-  color.b = b;
-  return color;
-}
-visualization_msgs::Marker LoopClosureAssistant::getMarker(std::string name, int reserve)
-{
-  visualization_msgs::Marker edges_marker;
-  edges_marker.header.frame_id = map_frame_;
-  edges_marker.header.stamp = ros::Time::now();
-  edges_marker.id = 0;
-  edges_marker.ns = name;
-  edges_marker.action = visualization_msgs::Marker::ADD;
-  edges_marker.type = visualization_msgs::Marker::LINE_LIST;
-  edges_marker.pose.orientation.w = 1;
-  edges_marker.scale.x = 0.01;
-  edges_marker.color.r = 0.0;
-  edges_marker.color.g = 0.0;
-  edges_marker.color.b = 0.0;
-  edges_marker.color.a = 1;
-  edges_marker.lifetime = ros::Duration(0.0);
-  edges_marker.points.reserve(reserve);
-  return edges_marker;
-}
 /*****************************************************************************/
 void LoopClosureAssistant::publishGraph()
 /*****************************************************************************/
@@ -236,10 +209,10 @@ void LoopClosureAssistant::publishGraph()
     }
 
     // add line markers for graph edges
-    visualization_msgs::Marker edges_marker = getMarker("intra_slam_edges", edges.size() * 2);
-    visualization_msgs::Marker edges_marker_inter = getMarker("inter_slam_edges", edges.size() * 2);
-    visualization_msgs::Marker loc_edges_marker = getMarker("intra_loc_edges", localization_vertices.size() * 3);
-    visualization_msgs::Marker inter_loc_edges_marker = getMarker("inter_loc_edges", localization_vertices.size() * 3);
+    visualization_msgs::Marker edges_marker = vis_utils::getMarker(map_frame_,"intra_slam_edges", edges.size() * 2);
+    visualization_msgs::Marker edges_marker_inter = vis_utils::getMarker(map_frame_,"inter_slam_edges", edges.size() * 2);
+    visualization_msgs::Marker loc_edges_marker = vis_utils::getMarker(map_frame_,"intra_loc_edges", localization_vertices.size() * 3);
+    visualization_msgs::Marker inter_loc_edges_marker = vis_utils::getMarker(map_frame_,"inter_loc_edges", localization_vertices.size() * 3);
 
     geometry_msgs::Point prevSourcePoint, prevTargetPoint;
     
@@ -265,11 +238,11 @@ void LoopClosureAssistant::publishGraph()
       if (prevTargetPoint == targetPoint) //checking for inter constraints
       {
         isInter = true;
-        color = (source_id >= first_localization_id) ? getColor(1, 0, 1) : getColor(0, 1, 1);
+        color = (source_id >= first_localization_id) ? vis_utils::getColor(1, 0, 1) : vis_utils::getColor(0, 1, 1);
       }
       else
       {
-        color = getColor(1, 1, 0); 
+        color = vis_utils::getColor(1, 1, 0); 
       }
 
       prevSourcePoint = sourcePoint;

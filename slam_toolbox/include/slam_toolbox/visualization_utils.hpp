@@ -139,6 +139,41 @@ inline void toNavMap(
   return;
 }
 
+inline std_msgs::ColorRGBA getColor(
+  const float& r,
+  const float& g,
+  const float& b)
+{
+  std_msgs::ColorRGBA color;
+  color.r = r;
+  color.g = g;
+  color.b = b;
+  return color;
+}
+
+inline visualization_msgs::Marker getMarker(
+  const std::string& frame,
+  const std::string& name,
+  const int& reserve)
+{
+  visualization_msgs::Marker edges_marker;
+  edges_marker.header.frame_id = frame;
+  edges_marker.header.stamp = ros::Time::now();
+  edges_marker.id = 0;
+  edges_marker.ns = name;
+  edges_marker.action = visualization_msgs::Marker::ADD;
+  edges_marker.type = visualization_msgs::Marker::LINE_LIST;
+  edges_marker.pose.orientation.w = 1;
+  edges_marker.scale.x = 0.01;
+  edges_marker.color.r = 0.0;
+  edges_marker.color.g = 0.0;
+  edges_marker.color.b = 0.0;
+  edges_marker.color.a = 1;
+  edges_marker.lifetime = ros::Duration(0.0);
+  edges_marker.points.reserve(reserve);
+  return edges_marker;
+}
+
 }  // end namespace
 
 #endif //SLAM_TOOLBOX_VISUALIZATION_UTILS_H_
