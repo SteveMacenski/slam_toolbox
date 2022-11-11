@@ -99,6 +99,7 @@ void LoopClosureAssistant::processInteractiveFeedback(const
     tf2::Quaternion q2(0.,0.,0.,1.0);
       q2.setEuler(0., 0., 3.14159);
       quat *= q1;
+    }
       quat *= q2;
 
       // interactive move
@@ -243,7 +244,7 @@ void LoopClosureAssistant::processInteractiveFeedback(const
     visualization_msgs::Marker loc_edges_marker = getMarker("intra_loc_edges", localization_vertices.size() * 3);
     visualization_msgs::Marker inter_loc_edges_marker = getMarker("inter_loc_edges", localization_vertices.size() * 3);
 
-    geometry_msgs::Point prevSourcePoint, prevTargetPoint;
+    geometry_msgs::Point prevTargetPoint;
     for (const auto &edge : edges)
     {
       isInter = false;
@@ -257,7 +258,6 @@ void LoopClosureAssistant::processInteractiveFeedback(const
       geometry_msgs::Point sourcePoint;
       sourcePoint.x = pose0.GetX();
       sourcePoint.y = pose0.GetY();
-      // if (prevTargetPoint == sourcePoint)
 
       int target_id = edge->GetTarget()->GetObject()->GetUniqueId();
       const auto &pose1 = edge->GetTarget()->GetObject()->GetCorrectedPose();
@@ -271,10 +271,9 @@ void LoopClosureAssistant::processInteractiveFeedback(const
       }
       else
       {
-        color = getColor(1, 1, 0); // yello
+        color = getColor(1, 1, 0); //r,g,b
       }
 
-      prevSourcePoint = sourcePoint;
       prevTargetPoint = targetPoint;
 
       if (source_id >= first_localization_id || target_id >= first_localization_id)
