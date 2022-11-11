@@ -2056,6 +2056,7 @@ namespace karto
     {
       return m_pMapperSensorManager;
     }
+    
     /**
      * Gets the localization vertices
      * @return localization vertices
