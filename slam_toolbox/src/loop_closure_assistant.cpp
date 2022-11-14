@@ -188,7 +188,7 @@ void LoopClosureAssistant::publishGraph()
         }
 
         const auto &pose = vertex.second->GetObject()->GetCorrectedPose();
-        m.id = vertex.first;
+        m.id = vertex.first + 1;
         m.pose.position.x = pose.GetX();
         m.pose.position.y = pose.GetY();
 
