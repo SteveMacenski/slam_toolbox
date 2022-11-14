@@ -168,8 +168,8 @@ void LoopClosureAssistant::publishGraph()
     clear.action = visualization_msgs::Marker::DELETEALL;
     marray.markers.push_back(clear);
 
-    visualization_msgs::Marker slam_node = vis_utils::toMarker(map_frame_, "slam_nodes", 0.05);
-    visualization_msgs::Marker loc_node = vis_utils::toMarker(map_frame_, "loc_nodes", 0.05);
+    visualization_msgs::Marker slam_node = vis_utils::toMarker(map_frame_, "slam_nodes", 0.1);
+    visualization_msgs::Marker loc_node = vis_utils::toMarker(map_frame_, "loc_nodes", 0.1);
 
     // add map nodes
     for (const auto &sensor_name : vertices)
