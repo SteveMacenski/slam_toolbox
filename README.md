@@ -108,6 +108,10 @@ To minimize the amount of changes required for moving to this mode over AMCL, we
 
 In summary, this approach I dub `elastic pose-graph localization` is where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using the scan matcher, but not update the underlaying map long-term should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The lifelong mapping/continuous slam mode above will do better if you'd like to modify the underlying graph while moving. This method of localization might not be suitable for all applications, it does require quite a bit of tuning for your particular robot and needs high quality odometry. If in doubt, you're always welcome to use other 2D map localizers in the ecosystem like AMCL. For most beginners or users looking for a good out of the box experience, I'd recommend AMCL. 
 
+### Update Nov-2022
+However, SLAM Toolbox is much accurate for long-term localization in changing environments, as demostrated [here](https://github.com/MigVega/Ogm2Pgbm).
+If you have an almost "perfect" 2D occupancy grid map (OGM) (e.g. from a floor plan or a section of a TLS Point cloud) now you can also the [OGM2PGBM package]  (https://github.com/MigVega/Ogm2Pgbm) to convert it to a pose graph-based map and use it for long-term localization with SLAM_toolbox.
+
 ## Tools 
 
 ### Plugin based Optimizers
