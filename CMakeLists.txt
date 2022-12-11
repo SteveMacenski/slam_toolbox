@@ -69,7 +69,7 @@ set(libraries
     SlamToolboxPlugin
     ceres_solver_plugin
     async_slam_toolbox
-    # sync_slam_toolbox
+    sync_slam_toolbox
     # localization_slam_toolbox
     # lifelong_slam_toolbox
     # map_and_localization_slam_toolbox
@@ -155,10 +155,10 @@ target_link_libraries(async_slam_toolbox toolbox_common kartoSlamToolbox ${Boost
 add_executable(async_slam_toolbox_node src/slam_toolbox_async_node.cpp)
 target_link_libraries(async_slam_toolbox_node async_slam_toolbox)
 
-# add_library(sync_slam_toolbox src/slam_toolbox_sync.cpp)
-# target_link_libraries(sync_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
-# add_executable(sync_slam_toolbox_node src/slam_toolbox_sync_node.cpp)
-# target_link_libraries(sync_slam_toolbox_node sync_slam_toolbox)
+add_library(sync_slam_toolbox src/slam_toolbox_sync.cpp)
+target_link_libraries(sync_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
+add_executable(sync_slam_toolbox_node src/slam_toolbox_sync_node.cpp)
+target_link_libraries(sync_slam_toolbox_node sync_slam_toolbox)
 
 # add_library(localization_slam_toolbox src/slam_toolbox_localization.cpp)
 # target_link_libraries(localization_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
@@ -191,7 +191,7 @@ target_link_libraries(async_slam_toolbox_node async_slam_toolbox)
 
 #### Install
 install(TARGETS async_slam_toolbox_node
-                # sync_slam_toolbox_node
+                sync_slam_toolbox_node
                 # localization_slam_toolbox_node
                 # map_and_localization_slam_toolbox_node
                 # merge_maps_kinematic

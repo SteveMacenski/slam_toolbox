@@ -55,7 +55,6 @@ SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
   process_near_pose_ = nullptr;
   do_threads_clean_up_ = false;
   configure();
-  RCLCPP_INFO(get_logger(),"Configured");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -76,7 +75,6 @@ SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
       tf2::durationFromSec(transform_timeout_.seconds()));
   scan_filter_->registerCallback(
     std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1)); 
-  RCLCPP_INFO(get_logger(),"Activated");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -91,7 +89,6 @@ SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
   pose_pub_->on_deactivate();
   closure_assistant_->deactivate();
   scan_filter_.reset();
-  RCLCPP_INFO(get_logger(),"Deactivated");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -107,7 +104,6 @@ SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
     threads_[i].reset();
   }
   threads_.clear();
-  do_threads_clean_up_ = false;
 
   // delete in reverse order of initialization
   closure_assistant_.reset();
@@ -134,7 +130,6 @@ SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
   dataset_.reset();
   smapper_->getMapper()->Reset();
   smapper_.reset();
-  RCLCPP_INFO(get_logger(),"Cleaned up");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 

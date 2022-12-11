@@ -28,12 +28,6 @@ SynchronousSlamToolbox::SynchronousSlamToolbox(rclcpp::NodeOptions options)
 : SlamToolbox(options)
 /*****************************************************************************/
 {
-  ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>("slam_toolbox/clear_queue",
-      std::bind(&SynchronousSlamToolbox::clearQueueCallback, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-
-  threads_.push_back(std::make_unique<boost::thread>(
-      boost::bind(&SynchronousSlamToolbox::run, this)));
 }
 
 /*****************************************************************************/
@@ -41,7 +35,7 @@ void SynchronousSlamToolbox::run()
 /*****************************************************************************/
 {
   rclcpp::Rate r(100);
-  while (rclcpp::ok()) {
+  while (rclcpp::ok() && !do_threads_clean_up_) {
     if (!isPaused(PROCESSING)) {
       PosedScan scan_w_pose(nullptr, karto::Pose2()); // dummy, updated in critical section
       bool queue_empty = true;
@@ -67,6 +61,30 @@ void SynchronousSlamToolbox::run()
 
     r.sleep();
   }
+}
+
+/*****************************************************************************/
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+SynchronousSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
+/*****************************************************************************/
+{
+  SlamToolbox::on_configure(rclcpp_lifecycle::State());
+  ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>("slam_toolbox/clear_queue",
+      std::bind(&SynchronousSlamToolbox::clearQueueCallback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  threads_.push_back(std::make_unique<boost::thread>(
+      boost::bind(&SynchronousSlamToolbox::run, this)));
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+/*****************************************************************************/
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+SynchronousSlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
+/*****************************************************************************/
+{
+  SlamToolbox::on_cleanup(rclcpp_lifecycle::State()); // with run threads cleanup
+  ssClear_.reset();
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/

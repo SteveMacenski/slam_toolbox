@@ -33,7 +33,12 @@ public:
   explicit SynchronousSlamToolbox(rclcpp::NodeOptions options);
   ~SynchronousSlamToolbox() {}
   void run();
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_configure(const rclcpp_lifecycle::State &) override;
 
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_cleanup(const rclcpp_lifecycle::State &) override;
+ 
 protected:
   void laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override;
   bool clearQueueCallback(
