@@ -37,6 +37,7 @@ SlamToolbox::SlamToolbox()
 SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
 : rclcpp_lifecycle::LifecycleNode("slam_toolbox", "", options),
   solver_loader_("slam_toolbox", "karto::ScanSolver"),
+  processor_type_(PROCESS),
   transform_timeout_(rclcpp::Duration::from_seconds(0.5)),
   minimum_time_interval_(std::chrono::nanoseconds(0))
 /*****************************************************************************/
@@ -50,11 +51,11 @@ SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(),"Configuring");
-  processor_type_ = PROCESS;
   first_measurement_ = true;
   process_near_pose_ = nullptr;
   do_threads_clean_up_ = false;
   configure();
+  loadPoseGraphByParams();
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -182,8 +183,6 @@ void SlamToolbox::configure()
       this, transform_publish_period)));
   threads_.push_back(std::make_unique<boost::thread>(
       boost::bind(&SlamToolbox::publishVisualizations, this)));
-
-  loadPoseGraphByParams();
 }
 
 /*****************************************************************************/

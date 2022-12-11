@@ -32,7 +32,12 @@ public:
   explicit LocalizationSlamToolbox(rclcpp::NodeOptions options);
   virtual ~LocalizationSlamToolbox() {}
   virtual void loadPoseGraphByParams();
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_configure(const rclcpp_lifecycle::State &) override;
 
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_cleanup(const rclcpp_lifecycle::State &) override;
+ 
 protected:
   virtual void laserCallback(
     sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override;

@@ -31,6 +31,8 @@ class AsynchronousSlamToolbox : public SlamToolbox
 public:
   explicit AsynchronousSlamToolbox(rclcpp::NodeOptions options);
   ~AsynchronousSlamToolbox() {}
+  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+  on_configure(const rclcpp_lifecycle::State &) override;
 
 protected:
   void laserCallback(

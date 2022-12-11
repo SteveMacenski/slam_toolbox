@@ -68,6 +68,7 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 SynchronousSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
+  processor_type_ = PROCESS;
   SlamToolbox::on_configure(rclcpp_lifecycle::State());
   ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>("slam_toolbox/clear_queue",
       std::bind(&SynchronousSlamToolbox::clearQueueCallback, this,
