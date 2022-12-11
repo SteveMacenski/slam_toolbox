@@ -30,6 +30,7 @@
 #include "tf2/utils.h"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
+#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "interactive_markers/interactive_marker_server.hpp"
 #include "interactive_markers/menu_handler.hpp"
 
@@ -55,6 +56,9 @@ public:
     const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback);
   void publishGraph();
   void setMapper(karto::Mapper * mapper);
+  void activate();
+  void deactivate();
+  bool is_activated();
 
 private:
   bool manualLoopClosureCallback(
@@ -75,8 +79,8 @@ private:
 
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   laser_utils::ScanHolder * scan_holder_;
-  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
-  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
+  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_publisher_;
   rclcpp::Service<slam_toolbox::srv::Clear>::SharedPtr ssClear_manual_;
   rclcpp::Service<slam_toolbox::srv::LoopClosure>::SharedPtr ssLoopClosure_;
   rclcpp::Service<slam_toolbox::srv::ToggleInteractive>::SharedPtr ssInteractive_;

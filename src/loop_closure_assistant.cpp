@@ -35,10 +35,18 @@ LoopClosureAssistant::LoopClosureAssistant(
   processor_type_(processor_type)
 /*****************************************************************************/
 {
-  node_->declare_parameter("paused_processing", false);
+  if (!node_->has_parameter("paused_processing"))
+  {
+    node_->declare_parameter("paused_processing", false);
+  }
   node_->set_parameter(rclcpp::Parameter("paused_processing", false));
-  node_->declare_parameter("interactive_mode", false);
+
+  if (!node_->has_parameter("interactive_mode"))
+  {
+    node_->declare_parameter("interactive_mode", false);
+  }
   node_->set_parameter(rclcpp::Parameter("interactive_mode", false));
+
   node_->get_parameter("enable_interactive_mode", enable_interactive_mode_);
 
   tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(node_);
@@ -105,9 +113,6 @@ void LoopClosureAssistant::processInteractiveFeedback(const
   if (feedback->event_type ==
       visualization_msgs::msg::InteractiveMarkerFeedback::POSE_UPDATE)
   {
-    // get scan
-    sensor_msgs::msg::LaserScan scan = scan_holder_->getCorrectedScan(id);
-
     // get correct orientation
     tf2::Quaternion quat(0.,0.,0.,1.0), msg_quat(0.,0.,0.,1.0);
     double node_yaw, first_node_yaw;
@@ -139,9 +144,14 @@ void LoopClosureAssistant::processInteractiveFeedback(const
     msg.header.stamp = node_->now();
     tfB_->sendTransform(msg);
 
-    scan.header.frame_id = "scan_visualization";
-    scan.header.stamp = node_->now();
-    scan_publisher_->publish(scan);
+    if (scan_publisher_->is_activated())
+    {
+      // get scan and publish
+      sensor_msgs::msg::LaserScan scan = scan_holder_->getCorrectedScan(id);
+      scan.header.frame_id = "scan_visualization";
+      scan.header.stamp = node_->now();
+      scan_publisher_->publish(scan);
+    }
   }
 }
 
@@ -261,7 +271,33 @@ void LoopClosureAssistant::publishGraph()
 
   // if disabled, clears out old markers
   interactive_server_->applyChanges();
-  marker_publisher_->publish(marray);
+  if (marker_publisher_->is_activated())
+  {
+    marker_publisher_->publish(marray);
+  }
+}
+
+/*****************************************************************************/
+void LoopClosureAssistant::activate()
+/*****************************************************************************/
+{
+  marker_publisher_->on_activate();
+  scan_publisher_->on_activate();
+}
+
+/*****************************************************************************/
+void LoopClosureAssistant::deactivate()
+/*****************************************************************************/
+{
+  marker_publisher_->on_deactivate();
+  scan_publisher_->on_deactivate();
+}
+
+/*****************************************************************************/
+bool LoopClosureAssistant::is_activated()
+/*****************************************************************************/
+{
+  return marker_publisher_->is_activated() || scan_publisher_->is_activated();
 }
 
 /*****************************************************************************/

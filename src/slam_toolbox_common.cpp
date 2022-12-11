@@ -41,11 +41,11 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
   first_measurement_(true),
   process_near_pose_(nullptr),
   transform_timeout_(rclcpp::Duration::from_seconds(0.5)),
-  minimum_time_interval_(std::chrono::nanoseconds(0))
+  minimum_time_interval_(std::chrono::nanoseconds(0)),
+  do_threads_clean_up_(false)
 /*****************************************************************************/
 {
-  smapper_ = std::make_unique<mapper_utils::SMapper>();
-  dataset_ = std::make_unique<Dataset>();
+  setParams();
 }
 
 /*****************************************************************************/
@@ -53,6 +53,9 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
+  RCLCPP_INFO(get_logger(),"Configuring");
+  configure();
+  RCLCPP_INFO(get_logger(),"Configured");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -61,6 +64,19 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
+  RCLCPP_INFO(get_logger(),"Activating");
+  sst_->on_activate();
+  sstm_->on_activate();
+  pose_pub_->on_activate();
+  closure_assistant_->activate();
+  scan_filter_ =
+    std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
+      *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_,
+      get_node_logging_interface(), get_node_clock_interface(),
+      tf2::durationFromSec(transform_timeout_.seconds()));
+  scan_filter_->registerCallback(
+    std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1)); 
+  RCLCPP_INFO(get_logger(),"Activated");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -69,6 +85,13 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
+  RCLCPP_INFO(get_logger(),"Deactivating");
+  sst_->on_deactivate();
+  sstm_->on_deactivate();
+  pose_pub_->on_deactivate();
+  closure_assistant_->deactivate();
+  scan_filter_.reset();
+  RCLCPP_INFO(get_logger(),"Deactivated");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -77,12 +100,56 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
+  RCLCPP_INFO(get_logger(),"Cleaning up");
+  do_threads_clean_up_ = true;
+  for (int i = 0; i != threads_.size(); i++) {
+    threads_[i]->join();
+  }
+  do_threads_clean_up_ = false;
+
+  // delete in reverse order of initialization
+  closure_assistant_.reset();
+  map_saver_.reset();
+  scan_holder_.reset();
+  pose_helper_.reset();
+  laser_assistant_.reset();
+  solver_.reset();
+
+  scan_filter_sub_.reset();
+  ssDesserialize_.reset();
+  ssSerialize_.reset();
+  ssPauseMeasurements_.reset();
+  ssMap_.reset();
+  sstm_.reset();
+  sst_.reset();
+  pose_pub_.reset();
+
+  tfB_.reset();
+  tfL_.reset();
+  tf_.reset();
+
+  dataset_.reset();
+  smapper_.reset();
+  RCLCPP_INFO(get_logger(),"Cleaned up");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
+/*****************************************************************************/
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 SlamToolbox::on_shutdown(const rclcpp_lifecycle::State &state)
+/*****************************************************************************/
 {
+  RCLCPP_INFO(get_logger(),"Shutting down");
+
+  if (scan_filter_) // ptr to be released at the end of deactivate (see on_deactivate)
+  {
+    on_deactivate(rclcpp_lifecycle::State());
+  }
+  if (smapper_) // ptr to be released at the end of cleanup (see on_cleanup)
+  {
+    on_cleanup(rclcpp_lifecycle::State());
+  }
+  RCLCPP_INFO(get_logger(),"Shutdown");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -90,7 +157,10 @@ SlamToolbox::on_shutdown(const rclcpp_lifecycle::State &state)
 void SlamToolbox::configure()
 /*****************************************************************************/
 {
-  setParams();
+  smapper_ = std::make_unique<mapper_utils::SMapper>();
+  dataset_ = std::make_unique<Dataset>();
+
+  smapper_->configure(shared_from_this());
   setROSInterfaces();
   setSolver();
 
@@ -107,15 +177,14 @@ void SlamToolbox::configure()
     state_, processor_type_);
   reprocessing_transform_.setIdentity();
 
-  double transform_publish_period = 0.05;
-  transform_publish_period =
-    this->declare_parameter("transform_publish_period",
-      transform_publish_period);
+  double transform_publish_period = this->get_parameter("transform_publish_period").as_double();
   threads_.push_back(std::make_unique<boost::thread>(
       boost::bind(&SlamToolbox::publishTransformLoop,
       this, transform_publish_period)));
   threads_.push_back(std::make_unique<boost::thread>(
       boost::bind(&SlamToolbox::publishVisualizations, this)));
+
+  loadPoseGraphByParams();
 }
 
 /*****************************************************************************/
@@ -125,15 +194,29 @@ SlamToolbox::~SlamToolbox()
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->join();
   }
-
-  smapper_.reset();
-  dataset_.reset();
+  // delete in reverse order of declaration
   closure_assistant_.reset();
   map_saver_.reset();
+  scan_holder_.reset();
   pose_helper_.reset();
   laser_assistant_.reset();
-  scan_holder_.reset();
   solver_.reset();
+
+  scan_filter_sub_.reset();
+  ssDesserialize_.reset();
+  ssSerialize_.reset();
+  ssPauseMeasurements_.reset();
+  ssMap_.reset();
+  sstm_.reset();
+  sst_.reset();
+  pose_pub_.reset();
+
+  tfB_.reset();
+  tfL_.reset();
+  tf_.reset();
+
+  dataset_.reset();
+  smapper_.reset();
 }
 
 /*****************************************************************************/
@@ -141,9 +224,7 @@ void SlamToolbox::setSolver()
 /*****************************************************************************/
 {
   // Set solver to be used in loop closure
-  std::string solver_plugin = std::string("solver_plugins::CeresSolver");
-  solver_plugin = this->declare_parameter("solver_plugin", solver_plugin);
-
+  std::string solver_plugin = this->get_parameter("solver_plugin").as_string();
   try {
     solver_ = solver_loader_.createSharedInstance(solver_plugin);
     RCLCPP_INFO(get_logger(), "Using solver plugin %s",
@@ -219,17 +300,25 @@ void SlamToolbox::setParams()
         RCUTILS_LOG_SEVERITY_DEBUG);
   }
 
-  smapper_->configure(shared_from_this());
-  this->declare_parameter("paused_new_measurements",rclcpp::ParameterType::PARAMETER_BOOL);
-  this->set_parameter({"paused_new_measurements", false});
+  this->declare_parameter("paused_new_measurements",false);
+  this->set_parameter(rclcpp::Parameter("paused_new_measurements", false));
+  
+  this->declare_parameter("transform_publish_period",0.05);
+  this->declare_parameter("tf_buffer_duration", 30.0);
+
+  this->declare_parameter("solver_plugin", std::string("solver_plugins::CeresSolver"));
+  this->declare_parameter("map_file_name", std::string(""));
+  this->declare_parameter("map_update_interval", 10.0);
+
+  this->declare_parameter("map_start_pose", std::vector<double>());
+  this->declare_parameter("map_start_at_dock",false);
 }
 
 /*****************************************************************************/
 void SlamToolbox::setROSInterfaces()
 /*****************************************************************************/
 {
-  double tmp_val = 30.;
-  tmp_val = this->declare_parameter("tf_buffer_duration", tmp_val);
+  double tmp_val = this->get_parameter("tf_buffer_duration").as_double();
   tf_ = std::make_unique<tf2_ros::Buffer>(this->get_clock(),
       tf2::durationFromSec(tmp_val));
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -266,13 +355,6 @@ void SlamToolbox::setROSInterfaces()
   scan_filter_sub_ =
     std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan, rclcpp_lifecycle::LifecycleNode>>(
       shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
-  scan_filter_ =
-  std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-    *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_, 
-    get_node_logging_interface(), get_node_clock_interface(),
-    tf2::durationFromSec(transform_timeout_.seconds()));
-  scan_filter_->registerCallback(
-    std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
 }
 
 /*****************************************************************************/
@@ -285,7 +367,7 @@ void SlamToolbox::publishTransformLoop(
   }
 
   rclcpp::Rate r(1.0 / transform_publish_period);
-  while (rclcpp::ok()) {
+  while (rclcpp::ok() && !do_threads_clean_up_) {
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       rclcpp::Time scan_timestamp = scan_header.stamp;
@@ -318,12 +400,10 @@ void SlamToolbox::publishVisualizations()
   og.info.origin.orientation.w = 1.0;
   og.header.frame_id = map_frame_;
 
-  double map_update_interval = 10;
-  map_update_interval = this->declare_parameter("map_update_interval",
-      map_update_interval);
+  double map_update_interval = this->get_parameter("map_update_interval").as_double();
   rclcpp::Rate r(1.0 / map_update_interval);
 
-  while (rclcpp::ok()) {
+  while (rclcpp::ok() && !do_threads_clean_up_) {
     updateMap();
     if (!isPaused(VISUALIZING_GRAPH)) {
       boost::mutex::scoped_lock lock(smapper_mutex_);
@@ -366,9 +446,10 @@ bool SlamToolbox::shouldStartWithPoseGraph(
 /*****************************************************************************/
 {
   // if given a map to load at run time, do it.
-  this->declare_parameter("map_file_name", std::string(""));
-  auto map_start_pose = this->declare_parameter("map_start_pose",rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY);
-  auto map_start_at_dock = this->declare_parameter("map_start_at_dock",rclcpp::ParameterType::PARAMETER_BOOL);
+  // PARAMETER_DOUBLE_ARRAY
+  auto map_start_pose = this->get_parameter("map_start_pose").get_parameter_value();
+  // PARAMETER_BOOL
+  auto map_start_at_dock = this->get_parameter("map_start_at_dock").get_parameter_value();
   filename = this->get_parameter("map_file_name").as_string();
   if (!filename.empty()) {
     std::vector<double> read_pose;
@@ -439,10 +520,16 @@ bool SlamToolbox::updateMap()
 
   // publish map as current
   map_.map.header.stamp = scan_header.stamp;
-  sst_->publish(
-    std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
-  sstm_->publish(
-    std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
+  if (sst_->is_activated())
+  {
+    sst_->publish(
+        std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
+  }
+  if (sstm_->is_activated())
+  {
+    sstm_->publish(
+        std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
+  }
 
   delete occ_grid;
   occ_grid = nullptr;
@@ -661,22 +748,25 @@ void SlamToolbox::publishPose(
   const rclcpp::Time & t)
 /*****************************************************************************/
 {
-  geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
-  pose_msg.header.stamp = t;
-  pose_msg.header.frame_id = map_frame_;
+  if (pose_pub_->is_activated())
+  {
+    geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
+    pose_msg.header.stamp = t;
+    pose_msg.header.frame_id = map_frame_;
 
-  tf2::Quaternion q(0., 0., 0., 1.0);
-  q.setRPY(0., 0., pose.GetHeading());
-  tf2::Transform transform(q, tf2::Vector3(pose.GetX(), pose.GetY(), 0.0));
-  tf2::toMsg(transform, pose_msg.pose.pose);
+    tf2::Quaternion q(0., 0., 0., 1.0);
+    q.setRPY(0., 0., pose.GetHeading());
+    tf2::Transform transform(q, tf2::Vector3(pose.GetX(), pose.GetY(), 0.0));
+    tf2::toMsg(transform, pose_msg.pose.pose);
 
-  pose_msg.pose.covariance[0] = cov(0, 0) * position_covariance_scale_;  // x
-  pose_msg.pose.covariance[1] = cov(0, 1) * position_covariance_scale_;  // xy
-  pose_msg.pose.covariance[6] = cov(1, 0) * position_covariance_scale_;  // xy
-  pose_msg.pose.covariance[7] = cov(1, 1) * position_covariance_scale_;  // y
-  pose_msg.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;      // yaw
+    pose_msg.pose.covariance[0] = cov(0, 0) * position_covariance_scale_; // x
+    pose_msg.pose.covariance[1] = cov(0, 1) * position_covariance_scale_; // xy
+    pose_msg.pose.covariance[6] = cov(1, 0) * position_covariance_scale_; // xy
+    pose_msg.pose.covariance[7] = cov(1, 1) * position_covariance_scale_; // y
+    pose_msg.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;     // yaw
 
-  pose_pub_->publish(pose_msg);
+    pose_pub_->publish(pose_msg);
+  }
 }
 
 /*****************************************************************************/

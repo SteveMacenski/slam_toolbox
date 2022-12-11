@@ -29,17 +29,42 @@ void CeresSolver::Configure(rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 
   std::string solver_type, preconditioner_type, dogleg_type,
     trust_strategy, loss_fn, mode;
-  solver_type = node->declare_parameter("ceres_linear_solver",
-      std::string("SPARSE_NORMAL_CHOLESKY"));
-  preconditioner_type = node->declare_parameter("ceres_preconditioner",
-      std::string("JACOBI"));
-  dogleg_type = node->declare_parameter("ceres_dogleg_type",
-      std::string("TRADITIONAL_DOGLEG"));
-  trust_strategy = node->declare_parameter("ceres_trust_strategy",
-      std::string("LM"));
-  loss_fn = node->declare_parameter("ceres_loss_function",
-      std::string("None"));
-  mode = node->declare_parameter("mode", std::string("mapping"));
+  if (!node->has_parameter("ceres_linear_solver"))
+  {
+    node->declare_parameter("ceres_linear_solver", std::string("SPARSE_NORMAL_CHOLESKY"));
+  }
+  solver_type = node->get_parameter("ceres_linear_solver").as_string();
+
+  if (!node->has_parameter("ceres_preconditioner"))
+  {
+    node->declare_parameter("ceres_preconditioner", std::string("JACOBI"));
+  }
+  preconditioner_type = node->get_parameter("ceres_preconditioner").as_string();
+
+  if (!node->has_parameter("ceres_dogleg_type"))
+  {
+    node->declare_parameter("ceres_dogleg_type", std::string("TRADITIONAL_DOGLEG"));
+  }
+  dogleg_type = node->get_parameter("ceres_dogleg_type").as_string();
+
+  if (!node->has_parameter("ceres_trust_strategy"))
+  {
+    node->declare_parameter("ceres_trust_strategy", std::string("LM"));
+  }
+  trust_strategy = node->get_parameter("ceres_trust_strategy").as_string();
+
+  if (!node->has_parameter("ceres_loss_function"))
+  {
+    node->declare_parameter("ceres_loss_function", std::string("None"));
+  }
+  loss_fn = node->get_parameter("ceres_loss_function").as_string();
+
+  if (!node->has_parameter("mode"))
+  {
+    node->declare_parameter("mode", std::string("mapping"));
+  }
+  mode = node->get_parameter("mode").as_string();
+
   debug_logging_ = node->get_parameter("debug_logging").as_bool();
 
   corrections_.clear();

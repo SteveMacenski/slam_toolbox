@@ -29,6 +29,7 @@
 #include <memory>
 #include <fstream>
 
+#include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
@@ -149,9 +150,9 @@ protected:
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan, rclcpp_lifecycle::LifecycleNode>> scan_filter_sub_;
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> scan_filter_;
-  std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>> sst_;
-  std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>> sstm_;
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>> sst_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::MapMetaData>> sstm_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub_;
   std::shared_ptr<rclcpp::Service<nav_msgs::srv::GetMap>> ssMap_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::Pause>> ssPauseMeasurements_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::SerializePoseGraph>> ssSerialize_;
@@ -189,6 +190,7 @@ protected:
   ProcessType processor_type_;
   std::unique_ptr<karto::Pose2> process_near_pose_;
   tf2::Transform reprocessing_transform_;
+  bool do_threads_clean_up_;
 
   // pluginlib
   pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;
