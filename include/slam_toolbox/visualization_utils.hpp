@@ -32,7 +32,7 @@ inline visualization_msgs::msg::Marker toMarker(
   const std::string & frame,
   const std::string & ns,
   const double & scale,
-  rclcpp::Node::SharedPtr node)
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 {
   visualization_msgs::msg::Marker marker;
 
@@ -58,7 +58,7 @@ inline visualization_msgs::msg::Marker toMarker(
 inline visualization_msgs::msg::InteractiveMarker toInteractiveMarker(
   visualization_msgs::msg::Marker & marker,
   const double & scale,
-  rclcpp::Node::SharedPtr node)
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 {
   // marker basics
   visualization_msgs::msg::InteractiveMarker int_marker;

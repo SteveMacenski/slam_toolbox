@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
 #include "tf2/utils.h"
 
@@ -76,7 +77,7 @@ class LaserAssistant
 {
 public:
   LaserAssistant(
-    rclcpp::Node::SharedPtr node, tf2_ros::Buffer * tf,
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node, tf2_ros::Buffer * tf,
     const std::string & base_frame);
   ~LaserAssistant();
   LaserMetadata toLaserMetadata(sensor_msgs::msg::LaserScan scan);
@@ -85,7 +86,7 @@ private:
   karto::LaserRangeFinder * makeLaser(const double & mountingYaw);
   bool isInverted(double & mountingYaw);
 
-  rclcpp::Node::SharedPtr node_;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   tf2_ros::Buffer * tf_;
   sensor_msgs::msg::LaserScan scan_;
   std::string frame_, base_frame_;

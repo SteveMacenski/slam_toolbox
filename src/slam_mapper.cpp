@@ -93,7 +93,7 @@ karto::Pose2 SMapper::toKartoPose(const tf2::Transform & pose) const
 }
 
 /*****************************************************************************/
-void SMapper::configure(const rclcpp::Node::SharedPtr & node)
+void SMapper::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node)
 /*****************************************************************************/
 {
   bool use_scan_matching = true;

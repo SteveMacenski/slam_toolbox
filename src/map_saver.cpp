@@ -24,7 +24,7 @@ namespace map_saver
 {
 
 /*****************************************************************************/
-MapSaver::MapSaver(rclcpp::Node::SharedPtr node, const std::string & map_name)
+MapSaver::MapSaver(rclcpp_lifecycle::LifecycleNode::SharedPtr node, const std::string & map_name)
 : node_(node), map_name_(map_name), received_map_(false)
 /*****************************************************************************/
 {

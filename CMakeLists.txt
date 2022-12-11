@@ -25,6 +25,8 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
@@ -52,6 +54,8 @@ set(dependencies
   std_msgs
   std_srvs
   builtin_interfaces
+  rclcpp_lifecycle
+  lifecycle_msgs
   rviz_common
   rviz_default_plugins
   rviz_ogre_vendor
@@ -65,10 +69,10 @@ set(libraries
     SlamToolboxPlugin
     ceres_solver_plugin
     async_slam_toolbox
-    sync_slam_toolbox
-    localization_slam_toolbox
-    lifelong_slam_toolbox
-    map_and_localization_slam_toolbox
+    # sync_slam_toolbox
+    # localization_slam_toolbox
+    # lifelong_slam_toolbox
+    # map_and_localization_slam_toolbox
 )
 
 find_package(PkgConfig REQUIRED)
@@ -151,29 +155,29 @@ target_link_libraries(async_slam_toolbox toolbox_common kartoSlamToolbox ${Boost
 add_executable(async_slam_toolbox_node src/slam_toolbox_async_node.cpp)
 target_link_libraries(async_slam_toolbox_node async_slam_toolbox)
 
-add_library(sync_slam_toolbox src/slam_toolbox_sync.cpp)
-target_link_libraries(sync_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
-add_executable(sync_slam_toolbox_node src/slam_toolbox_sync_node.cpp)
-target_link_libraries(sync_slam_toolbox_node sync_slam_toolbox)
+# add_library(sync_slam_toolbox src/slam_toolbox_sync.cpp)
+# target_link_libraries(sync_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
+# add_executable(sync_slam_toolbox_node src/slam_toolbox_sync_node.cpp)
+# target_link_libraries(sync_slam_toolbox_node sync_slam_toolbox)
 
-add_library(localization_slam_toolbox src/slam_toolbox_localization.cpp)
-target_link_libraries(localization_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
-add_executable(localization_slam_toolbox_node src/slam_toolbox_localization_node.cpp)
-target_link_libraries(localization_slam_toolbox_node localization_slam_toolbox)
+# add_library(localization_slam_toolbox src/slam_toolbox_localization.cpp)
+# target_link_libraries(localization_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
+# add_executable(localization_slam_toolbox_node src/slam_toolbox_localization_node.cpp)
+# target_link_libraries(localization_slam_toolbox_node localization_slam_toolbox)
 
-add_library(lifelong_slam_toolbox src/experimental/slam_toolbox_lifelong.cpp)
-target_link_libraries(lifelong_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
-add_executable(lifelong_slam_toolbox_node src/experimental/slam_toolbox_lifelong_node.cpp)
-target_link_libraries(lifelong_slam_toolbox_node lifelong_slam_toolbox)
+# add_library(lifelong_slam_toolbox src/experimental/slam_toolbox_lifelong.cpp)
+# target_link_libraries(lifelong_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
+# add_executable(lifelong_slam_toolbox_node src/experimental/slam_toolbox_lifelong_node.cpp)
+# target_link_libraries(lifelong_slam_toolbox_node lifelong_slam_toolbox)
 
-add_library(map_and_localization_slam_toolbox src/experimental/slam_toolbox_map_and_localization.cpp)
-target_link_libraries(map_and_localization_slam_toolbox localization_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
-add_executable(map_and_localization_slam_toolbox_node src/experimental/slam_toolbox_map_and_localization_node.cpp)
-target_link_libraries(map_and_localization_slam_toolbox_node map_and_localization_slam_toolbox)
+# add_library(map_and_localization_slam_toolbox src/experimental/slam_toolbox_map_and_localization.cpp)
+# target_link_libraries(map_and_localization_slam_toolbox localization_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
+# add_executable(map_and_localization_slam_toolbox_node src/experimental/slam_toolbox_map_and_localization_node.cpp)
+# target_link_libraries(map_and_localization_slam_toolbox_node map_and_localization_slam_toolbox)
 
 #### Merging maps tool
-add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
-target_link_libraries(merge_maps_kinematic kartoSlamToolbox toolbox_common)
+# add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
+# target_link_libraries(merge_maps_kinematic kartoSlamToolbox toolbox_common)
 
 #### testing
 #if(BUILD_TESTING)
@@ -187,10 +191,10 @@ target_link_libraries(merge_maps_kinematic kartoSlamToolbox toolbox_common)
 
 #### Install
 install(TARGETS async_slam_toolbox_node
-                sync_slam_toolbox_node
-                localization_slam_toolbox_node
-                map_and_localization_slam_toolbox_node
-                merge_maps_kinematic
+                # sync_slam_toolbox_node
+                # localization_slam_toolbox_node
+                # map_and_localization_slam_toolbox_node
+                # merge_maps_kinematic
                 ${libraries}
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

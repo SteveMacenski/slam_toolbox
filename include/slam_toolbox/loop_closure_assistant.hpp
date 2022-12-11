@@ -29,6 +29,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "interactive_markers/interactive_marker_server.hpp"
 #include "interactive_markers/menu_handler.hpp"
 
@@ -45,7 +46,7 @@ class LoopClosureAssistant
 {
 public:
   LoopClosureAssistant(
-    rclcpp::Node::SharedPtr node, karto::Mapper * mapper,
+    rclcpp_lifecycle::LifecycleNode::SharedPtr node, karto::Mapper * mapper,
     laser_utils::ScanHolder * scan_holder, PausedState & state,
     ProcessType & processor_type);
 
@@ -86,7 +87,7 @@ private:
   std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
   boost::mutex interactive_mutex_;
   bool interactive_mode_, enable_interactive_mode_;
-  rclcpp::Node::SharedPtr node_;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::string map_frame_;
   PausedState & state_;
   ProcessType & processor_type_;
