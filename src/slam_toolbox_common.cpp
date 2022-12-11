@@ -37,12 +37,8 @@ SlamToolbox::SlamToolbox()
 SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
 : rclcpp_lifecycle::LifecycleNode("slam_toolbox", "", options),
   solver_loader_("slam_toolbox", "karto::ScanSolver"),
-  processor_type_(PROCESS),
-  first_measurement_(true),
-  process_near_pose_(nullptr),
   transform_timeout_(rclcpp::Duration::from_seconds(0.5)),
-  minimum_time_interval_(std::chrono::nanoseconds(0)),
-  do_threads_clean_up_(false)
+  minimum_time_interval_(std::chrono::nanoseconds(0))
 /*****************************************************************************/
 {
   setParams();
@@ -54,6 +50,10 @@ SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(),"Configuring");
+  processor_type_ = PROCESS;
+  first_measurement_ = true;
+  process_near_pose_ = nullptr;
+  do_threads_clean_up_ = false;
   configure();
   RCLCPP_INFO(get_logger(),"Configured");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -104,7 +104,9 @@ SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
   do_threads_clean_up_ = true;
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->join();
+    threads_[i].reset();
   }
+  threads_.clear();
   do_threads_clean_up_ = false;
 
   // delete in reverse order of initialization
@@ -128,7 +130,9 @@ SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
   tfL_.reset();
   tf_.reset();
 
+  lasers_.clear();
   dataset_.reset();
+  smapper_->getMapper()->Reset();
   smapper_.reset();
   RCLCPP_INFO(get_logger(),"Cleaned up");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
@@ -193,7 +197,9 @@ SlamToolbox::~SlamToolbox()
 {
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->join();
+    threads_[i].reset();
   }
+  threads_.clear();
   // delete in reverse order of declaration
   closure_assistant_.reset();
   map_saver_.reset();
