@@ -52,11 +52,12 @@ inline bool write(
   }
 }
 
+template<class NodeT>
 inline bool read(
   const std::string & filename,
   karto::Mapper & mapper,
   karto::Dataset & dataset,
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+  NodeT node)
 {
   if (!fileExists(filename + std::string(".posegraph"))) {
     RCLCPP_ERROR(node->get_logger(),
