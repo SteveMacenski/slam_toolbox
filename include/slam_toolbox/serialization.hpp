@@ -35,11 +35,12 @@ inline bool fileExists(const std::string & name)
   return stat(name.c_str(), &buffer) == 0;
 }
 
+template<class NodeT>
 inline bool write(
   const std::string & filename,
   karto::Mapper & mapper,
   karto::Dataset & dataset,
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node)
+  NodeT node)
 {
   try {
     mapper.SaveToFile(filename + std::string(".posegraph"));
