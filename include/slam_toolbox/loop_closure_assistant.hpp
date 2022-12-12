@@ -56,18 +56,18 @@ public:
     const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback);
   void publishGraph();
   void setMapper(karto::Mapper * mapper);
-  void activate();
-  void deactivate();
+  void on_activate();
+  void on_deactivate();
   bool is_activated();
 
 private:
   bool manualLoopClosureCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<slam_toolbox::srv::LoopClosure::Request> req, 
+    const std::shared_ptr<slam_toolbox::srv::LoopClosure::Request> req,
     std::shared_ptr<slam_toolbox::srv::LoopClosure::Response> resp);
   bool clearChangesCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<slam_toolbox::srv::Clear::Request> req, 
+    const std::shared_ptr<slam_toolbox::srv::Clear::Request> req,
     std::shared_ptr<slam_toolbox::srv::Clear::Response> resp);
   bool interactiveModeCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,

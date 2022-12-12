@@ -17,7 +17,6 @@
 #include "solvers/ceres_utils.h"
 
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
 
@@ -39,7 +38,9 @@ public:
   virtual void Compute();  // Solve
   virtual void Clear();  // Resets the corrections
   virtual void Reset();  // Resets the solver plugin clean
-  virtual void Configure(rclcpp_lifecycle::LifecycleNode::SharedPtr node);
+  virtual void Configure(
+    rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface,
+    rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface);
 
   // Adds a node to the solver
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan> * pVertex);
@@ -76,7 +77,7 @@ private:
   boost::mutex nodes_mutex_;
 
   // ros
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  std::shared_ptr<rclcpp::Logger> logger_ptr_;
 };
 
 }  // namespace solver_plugins

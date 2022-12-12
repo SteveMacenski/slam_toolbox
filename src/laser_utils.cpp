@@ -68,11 +68,12 @@ void LaserMetadata::invertScan(sensor_msgs::msg::LaserScan & scan) const
   scan.intensities = temp.intensities;
 }
 
-
 LaserAssistant::LaserAssistant(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
-  tf2_ros::Buffer * tf, const std::string & base_frame)
-: node_(node), tf_(tf), base_frame_(base_frame)
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface,
+  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface,
+  tf2_ros::Buffer * tf,
+  const std::string & base_frame)
+: logger_(logging_interface->get_logger()),parameters_interface_(parameters_interface), tf_(tf), base_frame_(base_frame)
 {
 }
 
@@ -120,20 +121,20 @@ karto::LaserRangeFinder * LaserAssistant::makeLaser(const double & mountingYaw)
   laser->SetIs360Laser(is_360_lidar);
 
   double max_laser_range = 25;
-  if (!node_->has_parameter("max_laser_range")) {
-    node_->declare_parameter("max_laser_range", max_laser_range);
+  if (!parameters_interface_->has_parameter("max_laser_range")) {
+    parameters_interface_->declare_parameter("max_laser_range",rclcpp::ParameterValue(max_laser_range));
   }
-  node_->get_parameter("max_laser_range", max_laser_range);
+  max_laser_range = parameters_interface_->get_parameter("max_laser_range").as_double();
 
   if (max_laser_range <= 0) {
-    RCLCPP_WARN(node_->get_logger(),
+    RCLCPP_WARN(logger_,
       "You've set maximum_laser_range to be negative,"
       "this isn't allowed so it will be set to (%.1f).", scan_.range_max);
     max_laser_range = scan_.range_max;
   }
 
   if (max_laser_range > scan_.range_max) {
-    RCLCPP_WARN(node_->get_logger(),
+    RCLCPP_WARN(logger_,
       "maximum laser range setting (%.1f m) exceeds the capabilities "
       "of the used Lidar (%.1f m)", max_laser_range, scan_.range_max);
     max_laser_range = scan_.range_max;
@@ -152,7 +153,7 @@ bool LaserAssistant::isInverted(double & mountingYaw)
   laser_pose_ = tf_->transform(laser_ident, base_frame_);
   mountingYaw = tf2::getYaw(laser_pose_.transform.rotation);
 
-  RCLCPP_DEBUG(node_->get_logger(), "laser %s's pose wrt base: %.3f %.3f %.3f %.3f",
+  RCLCPP_DEBUG(logger_, "laser %s's pose wrt base: %.3f %.3f %.3f %.3f",
     frame_.c_str(), laser_pose_.transform.translation.x,
     laser_pose_.transform.translation.y,
     laser_pose_.transform.translation.z, mountingYaw);
@@ -165,7 +166,7 @@ bool LaserAssistant::isInverted(double & mountingYaw)
   laser_orient = tf_->transform(laser_orient, frame_);
 
   if (laser_orient.vector.z <= 0) {
-    RCLCPP_DEBUG(node_->get_logger(), "laser is mounted upside-down");
+    RCLCPP_DEBUG(logger_, "laser is mounted upside-down");
     return true;
   }
 

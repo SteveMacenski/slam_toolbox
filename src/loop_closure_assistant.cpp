@@ -53,13 +53,13 @@ LoopClosureAssistant::LoopClosureAssistant(
   solver_ = mapper_->getScanSolver();
 
   ssClear_manual_ = node_->create_service<slam_toolbox::srv::Clear>(
-    "slam_toolbox/clear_changes", std::bind(&LoopClosureAssistant::clearChangesCallback, 
+    "slam_toolbox/clear_changes", std::bind(&LoopClosureAssistant::clearChangesCallback,
     this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  
+
   ssLoopClosure_ = node_->create_service<slam_toolbox::srv::LoopClosure>(
     "slam_toolbox/manual_loop_closure", std::bind(&LoopClosureAssistant::manualLoopClosureCallback,
     this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  
+
   scan_publisher_ = node_->create_publisher<sensor_msgs::msg::LaserScan>(
     "slam_toolbox/scan_visualization",10);
   interactive_server_ = std::make_unique<interactive_markers::InteractiveMarkerServer>(
@@ -93,7 +93,7 @@ void LoopClosureAssistant::processInteractiveFeedback(const
 {
   if (processor_type_ != PROCESS)
   {
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 5, 
+    RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 5,
       "Interactive mode is invalid outside processing mode.");
     return;
   }
@@ -278,7 +278,7 @@ void LoopClosureAssistant::publishGraph()
 }
 
 /*****************************************************************************/
-void LoopClosureAssistant::activate()
+void LoopClosureAssistant::on_activate()
 /*****************************************************************************/
 {
   marker_publisher_->on_activate();
@@ -286,7 +286,7 @@ void LoopClosureAssistant::activate()
 }
 
 /*****************************************************************************/
-void LoopClosureAssistant::deactivate()
+void LoopClosureAssistant::on_deactivate()
 /*****************************************************************************/
 {
   marker_publisher_->on_deactivate();
@@ -303,7 +303,7 @@ bool LoopClosureAssistant::is_activated()
 /*****************************************************************************/
 bool LoopClosureAssistant::manualLoopClosureCallback(
   const std::shared_ptr<rmw_request_id_t> request_header,
-  const std::shared_ptr<slam_toolbox::srv::LoopClosure::Request> req, 
+  const std::shared_ptr<slam_toolbox::srv::LoopClosure::Request> req,
   std::shared_ptr<slam_toolbox::srv::LoopClosure::Response> resp)
 /*****************************************************************************/
 {
@@ -396,7 +396,7 @@ void LoopClosureAssistant::moveNode(
 /*****************************************************************************/
 bool LoopClosureAssistant::clearChangesCallback(
   const std::shared_ptr<rmw_request_id_t> request_header,
-  const std::shared_ptr<slam_toolbox::srv::Clear::Request> req, 
+  const std::shared_ptr<slam_toolbox::srv::Clear::Request> req,
   std::shared_ptr<slam_toolbox::srv::Clear::Response> resp)
 /*****************************************************************************/
 {

@@ -33,7 +33,6 @@
 
 #include "Eigen/Core"
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "Karto.h"  // NOLINT
 #include "nanoflann_adaptors.h"  // NOLINT
 
@@ -980,7 +979,15 @@ public:
    */
   virtual void Compute() = 0;
 
-  virtual void Configure(rclcpp_lifecycle::LifecycleNode::SharedPtr node) = 0;
+  virtual void Configure(
+    rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface,
+    rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface) = 0;
+
+  template<class NodeT>
+  void Configure(NodeT node)
+  {
+    Configure(node->get_node_logging_interface(),node->get_node_parameters_interface());
+  }
 
   /**
    * Get corrected poses after optimization

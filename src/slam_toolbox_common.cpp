@@ -68,14 +68,14 @@ SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
   sst_->on_activate();
   sstm_->on_activate();
   pose_pub_->on_activate();
-  closure_assistant_->activate();
+  closure_assistant_->on_activate();
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
       *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_,
       get_node_logging_interface(), get_node_clock_interface(),
       tf2::durationFromSec(transform_timeout_.seconds()));
   scan_filter_->registerCallback(
-    std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1)); 
+    std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -88,7 +88,7 @@ SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
   sst_->on_deactivate();
   sstm_->on_deactivate();
   pose_pub_->on_deactivate();
-  closure_assistant_->deactivate();
+  closure_assistant_->on_deactivate();
   scan_filter_.reset();
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
@@ -302,7 +302,7 @@ void SlamToolbox::setParams()
 
   this->declare_parameter("paused_new_measurements",false);
   this->set_parameter(rclcpp::Parameter("paused_new_measurements", false));
-  
+
   this->declare_parameter("transform_publish_period",0.05);
   this->declare_parameter("tf_buffer_duration", 30.0);
 
