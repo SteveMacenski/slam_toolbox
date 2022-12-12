@@ -38,6 +38,9 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
 : rclcpp_lifecycle::LifecycleNode("slam_toolbox", "", options),
   solver_loader_("slam_toolbox", "karto::ScanSolver"),
   processor_type_(PROCESS),
+  first_measurement_(true),
+  process_near_pose_(nullptr),
+  do_threads_clean_up_(false),
   transform_timeout_(rclcpp::Duration::from_seconds(0.5)),
   minimum_time_interval_(std::chrono::nanoseconds(0))
 /*****************************************************************************/
