@@ -22,7 +22,6 @@
 #include <memory>
 #include "geometry_msgs/msg/quaternion.hpp"
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 #include "slam_toolbox/toolbox_types.hpp"
@@ -47,7 +46,13 @@ public:
   // convert TF pose to karto pose
   karto::Pose2 toKartoPose(const tf2::Transform & pose) const;
 
-  void configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr & node);
+  template <class NodeT>
+  void configure(NodeT && node)
+  {
+    configure(node->get_node_logging_interface(), node->get_node_parameters_interface());
+  }
+  void configure(rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface,
+                 rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface);
   void Reset();
 
   // // processors
