@@ -21,6 +21,7 @@
 
 #include <string>
 
+#include "rclcpp/rclcpp.hpp"
 #include "visualization_msgs/msg/marker.hpp"
 #include "visualization_msgs/msg/interactive_marker.hpp"
 #include "visualization_msgs/msg/interactive_marker_feedback.hpp"
@@ -28,17 +29,16 @@
 namespace vis_utils
 {
 
-template<class NodeT>
 inline visualization_msgs::msg::Marker toMarker(
   const std::string & frame,
   const std::string & ns,
   const double & scale,
-  NodeT node)
+  rclcpp::Clock::SharedPtr clock)
 {
   visualization_msgs::msg::Marker marker;
 
   marker.header.frame_id = frame;
-  marker.header.stamp = node->now();
+  marker.header.stamp = clock->now();
   marker.ns = ns;
   marker.type = visualization_msgs::msg::Marker::SPHERE;
   marker.pose.position.z = 0.0;
@@ -55,17 +55,25 @@ inline visualization_msgs::msg::Marker toMarker(
 
   return marker;
 }
-
 template<class NodeT>
+inline visualization_msgs::msg::Marker toMarker(
+  const std::string & frame,
+  const std::string & ns,
+  const double & scale,
+  NodeT && node)
+{
+  return toMarker(frame, ns, scale, node->get_clock());
+}
+
 inline visualization_msgs::msg::InteractiveMarker toInteractiveMarker(
   visualization_msgs::msg::Marker & marker,
   const double & scale,
-  NodeT node)
+  rclcpp::Clock::SharedPtr clock)
 {
   // marker basics
   visualization_msgs::msg::InteractiveMarker int_marker;
   int_marker.header.frame_id = marker.header.frame_id;
-  int_marker.header.stamp = node->now();
+  int_marker.header.stamp = clock->now();
   int_marker.name = std::to_string(marker.id);
   int_marker.pose.orientation.w = 1.;
   int_marker.pose.position.x = marker.pose.position.x;
@@ -100,6 +108,14 @@ inline visualization_msgs::msg::InteractiveMarker toInteractiveMarker(
   int_marker.controls.push_back(control_rot);
 
   return int_marker;
+}
+template<class NodeT>
+inline visualization_msgs::msg::InteractiveMarker toInteractiveMarker(
+  visualization_msgs::msg::Marker & marker,
+  const double & scale,
+  NodeT && node)
+{
+  return toInteractiveMarker(marker, scale, clock);
 }
 
 inline void toNavMap(

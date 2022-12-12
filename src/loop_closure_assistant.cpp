@@ -26,57 +26,71 @@ namespace loop_closure_assistant
 
 /*****************************************************************************/
 LoopClosureAssistant::LoopClosureAssistant(
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node,
-  karto::Mapper * mapper,
-  laser_utils::ScanHolder * scan_holder,
-  PausedState & state, ProcessType & processor_type)
-: mapper_(mapper), scan_holder_(scan_holder),
-  interactive_mode_(false), node_(node), state_(state),
-  processor_type_(processor_type)
+  rclcpp::node_interfaces::NodeBaseInterface::SharedPtr base_interface,
+  rclcpp::node_interfaces::NodeClockInterface::SharedPtr clock_interface,
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface,
+  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface,
+  rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr topics_interface,
+  rclcpp::node_interfaces::NodeServicesInterface::SharedPtr services_interface,
+  karto::Mapper *mapper,
+  laser_utils::ScanHolder *scan_holder, PausedState &state,
+  ProcessType &processor_type)
+: clock_(clock_interface->get_clock()), logger_(logging_interface->get_logger()),
+  parameters_interface_(parameters_interface),
+  mapper_(mapper), scan_holder_(scan_holder),
+  interactive_mode_(false), state_(state),
+  processor_type_(processor_type), is_activated_(false)
 /*****************************************************************************/
 {
-  if (!node_->has_parameter("paused_processing"))
+  if (!parameters_interface_->has_parameter("paused_processing"))
   {
-    node_->declare_parameter("paused_processing", false);
+    parameters_interface_->declare_parameter("paused_processing", rclcpp::ParameterValue(false));
   }
-  node_->set_parameter(rclcpp::Parameter("paused_processing", false));
+  parameters_interface_->set_parameters({rclcpp::Parameter("paused_processing", false)});
 
-  if (!node_->has_parameter("interactive_mode"))
+  if (!parameters_interface_->has_parameter("interactive_mode"))
   {
-    node_->declare_parameter("interactive_mode", false);
+    parameters_interface_->declare_parameter("interactive_mode", rclcpp::ParameterValue(false));
   }
-  node_->set_parameter(rclcpp::Parameter("interactive_mode", false));
+  parameters_interface_->set_parameters({rclcpp::Parameter("interactive_mode", false)});
 
-  node_->get_parameter("enable_interactive_mode", enable_interactive_mode_);
+  enable_interactive_mode_ = parameters_interface_->get_parameter("enable_interactive_mode").as_bool();
 
-  tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(node_);
   solver_ = mapper_->getScanSolver();
 
-  ssClear_manual_ = node_->create_service<slam_toolbox::srv::Clear>(
+  ssClear_manual_= rclcpp::create_service<slam_toolbox::srv::Clear>(
+    base_interface, services_interface,
     "slam_toolbox/clear_changes", std::bind(&LoopClosureAssistant::clearChangesCallback,
-    this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+    rmw_qos_profile_services_default, nullptr);
 
-  ssLoopClosure_ = node_->create_service<slam_toolbox::srv::LoopClosure>(
+  ssLoopClosure_ = rclcpp::create_service<slam_toolbox::srv::LoopClosure>(
+    base_interface, services_interface,
     "slam_toolbox/manual_loop_closure", std::bind(&LoopClosureAssistant::manualLoopClosureCallback,
-    this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+    rmw_qos_profile_services_default, nullptr);
 
-  scan_publisher_ = node_->create_publisher<sensor_msgs::msg::LaserScan>(
-    "slam_toolbox/scan_visualization",10);
+  scan_publisher_ = rclcpp::create_publisher<sensor_msgs::msg::LaserScan>(
+    parameters_interface, topics_interface,
+    "slam_toolbox/scan_visualization", 10);
   interactive_server_ = std::make_unique<interactive_markers::InteractiveMarkerServer>(
     "slam_toolbox",
-    node_->get_node_base_interface(),
-    node_->get_node_clock_interface(),
-    node_->get_node_logging_interface(),
-    node_->get_node_topics_interface(),
-    node_->get_node_services_interface());
-  ssInteractive_ = node_->create_service<slam_toolbox::srv::ToggleInteractive>(
+    base_interface,
+    clock_interface,
+    logging_interface,
+    topics_interface,
+    services_interface);
+  ssInteractive_ = rclcpp::create_service<slam_toolbox::srv::ToggleInteractive>(
+    base_interface, services_interface,
     "slam_toolbox/toggle_interactive_mode", std::bind(&LoopClosureAssistant::interactiveModeCallback,
-    this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3),
+    rmw_qos_profile_services_default, nullptr);
 
 
-  marker_publisher_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
+  marker_publisher_ = rclcpp::create_publisher<visualization_msgs::msg::MarkerArray>(
+    parameters_interface, topics_interface,
     "slam_toolbox/graph_visualization", rclcpp::QoS(1));
-  map_frame_ = node->get_parameter("map_frame").as_string();
+  map_frame_ = parameters_interface_->get_parameter("map_frame").as_string();
 }
 
 /*****************************************************************************/
@@ -93,7 +107,7 @@ void LoopClosureAssistant::processInteractiveFeedback(const
 {
   if (processor_type_ != PROCESS)
   {
-    RCLCPP_ERROR_THROTTLE(node_->get_logger(), *node_->get_clock(), 5,
+    RCLCPP_ERROR_THROTTLE(logger_, *clock_, 5,
       "Interactive mode is invalid outside processing mode.");
     return;
   }
@@ -141,15 +155,15 @@ void LoopClosureAssistant::processInteractiveFeedback(const
     tf2::convert(transform, msg.transform);
     msg.child_frame_id = "scan_visualization";
     msg.header.frame_id = feedback->header.frame_id;
-    msg.header.stamp = node_->now();
+    msg.header.stamp = clock_->now();
     tfB_->sendTransform(msg);
 
-    if (scan_publisher_->is_activated())
+    if (is_activated_)
     {
       // get scan and publish
       sensor_msgs::msg::LaserScan scan = scan_holder_->getCorrectedScan(id);
       scan.header.frame_id = "scan_visualization";
-      scan.header.stamp = node_->now();
+      scan.header.stamp = clock_->now();
       scan_publisher_->publish(scan);
     }
   }
@@ -166,7 +180,7 @@ void LoopClosureAssistant::publishGraph()
     return;
   }
 
-  RCLCPP_DEBUG(node_->get_logger(), "Graph size: %zu", graph->size());
+  RCLCPP_DEBUG(logger_, "Graph size: %zu", graph->size());
   bool interactive_mode = false;
   {
     boost::mutex::scoped_lock lock(interactive_mutex_);
@@ -186,11 +200,11 @@ void LoopClosureAssistant::publishGraph()
 
   // clear existing markers to account for any removed nodes
   visualization_msgs::msg::Marker clear;
-  clear.header.stamp = node_->now();
+  clear.header.stamp = clock_->now();
   clear.action = visualization_msgs::msg::Marker::DELETEALL;
   marray.markers.push_back(clear);
 
-  visualization_msgs::msg::Marker m = vis_utils::toMarker(map_frame_, "slam_toolbox", 0.1, node_);
+  visualization_msgs::msg::Marker m = vis_utils::toMarker(map_frame_, "slam_toolbox", 0.1, clock_);
 
   // add map nodes
   for (const auto & sensor_name : vertices) {
@@ -203,7 +217,7 @@ void LoopClosureAssistant::publishGraph()
 
       if (interactive_mode && enable_interactive_mode_) {
         visualization_msgs::msg::InteractiveMarker int_marker =
-          vis_utils::toInteractiveMarker(m, 0.3, node_);
+          vis_utils::toInteractiveMarker(m, 0.3, clock_);
         interactive_server_->insert(int_marker,
           std::bind(
           &LoopClosureAssistant::processInteractiveFeedback,
@@ -217,7 +231,7 @@ void LoopClosureAssistant::publishGraph()
   // add line markers for graph edges
   visualization_msgs::msg::Marker edges_marker;
   edges_marker.header.frame_id = map_frame_;
-  edges_marker.header.stamp = node_->now();
+  edges_marker.header.stamp = clock_->now();
   edges_marker.id = 0;
   edges_marker.ns = "slam_toolbox_edges";
   edges_marker.action = visualization_msgs::msg::Marker::ADD;
@@ -231,7 +245,7 @@ void LoopClosureAssistant::publishGraph()
 
   visualization_msgs::msg::Marker localization_edges_marker;
   localization_edges_marker.header.frame_id = map_frame_;
-  localization_edges_marker.header.stamp = node_->now();
+  localization_edges_marker.header.stamp = clock_->now();
   localization_edges_marker.id = 1;
   localization_edges_marker.ns = "slam_toolbox_edges";
   localization_edges_marker.action = visualization_msgs::msg::Marker::ADD;
@@ -271,7 +285,7 @@ void LoopClosureAssistant::publishGraph()
 
   // if disabled, clears out old markers
   interactive_server_->applyChanges();
-  if (marker_publisher_->is_activated())
+  if (is_activated_)
   {
     marker_publisher_->publish(marray);
   }
@@ -281,23 +295,21 @@ void LoopClosureAssistant::publishGraph()
 void LoopClosureAssistant::on_activate()
 /*****************************************************************************/
 {
-  marker_publisher_->on_activate();
-  scan_publisher_->on_activate();
+  is_activated_ = true;
 }
 
 /*****************************************************************************/
 void LoopClosureAssistant::on_deactivate()
 /*****************************************************************************/
 {
-  marker_publisher_->on_deactivate();
-  scan_publisher_->on_deactivate();
+  is_activated_ = false;
 }
 
 /*****************************************************************************/
 bool LoopClosureAssistant::is_activated()
 /*****************************************************************************/
 {
-  return marker_publisher_->is_activated() || scan_publisher_->is_activated();
+  return is_activated_;
 }
 
 /*****************************************************************************/
@@ -310,7 +322,7 @@ bool LoopClosureAssistant::manualLoopClosureCallback(
   if(!enable_interactive_mode_)
   {
     RCLCPP_WARN(
-      node_->get_logger(), "Called manual loop closure"
+      logger_, "Called manual loop closure"
       " with interactive mode disabled. Ignoring.");
     return false;
   }
@@ -321,13 +333,13 @@ bool LoopClosureAssistant::manualLoopClosureCallback(
     if (moved_nodes_.size() == 0)
     {
       RCLCPP_WARN(
-        node_->get_logger(),
+        logger_,
         "No moved nodes to attempt manual loop closure.");
       return true;
     }
 
     RCLCPP_INFO(
-      node_->get_logger(),
+      logger_,
       "LoopClosureAssistant: Attempting to manual "
       "loop close with %i moved nodes.", (int)moved_nodes_.size());
     // for each in node map
@@ -359,7 +371,7 @@ bool LoopClosureAssistant::interactiveModeCallback(
   if(!enable_interactive_mode_)
   {
     RCLCPP_WARN(
-      node_->get_logger(),
+      logger_,
       "Called toggle interactive mode with interactive mode disabled. Ignoring.");
     return false;
   }
@@ -369,10 +381,11 @@ bool LoopClosureAssistant::interactiveModeCallback(
     boost::mutex::scoped_lock lock_i(interactive_mutex_);
     interactive_mode_ = !interactive_mode_;
     interactive_mode = interactive_mode_;
-    node_->set_parameter(rclcpp::Parameter("interactive_mode", interactive_mode_));
+    parameters_interface_->set_parameters({rclcpp::Parameter("interactive_mode",
+                                                             interactive_mode_)});
   }
 
-  RCLCPP_INFO(node_->get_logger(),
+  RCLCPP_INFO(logger_,
      "SlamToolbox: Toggling %s interactive mode.",
       interactive_mode ? "on" : "off");
   publishGraph();
@@ -381,7 +394,8 @@ bool LoopClosureAssistant::interactiveModeCallback(
   // set state so we don't overwrite changes in rviz while loop closing
   state_.set(PROCESSING, interactive_mode);
   state_.set(VISUALIZING_GRAPH, interactive_mode);
-  node_->set_parameter(rclcpp::Parameter("paused_processing", interactive_mode));
+  parameters_interface_->set_parameters({rclcpp::Parameter("paused_processing",
+                                                           interactive_mode)});
   return true;
 }
 
@@ -403,13 +417,13 @@ bool LoopClosureAssistant::clearChangesCallback(
   if(!enable_interactive_mode_)
   {
     RCLCPP_WARN(
-      node_->get_logger(),
+      logger_,
       "Called Clear changes with interactive mode disabled. Ignoring.");
     return false;
   }
 
   RCLCPP_INFO(
-    node_->get_logger(),
+    logger_,
     "LoopClosureAssistant: Clearing manual loop closure nodes.");
   publishGraph();
   clearMovedNodes();
@@ -429,7 +443,7 @@ void LoopClosureAssistant::addMovedNodes(const int & id, Eigen::Vector3d vec)
 /*****************************************************************************/
 {
   RCLCPP_INFO(
-    node_->get_logger(),
+    logger_,
     "LoopClosureAssistant: Node %i new manual loop closure "
     "pose has been recorded.",id);
   boost::mutex::scoped_lock lock(moved_nodes_mutex_);

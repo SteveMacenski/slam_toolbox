@@ -29,8 +29,6 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 #include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "interactive_markers/interactive_marker_server.hpp"
 #include "interactive_markers/menu_handler.hpp"
 
@@ -47,9 +45,32 @@ class LoopClosureAssistant
 {
 public:
   LoopClosureAssistant(
-    rclcpp_lifecycle::LifecycleNode::SharedPtr node, karto::Mapper * mapper,
-    laser_utils::ScanHolder * scan_holder, PausedState & state,
-    ProcessType & processor_type);
+    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr base_interface,
+    rclcpp::node_interfaces::NodeClockInterface::SharedPtr clock_interface,
+    rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface,
+    rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface,
+    rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr topics_interface,
+    rclcpp::node_interfaces::NodeServicesInterface::SharedPtr services_interface,
+    karto::Mapper *mapper,
+    laser_utils::ScanHolder *scan_holder, PausedState &state,
+    ProcessType &processor_type);
+  template <class NodeT>
+  LoopClosureAssistant(
+    NodeT && node,
+    karto::Mapper *mapper,
+    laser_utils::ScanHolder *scan_holder, PausedState &state,
+    ProcessType &processor_type)
+    : LoopClosureAssistant(node->get_node_base_interface(),
+                           node->get_node_clock_interface(),
+                           node->get_node_logging_interface(),
+                           node->get_node_parameters_interface(),
+                           node->get_node_topics_interface(),
+                           node->get_node_services_interface(),
+                           mapper, scan_holder, state, processor_type)
+  {
+    // Constructor of TransformBroadcaster with node_interfaces is not yet in humble
+    tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(node);
+  }
 
   void clearMovedNodes();
   void processInteractiveFeedback(
@@ -79,8 +100,8 @@ private:
 
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   laser_utils::ScanHolder * scan_holder_;
-  rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
-  rclcpp_lifecycle::LifecyclePublisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_publisher_;
+  rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_publisher_;
   rclcpp::Service<slam_toolbox::srv::Clear>::SharedPtr ssClear_manual_;
   rclcpp::Service<slam_toolbox::srv::LoopClosure>::SharedPtr ssLoopClosure_;
   rclcpp::Service<slam_toolbox::srv::ToggleInteractive>::SharedPtr ssInteractive_;
@@ -91,10 +112,14 @@ private:
   std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
   boost::mutex interactive_mutex_;
   bool interactive_mode_, enable_interactive_mode_;
-  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
   std::string map_frame_;
   PausedState & state_;
   ProcessType & processor_type_;
+
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Logger logger_;
+  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface_;
+  bool is_activated_;
 };
 
 }   // namespace loop_closure_assistant

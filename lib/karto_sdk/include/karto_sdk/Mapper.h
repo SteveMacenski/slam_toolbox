@@ -984,7 +984,7 @@ public:
     rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface) = 0;
 
   template<class NodeT>
-  void Configure(NodeT node)
+  void Configure(NodeT && node)
   {
     Configure(node->get_node_logging_interface(),node->get_node_parameters_interface());
   }

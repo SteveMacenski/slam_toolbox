@@ -77,7 +77,7 @@ class LaserAssistant
 public:
   template <class NodeT>
   LaserAssistant(
-    NodeT node, tf2_ros::Buffer *tf,
+    NodeT && node, tf2_ros::Buffer *tf,
     const std::string &base_frame)
     : LaserAssistant(node->get_node_logging_interface(), node->get_node_parameters_interface(), tf, base_frame) {}
   LaserAssistant(
