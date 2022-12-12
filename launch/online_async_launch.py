@@ -28,8 +28,8 @@ def generate_launch_description():
 
     start_async_slam_toolbox_node = LifecycleNode(
         parameters=[
-            slam_params_file,
-            {'use_sim_time': use_sim_time}
+          slam_params_file,
+          {'use_sim_time': use_sim_time}
         ],
         package='slam_toolbox',
         executable='async_slam_toolbox_node',
@@ -37,11 +37,11 @@ def generate_launch_description():
         output='screen',
         namespace='/'
     )
-    
+
     configure_event = EmitEvent(
         event=ChangeState(
-            lifecycle_node_matcher=matches_action(start_async_slam_toolbox_node),
-            transition_id=Transition.TRANSITION_CONFIGURE
+          lifecycle_node_matcher=matches_action(start_async_slam_toolbox_node),
+          transition_id=Transition.TRANSITION_CONFIGURE
         )
     )
 

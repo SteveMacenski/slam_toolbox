@@ -28,8 +28,8 @@ def generate_launch_description():
 
     start_sync_slam_toolbox_node = LifecycleNode(
         parameters=[
-            slam_params_file,
-            {'use_sim_time': use_sim_time}
+          slam_params_file,
+          {'use_sim_time': use_sim_time}
         ],
         package='slam_toolbox',
         executable='sync_slam_toolbox_node',
@@ -67,5 +67,5 @@ def generate_launch_description():
     ld.add_action(start_sync_slam_toolbox_node)
     ld.add_action(configure_event)
     ld.add_action(activate_event)
-    
+
     return ld

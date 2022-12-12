@@ -13,11 +13,11 @@ def generate_launch_description():
           parameters=[
             get_package_share_directory("slam_toolbox") + '/config/mapper_params_offline.yaml'
           ],
-        package='slam_toolbox',
-        executable='sync_slam_toolbox_node',
-        name='slam_toolbox',
-        output='screen',
-        namespace='/'
+          package='slam_toolbox',
+          executable='sync_slam_toolbox_node',
+          name='slam_toolbox',
+          output='screen',
+          namespace='/'
     )
 
     configure_event = EmitEvent(
