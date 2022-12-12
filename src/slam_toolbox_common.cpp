@@ -139,17 +139,17 @@ rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 SlamToolbox::on_shutdown(const rclcpp_lifecycle::State &state)
 /*****************************************************************************/
 {
-  RCLCPP_INFO(get_logger(),"Shutting down");
-
-  if (scan_filter_) // ptr to be released at the end of deactivate (see on_deactivate)
+  RCLCPP_INFO(get_logger(), "Shutting down");
+  if (state.id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
   {
     on_deactivate(rclcpp_lifecycle::State());
+    on_cleanup(rclcpp_lifecycle::State());
   }
-  if (smapper_) // ptr to be released at the end of cleanup (see on_cleanup)
+  else if (state.id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     on_cleanup(rclcpp_lifecycle::State());
   }
-  RCLCPP_INFO(get_logger(),"Shutdown");
+  RCLCPP_INFO(get_logger(), "Shutdown");
   return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
@@ -194,7 +194,7 @@ SlamToolbox::~SlamToolbox()
     threads_[i].reset();
   }
   threads_.clear();
-  // delete in reverse order of declaration
+  // delete in reverse order of initialization
   closure_assistant_.reset();
   map_saver_.reset();
   scan_holder_.reset();
