@@ -39,8 +39,6 @@ int main(int argc, char ** argv)
 
   rclcpp::NodeOptions options;
   auto node = std::make_shared<slam_toolbox::MapAndLocalizationSlamToolbox>(options);
-  node->configure();
-  node->loadPoseGraphByParams();
   rclcpp::spin(node->get_node_base_interface());
   rclcpp::shutdown();
   return 0;

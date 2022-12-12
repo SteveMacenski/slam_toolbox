@@ -26,13 +26,6 @@ MapAndLocalizationSlamToolbox::MapAndLocalizationSlamToolbox(rclcpp::NodeOptions
 : LocalizationSlamToolbox(options)
 /*****************************************************************************/
 {
-  // disable interactive mode
-  enable_interactive_mode_ = false;
-
-  ssSetLocalizationMode_ = create_service<std_srvs::srv::SetBool>(
-    "slam_toolbox/set_localization_mode",
-    std::bind(&MapAndLocalizationSlamToolbox::setLocalizationModeCallback, this,
-    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 }
 
 /*****************************************************************************/
@@ -42,6 +35,34 @@ void MapAndLocalizationSlamToolbox::configure()
   SlamToolbox::configure();
   toggleMode(false);
 }
+
+/*****************************************************************************/
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+MapAndLocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
+/*****************************************************************************/
+{
+  processor_type_ = PROCESS;
+  SlamToolbox::on_configure(rclcpp_lifecycle::State());
+  // disable interactive mode
+  enable_interactive_mode_ = false;
+
+  ssSetLocalizationMode_ = create_service<std_srvs::srv::SetBool>(
+    "slam_toolbox/set_localization_mode",
+    std::bind(&MapAndLocalizationSlamToolbox::setLocalizationModeCallback, this,
+    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+/*****************************************************************************/
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+MapAndLocalizationSlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
+/*****************************************************************************/
+{
+  SlamToolbox::on_cleanup(rclcpp_lifecycle::State());
+  ssSetLocalizationMode_.reset();
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
 
 /*****************************************************************************/
 bool MapAndLocalizationSlamToolbox::setLocalizationModeCallback(

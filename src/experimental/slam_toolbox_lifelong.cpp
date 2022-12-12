@@ -61,6 +61,29 @@ LifelongSlamToolbox::LifelongSlamToolbox(rclcpp::NodeOptions options)
   candidates_scale_ = this->declare_parameter("lifelong_candidates_scale",
       candidates_scale_);
 
+  RCLCPP_WARN(get_logger(), "Lifelong mapping mode in SLAM Toolbox is considered "
+    "experimental and should be understood before proceeding. Please visit: "
+    "https://github.com/SteveMacenski/slam_toolbox/wiki/"
+    "Experimental-Lifelong-Mapping-Node for more information.");
+}
+
+/*****************************************************************************/
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+LifelongSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
+/*****************************************************************************/
+{
+  processor_type_ = PROCESS;
+  SlamToolbox::on_configure(rclcpp_lifecycle::State());
+
+  use_tree_ = this->get_parameter("lifelong_search_use_tree").as_bool();
+  iou_thresh_ = this->get_parameter("lifelong_minimum_score").as_double();
+  iou_match_ = this->get_parameter("lifelong_iou_match").as_double();
+  removal_score_ = this->get_parameter("lifelong_node_removal_score").as_double();
+  overlap_scale_ = this->get_parameter("lifelong_overlap_score_scale").as_double();
+  constraint_scale_ = this->get_parameter("lifelong_constraint_multiplier").as_double();
+  nearby_penalty_ = this->get_parameter("lifelong_nearby_penalty").as_double();
+  candidates_scale_ = this->get_parameter("lifelong_candidates_scale").as_double();
+
   checkIsNotNormalized(iou_thresh_);
   checkIsNotNormalized(constraint_scale_);
   checkIsNotNormalized(removal_score_);
@@ -69,13 +92,18 @@ LifelongSlamToolbox::LifelongSlamToolbox(rclcpp::NodeOptions options)
   checkIsNotNormalized(nearby_penalty_);
   checkIsNotNormalized(candidates_scale_);
 
-  RCLCPP_WARN(get_logger(), "Lifelong mapping mode in SLAM Toolbox is considered "
-    "experimental and should be understood before proceeding. Please visit: "
-    "https://github.com/SteveMacenski/slam_toolbox/wiki/"
-    "Experimental-Lifelong-Mapping-Node for more information.");
-
   // in lifelong mode, we cannot have interactive mode enabled
   enable_interactive_mode_ = false;
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+}
+
+/*****************************************************************************/
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+LifelongSlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
+/*****************************************************************************/
+{
+  SlamToolbox::on_cleanup(rclcpp_lifecycle::State());
+  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
