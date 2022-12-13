@@ -107,7 +107,7 @@ void LoopClosureAssistant::processInteractiveFeedback(const
 {
   if (processor_type_ != PROCESS)
   {
-    RCLCPP_ERROR_THROTTLE(logger_, *clock_, 5,
+    RCLCPP_ERROR_THROTTLE(logger_, *clock_, 5000,
       "Interactive mode is invalid outside processing mode.");
     return;
   }
@@ -156,7 +156,16 @@ void LoopClosureAssistant::processInteractiveFeedback(const
     msg.child_frame_id = "scan_visualization";
     msg.header.frame_id = feedback->header.frame_id;
     msg.header.stamp = clock_->now();
-    tfB_->sendTransform(msg);
+    if (tfB_)
+    {
+      tfB_->sendTransform(msg);
+    }
+    else
+    {
+      RCLCPP_WARN_THROTTLE(logger_, *clock_, 5000,
+                           "TransformBroadcaster is not initialized. "
+                           "Cannot publish TF for scan_visualization");
+    }
 
     if (is_activated_)
     {

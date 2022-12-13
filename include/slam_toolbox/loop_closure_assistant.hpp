@@ -68,6 +68,7 @@ public:
                            node->get_node_services_interface(),
                            mapper, scan_holder, state, processor_type)
   {
+    // TODO: use node_interfaces
     // Constructor of TransformBroadcaster with node_interfaces is not yet in humble
     tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(node);
   }

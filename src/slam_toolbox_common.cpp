@@ -192,6 +192,8 @@ void SlamToolbox::configure()
 SlamToolbox::~SlamToolbox()
 /*****************************************************************************/
 {
+  scan_filter_.reset();
+
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->join();
     threads_[i].reset();
