@@ -40,6 +40,7 @@ protected:
 
   std::queue<PosedScan> q_;
   ros::ServiceServer ssClear_;
+  boost::mutex q_mutex_;
 };
 
 }

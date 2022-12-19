@@ -43,20 +43,30 @@ void SynchronousSlamToolbox::run()
   ros::Rate r(100);
   while(ros::ok())
   {
-    if (!q_.empty() && !isPaused(PROCESSING))
+    if (!isPaused(PROCESSING))
     {
-      PosedScan scan_w_pose = q_.front();
-      q_.pop();
-
-      if (q_.size() > 10)
+      PosedScan scan_w_pose(nullptr, karto::Pose2()); // dummy, updated in critical section
+      bool queue_empty = true;
       {
-        ROS_WARN_THROTTLE(10., "Queue size has grown to: %i. "
-          "Recommend stopping until message is gone if online mapping.",
-          (int)q_.size());
-      }
+        boost::mutex::scoped_lock lock(q_mutex_);
+        queue_empty = q_.empty();
+        if(!queue_empty)
+        {
+          scan_w_pose = q_.front();
+          q_.pop();
 
-      addScan(getLaser(scan_w_pose.scan), scan_w_pose);
-      continue;
+          if (q_.size() > 10)
+          {
+            ROS_WARN_THROTTLE(10., "Queue size has grown to: %i. "
+              "Recommend stopping until message is gone if online mapping.",
+              (int)q_.size());
+          }
+        }
+      }
+      if(!queue_empty){
+        addScan(getLaser(scan_w_pose.scan), scan_w_pose);
+        continue;
+      }
     }
 
     r.sleep();
@@ -88,6 +98,7 @@ void SynchronousSlamToolbox::laserCallback(
   // if sync and valid, add to queue
   if (shouldProcessScan(scan, pose))
   {
+    boost::mutex::scoped_lock lock(q_mutex_);
     q_.push(PosedScan(scan, pose));
   }
 
