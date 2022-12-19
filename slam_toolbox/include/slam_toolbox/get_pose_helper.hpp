@@ -37,9 +37,7 @@ public:
   {
   };
 
-  bool getOdomPose(karto::Pose2& karto_pose,
-    const ros::Time& t,
-    std::string ref_frame = std::string(""))
+  bool getOdomPose(karto::Pose2& karto_pose, const ros::Time& t, std::string ref_frame)
   {
     // Only succeed if ref_frame matches base_frame_; otherwise using wrong pose helper
     if(ref_frame != base_frame_)
