@@ -46,6 +46,12 @@ This package has been benchmarked mapping building at 5x+ realtime up to about 3
 The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/) in Oakland, California. Thanks to [Silicon Valley Robotics](https://svrobo.org/) & Circuit Launch for being a testbed for some of this work.
 
 ![map_image](/images/circuit_launch.gif?raw=true "Map Image")
+An overview of how the map was generated is presented below:
+![slam_toolbox_sync_diagram](/images/slam_toolbox_sync.png)
+1. ROS Node: SLAM toolbox is run in synchronous mode, which generates a ROS node. This node subscribes to laser scan and odometry topics, and publishes map to odom transform and a map
+2. Get odometry and LIDAR data: A callback for the laser topic will generate a pose (using odometry) and a laser scan tied at that node. These PosedScan objects form a queue, which are processed by the algorithm
+3. Process Data: The queue of PosedScan objects are used to compute robot pose, publish transforms, do laser scan matching, build a pose graph, find loop closures, and perform optimizations
+4. Mapping: Laser scans associated with each pose in the pose graph are used to construct and publish a map
 
 # Support and Contribution
 
