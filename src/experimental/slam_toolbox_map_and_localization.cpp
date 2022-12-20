@@ -50,7 +50,7 @@ MapAndLocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
     "slam_toolbox/set_localization_mode",
     std::bind(&MapAndLocalizationSlamToolbox::setLocalizationModeCallback, this,
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
@@ -60,7 +60,7 @@ MapAndLocalizationSlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
 {
   SlamToolbox::on_cleanup(rclcpp_lifecycle::State());
   ssSetLocalizationMode_.reset();
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
