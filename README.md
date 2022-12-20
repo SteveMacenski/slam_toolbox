@@ -47,6 +47,13 @@ The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/
 
 ![map_image](/images/circuit_launch.gif?raw=true "Map Image")
 
+An overview of how the map was generated is presented below:
+![slam_toolbox_sync_diagram](/images/slam_toolbox_sync.png)
+1. ROS Node: SLAM toolbox is run in synchronous mode, which generates a ROS node. This node subscribes to laser scan and odometry topics, and publishes map to odom transform and a map.
+2. Get odometry and LIDAR data: A callback for the laser topic will generate a pose (using odometry) and a laser scan tied at that node. These PosedScan objects form a queue, which are processed by the algorithm.
+3. Process Data: The queue of PosedScan objects are used to construct a pose graph; odometry is refined using laser scan matching. This pose graph is used to compute robot pose, and find loop closures. If a loop closure is found, the pose graph is optimized, and pose estimates are updated. Pose estimates are used to compute and publish a map to odom transform for the robot.
+4. Mapping: Laser scans associated with each pose in the pose graph are used to construct and publish a map.
+
 # Support and Contribution
 
 If you have any questions on use or configuration, please post your questions on [ROS Answers](answers.ros.org) and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
