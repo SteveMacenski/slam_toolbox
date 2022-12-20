@@ -49,59 +49,55 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
 }
 
 /*****************************************************************************/
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
+CallbackReturn SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
-  RCLCPP_INFO(get_logger(),"Configuring");
+  RCLCPP_INFO(get_logger(), "Configuring");
   first_measurement_ = true;
   process_near_pose_ = nullptr;
   do_threads_clean_up_ = false;
   configure();
   loadPoseGraphByParams();
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
+CallbackReturn SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
-  RCLCPP_INFO(get_logger(),"Activating");
+  RCLCPP_INFO(get_logger(), "Activating");
   sst_->on_activate();
   sstm_->on_activate();
   pose_pub_->on_activate();
   closure_assistant_->on_activate();
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-      *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_,
-      get_node_logging_interface(), get_node_clock_interface(),
-      tf2::durationFromSec(transform_timeout_.seconds()));
+    *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_,
+    get_node_logging_interface(), get_node_clock_interface(),
+    tf2::durationFromSec(transform_timeout_.seconds()));
   scan_filter_->registerCallback(
     std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
+CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
-  RCLCPP_INFO(get_logger(),"Deactivating");
+  RCLCPP_INFO(get_logger(), "Deactivating");
   sst_->on_deactivate();
   sstm_->on_deactivate();
   pose_pub_->on_deactivate();
   closure_assistant_->on_deactivate();
   scan_filter_.reset();
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
+CallbackReturn SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
-  RCLCPP_INFO(get_logger(),"Cleaning up");
+  RCLCPP_INFO(get_logger(), "Cleaning up");
   do_threads_clean_up_ = true;
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->join();
@@ -134,26 +130,23 @@ SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
   dataset_.reset();
   smapper_->getMapper()->Reset();
   smapper_.reset();
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-SlamToolbox::on_shutdown(const rclcpp_lifecycle::State &state)
+CallbackReturn
+SlamToolbox::on_shutdown(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
-  if (state.id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-  {
+  if (state.id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
     on_deactivate(rclcpp_lifecycle::State());
     on_cleanup(rclcpp_lifecycle::State());
-  }
-  else if (state.id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
-  {
+  } else if (state.id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE) {
     on_cleanup(rclcpp_lifecycle::State());
   }
   RCLCPP_INFO(get_logger(), "Shutdown");
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
@@ -305,10 +298,10 @@ void SlamToolbox::setParams()
         RCUTILS_LOG_SEVERITY_DEBUG);
   }
 
-  this->declare_parameter("paused_new_measurements",false);
+  this->declare_parameter("paused_new_measurements", false);
   this->set_parameter(rclcpp::Parameter("paused_new_measurements", false));
 
-  this->declare_parameter("transform_publish_period",0.05);
+  this->declare_parameter("transform_publish_period", 0.05);
   this->declare_parameter("tf_buffer_duration", 30.0);
 
   this->declare_parameter("solver_plugin", std::string("solver_plugins::CeresSolver"));
@@ -316,7 +309,7 @@ void SlamToolbox::setParams()
   this->declare_parameter("map_update_interval", 10.0);
 
   this->declare_parameter("map_start_pose", std::vector<double>());
-  this->declare_parameter("map_start_at_dock",false);
+  this->declare_parameter("map_start_at_dock", false);
 }
 
 /*****************************************************************************/
@@ -358,8 +351,9 @@ void SlamToolbox::setROSInterfaces()
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   scan_filter_sub_ =
-    std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan, rclcpp_lifecycle::LifecycleNode>>(
-      shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
+    std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
+      rclcpp_lifecycle::LifecycleNode>>(
+    shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
 }
 
 /*****************************************************************************/
@@ -525,15 +519,13 @@ bool SlamToolbox::updateMap()
 
   // publish map as current
   map_.map.header.stamp = scan_header.stamp;
-  if (sst_->is_activated())
-  {
+  if (sst_->is_activated()) {
     sst_->publish(
-        std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
+      std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
   }
-  if (sstm_->is_activated())
-  {
+  if (sstm_->is_activated()) {
     sstm_->publish(
-        std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
+      std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
   }
 
   delete occ_grid;
@@ -753,8 +745,7 @@ void SlamToolbox::publishPose(
   const rclcpp::Time & t)
 /*****************************************************************************/
 {
-  if (pose_pub_->is_activated())
-  {
+  if (pose_pub_->is_activated()) {
     geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
     pose_msg.header.stamp = t;
     pose_msg.header.frame_id = map_frame_;

@@ -23,6 +23,7 @@
 #include <memory>
 #include <chrono>
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
 
 namespace map_saver
@@ -32,19 +33,8 @@ namespace map_saver
 class MapSaver
 {
 public:
-  MapSaver(
-    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr base_interface,
-    rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface,
-    rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr topics_interface,
-    rclcpp::node_interfaces::NodeServicesInterface::SharedPtr services_interface,
-    const std::string & map_name);
-  template <class NodeT>
-  MapSaver(NodeT && node, const std::string &map_name)
-    : MapSaver(node->get_node_base_interface(),
-               node->get_node_logging_interface(),
-               node->get_node_topics_interface(),
-               node->get_node_services_interface(),
-               map_name) {}
+  template<class NodeT>
+  MapSaver(std::shared_ptr<NodeT> node, const std::string & map_name);
 
 protected:
   bool saveMapCallback(

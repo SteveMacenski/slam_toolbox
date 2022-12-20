@@ -29,6 +29,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "interactive_markers/interactive_marker_server.hpp"
 #include "interactive_markers/menu_handler.hpp"
 
@@ -44,34 +45,11 @@ using namespace ::toolbox_types;  // NOLINT
 class LoopClosureAssistant
 {
 public:
+  template<class NodeT>
   LoopClosureAssistant(
-    rclcpp::node_interfaces::NodeBaseInterface::SharedPtr base_interface,
-    rclcpp::node_interfaces::NodeClockInterface::SharedPtr clock_interface,
-    rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface,
-    rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface,
-    rclcpp::node_interfaces::NodeTopicsInterface::SharedPtr topics_interface,
-    rclcpp::node_interfaces::NodeServicesInterface::SharedPtr services_interface,
-    karto::Mapper *mapper,
-    laser_utils::ScanHolder *scan_holder, PausedState &state,
-    ProcessType &processor_type);
-  template <class NodeT>
-  LoopClosureAssistant(
-    NodeT && node,
-    karto::Mapper *mapper,
-    laser_utils::ScanHolder *scan_holder, PausedState &state,
-    ProcessType &processor_type)
-    : LoopClosureAssistant(node->get_node_base_interface(),
-                           node->get_node_clock_interface(),
-                           node->get_node_logging_interface(),
-                           node->get_node_parameters_interface(),
-                           node->get_node_topics_interface(),
-                           node->get_node_services_interface(),
-                           mapper, scan_holder, state, processor_type)
-  {
-    // TODO: use node_interfaces
-    // Constructor of TransformBroadcaster with node_interfaces is not yet in humble
-    tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(node);
-  }
+    std::shared_ptr<NodeT> node, karto::Mapper * mapper,
+    laser_utils::ScanHolder * scan_holder, PausedState & state,
+    ProcessType & processor_type);
 
   void clearMovedNodes();
   void processInteractiveFeedback(

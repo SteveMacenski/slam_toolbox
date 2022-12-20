@@ -57,7 +57,7 @@ void LocalizationSlamToolbox::loadPoseGraphByParams()
 }
 
 /*****************************************************************************/
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+CallbackReturn
 LocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
@@ -66,30 +66,32 @@ LocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
   localization_pose_sub_ =
     this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", 1,
-    std::bind(&LocalizationSlamToolbox::localizePoseCallback,
-    this, std::placeholders::_1));
+    std::bind(
+      &LocalizationSlamToolbox::localizePoseCallback,
+      this, std::placeholders::_1));
   clear_localization_ = this->create_service<std_srvs::srv::Empty>(
     "slam_toolbox/clear_localization_buffer",
-    std::bind(&LocalizationSlamToolbox::clearLocalizationBuffer, this,
-    std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+    std::bind(
+      &LocalizationSlamToolbox::clearLocalizationBuffer, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   // in localization mode, we cannot allow for interactive mode
   enable_interactive_mode_ = false;
 
   // in localization mode, disable map saver
   map_saver_.reset();
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+CallbackReturn
 LocalizationSlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   SlamToolbox::on_cleanup(rclcpp_lifecycle::State());
   clear_localization_.reset();
   localization_pose_sub_.reset();
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/

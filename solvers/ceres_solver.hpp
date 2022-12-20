@@ -13,10 +13,12 @@
 #include <unordered_map>
 #include <utility>
 #include <cmath>
+#include <memory>
 #include "karto_sdk/Mapper.h"
 #include "solvers/ceres_utils.h"
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "std_srvs/srv/empty.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
 
@@ -38,9 +40,8 @@ public:
   virtual void Compute();  // Solve
   virtual void Clear();  // Resets the corrections
   virtual void Reset();  // Resets the solver plugin clean
-  virtual void Configure(
-    rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface,
-    rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface);
+
+  virtual void Configure(rclcpp_lifecycle::LifecycleNode::SharedPtr node);
 
   // Adds a node to the solver
   virtual void AddNode(karto::Vertex<karto::LocalizedRangeScan> * pVertex);
@@ -77,7 +78,7 @@ private:
   boost::mutex nodes_mutex_;
 
   // ros
-  std::shared_ptr<rclcpp::Logger> logger_ptr_;
+  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface_;
 };
 
 }  // namespace solver_plugins

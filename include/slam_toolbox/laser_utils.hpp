@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
 #include "tf2/utils.h"
 
@@ -75,15 +76,10 @@ private:
 class LaserAssistant
 {
 public:
-  template <class NodeT>
+  template<class NodeT>
   LaserAssistant(
-    NodeT && node, tf2_ros::Buffer *tf,
-    const std::string &base_frame)
-    : LaserAssistant(node->get_node_logging_interface(), node->get_node_parameters_interface(), tf, base_frame) {}
-  LaserAssistant(
-    rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface,
-    rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface,
-    tf2_ros::Buffer * tf, const std::string & base_frame);
+    std::shared_ptr<NodeT> node, tf2_ros::Buffer * tf,
+    const std::string & base_frame);
   ~LaserAssistant();
   LaserMetadata toLaserMetadata(sensor_msgs::msg::LaserScan scan);
 

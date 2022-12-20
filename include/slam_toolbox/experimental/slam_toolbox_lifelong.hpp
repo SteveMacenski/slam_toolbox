@@ -30,12 +30,9 @@ class LifelongSlamToolbox : public SlamToolbox
 public:
   explicit LifelongSlamToolbox(rclcpp::NodeOptions options);
   ~LifelongSlamToolbox() {}
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_configure(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_configure(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override;
 
-  rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-  on_cleanup(const rclcpp_lifecycle::State &) override;
- 
   // computation metrics
   double computeObjectiveScore(
     const double & intersect_over_union, const double & area_overlap,

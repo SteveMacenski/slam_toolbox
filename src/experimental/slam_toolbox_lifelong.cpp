@@ -68,8 +68,7 @@ LifelongSlamToolbox::LifelongSlamToolbox(rclcpp::NodeOptions options)
 }
 
 /*****************************************************************************/
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-LifelongSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
+CallbackReturn LifelongSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   processor_type_ = PROCESS;
@@ -94,16 +93,15 @@ LifelongSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 
   // in lifelong mode, we cannot have interactive mode enabled
   enable_interactive_mode_ = false;
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-LifelongSlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
+CallbackReturn LifelongSlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   SlamToolbox::on_cleanup(rclcpp_lifecycle::State());
-  return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/

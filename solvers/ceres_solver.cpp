@@ -22,58 +22,56 @@ CeresSolver::CeresSolver()
 }
 
 /*****************************************************************************/
-void CeresSolver::Configure(
-  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface,
-  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface)
+void CeresSolver::Configure(rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 /*****************************************************************************/
 {
-  logger_ptr_ = std::make_shared<rclcpp::Logger>(logging_interface->get_logger());
+  logging_interface_ = node->get_node_logging_interface();
 
   std::string solver_type, preconditioner_type, dogleg_type,
     trust_strategy, loss_fn, mode;
-  if (!parameters_interface->has_parameter("ceres_linear_solver"))
-  {
-    parameters_interface->declare_parameter("ceres_linear_solver",
-                                            rclcpp::ParameterValue(std::string("SPARSE_NORMAL_CHOLESKY")));
+  if (!node->has_parameter("ceres_linear_solver")) {
+    node->declare_parameter(
+      "ceres_linear_solver",
+      rclcpp::ParameterValue(std::string("SPARSE_NORMAL_CHOLESKY")));
   }
-  solver_type = parameters_interface->get_parameter("ceres_linear_solver").as_string();
+  solver_type = node->get_parameter("ceres_linear_solver").as_string();
 
-  if (!parameters_interface->has_parameter("ceres_preconditioner"))
-  {
-    parameters_interface->declare_parameter("ceres_preconditioner",
-                                            rclcpp::ParameterValue(std::string("JACOBI")));
+  if (!node->has_parameter("ceres_preconditioner")) {
+    node->declare_parameter(
+      "ceres_preconditioner",
+      rclcpp::ParameterValue(std::string("JACOBI")));
   }
-  preconditioner_type = parameters_interface->get_parameter("ceres_preconditioner").as_string();
+  preconditioner_type = node->get_parameter("ceres_preconditioner").as_string();
 
-  if (!parameters_interface->has_parameter("ceres_dogleg_type"))
-  {
-    parameters_interface->declare_parameter("ceres_dogleg_type",
-                                            rclcpp::ParameterValue(std::string("TRADITIONAL_DOGLEG")));
+  if (!node->has_parameter("ceres_dogleg_type")) {
+    node->declare_parameter(
+      "ceres_dogleg_type",
+      rclcpp::ParameterValue(std::string("TRADITIONAL_DOGLEG")));
   }
-  dogleg_type = parameters_interface->get_parameter("ceres_dogleg_type").as_string();
+  dogleg_type = node->get_parameter("ceres_dogleg_type").as_string();
 
-  if (!parameters_interface->has_parameter("ceres_trust_strategy"))
-  {
-    parameters_interface->declare_parameter("ceres_trust_strategy",
-                                            rclcpp::ParameterValue(std::string("LM")));
+  if (!node->has_parameter("ceres_trust_strategy")) {
+    node->declare_parameter(
+      "ceres_trust_strategy",
+      rclcpp::ParameterValue(std::string("LM")));
   }
-  trust_strategy = parameters_interface->get_parameter("ceres_trust_strategy").as_string();
+  trust_strategy = node->get_parameter("ceres_trust_strategy").as_string();
 
-  if (!parameters_interface->has_parameter("ceres_loss_function"))
-  {
-    parameters_interface->declare_parameter("ceres_loss_function",
-                                            rclcpp::ParameterValue(std::string("None")));
+  if (!node->has_parameter("ceres_loss_function")) {
+    node->declare_parameter(
+      "ceres_loss_function",
+      rclcpp::ParameterValue(std::string("None")));
   }
-  loss_fn = parameters_interface->get_parameter("ceres_loss_function").as_string();
+  loss_fn = node->get_parameter("ceres_loss_function").as_string();
 
-  if (!parameters_interface->has_parameter("mode"))
-  {
-    parameters_interface->declare_parameter("mode",
-                            rclcpp::ParameterValue(std::string("mapping")));
+  if (!node->has_parameter("mode")) {
+    node->declare_parameter(
+      "mode",
+      rclcpp::ParameterValue(std::string("mapping")));
   }
-  mode = parameters_interface->get_parameter("mode").as_string();
+  mode = node->get_parameter("mode").as_string();
 
-  debug_logging_ = parameters_interface->get_parameter("debug_logging").as_bool();
+  debug_logging_ = node->get_parameter("debug_logging").as_bool();
 
   corrections_.clear();
   first_node_ = nodes_->end();
@@ -84,11 +82,13 @@ void CeresSolver::Configure(
   // choose loss function default squared loss (NULL)
   loss_function_ = NULL;
   if (loss_fn == "HuberLoss") {
-    RCLCPP_INFO(*logger_ptr_,
+    RCLCPP_INFO(
+      node->get_logger(),
       "CeresSolver: Using HuberLoss loss function.");
     loss_function_ = new ceres::HuberLoss(0.7);
   } else if (loss_fn == "CauchyLoss") {
-    RCLCPP_INFO(*logger_ptr_,
+    RCLCPP_INFO(
+      node->get_logger(),
       "CeresSolver: Using CauchyLoss loss function.");
     loss_function_ = new ceres::CauchyLoss(0.7);
   }
@@ -96,15 +96,18 @@ void CeresSolver::Configure(
   // choose linear solver default CHOL
   options_.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
   if (solver_type == "SPARSE_SCHUR") {
-    RCLCPP_INFO(*logger_ptr_,
+    RCLCPP_INFO(
+      node->get_logger(),
       "CeresSolver: Using SPARSE_SCHUR solver.");
     options_.linear_solver_type = ceres::SPARSE_SCHUR;
   } else if (solver_type == "ITERATIVE_SCHUR") {
-    RCLCPP_INFO(*logger_ptr_,
+    RCLCPP_INFO(
+      node->get_logger(),
       "CeresSolver: Using ITERATIVE_SCHUR solver.");
     options_.linear_solver_type = ceres::ITERATIVE_SCHUR;
   } else if (solver_type == "CGNR") {
-    RCLCPP_INFO(*logger_ptr_,
+    RCLCPP_INFO(
+      node->get_logger(),
       "CeresSolver: Using CGNR solver.");
     options_.linear_solver_type = ceres::CGNR;
   }
@@ -112,11 +115,13 @@ void CeresSolver::Configure(
   // choose preconditioner default Jacobi
   options_.preconditioner_type = ceres::JACOBI;
   if (preconditioner_type == "IDENTITY") {
-    RCLCPP_INFO(*logger_ptr_,
+    RCLCPP_INFO(
+      node->get_logger(),
       "CeresSolver: Using IDENTITY preconditioner.");
     options_.preconditioner_type = ceres::IDENTITY;
   } else if (preconditioner_type == "SCHUR_JACOBI") {
-    RCLCPP_INFO(*logger_ptr_,
+    RCLCPP_INFO(
+      node->get_logger(),
       "CeresSolver: Using SCHUR_JACOBI preconditioner.");
     options_.preconditioner_type = ceres::SCHUR_JACOBI;
   }
@@ -132,7 +137,8 @@ void CeresSolver::Configure(
   // choose trust region strategy default LM
   options_.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
   if (trust_strategy == "DOGLEG") {
-    RCLCPP_INFO(*logger_ptr_,
+    RCLCPP_INFO(
+      node->get_logger(),
       "CeresSolver: Using DOGLEG trust region strategy.");
     options_.trust_region_strategy_type = ceres::DOGLEG;
   }
@@ -141,7 +147,8 @@ void CeresSolver::Configure(
   if (options_.trust_region_strategy_type == ceres::DOGLEG) {
     options_.dogleg_type = ceres::TRADITIONAL_DOGLEG;
     if (dogleg_type == "SUBSPACE_DOGLEG") {
-      RCLCPP_INFO(*logger_ptr_,
+      RCLCPP_INFO(
+        node->get_logger(),
         "CeresSolver: Using SUBSPACE_DOGLEG dogleg type.");
       options_.dogleg_type = ceres::SUBSPACE_DOGLEG;
     }
@@ -210,7 +217,8 @@ void CeresSolver::Compute()
   boost::mutex::scoped_lock lock(nodes_mutex_);
 
   if (nodes_->size() == 0) {
-    RCLCPP_WARN(*logger_ptr_,
+    RCLCPP_WARN(
+      logging_interface_->get_logger(),
       "CeresSolver: Ceres was called when there are no nodes."
       " This shouldn't happen.");
     return;
@@ -221,7 +229,8 @@ void CeresSolver::Compute()
       problem_->HasParameterBlock(&first_node_->second(0)) &&
       problem_->HasParameterBlock(&first_node_->second(1)) &&
       problem_->HasParameterBlock(&first_node_->second(2))) {
-    RCLCPP_DEBUG(*logger_ptr_,
+    RCLCPP_DEBUG(
+      logging_interface_->get_logger(),
       "CeresSolver: Setting first node as a constant pose:"
       "%0.2f, %0.2f, %0.2f.", first_node_->second(0),
       first_node_->second(1), first_node_->second(2));
@@ -238,7 +247,8 @@ void CeresSolver::Compute()
   }
 
   if (!summary.IsSolutionUsable()) {
-    RCLCPP_WARN(*logger_ptr_, "CeresSolver: "
+    RCLCPP_WARN(
+      logging_interface_->get_logger(), "CeresSolver: "
       "Ceres could not find a usable solution to optimize.");
     return;
   }
@@ -344,7 +354,8 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan> * pEdge)
   if (node1it == nodes_->end() ||
     node2it == nodes_->end() || node1it == node2it)
   {
-    RCLCPP_WARN(*logger_ptr_,
+    RCLCPP_WARN(
+      logging_interface_->get_logger(),
       "CeresSolver: Failed to add constraint, could not find nodes.");
     return;
   }
@@ -389,7 +400,8 @@ void CeresSolver::RemoveNode(kt_int32s id)
   if (nodeit != nodes_->end()) {
     nodes_->erase(nodeit);
   } else {
-    RCLCPP_ERROR(*logger_ptr_, "RemoveNode: Failed to find node matching id %i",
+    RCLCPP_ERROR(
+      logging_interface_->get_logger(), "RemoveNode: Failed to find node matching id %i",
       (int)id);
   }
 }
@@ -410,7 +422,8 @@ void CeresSolver::RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
     problem_->RemoveResidualBlock(it_b->second);
     blocks_->erase(it_b);
   } else {
-    RCLCPP_ERROR(*logger_ptr_,
+    RCLCPP_ERROR(
+      logging_interface_->get_logger(),
       "RemoveConstraint: Failed to find residual block for %i %i",
       (int)sourceId, (int)targetId);
   }
