@@ -46,7 +46,12 @@ SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
     ROS_FATAL("[RoboSAR:slam_toolbox_common:SlamToolbox] base_frames_.size() != odom_frames_.size()");
   assert(base_frames_.size() == laser_topics_.size());
   assert(base_frames_.size() == odom_frames_.size());
-
+  // Create map to compute odom frame given base frame
+  for(size_t idx = 0; idx < base_frames_.size(); idx++)
+  {
+    m_base_id_to_odom_id_[base_frames_[idx]] = odom_frames_[idx];
+  }
+  // Set up pose helpers and laser assistants for each robot
   for(size_t idx = 0; idx < base_frames_.size(); idx++)
   {
     pose_helpers_.push_back(std::make_unique<pose_utils::GetPoseHelper>(tf_.get(), base_frames_[idx], odom_frames_[idx]));
@@ -379,9 +384,8 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
   const bool& update_reprocessing_transform)
 /*****************************************************************************/
 {
-  // Turn base frame into odom frame
-  std::string robot_name = header.frame_id.substr(0, header.frame_id.find("/"));
-  std::string odom_frame = robot_name + "/" + "odom"; // TODO: Make not hard coded
+  // Use base frame to look up odom frame
+  std::string odom_frame = m_base_id_to_odom_id_[header.frame_id];
   // Compute the map->odom transform
   const ros::Time& t = header.stamp;
   tf2::Stamped<tf2::Transform> odom_to_map;
