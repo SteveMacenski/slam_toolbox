@@ -10,7 +10,7 @@ ceres_loss_function: None
 map_frame: map
 odom_frames: ["robot1/odom", "robot2/odom"]
 base_frames: ["robot1/base_footprint", "robot2/base_footprint"]
-laser_topics: ["robot1/scan, robot2/scan"]
+laser_topics: ["/robot1/scan", "/robot2/scan"]
 mode: mapping #localization
 
 # if you'd like to immediately start continuing a map at a given pose
