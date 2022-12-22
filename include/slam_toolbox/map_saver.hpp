@@ -34,7 +34,7 @@ class MapSaver
 {
 public:
   template<class NodeT>
-  MapSaver(std::shared_ptr<NodeT> node, const std::string & map_name);
+  MapSaver(NodeT node, const std::string & map_name);
 
 protected:
   bool saveMapCallback(

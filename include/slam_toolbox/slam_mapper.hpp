@@ -48,7 +48,7 @@ public:
   karto::Pose2 toKartoPose(const tf2::Transform & pose) const;
 
   template<class NodeT>
-  void configure(const std::shared_ptr<NodeT> & node);
+  void configure(const NodeT & node);
 
   void Reset();
 

@@ -27,7 +27,7 @@ namespace loop_closure_assistant
 /*****************************************************************************/
 template<class NodeT>
 LoopClosureAssistant::LoopClosureAssistant(
-  std::shared_ptr<NodeT> node,
+  NodeT node,
   karto::Mapper * mapper,
   laser_utils::ScanHolder * scan_holder,
   PausedState & state, ProcessType & processor_type)

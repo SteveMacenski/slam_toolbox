@@ -78,7 +78,7 @@ class LaserAssistant
 public:
   template<class NodeT>
   LaserAssistant(
-    std::shared_ptr<NodeT> node, tf2_ros::Buffer * tf,
+    NodeT node, tf2_ros::Buffer * tf,
     const std::string & base_frame);
   ~LaserAssistant();
   LaserMetadata toLaserMetadata(sensor_msgs::msg::LaserScan scan);

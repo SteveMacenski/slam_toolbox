@@ -94,7 +94,7 @@ karto::Pose2 SMapper::toKartoPose(const tf2::Transform & pose) const
 
 /*****************************************************************************/
 template<class NodeT>
-void SMapper::configure(const std::shared_ptr<NodeT> & node)
+void SMapper::configure(const NodeT & node)
 /*****************************************************************************/
 {
   bool use_scan_matching = true;

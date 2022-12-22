@@ -47,7 +47,7 @@ class LoopClosureAssistant
 public:
   template<class NodeT>
   LoopClosureAssistant(
-    std::shared_ptr<NodeT> node, karto::Mapper * mapper,
+    NodeT node, karto::Mapper * mapper,
     laser_utils::ScanHolder * scan_holder, PausedState & state,
     ProcessType & processor_type);
 

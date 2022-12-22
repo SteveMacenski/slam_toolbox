@@ -31,17 +31,17 @@
 namespace vis_utils
 {
 
-template<class ClockHandler>
+template<class NodeT>
 inline visualization_msgs::msg::Marker toMarker(
   const std::string & frame,
   const std::string & ns,
   const double & scale,
-  std::shared_ptr<ClockHandler> handler)
+  NodeT node)
 {
   visualization_msgs::msg::Marker marker;
 
   marker.header.frame_id = frame;
-  marker.header.stamp = handler->now();
+  marker.header.stamp = node->now();
   marker.ns = ns;
   marker.type = visualization_msgs::msg::Marker::SPHERE;
   marker.pose.position.z = 0.0;
@@ -59,16 +59,16 @@ inline visualization_msgs::msg::Marker toMarker(
   return marker;
 }
 
-template<class ClockHandler>
+template<class NodeT>
 inline visualization_msgs::msg::InteractiveMarker toInteractiveMarker(
   visualization_msgs::msg::Marker & marker,
   const double & scale,
-  std::shared_ptr<ClockHandler> handler)
+  NodeT node)
 {
   // marker basics
   visualization_msgs::msg::InteractiveMarker int_marker;
   int_marker.header.frame_id = marker.header.frame_id;
-  int_marker.header.stamp = handler->now();
+  int_marker.header.stamp = node->now();
   int_marker.name = std::to_string(marker.id);
   int_marker.pose.orientation.w = 1.;
   int_marker.pose.position.x = marker.pose.position.x;

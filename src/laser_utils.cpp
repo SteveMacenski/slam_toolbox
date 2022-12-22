@@ -70,7 +70,7 @@ void LaserMetadata::invertScan(sensor_msgs::msg::LaserScan & scan) const
 
 template<class NodeT>
 LaserAssistant::LaserAssistant(
-  std::shared_ptr<NodeT> node,
+  NodeT node,
   tf2_ros::Buffer * tf, const std::string & base_frame)
 : logger_(node->get_logger()), parameters_interface_(node->get_node_parameters_interface()),
   tf_(tf), base_frame_(base_frame)

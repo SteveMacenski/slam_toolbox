@@ -25,7 +25,7 @@ namespace map_saver
 
 /*****************************************************************************/
 template<class NodeT>
-MapSaver::MapSaver(std::shared_ptr<NodeT> node, const std::string & map_name)
+MapSaver::MapSaver(NodeT node, const std::string & map_name)
 : logger_(node->get_logger()), map_name_(map_name), received_map_(false)
 /*****************************************************************************/
 {
