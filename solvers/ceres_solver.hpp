@@ -78,7 +78,7 @@ private:
   boost::mutex nodes_mutex_;
 
   // ros
-  rclcpp::node_interfaces::NodeLoggingInterface::SharedPtr logging_interface_;
+  rclcpp::Logger logger_{rclcpp::get_logger("CeresSolver")};
 };
 
 }  // namespace solver_plugins

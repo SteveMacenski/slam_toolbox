@@ -25,7 +25,7 @@ CeresSolver::CeresSolver()
 void CeresSolver::Configure(rclcpp_lifecycle::LifecycleNode::SharedPtr node)
 /*****************************************************************************/
 {
-  logging_interface_ = node->get_node_logging_interface();
+  logger_ = node->get_logger();
 
   std::string solver_type, preconditioner_type, dogleg_type,
     trust_strategy, loss_fn, mode;
@@ -218,7 +218,7 @@ void CeresSolver::Compute()
 
   if (nodes_->size() == 0) {
     RCLCPP_WARN(
-      logging_interface_->get_logger(),
+      logger_,
       "CeresSolver: Ceres was called when there are no nodes."
       " This shouldn't happen.");
     return;
@@ -230,7 +230,7 @@ void CeresSolver::Compute()
       problem_->HasParameterBlock(&first_node_->second(1)) &&
       problem_->HasParameterBlock(&first_node_->second(2))) {
     RCLCPP_DEBUG(
-      logging_interface_->get_logger(),
+      logger_,
       "CeresSolver: Setting first node as a constant pose:"
       "%0.2f, %0.2f, %0.2f.", first_node_->second(0),
       first_node_->second(1), first_node_->second(2));
@@ -248,7 +248,7 @@ void CeresSolver::Compute()
 
   if (!summary.IsSolutionUsable()) {
     RCLCPP_WARN(
-      logging_interface_->get_logger(), "CeresSolver: "
+      logger_, "CeresSolver: "
       "Ceres could not find a usable solution to optimize.");
     return;
   }
@@ -355,7 +355,7 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan> * pEdge)
     node2it == nodes_->end() || node1it == node2it)
   {
     RCLCPP_WARN(
-      logging_interface_->get_logger(),
+      logger_,
       "CeresSolver: Failed to add constraint, could not find nodes.");
     return;
   }
@@ -401,7 +401,7 @@ void CeresSolver::RemoveNode(kt_int32s id)
     nodes_->erase(nodeit);
   } else {
     RCLCPP_ERROR(
-      logging_interface_->get_logger(), "RemoveNode: Failed to find node matching id %i",
+      logger_, "RemoveNode: Failed to find node matching id %i",
       (int)id);
   }
 }
@@ -423,7 +423,7 @@ void CeresSolver::RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
     blocks_->erase(it_b);
   } else {
     RCLCPP_ERROR(
-      logging_interface_->get_logger(),
+      logger_,
       "RemoveConstraint: Failed to find residual block for %i %i",
       (int)sourceId, (int)targetId);
   }
