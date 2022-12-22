@@ -206,10 +206,15 @@ void SlamToolbox::publishTransformLoop(const double& transform_publish_period)
   while(ros::ok())
   {
     {
+      // Create copy of map-to-odom TFs map
+      std::map<std::string, tf2::Transform> local_TFs_map;
+      {
+        boost::mutex::scoped_lock lock(map_to_odom_mutex_);
+        local_TFs_map = m_map_to_odoms_;
+      }
       // Publish all past and current transforms so none of them go stale
-      boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      std::map<std::string, tf2::Transform>::iterator iter;
-      for(iter = m_map_to_odoms_.begin(); iter != m_map_to_odoms_.end(); iter++)
+      std::map<std::string, tf2::Transform>::const_iterator iter;
+      for(iter = local_TFs_map.begin(); iter != local_TFs_map.end(); iter++)
       {
         geometry_msgs::TransformStamped msg;
         tf2::convert(iter->second, msg.transform);
