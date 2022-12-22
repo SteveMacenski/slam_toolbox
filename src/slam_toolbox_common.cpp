@@ -40,7 +40,6 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
   processor_type_(PROCESS),
   first_measurement_(true),
   process_near_pose_(nullptr),
-  do_threads_clean_up_(false),
   transform_timeout_(rclcpp::Duration::from_seconds(0.5)),
   minimum_time_interval_(std::chrono::nanoseconds(0))
 /*****************************************************************************/
@@ -55,7 +54,6 @@ CallbackReturn SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Configuring");
   first_measurement_ = true;
   process_near_pose_ = nullptr;
-  do_threads_clean_up_ = false;
   configure();
   loadPoseGraphByParams();
   return CallbackReturn::SUCCESS;
@@ -98,7 +96,6 @@ CallbackReturn SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
-  do_threads_clean_up_ = true;
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->join();
     threads_[i].reset();
@@ -366,7 +363,10 @@ void SlamToolbox::publishTransformLoop(
   }
 
   rclcpp::Rate r(1.0 / transform_publish_period);
-  while (rclcpp::ok() && !do_threads_clean_up_) {
+  while (rclcpp::ok() &&
+    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_CLEANINGUP &&
+    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
+  {
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       rclcpp::Time scan_timestamp = scan_header.stamp;
@@ -402,7 +402,10 @@ void SlamToolbox::publishVisualizations()
   double map_update_interval = this->get_parameter("map_update_interval").as_double();
   rclcpp::Rate r(1.0 / map_update_interval);
 
-  while (rclcpp::ok() && !do_threads_clean_up_) {
+  while (rclcpp::ok() &&
+    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_CLEANINGUP &&
+    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
+  {
     updateMap();
     if (!isPaused(VISUALIZING_GRAPH)) {
       boost::mutex::scoped_lock lock(smapper_mutex_);

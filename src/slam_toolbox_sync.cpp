@@ -35,7 +35,10 @@ void SynchronousSlamToolbox::run()
 /*****************************************************************************/
 {
   rclcpp::Rate r(100);
-  while (rclcpp::ok() && !do_threads_clean_up_) {
+  while (rclcpp::ok() &&
+    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_CLEANINGUP &&
+    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
+  {
     if (!isPaused(PROCESSING)) {
       PosedScan scan_w_pose(nullptr, karto::Pose2()); // dummy, updated in critical section
       bool queue_empty = true;
