@@ -128,7 +128,6 @@ void SlamToolbox::setSolver(ros::NodeHandle& private_nh_)
 void SlamToolbox::setParams(ros::NodeHandle& private_nh)
 /*****************************************************************************/
 {
-  map_to_odom_.setIdentity();
   private_nh.param("map_frame", map_frame_, std::string("map"));
   private_nh.param("resolution", resolution_, 0.05);
   private_nh.param("map_name", map_name_, std::string("/map"));
@@ -207,11 +206,8 @@ void SlamToolbox::publishTransformLoop(const double& transform_publish_period)
   while(ros::ok())
   {
     {
-      boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      // Update with / add latest transform
-      if(map_to_odom_child_frame_id_.length() > 0)
-        m_map_to_odoms_[map_to_odom_child_frame_id_] = map_to_odom_;
       // Publish all past and current transforms so none of them go stale
+      boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       std::map<std::string, tf2::Transform>::iterator iter;
       for(iter = m_map_to_odoms_.begin(); iter != m_map_to_odoms_.end(); iter++)
       {
@@ -423,10 +419,11 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
   }
 
   // set map to odom for our transformation thread to publish
-  boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-  map_to_odom_ = tf2::Transform(tf2::Quaternion( odom_to_map.getRotation() ),
+  tf2::Transform map_to_odom_tf = tf2::Transform(
+    tf2::Quaternion( odom_to_map.getRotation() ),
     tf2::Vector3( odom_to_map.getOrigin() ) ).inverse();
-  map_to_odom_child_frame_id_ = odom_frame;
+  boost::mutex::scoped_lock lock(map_to_odom_mutex_);
+  m_map_to_odoms_[odom_frame] = map_to_odom_tf;
 
   return odom_to_map;
 }
