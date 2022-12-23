@@ -68,11 +68,11 @@ void SynchronousSlamToolbox::run()
 
 /*****************************************************************************/
 CallbackReturn
-SynchronousSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
+SynchronousSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
   processor_type_ = PROCESS;
-  SlamToolbox::on_configure(rclcpp_lifecycle::State());
+  SlamToolbox::on_configure(state);
   ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>(
     "slam_toolbox/clear_queue",
     std::bind(
@@ -86,10 +86,10 @@ SynchronousSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 
 /*****************************************************************************/
 CallbackReturn
-SynchronousSlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
+SynchronousSlamToolbox::on_cleanup(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  SlamToolbox::on_cleanup(rclcpp_lifecycle::State()); // with run threads cleanup
+  SlamToolbox::on_cleanup(state); // with run threads cleanup
   ssClear_.reset();
   return CallbackReturn::SUCCESS;
 }

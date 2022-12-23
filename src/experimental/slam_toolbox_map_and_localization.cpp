@@ -38,11 +38,11 @@ void MapAndLocalizationSlamToolbox::configure()
 
 /*****************************************************************************/
 CallbackReturn
-MapAndLocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
+MapAndLocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
   processor_type_ = PROCESS;
-  SlamToolbox::on_configure(rclcpp_lifecycle::State());
+  SlamToolbox::on_configure(state);
   // disable interactive mode
   enable_interactive_mode_ = false;
 
@@ -55,10 +55,10 @@ MapAndLocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 
 /*****************************************************************************/
 CallbackReturn
-MapAndLocalizationSlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
+MapAndLocalizationSlamToolbox::on_cleanup(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  SlamToolbox::on_cleanup(rclcpp_lifecycle::State());
+  SlamToolbox::on_cleanup(state);
   ssSetLocalizationMode_.reset();
   return CallbackReturn::SUCCESS;
 }

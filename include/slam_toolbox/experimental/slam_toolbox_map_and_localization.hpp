@@ -31,8 +31,8 @@ public:
   virtual ~MapAndLocalizationSlamToolbox() {}
   void loadPoseGraphByParams() override;
   void configure() override;
-  CallbackReturn on_configure(const rclcpp_lifecycle::State &) override;
-  CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
 protected:
   void laserCallback(

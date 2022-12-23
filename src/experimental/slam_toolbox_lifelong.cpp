@@ -68,11 +68,12 @@ LifelongSlamToolbox::LifelongSlamToolbox(rclcpp::NodeOptions options)
 }
 
 /*****************************************************************************/
-CallbackReturn LifelongSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
+CallbackReturn
+LifelongSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
   processor_type_ = PROCESS;
-  SlamToolbox::on_configure(rclcpp_lifecycle::State());
+  SlamToolbox::on_configure(state);
 
   use_tree_ = this->get_parameter("lifelong_search_use_tree").as_bool();
   iou_thresh_ = this->get_parameter("lifelong_minimum_score").as_double();
@@ -97,10 +98,11 @@ CallbackReturn LifelongSlamToolbox::on_configure(const rclcpp_lifecycle::State &
 }
 
 /*****************************************************************************/
-CallbackReturn LifelongSlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
+CallbackReturn
+LifelongSlamToolbox::on_cleanup(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  SlamToolbox::on_cleanup(rclcpp_lifecycle::State());
+  SlamToolbox::on_cleanup(state);
   return CallbackReturn::SUCCESS;
 }
 

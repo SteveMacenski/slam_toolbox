@@ -137,10 +137,10 @@ SlamToolbox::on_shutdown(const rclcpp_lifecycle::State & state)
 {
   RCLCPP_INFO(get_logger(), "Shutting down");
   if (state.id() == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE) {
-    on_deactivate(rclcpp_lifecycle::State());
-    on_cleanup(rclcpp_lifecycle::State());
+    on_deactivate(state);
+    on_cleanup(state);
   } else if (state.id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE) {
-    on_cleanup(rclcpp_lifecycle::State());
+    on_cleanup(state);
   }
   RCLCPP_INFO(get_logger(), "Shutdown");
   return CallbackReturn::SUCCESS;

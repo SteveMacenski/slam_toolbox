@@ -58,11 +58,11 @@ void LocalizationSlamToolbox::loadPoseGraphByParams()
 
 /*****************************************************************************/
 CallbackReturn
-LocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
+LocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
   processor_type_ = PROCESS_LOCALIZATION;
-  SlamToolbox::on_configure(rclcpp_lifecycle::State());
+  SlamToolbox::on_configure(state);
   localization_pose_sub_ =
     this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", 1,
@@ -85,10 +85,10 @@ LocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 
 /*****************************************************************************/
 CallbackReturn
-LocalizationSlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
+LocalizationSlamToolbox::on_cleanup(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  SlamToolbox::on_cleanup(rclcpp_lifecycle::State());
+  SlamToolbox::on_cleanup(state);
   clear_localization_.reset();
   localization_pose_sub_.reset();
   return CallbackReturn::SUCCESS;

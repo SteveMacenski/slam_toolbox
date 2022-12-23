@@ -32,11 +32,11 @@ AsynchronousSlamToolbox::AsynchronousSlamToolbox(rclcpp::NodeOptions options)
 
 /*****************************************************************************/
 CallbackReturn
-AsynchronousSlamToolbox::on_configure(const rclcpp_lifecycle::State &)
+AsynchronousSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
   processor_type_ = PROCESS;
-  SlamToolbox::on_configure(rclcpp_lifecycle::State());
+  SlamToolbox::on_configure(state);
   return CallbackReturn::SUCCESS;
 }
 
