@@ -177,7 +177,7 @@ protected:
   // Internal state
   std::vector<std::unique_ptr<boost::thread>> threads_;
   tf2::Transform map_to_odom_;
-  boost::mutex map_to_odom_mutex_, smapper_mutex_, pose_mutex_;
+  boost::mutex map_to_odom_mutex_, smapper_mutex_, pose_mutex_, get_state_mutex_;
   PausedState state_;
   nav_msgs::srv::GetMap::Response map_;
   ProcessType processor_type_;

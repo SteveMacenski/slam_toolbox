@@ -363,10 +363,19 @@ void SlamToolbox::publishTransformLoop(
   }
 
   rclcpp::Rate r(1.0 / transform_publish_period);
-  while (rclcpp::ok() &&
-    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING &&
-    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
-  {
+  while (rclcpp::ok()) {
+    {
+      // `get_current_state` is not thread safe in humble
+      // see. <https://github.com/ros2/rclcpp/issues/1746>
+      // fixed in rolling. <https://github.com/ros2/rclcpp/pull/1756>
+      boost::mutex::scoped_lock lock(get_state_mutex_);
+      auto get_state_id = get_current_state().id();
+      if (get_state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING ||
+        get_state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
+      {
+        break;
+      }
+    }
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       rclcpp::Time scan_timestamp = scan_header.stamp;
@@ -402,10 +411,19 @@ void SlamToolbox::publishVisualizations()
   double map_update_interval = this->get_parameter("map_update_interval").as_double();
   rclcpp::Rate r(1.0 / map_update_interval);
 
-  while (rclcpp::ok() &&
-    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING &&
-    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
-  {
+  while (rclcpp::ok()) {
+    {
+      // `get_current_state` is not thread safe in humble
+      // see. <https://github.com/ros2/rclcpp/issues/1746>
+      // fixed in rolling. <https://github.com/ros2/rclcpp/pull/1756>
+      boost::mutex::scoped_lock lock(get_state_mutex_);
+      auto get_state_id = get_current_state().id();
+      if (get_state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING ||
+        get_state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
+      {
+        break;
+      }
+    }
     updateMap();
     if (!isPaused(VISUALIZING_GRAPH)) {
       boost::mutex::scoped_lock lock(smapper_mutex_);
