@@ -129,11 +129,12 @@ CallbackReturn SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
-  // delete in reverse order of initialization
+  smapper_.reset();
+  dataset_.reset();
   map_saver_.reset();
-  scan_holder_.reset();
   pose_helper_.reset();
   laser_assistant_.reset();
+  scan_holder_.reset();
   solver_.reset();
 
   scan_filter_sub_.reset();
@@ -150,9 +151,6 @@ CallbackReturn SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
   tf_.reset();
 
   lasers_.clear();
-  dataset_.reset();
-  smapper_->getMapper()->Reset();
-  smapper_.reset();
   return CallbackReturn::SUCCESS;
 }
 
@@ -184,11 +182,13 @@ SlamToolbox::~SlamToolbox()
     threads_[i].reset();
   }
   threads_.clear();
-  // delete in reverse order of initialization
+
+  smapper_.reset();
+  dataset_.reset();
   map_saver_.reset();
-  scan_holder_.reset();
   pose_helper_.reset();
   laser_assistant_.reset();
+  scan_holder_.reset();
   solver_.reset();
 
   scan_filter_sub_.reset();
@@ -204,8 +204,7 @@ SlamToolbox::~SlamToolbox()
   tfL_.reset();
   tf_.reset();
 
-  dataset_.reset();
-  smapper_.reset();
+  lasers_.clear();
 }
 
 /*****************************************************************************/
