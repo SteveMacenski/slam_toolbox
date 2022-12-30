@@ -65,7 +65,6 @@ public:
   explicit SlamToolbox(rclcpp::NodeOptions);
   SlamToolbox();
   virtual ~SlamToolbox();
-  virtual void configure();
   virtual void loadPoseGraphByParams();
 
   CallbackReturn on_configure(const rclcpp_lifecycle::State &) override;

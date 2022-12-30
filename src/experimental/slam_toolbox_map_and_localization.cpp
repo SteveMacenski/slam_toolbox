@@ -29,20 +29,14 @@ MapAndLocalizationSlamToolbox::MapAndLocalizationSlamToolbox(rclcpp::NodeOptions
 }
 
 /*****************************************************************************/
-void MapAndLocalizationSlamToolbox::configure()
-/*****************************************************************************/
-{
-  SlamToolbox::configure();
-  toggleMode(false);
-}
-
-/*****************************************************************************/
 CallbackReturn
 MapAndLocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
   processor_type_ = PROCESS;
   SlamToolbox::on_configure(state);
+  toggleMode(false);
+
   // disable interactive mode
   enable_interactive_mode_ = false;
 
