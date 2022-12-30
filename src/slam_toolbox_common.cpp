@@ -53,7 +53,6 @@ CallbackReturn SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Configuring");
   first_measurement_ = true;
   process_near_pose_ = nullptr;
-
   smapper_ = std::make_unique<mapper_utils::SMapper>();
   dataset_ = std::make_unique<Dataset>();
 
@@ -101,7 +100,6 @@ CallbackReturn SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
     tf2::durationFromSec(transform_timeout_.seconds()));
   scan_filter_->registerCallback(
     std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
-
   return CallbackReturn::SUCCESS;
 }
 
@@ -110,7 +108,6 @@ CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
-
   scan_filter_.reset();
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->join();
@@ -593,7 +590,7 @@ bool SlamToolbox::updateMap()
   sst_->publish(
     std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
   sstm_->publish(
-      std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
+    std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
 
   delete occ_grid;
   occ_grid = nullptr;
@@ -821,11 +818,11 @@ void SlamToolbox::publishPose(
   tf2::Transform transform(q, tf2::Vector3(pose.GetX(), pose.GetY(), 0.0));
   tf2::toMsg(transform, pose_msg.pose.pose);
 
-  pose_msg.pose.covariance[0] = cov(0, 0) * position_covariance_scale_; // x
-  pose_msg.pose.covariance[1] = cov(0, 1) * position_covariance_scale_; // xy
-  pose_msg.pose.covariance[6] = cov(1, 0) * position_covariance_scale_; // xy
-  pose_msg.pose.covariance[7] = cov(1, 1) * position_covariance_scale_; // y
-  pose_msg.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;     // yaw
+  pose_msg.pose.covariance[0] = cov(0, 0) * position_covariance_scale_;  // x
+  pose_msg.pose.covariance[1] = cov(0, 1) * position_covariance_scale_;  // xy
+  pose_msg.pose.covariance[6] = cov(1, 0) * position_covariance_scale_;  // xy
+  pose_msg.pose.covariance[7] = cov(1, 1) * position_covariance_scale_;  // y
+  pose_msg.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;      // yaw
 
   pose_pub_->publish(pose_msg);
 }
