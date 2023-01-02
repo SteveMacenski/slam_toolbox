@@ -55,6 +55,7 @@ private:
   bool interactiveModeCallback(slam_toolbox_msgs::ToggleInteractive::Request  &req, slam_toolbox_msgs::ToggleInteractive::Response &resp);
   void moveNode(const int& id, const Eigen::Vector3d& pose);
   void addMovedNodes(const int& id, Eigen::Vector3d vec);
+  std_msgs::ColorRGBA createNewColor();
 
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   laser_utils::ScanHolder* scan_holder_;
@@ -72,6 +73,7 @@ private:
   std::string map_frame_;
   PausedState& state_;
   ProcessType& processor_type_;
+  std::map<karto::Name, std_msgs::ColorRGBA> m_sensor_name_to_color_;
 };
 
 }  // end namespace

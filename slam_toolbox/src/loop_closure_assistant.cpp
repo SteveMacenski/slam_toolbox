@@ -171,6 +171,12 @@ void LoopClosureAssistant::publishGraph()
          inner_it != outer_it->second.end(); ++inner_it)
     {
       karto::LocalizedRangeScan * scan = inner_it->second->GetObject();
+      // Update color map and marker color
+      karto::Name cur_sensor = scan->GetSensorName();
+      std::map<karto::Name, std_msgs::ColorRGBA>::const_iterator map_it = m_sensor_name_to_color_.find(cur_sensor);
+      if(map_it == m_sensor_name_to_color_.end())
+        m_sensor_name_to_color_[cur_sensor] = createNewColor();
+      vertex_marker.color = m_sensor_name_to_color_[cur_sensor];
 
       vertex_marker.pose.position.x = scan->GetCorrectedPose().GetX();
       vertex_marker.pose.position.y = scan->GetCorrectedPose().GetY();
@@ -211,6 +217,20 @@ void LoopClosureAssistant::publishGraph()
       const karto::Edge<karto::LocalizedRangeScan> * edge = *it;
       karto::LocalizedRangeScan * source_scan = edge->GetSource()->GetObject();
       karto::LocalizedRangeScan * target_scan = edge->GetTarget()->GetObject();
+      // Set edge color based on if edge is for one robot, or two
+      karto::Name source_sensor = source_scan->GetSensorName();
+      if(source_sensor == target_scan->GetSensorName())
+      {
+        edge_marker.color = m_sensor_name_to_color_[source_sensor];
+        edge_marker.color.a = 0.5;
+      }
+      else
+      {
+        edge_marker.color.r = 1.0;
+        edge_marker.color.g = 0.0;
+        edge_marker.color.b = 0.0;
+        edge_marker.color.a = 0.5;
+      }
       const karto::Pose2 source_pose = source_scan->GetCorrectedPose();
       const karto::Pose2 target_pose = target_scan->GetCorrectedPose();
 
@@ -361,5 +381,17 @@ void LoopClosureAssistant::addMovedNodes(const int& id, Eigen::Vector3d vec)
   boost::mutex::scoped_lock lock(moved_nodes_mutex_);
   moved_nodes_[id] = vec;
 }
+
+/*****************************************************************************/
+std_msgs::ColorRGBA LoopClosureAssistant::createNewColor()
+{
+  std_msgs::ColorRGBA new_color;
+  new_color.r = (float)(rand() % 1000) / 1000;
+  new_color.g = (float)(rand() % 1000) / 1000;
+  new_color.b = (float)(rand() % 1000) / 1000;
+  new_color.a = 1;
+  return new_color;
+}
+/*****************************************************************************/
 
 } // end namespace
