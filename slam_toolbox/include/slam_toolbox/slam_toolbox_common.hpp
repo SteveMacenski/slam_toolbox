@@ -70,7 +70,7 @@ protected:
   void setROSInterfaces(ros::NodeHandle& node);
 
   // callbacks
-  virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) = 0;
+  virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan, const std::string& base_frame_id) = 0;
   bool mapCallback(nav_msgs::GetMap::Request& req,
     nav_msgs::GetMap::Response& res);
   virtual bool serializePoseGraphCallback(slam_toolbox_msgs::SerializePoseGraph::Request& req,
@@ -123,7 +123,7 @@ protected:
   std::unique_ptr<karto::Dataset> dataset_;
   std::map<std::string, laser_utils::LaserMetadata> lasers_;
   std::map<std::string, tf2::Transform> m_map_to_odoms_;
-  std::map<std::string, std::string> m_base_id_to_odom_id_;
+  std::map<std::string, std::string> m_base_id_to_odom_id_, m_laser_id_to_base_id_;
 
   // helpers
   std::map<std::string,std::unique_ptr<laser_utils::LaserAssistant>> laser_assistants_;
@@ -134,7 +134,7 @@ protected:
 
   // Internal state
   std::vector<std::unique_ptr<boost::thread> > threads_;
-  boost::mutex map_to_odom_mutex_, smapper_mutex_, pose_mutex_;
+  boost::mutex map_to_odom_mutex_, smapper_mutex_, pose_mutex_, laser_id_map_mutex_;
   PausedState state_;
   nav_msgs::GetMap::Response map_;
   ProcessType processor_type_;

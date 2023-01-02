@@ -33,7 +33,7 @@ public:
 
 protected:
   virtual void laserCallback(
-    const sensor_msgs::LaserScan::ConstPtr& scan) override final;
+    const sensor_msgs::LaserScan::ConstPtr& scan, const std::string& base_frame_id) override final;
   virtual bool deserializePoseGraphCallback(
     slam_toolbox_msgs::DeserializePoseGraph::Request& req,
     slam_toolbox_msgs::DeserializePoseGraph::Response& resp) override final;

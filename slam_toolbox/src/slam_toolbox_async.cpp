@@ -32,7 +32,7 @@ AsynchronousSlamToolbox::AsynchronousSlamToolbox(ros::NodeHandle& nh)
 
 /*****************************************************************************/
 void AsynchronousSlamToolbox::laserCallback(
-  const sensor_msgs::LaserScan::ConstPtr& scan)
+  const sensor_msgs::LaserScan::ConstPtr& scan, const std::string& base_frame_id)
 /*****************************************************************************/
 {
   // no odom info on any pose helper
@@ -40,13 +40,23 @@ void AsynchronousSlamToolbox::laserCallback(
   bool found_odom = false;
   for(size_t idx = 0; idx < pose_helpers_.size(); idx++)
   {
-    found_odom = pose_helpers_[idx]->getOdomPose(pose, scan->header.stamp, scan->header.frame_id);
+    // try compute odometry
+    found_odom = pose_helpers_[idx]->getOdomPose(pose, scan->header.stamp, base_frame_id);
     if(found_odom)
       break;
   }
   if(!found_odom)
     return;
 
+  // Add new sensor to laser ID map, and to laser assistants
+  {
+    boost::mutex::scoped_lock l(laser_id_map_mutex_);
+    if(m_laser_id_to_base_id_.find(scan->header.frame_id) == m_laser_id_to_base_id_.end())
+    {
+      m_laser_id_to_base_id_[scan->header.frame_id] = base_frame_id;
+      laser_assistants_[scan->header.frame_id] = std::make_unique<laser_utils::LaserAssistant>(nh_, tf_.get(), base_frame_id);
+    }
+  }
   // ensure the laser can be used
   karto::LaserRangeFinder* laser = getLaser(scan);
 

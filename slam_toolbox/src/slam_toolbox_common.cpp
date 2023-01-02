@@ -46,16 +46,15 @@ SlamToolbox::SlamToolbox(ros::NodeHandle& nh)
     ROS_FATAL("[RoboSAR:slam_toolbox_common:SlamToolbox] base_frames_.size() != odom_frames_.size()");
   assert(base_frames_.size() == laser_topics_.size());
   assert(base_frames_.size() == odom_frames_.size());
-  // Create map to compute odom frame given base frame
+  // Setup map: base frame to odom frame
   for(size_t idx = 0; idx < base_frames_.size(); idx++)
   {
     m_base_id_to_odom_id_[base_frames_[idx]] = odom_frames_[idx];
   }
-  // Set up pose helpers and laser assistants for each robot
+  // Set up pose helpers for each robot
   for(size_t idx = 0; idx < base_frames_.size(); idx++)
   {
     pose_helpers_.push_back(std::make_unique<pose_utils::GetPoseHelper>(tf_.get(), base_frames_[idx], odom_frames_[idx]));
-    laser_assistants_[base_frames_[idx]] = std::make_unique<laser_utils::LaserAssistant>(nh_, tf_.get(), base_frames_[idx]); // Assumes base frame = laser frame
   }
   scan_holder_ = std::make_unique<laser_utils::ScanHolder>(lasers_);
   map_saver_ = std::make_unique<map_saver::MapSaver>(nh_, map_name_);
@@ -90,7 +89,6 @@ SlamToolbox::~SlamToolbox()
   for(size_t idx = 0; idx < pose_helpers_.size(); idx++)
   {
     pose_helpers_[idx].reset();
-    // laser_assistants_.reset();
   }
   for(std::map<std::string,std::unique_ptr<laser_utils::LaserAssistant>>::iterator it = laser_assistants_.begin(); it != laser_assistants_.end(); it++)
   {
@@ -189,7 +187,7 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
     ROS_INFO("Subscribing to scan: %s", laser_topics_[idx].c_str());
     scan_filter_subs_.push_back(std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, laser_topics_[idx], 5));
     scan_filters_.push_back(std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_subs_.back(), *tf_, odom_frames_[idx], 5, node));
-    scan_filters_.back()->registerCallback(boost::bind(&SlamToolbox::laserCallback, this, _1));
+    scan_filters_.back()->registerCallback(boost::bind(&SlamToolbox::laserCallback, this, _1, base_frames_[idx]));
   }
 }
 
@@ -331,12 +329,19 @@ karto::LaserRangeFinder* SlamToolbox::getLaser(const
   sensor_msgs::LaserScan::ConstPtr& scan)
 /*****************************************************************************/
 {
+  // Use laser scan ID to get base frame ID
   const std::string& frame = scan->header.frame_id;
   if(lasers_.find(frame) == lasers_.end())
   {
     try
     {
-      lasers_[frame] = laser_assistants_[frame]->toLaserMetadata(*scan);
+      std::map<std::string,std::unique_ptr<laser_utils::LaserAssistant>>::const_iterator it = laser_assistants_.find(frame);
+      if(it == laser_assistants_.end())
+      {
+        ROS_ERROR("Failed to get requested laser assistant, aborting initialization (%s)", frame.c_str());
+        return nullptr;
+      }
+      lasers_[frame] = it->second->toLaserMetadata(*scan);
       dataset_->Add(lasers_[frame].getLaser(), true);
     }
     catch (tf2::TransformException& e)
@@ -385,16 +390,27 @@ tf2::Stamped<tf2::Transform> SlamToolbox::setTransformFromPoses(
   const bool& update_reprocessing_transform)
 /*****************************************************************************/
 {
-  // Use base frame to look up odom frame
-  std::string odom_frame = m_base_id_to_odom_id_[header.frame_id];
+  tf2::Stamped<tf2::Transform> odom_to_map;
+  // Use laser frame to look up base and odom frame
+  std::string base_frame;
+  {
+    boost::mutex::scoped_lock l(laser_id_map_mutex_);
+    std::map<std::string, std::string>::const_iterator it = m_laser_id_to_base_id_.find(header.frame_id);
+    if(it == m_laser_id_to_base_id_.end())
+    {
+      ROS_ERROR("Requested laser frame ID not in map: %s", header.frame_id.c_str());
+      return odom_to_map;
+    }
+    base_frame = it->second;
+  }
+  const std::string& odom_frame = m_base_id_to_odom_id_[base_frame];
   // Compute the map->odom transform
   const ros::Time& t = header.stamp;
-  tf2::Stamped<tf2::Transform> odom_to_map;
   tf2::Quaternion q(0.,0.,0.,1.0);
   q.setRPY(0., 0., corrected_pose.GetHeading());
   tf2::Stamped<tf2::Transform> base_to_map(
     tf2::Transform(q, tf2::Vector3(corrected_pose.GetX(),
-    corrected_pose.GetY(), 0.0)).inverse(), t, header.frame_id); // Assumes base frame = laser frame
+    corrected_pose.GetY(), 0.0)).inverse(), t, base_frame);
   try
   {
     geometry_msgs::TransformStamped base_to_map_msg, odom_to_map_msg;
@@ -735,8 +751,14 @@ void SlamToolbox::loadSerializedPoseGraph(
         ROS_INFO("Got scan!");
         try
         {
-          lasers_[scan->header.frame_id] =
-            laser_assistants_[scan->header.frame_id]->toLaserMetadata(*scan);
+          const std::string& frame = scan->header.frame_id;
+          std::map<std::string,std::unique_ptr<laser_utils::LaserAssistant>>::const_iterator it = laser_assistants_.find(frame);
+          if(it == laser_assistants_.end())
+          {
+            ROS_ERROR("Failed to get requested laser assistant, aborting continue mapping (%s)", frame.c_str());
+            exit(-1);
+          }
+          lasers_[frame] = it->second->toLaserMetadata(*scan);
           break;
         }
         catch (tf2::TransformException& e)
