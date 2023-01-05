@@ -34,6 +34,7 @@ public:
   ~SynchronousSlamToolbox() {}
   void run();
   CallbackReturn on_configure(const rclcpp_lifecycle::State & state) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State & state) override;
   CallbackReturn on_cleanup(const rclcpp_lifecycle::State & state) override;
 
 protected:

@@ -36,7 +36,7 @@ void SynchronousSlamToolbox::run()
 {
   rclcpp::Rate r(100);
   while (rclcpp::ok() &&
-    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_CLEANINGUP &&
+    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING &&
     get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
   {
     if (!isPaused(PROCESSING)) {
@@ -78,6 +78,15 @@ SynchronousSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
     std::bind(
       &SynchronousSlamToolbox::clearQueueCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  return CallbackReturn::SUCCESS;
+}
+
+/*****************************************************************************/
+CallbackReturn
+SynchronousSlamToolbox::on_activate(const rclcpp_lifecycle::State & state)
+/*****************************************************************************/
+{
+  SlamToolbox::on_activate(state);
   threads_.push_back(
     std::make_unique<boost::thread>(
       boost::bind(&SynchronousSlamToolbox::run, this)));
@@ -89,7 +98,7 @@ CallbackReturn
 SynchronousSlamToolbox::on_cleanup(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  SlamToolbox::on_cleanup(state); // with run threads cleanup
+  SlamToolbox::on_cleanup(state);
   ssClear_.reset();
   return CallbackReturn::SUCCESS;
 }

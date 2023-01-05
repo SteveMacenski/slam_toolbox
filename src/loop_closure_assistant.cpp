@@ -35,8 +35,7 @@ LoopClosureAssistant::LoopClosureAssistant(
   interactive_mode_(false), state_(state),
   processor_type_(processor_type),
   clock_(node->get_clock()), logger_(node->get_logger()),
-  parameters_interface_(node->get_node_parameters_interface()),
-  is_activated_(false)
+  parameters_interface_(node->get_node_parameters_interface())
 /*****************************************************************************/
 {
   if (!node->has_parameter("paused_processing")) {
@@ -114,6 +113,9 @@ void LoopClosureAssistant::processInteractiveFeedback(const
   if (feedback->event_type ==
       visualization_msgs::msg::InteractiveMarkerFeedback::POSE_UPDATE)
   {
+    // get scan
+    sensor_msgs::msg::LaserScan scan = scan_holder_->getCorrectedScan(id);
+
     // get correct orientation
     tf2::Quaternion quat(0.,0.,0.,1.0), msg_quat(0.,0.,0.,1.0);
     double node_yaw, first_node_yaw;
@@ -145,13 +147,9 @@ void LoopClosureAssistant::processInteractiveFeedback(const
     msg.header.stamp = clock_->now();
     tfB_->sendTransform(msg);
 
-    if (is_activated_) {
-      // get scan and publish
-      sensor_msgs::msg::LaserScan scan = scan_holder_->getCorrectedScan(id);
-      scan.header.frame_id = "scan_visualization";
-      scan.header.stamp = clock_->now();
-      scan_publisher_->publish(scan);
-    }
+    scan.header.frame_id = "scan_visualization";
+    scan.header.stamp = clock_->now();
+    scan_publisher_->publish(scan);
   }
 }
 
@@ -271,30 +269,7 @@ void LoopClosureAssistant::publishGraph()
 
   // if disabled, clears out old markers
   interactive_server_->applyChanges();
-  if (is_activated_) {
-    marker_publisher_->publish(marray);
-  }
-}
-
-/*****************************************************************************/
-void LoopClosureAssistant::on_activate()
-/*****************************************************************************/
-{
-  is_activated_ = true;
-}
-
-/*****************************************************************************/
-void LoopClosureAssistant::on_deactivate()
-/*****************************************************************************/
-{
-  is_activated_ = false;
-}
-
-/*****************************************************************************/
-bool LoopClosureAssistant::is_activated()
-/*****************************************************************************/
-{
-  return is_activated_;
+  marker_publisher_->publish(marray);
 }
 
 /*****************************************************************************/

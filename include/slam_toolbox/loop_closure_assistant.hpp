@@ -56,9 +56,6 @@ public:
     const visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback);
   void publishGraph();
   void setMapper(karto::Mapper * mapper);
-  void on_activate();
-  void on_deactivate();
-  bool is_activated();
 
 private:
   bool manualLoopClosureCallback(
@@ -98,7 +95,6 @@ private:
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_;
   rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface_;
-  bool is_activated_;
 };
 
 }   // namespace loop_closure_assistant

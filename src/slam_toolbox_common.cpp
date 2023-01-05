@@ -67,7 +67,18 @@ CallbackReturn SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
   sst_->on_activate();
   sstm_->on_activate();
   pose_pub_->on_activate();
-  closure_assistant_->on_activate();
+  closure_assistant_ =
+    std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
+    shared_from_this(), smapper_->getMapper(), scan_holder_.get(),
+    state_, processor_type_);
+
+  double transform_publish_period = this->get_parameter("transform_publish_period").as_double();
+  threads_.push_back(std::make_unique<boost::thread>(
+      boost::bind(&SlamToolbox::publishTransformLoop,
+      this, transform_publish_period)));
+  threads_.push_back(std::make_unique<boost::thread>(
+      boost::bind(&SlamToolbox::publishVisualizations, this)));
+
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
     *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_,
@@ -75,6 +86,7 @@ CallbackReturn SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
     tf2::durationFromSec(transform_timeout_.seconds()));
   scan_filter_->registerCallback(
     std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -83,11 +95,17 @@ CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+
+  scan_filter_.reset();
+  for (int i = 0; i != threads_.size(); i++) {
+    threads_[i]->join();
+    threads_[i].reset();
+  }
+  threads_.clear();
+  closure_assistant_.reset();
   sst_->on_deactivate();
   sstm_->on_deactivate();
   pose_pub_->on_deactivate();
-  closure_assistant_->on_deactivate();
-  scan_filter_.reset();
   return CallbackReturn::SUCCESS;
 }
 
@@ -96,14 +114,7 @@ CallbackReturn SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
-  for (int i = 0; i != threads_.size(); i++) {
-    threads_[i]->join();
-    threads_[i].reset();
-  }
-  threads_.clear();
-
   // delete in reverse order of initialization
-  closure_assistant_.reset();
   map_saver_.reset();
   scan_holder_.reset();
   pose_helper_.reset();
@@ -164,18 +175,7 @@ void SlamToolbox::configure()
   scan_holder_ = std::make_unique<laser_utils::ScanHolder>(lasers_);
   map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(),
       map_name_);
-  closure_assistant_ =
-    std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
-    shared_from_this(), smapper_->getMapper(), scan_holder_.get(),
-    state_, processor_type_);
   reprocessing_transform_.setIdentity();
-
-  double transform_publish_period = this->get_parameter("transform_publish_period").as_double();
-  threads_.push_back(std::make_unique<boost::thread>(
-      boost::bind(&SlamToolbox::publishTransformLoop,
-      this, transform_publish_period)));
-  threads_.push_back(std::make_unique<boost::thread>(
-      boost::bind(&SlamToolbox::publishVisualizations, this)));
 }
 
 /*****************************************************************************/
@@ -183,6 +183,7 @@ SlamToolbox::~SlamToolbox()
 /*****************************************************************************/
 {
   scan_filter_.reset();
+  closure_assistant_.reset();
 
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->join();
@@ -190,7 +191,6 @@ SlamToolbox::~SlamToolbox()
   }
   threads_.clear();
   // delete in reverse order of initialization
-  closure_assistant_.reset();
   map_saver_.reset();
   scan_holder_.reset();
   pose_helper_.reset();
@@ -364,7 +364,7 @@ void SlamToolbox::publishTransformLoop(
 
   rclcpp::Rate r(1.0 / transform_publish_period);
   while (rclcpp::ok() &&
-    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_CLEANINGUP &&
+    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING &&
     get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
   {
     {
@@ -403,7 +403,7 @@ void SlamToolbox::publishVisualizations()
   rclcpp::Rate r(1.0 / map_update_interval);
 
   while (rclcpp::ok() &&
-    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_CLEANINGUP &&
+    get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING &&
     get_current_state().id() != lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
   {
     updateMap();
@@ -522,14 +522,10 @@ bool SlamToolbox::updateMap()
 
   // publish map as current
   map_.map.header.stamp = scan_header.stamp;
-  if (sst_->is_activated()) {
-    sst_->publish(
-      std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
-  }
-  if (sstm_->is_activated()) {
-    sstm_->publish(
+  sst_->publish(
+    std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
+  sstm_->publish(
       std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
-  }
 
   delete occ_grid;
   occ_grid = nullptr;
@@ -748,24 +744,22 @@ void SlamToolbox::publishPose(
   const rclcpp::Time & t)
 /*****************************************************************************/
 {
-  if (pose_pub_->is_activated()) {
-    geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
-    pose_msg.header.stamp = t;
-    pose_msg.header.frame_id = map_frame_;
+  geometry_msgs::msg::PoseWithCovarianceStamped pose_msg;
+  pose_msg.header.stamp = t;
+  pose_msg.header.frame_id = map_frame_;
 
-    tf2::Quaternion q(0., 0., 0., 1.0);
-    q.setRPY(0., 0., pose.GetHeading());
-    tf2::Transform transform(q, tf2::Vector3(pose.GetX(), pose.GetY(), 0.0));
-    tf2::toMsg(transform, pose_msg.pose.pose);
+  tf2::Quaternion q(0., 0., 0., 1.0);
+  q.setRPY(0., 0., pose.GetHeading());
+  tf2::Transform transform(q, tf2::Vector3(pose.GetX(), pose.GetY(), 0.0));
+  tf2::toMsg(transform, pose_msg.pose.pose);
 
-    pose_msg.pose.covariance[0] = cov(0, 0) * position_covariance_scale_; // x
-    pose_msg.pose.covariance[1] = cov(0, 1) * position_covariance_scale_; // xy
-    pose_msg.pose.covariance[6] = cov(1, 0) * position_covariance_scale_; // xy
-    pose_msg.pose.covariance[7] = cov(1, 1) * position_covariance_scale_; // y
-    pose_msg.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;     // yaw
+  pose_msg.pose.covariance[0] = cov(0, 0) * position_covariance_scale_; // x
+  pose_msg.pose.covariance[1] = cov(0, 1) * position_covariance_scale_; // xy
+  pose_msg.pose.covariance[6] = cov(1, 0) * position_covariance_scale_; // xy
+  pose_msg.pose.covariance[7] = cov(1, 1) * position_covariance_scale_; // y
+  pose_msg.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;     // yaw
 
-    pose_pub_->publish(pose_msg);
-  }
+  pose_pub_->publish(pose_msg);
 }
 
 /*****************************************************************************/
