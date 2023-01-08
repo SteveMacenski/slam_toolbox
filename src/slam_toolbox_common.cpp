@@ -416,9 +416,9 @@ void SlamToolbox::publishTransformLoop(
       // see. <https://github.com/ros2/rclcpp/issues/1746>
       // fixed in rolling. <https://github.com/ros2/rclcpp/pull/1756>
       boost::mutex::scoped_lock lock(get_state_mutex_);
-      auto get_state_id = get_current_state().id();
-      if (get_state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING ||
-        get_state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
+      auto state_id = get_current_state().id();
+      if (state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING ||
+        state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
       {
         break;
       }
@@ -464,9 +464,9 @@ void SlamToolbox::publishVisualizations()
       // see. <https://github.com/ros2/rclcpp/issues/1746>
       // fixed in rolling. <https://github.com/ros2/rclcpp/pull/1756>
       boost::mutex::scoped_lock lock(get_state_mutex_);
-      auto get_state_id = get_current_state().id();
-      if (get_state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING ||
-        get_state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
+      auto state_id = get_current_state().id();
+      if (state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING ||
+        state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
       {
         break;
       }
