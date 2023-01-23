@@ -28,6 +28,7 @@
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+#include <mutex>
 #include <shared_mutex>
 
 #include <math.h>
