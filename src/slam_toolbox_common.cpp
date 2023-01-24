@@ -110,6 +110,7 @@ CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Deactivating");
   scan_filter_.reset();
   for (int i = 0; i != threads_.size(); i++) {
+    threads_[i]->interrupt();
     threads_[i]->join();
     threads_[i].reset();
   }
@@ -175,6 +176,7 @@ SlamToolbox::~SlamToolbox()
   closure_assistant_.reset();
 
   for (int i = 0; i != threads_.size(); i++) {
+    threads_[i]->interrupt();
     threads_[i]->join();
     threads_[i].reset();
   }
@@ -411,18 +413,7 @@ void SlamToolbox::publishTransformLoop(
 
   rclcpp::Rate r(1.0 / transform_publish_period);
   while (rclcpp::ok()) {
-    {
-      // `get_current_state` is not thread safe in humble
-      // see. <https://github.com/ros2/rclcpp/issues/1746>
-      // fixed in rolling. <https://github.com/ros2/rclcpp/pull/1756>
-      boost::mutex::scoped_lock lock(get_state_mutex_);
-      auto state_id = get_current_state().id();
-      if (state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING ||
-        state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
-      {
-        break;
-      }
-    }
+    boost::this_thread::interruption_point();
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       rclcpp::Time scan_timestamp = scan_header.stamp;
@@ -459,18 +450,7 @@ void SlamToolbox::publishVisualizations()
   rclcpp::Rate r(1.0 / map_update_interval);
 
   while (rclcpp::ok()) {
-    {
-      // `get_current_state` is not thread safe in humble
-      // see. <https://github.com/ros2/rclcpp/issues/1746>
-      // fixed in rolling. <https://github.com/ros2/rclcpp/pull/1756>
-      boost::mutex::scoped_lock lock(get_state_mutex_);
-      auto state_id = get_current_state().id();
-      if (state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_DEACTIVATING ||
-        state_id == lifecycle_msgs::msg::State::TRANSITION_STATE_SHUTTINGDOWN)
-      {
-        break;
-      }
-    }
+    boost::this_thread::interruption_point();
     updateMap();
     if (!isPaused(VISUALIZING_GRAPH)) {
       boost::mutex::scoped_lock lock(smapper_mutex_);
