@@ -31,16 +31,6 @@ AsynchronousSlamToolbox::AsynchronousSlamToolbox(rclcpp::NodeOptions options)
 }
 
 /*****************************************************************************/
-CallbackReturn
-AsynchronousSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
-/*****************************************************************************/
-{
-  processor_type_ = PROCESS;
-  SlamToolbox::on_configure(state);
-  return CallbackReturn::SUCCESS;
-}
-
-/*****************************************************************************/
 void AsynchronousSlamToolbox::laserCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/

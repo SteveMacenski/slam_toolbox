@@ -51,6 +51,7 @@ CallbackReturn SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "Configuring");
+  processor_type_ = PROCESS;
   first_measurement_ = true;
   process_near_pose_ = nullptr;
   smapper_ = std::make_unique<mapper_utils::SMapper>();

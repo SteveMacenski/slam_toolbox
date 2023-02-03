@@ -50,7 +50,6 @@ CallbackReturn
 LifelongSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  processor_type_ = PROCESS;
   SlamToolbox::on_configure(state);
 
   use_tree_ = false;
@@ -111,15 +110,6 @@ LifelongSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 
   // in lifelong mode, we cannot have interactive mode enabled
   enable_interactive_mode_ = false;
-  return CallbackReturn::SUCCESS;
-}
-
-/*****************************************************************************/
-CallbackReturn
-LifelongSlamToolbox::on_cleanup(const rclcpp_lifecycle::State & state)
-/*****************************************************************************/
-{
-  SlamToolbox::on_cleanup(state);
   return CallbackReturn::SUCCESS;
 }
 

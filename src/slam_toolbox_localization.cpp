@@ -61,8 +61,8 @@ CallbackReturn
 LocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  processor_type_ = PROCESS_LOCALIZATION;
   SlamToolbox::on_configure(state);
+  processor_type_ = PROCESS_LOCALIZATION;
   localization_pose_sub_ =
     this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", 1,

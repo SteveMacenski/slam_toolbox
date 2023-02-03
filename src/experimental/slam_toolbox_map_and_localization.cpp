@@ -33,7 +33,6 @@ CallbackReturn
 MapAndLocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  processor_type_ = PROCESS;
   SlamToolbox::on_configure(state);
   toggleMode(false);
 
