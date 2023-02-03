@@ -68,7 +68,6 @@ CallbackReturn SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
   scan_holder_ = std::make_unique<laser_utils::ScanHolder>(lasers_);
   map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(),
       map_name_);
-  reprocessing_transform_.setIdentity();
 
   loadPoseGraphByParams();
   return CallbackReturn::SUCCESS;
@@ -98,6 +97,7 @@ CallbackReturn SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
   threads_.push_back(std::make_unique<boost::thread>(
       boost::bind(&SlamToolbox::publishVisualizations, this)));
 
+  reprocessing_transform_.setIdentity();
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
     *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_,
