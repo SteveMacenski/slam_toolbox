@@ -4,6 +4,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, EmitEvent, LogInfo,
                             RegisterEventHandler)
+from launch.conditions import IfCondition
 from launch.events import matches_action
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import LifecycleNode
@@ -13,9 +14,13 @@ from lifecycle_msgs.msg import Transition
 
 
 def generate_launch_description():
+    autostart = LaunchConfiguration('autostart')
     use_sim_time = LaunchConfiguration('use_sim_time')
     slam_params_file = LaunchConfiguration('slam_params_file')
 
+    declare_autostart_cmd = DeclareLaunchArgument(
+        'autostart', default_value='true',
+        description='Automatically startup the slamtoolbox')
     declare_use_sim_time_argument = DeclareLaunchArgument(
         'use_sim_time',
         default_value='true',
@@ -35,14 +40,15 @@ def generate_launch_description():
         executable='sync_slam_toolbox_node',
         name='slam_toolbox',
         output='screen',
-        namespace='/'
+        namespace=''
     )
 
     configure_event = EmitEvent(
         event=ChangeState(
             lifecycle_node_matcher=matches_action(start_sync_slam_toolbox_node),
             transition_id=Transition.TRANSITION_CONFIGURE
-        )
+        ),
+        condition=IfCondition(autostart)
     )
 
     activate_event = RegisterEventHandler(
@@ -57,11 +63,13 @@ def generate_launch_description():
                     transition_id=Transition.TRANSITION_ACTIVATE
                 ))
             ]
-        )
+        ),
+        condition=IfCondition(autostart)
     )
 
     ld = LaunchDescription()
 
+    ld.add_action(declare_autostart_cmd)
     ld.add_action(declare_use_sim_time_argument)
     ld.add_action(declare_slam_params_file_cmd)
     ld.add_action(start_sync_slam_toolbox_node)
