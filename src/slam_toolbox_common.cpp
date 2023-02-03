@@ -86,7 +86,11 @@ CallbackReturn SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
     shared_from_this(), smapper_->getMapper(), scan_holder_.get(),
     state_, processor_type_);
 
-  double transform_publish_period = this->get_parameter("transform_publish_period").as_double();
+  double transform_publish_period = 0.05;
+  if (!this->has_parameter("transform_publish_period")) {
+    this->declare_parameter("transform_publish_period", transform_publish_period);
+  }
+  transform_publish_period = this->get_parameter("transform_publish_period").as_double();
   threads_.push_back(std::make_unique<boost::thread>(
       boost::bind(&SlamToolbox::publishTransformLoop,
       this, transform_publish_period)));
@@ -211,7 +215,12 @@ void SlamToolbox::setSolver()
 /*****************************************************************************/
 {
   // Set solver to be used in loop closure
-  std::string solver_plugin = this->get_parameter("solver_plugin").as_string();
+  std::string solver_plugin = std::string("solver_plugins::CeresSolver");
+  if (!this->has_parameter("solver_plugin")) {
+    this->declare_parameter("solver_plugin", solver_plugin);
+  }
+  solver_plugin = this->get_parameter("solver_plugin").as_string();
+
   try {
     solver_ = solver_loader_.createSharedInstance(solver_plugin);
     RCLCPP_INFO(get_logger(), "Using solver plugin %s",
@@ -335,34 +344,17 @@ void SlamToolbox::setParams()
   }
   this->set_parameter(rclcpp::Parameter("paused_new_measurements", false));
 
-  if (!this->has_parameter("transform_publish_period")) {
-    this->declare_parameter("transform_publish_period", 0.05);
-  }
-  if (!this->has_parameter("tf_buffer_duration")) {
-    this->declare_parameter("tf_buffer_duration", 30.0);
-  }
-  if (!this->has_parameter("solver_plugin")) {
-    this->declare_parameter("solver_plugin", std::string("solver_plugins::CeresSolver"));
-  }
-  if (!this->has_parameter("map_file_name")) {
-    this->declare_parameter("map_file_name", std::string(""));
-  }
-  if (!this->has_parameter("map_update_interval")) {
-    this->declare_parameter("map_update_interval", 10.0);
-  }
-  if (!this->has_parameter("map_start_pose")) {
-    this->declare_parameter("map_start_pose", std::vector<double>());
-  }
-  if (!this->has_parameter("map_start_at_dock")) {
-    this->declare_parameter("map_start_at_dock", false);
-  }
 }
 
 /*****************************************************************************/
 void SlamToolbox::setROSInterfaces()
 /*****************************************************************************/
 {
-  double tmp_val = this->get_parameter("tf_buffer_duration").as_double();
+  double tmp_val = 30.0;
+  if (!this->has_parameter("tf_buffer_duration")) {
+    this->declare_parameter("tf_buffer_duration", tmp_val);
+  }
+  tmp_val = this->get_parameter("tf_buffer_duration").as_double();
   tf_ = std::make_unique<tf2_ros::Buffer>(this->get_clock(),
       tf2::durationFromSec(tmp_val));
   auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
@@ -446,7 +438,11 @@ void SlamToolbox::publishVisualizations()
   og.info.origin.orientation.w = 1.0;
   og.header.frame_id = map_frame_;
 
-  double map_update_interval = this->get_parameter("map_update_interval").as_double();
+  double map_update_interval = 10.0;
+  if (!this->has_parameter("map_update_interval")) {
+    this->declare_parameter("map_update_interval", map_update_interval);
+  }
+  map_update_interval = this->get_parameter("map_update_interval").as_double();
   rclcpp::Rate r(1.0 / map_update_interval);
 
   while (rclcpp::ok()) {
@@ -493,10 +489,17 @@ bool SlamToolbox::shouldStartWithPoseGraph(
 /*****************************************************************************/
 {
   // if given a map to load at run time, do it.
-  // PARAMETER_DOUBLE_ARRAY
+  if (!this->has_parameter("map_start_pose")) {
+    this->declare_parameter("map_start_pose", std::vector<double>());
+  }
   auto map_start_pose = this->get_parameter("map_start_pose").get_parameter_value();
-  // PARAMETER_BOOL
+  if (!this->has_parameter("map_start_at_dock")) {
+    this->declare_parameter("map_start_at_dock", false);
+  }
   auto map_start_at_dock = this->get_parameter("map_start_at_dock").get_parameter_value();
+  if (!this->has_parameter("map_file_name")) {
+    this->declare_parameter("map_file_name", std::string(""));
+  }
   filename = this->get_parameter("map_file_name").as_string();
   if (!filename.empty()) {
     std::vector<double> read_pose;
