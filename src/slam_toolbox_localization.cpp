@@ -63,17 +63,6 @@ LocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 {
   SlamToolbox::on_configure(state);
   processor_type_ = PROCESS_LOCALIZATION;
-  localization_pose_sub_ =
-    this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "initialpose", 1,
-    std::bind(
-      &LocalizationSlamToolbox::localizePoseCallback,
-      this, std::placeholders::_1));
-  clear_localization_ = this->create_service<std_srvs::srv::Empty>(
-    "slam_toolbox/clear_localization_buffer",
-    std::bind(
-      &LocalizationSlamToolbox::clearLocalizationBuffer, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   // in localization mode, we cannot allow for interactive mode
   enable_interactive_mode_ = false;
@@ -85,10 +74,30 @@ LocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
 
 /*****************************************************************************/
 CallbackReturn
-LocalizationSlamToolbox::on_cleanup(const rclcpp_lifecycle::State & state)
+LocalizationSlamToolbox::on_activate(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  SlamToolbox::on_cleanup(state);
+  SlamToolbox::on_activate(state);
+  localization_pose_sub_ =
+    this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+    "initialpose", 1,
+    std::bind(
+      &LocalizationSlamToolbox::localizePoseCallback,
+      this, std::placeholders::_1));
+  clear_localization_ = this->create_service<std_srvs::srv::Empty>(
+    "slam_toolbox/clear_localization_buffer",
+    std::bind(
+      &LocalizationSlamToolbox::clearLocalizationBuffer, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  return CallbackReturn::SUCCESS;
+}
+
+/*****************************************************************************/
+CallbackReturn
+LocalizationSlamToolbox::on_deactivate(const rclcpp_lifecycle::State & state)
+/*****************************************************************************/
+{
+  SlamToolbox::on_deactivate(state);
   clear_localization_.reset();
   localization_pose_sub_.reset();
   return CallbackReturn::SUCCESS;

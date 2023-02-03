@@ -66,24 +66,15 @@ void SynchronousSlamToolbox::run()
 
 /*****************************************************************************/
 CallbackReturn
-SynchronousSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
+SynchronousSlamToolbox::on_activate(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  SlamToolbox::on_configure(state);
+  SlamToolbox::on_activate(state);
   ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>(
     "slam_toolbox/clear_queue",
     std::bind(
       &SynchronousSlamToolbox::clearQueueCallback, this,
       std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-  return CallbackReturn::SUCCESS;
-}
-
-/*****************************************************************************/
-CallbackReturn
-SynchronousSlamToolbox::on_activate(const rclcpp_lifecycle::State & state)
-/*****************************************************************************/
-{
-  SlamToolbox::on_activate(state);
   threads_.push_back(
     std::make_unique<boost::thread>(
       boost::bind(&SynchronousSlamToolbox::run, this)));
@@ -92,10 +83,10 @@ SynchronousSlamToolbox::on_activate(const rclcpp_lifecycle::State & state)
 
 /*****************************************************************************/
 CallbackReturn
-SynchronousSlamToolbox::on_cleanup(const rclcpp_lifecycle::State & state)
+SynchronousSlamToolbox::on_deactivate(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  SlamToolbox::on_cleanup(state);
+  SlamToolbox::on_deactivate(state);
   ssClear_.reset();
   return CallbackReturn::SUCCESS;
 }
