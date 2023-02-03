@@ -39,6 +39,15 @@ MapAndLocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State & stat
   // disable interactive mode
   enable_interactive_mode_ = false;
 
+  return CallbackReturn::SUCCESS;
+}
+
+/*****************************************************************************/
+CallbackReturn
+MapAndLocalizationSlamToolbox::on_activate(const rclcpp_lifecycle::State & state)
+/*****************************************************************************/
+{
+  SlamToolbox::on_activate(state);
   ssSetLocalizationMode_ = create_service<std_srvs::srv::SetBool>(
     "slam_toolbox/set_localization_mode",
     std::bind(&MapAndLocalizationSlamToolbox::setLocalizationModeCallback, this,
@@ -48,10 +57,10 @@ MapAndLocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State & stat
 
 /*****************************************************************************/
 CallbackReturn
-MapAndLocalizationSlamToolbox::on_cleanup(const rclcpp_lifecycle::State & state)
+MapAndLocalizationSlamToolbox::on_deactivate(const rclcpp_lifecycle::State & state)
 /*****************************************************************************/
 {
-  SlamToolbox::on_cleanup(state);
+  SlamToolbox::on_deactivate(state);
   ssSetLocalizationMode_.reset();
   return CallbackReturn::SUCCESS;
 }
