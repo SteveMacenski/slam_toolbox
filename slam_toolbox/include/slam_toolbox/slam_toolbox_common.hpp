@@ -45,6 +45,7 @@
 #include <fstream>
 #include <boost/thread.hpp>
 #include <sys/resource.h>
+#include <assert.h>
 
 namespace slam_toolbox
 {
@@ -69,7 +70,7 @@ protected:
   void setROSInterfaces(ros::NodeHandle& node);
 
   // callbacks
-  virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan) = 0;
+  virtual void laserCallback(const sensor_msgs::LaserScan::ConstPtr& scan, const std::string& base_frame_id) = 0;
   bool mapCallback(nav_msgs::GetMap::Request& req,
     nav_msgs::GetMap::Response& res);
   virtual bool serializePoseGraphCallback(slam_toolbox_msgs::SerializePoseGraph::Request& req,
@@ -86,7 +87,7 @@ protected:
   karto::LocalizedRangeScan* addScan(karto::LaserRangeFinder* laser, PosedScan& scanWPose);
   bool updateMap();
   tf2::Stamped<tf2::Transform> setTransformFromPoses(const karto::Pose2& pose,
-    const karto::Pose2& karto_pose, const ros::Time& t, const bool& update_reprocessing_transform);
+    const karto::Pose2& karto_pose, const std_msgs::Header& header, const bool& update_reprocessing_transform);
   karto::LocalizedRangeScan* getLocalizedRangeScan(karto::LaserRangeFinder* laser,
     const sensor_msgs::LaserScan::ConstPtr& scan,
     karto::Pose2& karto_pose);
@@ -103,13 +104,14 @@ protected:
   std::unique_ptr<tf2_ros::Buffer> tf_;
   std::unique_ptr<tf2_ros::TransformListener> tfL_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
-  std::unique_ptr<message_filters::Subscriber<sensor_msgs::LaserScan> > scan_filter_sub_;
-  std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::LaserScan> > scan_filter_;
+  std::vector<std::unique_ptr<message_filters::Subscriber<sensor_msgs::LaserScan> > > scan_filter_subs_;
+  std::vector<std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::LaserScan> > > scan_filters_;
   ros::Publisher sst_, sstm_;
   ros::ServiceServer ssMap_, ssPauseMeasurements_, ssSerialize_, ssDesserialize_;
 
   // Storage for ROS parameters
-  std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_;
+  std::string map_frame_, map_name_;
+  std::vector<std::string> odom_frames_, base_frames_, laser_topics_;
   ros::Duration transform_timeout_, tf_buffer_dur_, minimum_time_interval_;
   int throttle_scans_;
 
@@ -120,18 +122,19 @@ protected:
   std::unique_ptr<mapper_utils::SMapper> smapper_;
   std::unique_ptr<karto::Dataset> dataset_;
   std::map<std::string, laser_utils::LaserMetadata> lasers_;
+  std::map<std::string, tf2::Transform> m_map_to_odoms_;
+  std::map<std::string, std::string> m_base_id_to_odom_id_, m_laser_id_to_base_id_;
 
   // helpers
-  std::unique_ptr<laser_utils::LaserAssistant> laser_assistant_;
-  std::unique_ptr<pose_utils::GetPoseHelper> pose_helper_;
+  std::map<std::string,std::unique_ptr<laser_utils::LaserAssistant>> laser_assistants_;
+  std::map<std::string,std::unique_ptr<pose_utils::GetPoseHelper>> pose_helpers_;
   std::unique_ptr<map_saver::MapSaver> map_saver_;
   std::unique_ptr<loop_closure_assistant::LoopClosureAssistant> closure_assistant_;
   std::unique_ptr<laser_utils::ScanHolder> scan_holder_;
 
   // Internal state
   std::vector<std::unique_ptr<boost::thread> > threads_;
-  tf2::Transform map_to_odom_;
-  boost::mutex map_to_odom_mutex_, smapper_mutex_, pose_mutex_;
+  boost::mutex map_to_odom_mutex_, smapper_mutex_, pose_mutex_, laser_id_map_mutex_;
   PausedState state_;
   nav_msgs::GetMap::Response map_;
   ProcessType processor_type_;

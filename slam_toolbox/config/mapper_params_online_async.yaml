@@ -7,17 +7,17 @@ ceres_dogleg_type: TRADITIONAL_DOGLEG
 ceres_loss_function: None
 
 # ROS Parameters
-odom_frame: odom
 map_frame: map
-base_frame: base_footprint
-scan_topic: /scan
+odom_frames: ["robot1/odom", "robot2/odom"]
+base_frames: ["robot1/base_footprint", "robot2/base_footprint"]
+laser_topics: ["/robot1/scan", "/robot2/scan"]
 mode: mapping #localization
 
 # if you'd like to immediately start continuing a map at a given pose
 # or at the dock, but they are mutually exclusive, if pose is given
 # will use pose
 #map_file_name: test_steve
-# map_start_pose: [0.0, 0.0, 0.0]
+#map_start_pose: [0.0, 0.0, 0.0]
 #map_start_at_dock: true
 
 debug_logging: false

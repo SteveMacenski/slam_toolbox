@@ -101,14 +101,16 @@ bool LocalizationSlamToolbox::deserializePoseGraphCallback(
 
 /*****************************************************************************/
 void LocalizationSlamToolbox::laserCallback(
-  const sensor_msgs::LaserScan::ConstPtr& scan)
+  const sensor_msgs::LaserScan::ConstPtr& scan, const std::string& base_frame_id)
 /*****************************************************************************/
 {
-  // no odom info
-  Pose2 pose;
-  if(!pose_helper_->getOdomPose(pose, scan->header.stamp))
-  {
+// no odom info on any pose helper
+  karto::Pose2 pose;
+  if(pose_helpers_.find(base_frame_id) == pose_helpers_.end())
     return;
+  else
+  {
+    pose_helpers_[base_frame_id]->getOdomPose(pose, scan->header.stamp, base_frame_id);
   }
 
   // ensure the laser can be used
@@ -188,7 +190,7 @@ LocalizedRangeScan* LocalizationSlamToolbox::addScan(
   } else {
     // compute our new transform
     setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
-      scan->header.stamp, update_reprocessing_transform);
+      scan->header, update_reprocessing_transform);
   }
 
   return range_scan;
