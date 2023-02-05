@@ -46,6 +46,17 @@ The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/
 
 ![map_image](/images/circuit_launch.gif?raw=true "Map Image")
 
+# Multi-Robot SLAM
+SLAM Toolbox supports multi-robot SLAM. The robots must all start in the same location, facing the same way. The first robot to connect determines the world origin, and the relative starting points of the other robots are determined using laser scan matching. This allows all robots to add to a shared pose graph, which makes possible:
+- Localization of multiple robots
+- Mapping using information from all sensor readings
+- Loop closures across robots
+
+Currently, synchornous and asynchornous mapping is supported.
+
+![MRSLAM_gif](/images/mrslam_readme.gif?raw=true "Multi-Robot SLAM")
+
+`odom_frames`, `base_frames`, and `laser_topics` define odom frame, base frame, and laser topic for all robots. These params must all have the same order of robots, and must have the same number of elements. This means that each robot can only have one LIDAR.
 
 # 03/23/2021 Note On Serialized Files
 
