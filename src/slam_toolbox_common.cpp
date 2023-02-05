@@ -119,7 +119,6 @@ CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
-  scan_filter_.reset();
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->interrupt();
     threads_[i]->join();
@@ -132,6 +131,7 @@ CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
   pose_pub_->on_deactivate();
 
   // reset interfaces
+  scan_filter_.reset();
   scan_filter_sub_.reset();
   ssDesserialize_.reset();
   ssSerialize_.reset();
@@ -177,9 +177,6 @@ SlamToolbox::on_shutdown(const rclcpp_lifecycle::State & state)
 SlamToolbox::~SlamToolbox()
 /*****************************************************************************/
 {
-  scan_filter_.reset();
-  closure_assistant_.reset();
-
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->interrupt();
     threads_[i]->join();
@@ -189,12 +186,14 @@ SlamToolbox::~SlamToolbox()
 
   smapper_.reset();
   dataset_.reset();
+  closure_assistant_.reset();
   map_saver_.reset();
   pose_helper_.reset();
   laser_assistant_.reset();
   scan_holder_.reset();
   solver_.reset();
 
+  scan_filter_.reset();
   scan_filter_sub_.reset();
   ssDesserialize_.reset();
   ssSerialize_.reset();
