@@ -70,16 +70,12 @@ void SynchronousSlamToolbox::laserCallback(
 {
   // no odom info on any pose helper
   karto::Pose2 pose;
-  bool found_odom = false;
-  for(size_t idx = 0; idx < pose_helpers_.size(); idx++)
-  {
-    // try compute odometry
-    found_odom = pose_helpers_[idx]->getOdomPose(pose, scan->header.stamp, base_frame_id);
-    if(found_odom)
-      break;
-  }
-  if(!found_odom)
+  if(pose_helpers_.find(base_frame_id) == pose_helpers_.end())
     return;
+  else
+  {
+    pose_helpers_[base_frame_id]->getOdomPose(pose, scan->header.stamp, base_frame_id);
+  }
 
   // Add new sensor to laser ID map, and to laser assistants
   {
