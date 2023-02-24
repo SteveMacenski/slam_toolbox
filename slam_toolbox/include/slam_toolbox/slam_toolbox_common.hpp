@@ -92,6 +92,7 @@ protected:
     karto::Pose2& karto_pose);
   bool shouldStartWithPoseGraph(std::string& filename, geometry_msgs::Pose2D& pose, bool& start_at_dock);
   bool shouldProcessScan(const sensor_msgs::LaserScan::ConstPtr& scan, const karto::Pose2& pose);
+  void publishPose(const karto::Pose2 & pose, const karto::Matrix3 & cov, const ros::Time & t);
 
   // pausing bits
   bool isPaused(const PausedApplication& app);
@@ -105,7 +106,7 @@ protected:
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
   std::unique_ptr<message_filters::Subscriber<sensor_msgs::LaserScan> > scan_filter_sub_;
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::LaserScan> > scan_filter_;
-  ros::Publisher sst_, sstm_;
+  ros::Publisher sst_, sstm_, pose_pub_;
   ros::ServiceServer ssMap_, ssPauseMeasurements_, ssSerialize_, ssDesserialize_;
 
   // Storage for ROS parameters
@@ -114,6 +115,8 @@ protected:
   int throttle_scans_;
 
   double resolution_;
+  double position_covariance_scale_;
+  double yaw_covariance_scale_;
   bool first_measurement_, enable_interactive_mode_;
 
   // Book keeping

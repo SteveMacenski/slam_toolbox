@@ -126,6 +126,9 @@ void SlamToolbox::setParams(ros::NodeHandle& private_nh)
   private_nh.param("minimum_time_interval", tmp_val, 0.5);
   minimum_time_interval_ = ros::Duration(tmp_val);
 
+  private_nh.param("position_covariance_scale", position_covariance_scale_, 1.0);
+  private_nh.param("yaw_covariance_scale", yaw_covariance_scale_, 1.0);
+
   bool debug = false;
   if (private_nh.getParam("debug_logging", debug) && debug)
   {
@@ -156,6 +159,7 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, scan_topic_, 5);
   scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_sub_, *tf_, odom_frame_, 5, node);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::laserCallback, this, _1));
+  pose_pub_ = node.advertise<geometry_msgs::PoseWithCovarianceStamped>("pose", 10, true);
 }
 
 /*****************************************************************************/
@@ -482,13 +486,16 @@ karto::LocalizedRangeScan* SlamToolbox::addScan(
   boost::mutex::scoped_lock lock(smapper_mutex_);
   bool processed = false, update_reprocessing_transform = false;
 
+  karto::Matrix3 covariance;
+  covariance.SetToIdentity();
+
   if (processor_type_ == PROCESS)
   {
-    processed = smapper_->getMapper()->Process(range_scan);
+    processed = smapper_->getMapper()->Process(range_scan, &covariance);
   }
   else if (processor_type_ == PROCESS_FIRST_NODE)
   {
-    processed = smapper_->getMapper()->ProcessAtDock(range_scan);
+    processed = smapper_->getMapper()->ProcessAtDock(range_scan, &covariance);
     processor_type_ = PROCESS;
     update_reprocessing_transform = true;
   }
@@ -504,7 +511,7 @@ karto::LocalizedRangeScan* SlamToolbox::addScan(
     range_scan->SetOdometricPose(*process_near_pose_);
     range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
     process_near_pose_.reset(nullptr);
-    processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan);
+    processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(range_scan, false, &covariance);
     update_reprocessing_transform = true;
     processor_type_ = PROCESS;
   }
@@ -526,6 +533,7 @@ karto::LocalizedRangeScan* SlamToolbox::addScan(
     setTransformFromPoses(range_scan->GetCorrectedPose(), karto_pose,
       scan->header.stamp, update_reprocessing_transform);
     dataset_->Add(range_scan);
+    publishPose(range_scan->GetCorrectedPose(), covariance, scan->header.stamp);
   }
   else
   {
@@ -534,6 +542,31 @@ karto::LocalizedRangeScan* SlamToolbox::addScan(
   }
 
   return range_scan;
+}
+
+/*****************************************************************************/
+void SlamToolbox::publishPose(
+  const karto::Pose2 & pose,
+  const karto::Matrix3 & cov,
+  const ros::Time & t)
+/*****************************************************************************/
+{
+  geometry_msgs::PoseWithCovarianceStamped pose_msg;
+  pose_msg.header.stamp = t;
+  pose_msg.header.frame_id = map_frame_;
+
+  tf2::Quaternion q(0., 0., 0., 1.0);
+  q.setRPY(0., 0., pose.GetHeading());
+  tf2::Transform transform(q, tf2::Vector3(pose.GetX(), pose.GetY(), 0.0));
+  tf2::toMsg(transform, pose_msg.pose.pose);
+
+  pose_msg.pose.covariance[0] = cov(0, 0) * position_covariance_scale_;  // x
+  pose_msg.pose.covariance[1] = cov(0, 1) * position_covariance_scale_;  // xy
+  pose_msg.pose.covariance[6] = cov(1, 0) * position_covariance_scale_;  // xy
+  pose_msg.pose.covariance[7] = cov(1, 1) * position_covariance_scale_;  // y
+  pose_msg.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;      // yaw
+
+  pose_pub_.publish(pose_msg);
 }
 
 /*****************************************************************************/
