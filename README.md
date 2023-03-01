@@ -178,10 +178,13 @@ The following are the services/topics that are exposed for use. See the rviz plu
 |-----|----|----|
 | **tf** | N/A | a valid transform from your configured odom_frame to base_frame |
 
+
 ## Published topics
 
-| map  | `nav_msgs/OccupancyGrid` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
+| Topic  | Type | Description | 
 |-----|----|----|
+| map  | `nav_msgs/OccupancyGrid` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
+| pose | `geometry_msgs/PoseWithCovarianceStamped` | pose of the base_frame in the configured map_frame along with the covariance calculated from the scan match |
 
 ## Exposed Services
 
@@ -239,6 +242,10 @@ The following settings and options are exposed to you. My default configuration 
 `map_update_interval` - Interval to update the 2D occupancy map for other applications / visualization
 
 `enable_interactive_mode` - Whether or not to allow for interactive mode to be enabled. Interactive mode will retain a cache of laser scans mapped to their ID for visualization in interactive mode. As a result the memory for the process will increase. This is manually disabled in localization and lifelong modes since they would increase the memory utilization over time. Valid for either mapping or continued mapping modes.
+
+`position_covariance_scale` - Amount to scale position covariance when publishing pose from scan match.  This can be used to tune the influence of the pose position in a downstream localization filter.  The covariance represents the uncertainty of the measurement, so scaling up the covariance will result in the pose position having less influence on downstream filters.  Default: 1.0
+
+`yaw_covariance_scale` - Amount to scale yaw covariance when publishing pose from scan match.  See description of position_covariance_scale.  Default: 1.0
 
 `resolution` - Resolution of the 2D occupancy map to generate
 
