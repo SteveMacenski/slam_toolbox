@@ -163,7 +163,7 @@ void CeresSolver::Configure(rclcpp_lifecycle::LifecycleNode::SharedPtr node)
   options_.max_num_consecutive_invalid_steps = 3;
   options_.max_consecutive_nonmonotonic_steps =
     options_.max_num_consecutive_invalid_steps;
-  options_.num_threads = 50;
+  options_.num_threads = 20; // Specified options.num_threads: 50 exceeds maximum available from the threading model Ceres was compiled with: 20.  Bounding to maximum number available.
   options_.use_nonmonotonic_steps = true;
   options_.jacobi_scaling = true;
 
