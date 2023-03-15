@@ -89,7 +89,22 @@ void MultiRobotSlamToolbox::localizedScanCallback(
       " %s; discarding scan", scan->header.frame_id.c_str());
     return;
   }
-  addExternalScan(laser, scan, pose);
+  LocalizedRangeScan * range_scan = addExternalScan(laser, scan, pose);
+  
+  if (range_scan != nullptr)
+  {
+    // Publish transform
+    pose = range_scan->GetCorrectedPose();
+    tf2::Quaternion q(0., 0., 0., 1.0);
+    geometry_msgs::msg::TransformStamped tf_msg;
+    q.setRPY(0., 0., pose.GetHeading());
+    tf2::Transform transform(q, tf2::Vector3(pose.GetX(), pose.GetY(), 0.0));
+    tf2::toMsg(transform, tf_msg.transform);
+    tf_msg.header.frame_id = map_frame_;
+    tf_msg.header.stamp = localized_scan->pose.header.stamp;
+    tf_msg.child_frame_id = localized_scan->scanner_offset.header.frame_id;
+    tfB_->sendTransform(tf_msg);
+  }
 }
 
 /*****************************************************************************/
