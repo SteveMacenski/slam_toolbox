@@ -24,6 +24,10 @@ MultiRobotSlamToolbox::MultiRobotSlamToolbox(rclcpp::NodeOptions options)
 : SlamToolbox(options), localized_scan_topic_("/localized_scan")
 /*****************************************************************************/
 {
+    current_ns_ = this->get_namespace() + 1;
+
+    localized_scan_pub_ = this->create_publisher<slam_toolbox::msg::LocalizedLaserScan>(
+    localized_scan_topic_, 10);
 }
 
 /*****************************************************************************/
@@ -50,9 +54,64 @@ void MultiRobotSlamToolbox::laserCallback(
   }
 
   LocalizedRangeScan * range_scan = addScan(laser, scan, pose);
+  if (range_scan != nullptr)
+  {
+    Matrix3 covariance;
+    covariance.SetToIdentity();
+    publishLocalizedScan(scan, laser->GetOffsetPose(), 
+        range_scan->GetCorrectedPose(), covariance, scan->header.stamp);
+  }
 }
 
 
+/*****************************************************************************/
+void MultiRobotSlamToolbox::publishLocalizedScan( 
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
+  const Pose2 & offset,
+  const Pose2 & pose,
+  const Matrix3 & cov,
+  const rclcpp::Time & t)
+/*****************************************************************************/
+{
+  slam_toolbox::msg::LocalizedLaserScan scan_msg; 
+
+  scan_msg.scan = *scan;
+
+  tf2::Quaternion q_offset(0., 0., 0., 1.0);
+  q_offset.setRPY(0., 0., offset.GetHeading());
+  tf2::Transform scanner_offset(q_offset, tf2::Vector3(offset.GetX(), offset.GetY(), 0.0));
+  tf2::toMsg(scanner_offset, scan_msg.scanner_offset.transform);
+  scan_msg.scanner_offset.header.stamp = t;
+
+  tf2::Quaternion q(0., 0., 0., 1.0);
+  q.setRPY(0., 0., pose.GetHeading());
+  tf2::Transform transform(q, tf2::Vector3(pose.GetX(), pose.GetY(), 0.0));
+  tf2::toMsg(transform, scan_msg.pose.pose.pose);
+
+  scan_msg.pose.pose.covariance[0] = cov(0, 0) * position_covariance_scale_;  // x
+  scan_msg.pose.pose.covariance[1] = cov(0, 1) * position_covariance_scale_;  // xy
+  scan_msg.pose.pose.covariance[6] = cov(1, 0) * position_covariance_scale_;  // xy
+  scan_msg.pose.pose.covariance[7] = cov(1, 1) * position_covariance_scale_;  // y
+  scan_msg.pose.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;      // yaw
+  scan_msg.pose.header.stamp = t;
+
+  // Set prefixed frame names
+  scan_msg.scan.header.frame_id = (*(scan->header.frame_id.cbegin()) == '/') ? 
+    current_ns_ + scan->header.frame_id :
+    current_ns_ + "/" + scan->header.frame_id;
+
+  scan_msg.pose.header.frame_id = (*(map_frame_.cbegin()) == '/') ? 
+    current_ns_ + map_frame_ :
+    current_ns_ + "/" + map_frame_;
+
+  scan_msg.scanner_offset.child_frame_id = scan_msg.scan.header.frame_id;
+
+  scan_msg.scanner_offset.header.frame_id = (*(base_frame_.cbegin()) == '/') ?
+    current_ns_ + base_frame_ :
+    current_ns_ + "/" + base_frame_;
+
+  localized_scan_pub_->publish(scan_msg);
+}
 
 /*****************************************************************************/
 bool MultiRobotSlamToolbox::deserializePoseGraphCallback(
