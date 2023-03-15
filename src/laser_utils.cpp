@@ -189,12 +189,13 @@ bool LaserAssistant::isInverted(double & mountingYaw)
     laser_pose_.transform.translation.y,
     laser_pose_.transform.translation.z, mountingYaw);
 
-  geometry_msgs::msg::Vector3Stamped laser_orient;
-  laser_orient.vector.z = laser_orient.vector.y = 0.;
-  laser_orient.vector.z = 1 + laser_pose_.transform.translation.z;
-  laser_orient.header.stamp = scan_.header.stamp;
-  laser_orient.header.frame_id = base_frame_;
-  laser_orient = tf_->transform(laser_orient, frame_);
+    tf2::Vector3 laser_orient;
+    tf2::Transform laser_pose;
+    tf2::convert(laser_pose_.transform, laser_pose);
+    laser_orient.setY(0.);
+    laser_orient.setZ(0.);
+    laser_orient.setZ(1 + laser_pose_.transform.translation.z); // TOOD can remove addition of laser_pose z component
+    laser_orient = laser_pose * laser_orient;
 
   if (laser_orient.vector.z <= 0) {
     RCLCPP_DEBUG(
