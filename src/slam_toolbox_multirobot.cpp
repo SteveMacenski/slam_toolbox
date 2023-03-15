@@ -28,6 +28,9 @@ MultiRobotSlamToolbox::MultiRobotSlamToolbox(rclcpp::NodeOptions options)
 
     localized_scan_pub_ = this->create_publisher<slam_toolbox::msg::LocalizedLaserScan>(
     localized_scan_topic_, 10);
+    localized_scan_sub_ = this->create_subscription<slam_toolbox::msg::LocalizedLaserScan>(
+        localized_scan_topic_, 10, std::bind(&MultiRobotSlamToolbox::localizedScanCallback, 
+        this, std::placeholders::_1));
 }
 
 /*****************************************************************************/
@@ -63,6 +66,110 @@ void MultiRobotSlamToolbox::laserCallback(
   }
 }
 
+/*****************************************************************************/
+void MultiRobotSlamToolbox::localizedScanCallback(
+  slam_toolbox::msg::LocalizedLaserScan::ConstSharedPtr localized_scan)
+{
+  std::string scan_ns = localized_scan->scan.header.frame_id.substr(0, 
+                          localized_scan->scan.header.frame_id.find('/'));
+  if (scan_ns == current_ns_) return; // Ignore callbacks from ourself
+
+  sensor_msgs::msg::LaserScan::ConstSharedPtr scan = 
+    std::make_shared<sensor_msgs::msg::LaserScan>(localized_scan->scan);
+  Pose2 pose;
+  pose.SetX(localized_scan->pose.pose.pose.position.x);
+  pose.SetY(localized_scan->pose.pose.pose.position.y);
+  tf2::Quaternion quat_tf;
+  tf2::convert(localized_scan->pose.pose.pose.orientation, quat_tf);
+  pose.SetHeading(tf2::getYaw(quat_tf));
+
+  LaserRangeFinder * laser = getLaser(localized_scan);
+  if (!laser) {
+    RCLCPP_WARN(get_logger(), "Failed to create device for received localizedScanner"
+      " %s; discarding scan", scan->header.frame_id.c_str());
+    return;
+  }
+  addExternalScan(laser, scan, pose);
+}
+
+/*****************************************************************************/
+LocalizedRangeScan * MultiRobotSlamToolbox::addExternalScan(
+  LaserRangeFinder * laser,
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
+  Pose2 & odom_pose)
+/*****************************************************************************/
+{
+  // get our localized range scan
+  LocalizedRangeScan * range_scan = getLocalizedRangeScan(
+    laser, scan, odom_pose);
+
+  // Add the localized range scan to the smapper
+  boost::mutex::scoped_lock lock(smapper_mutex_);
+  bool processed = false, update_reprocessing_transform = false;
+
+  Matrix3 covariance;
+  covariance.SetToIdentity();
+
+  if (processor_type_ == PROCESS) {
+    processed = smapper_->getMapper()->Process(range_scan, &covariance);
+  } else if (processor_type_ == PROCESS_FIRST_NODE) {
+    processed = smapper_->getMapper()->ProcessAtDock(range_scan, &covariance);
+    processor_type_ = PROCESS;
+    update_reprocessing_transform = true;
+  } else if (processor_type_ == PROCESS_NEAR_REGION) {
+    boost::mutex::scoped_lock l(pose_mutex_);
+    if (!process_near_pose_) {
+      RCLCPP_ERROR(get_logger(), "Process near region called without a "
+        "valid region request. Ignoring scan.");
+      return nullptr;
+    }
+    range_scan->SetOdometricPose(*process_near_pose_);
+    range_scan->SetCorrectedPose(range_scan->GetOdometricPose());
+    process_near_pose_.reset(nullptr);
+    processed = smapper_->getMapper()->ProcessAgainstNodesNearBy(
+      range_scan, false, &covariance);
+    update_reprocessing_transform = true;
+    processor_type_ = PROCESS;
+  } else {
+    RCLCPP_FATAL(get_logger(),
+      "SlamToolbox: No valid processor type set! Exiting.");
+    exit(-1);
+  }
+
+  // if successfully processed, create odom to map transformation
+  // and add our scan to storage
+  if (processed) {
+    if (enable_interactive_mode_) {
+      scan_holder_->addScan(*scan);
+    }
+  } else {
+    delete range_scan;
+    range_scan = nullptr;
+  }
+
+  return range_scan;
+}
+
+/*****************************************************************************/
+LaserRangeFinder * MultiRobotSlamToolbox::getLaser(
+  const slam_toolbox::msg::LocalizedLaserScan::ConstSharedPtr localized_scan)
+/*****************************************************************************/
+{
+  const std::string & frame = localized_scan->scan.header.frame_id;
+  if (lasers_.find(frame) == lasers_.end()) {
+    try {
+      lasers_[frame] = laser_assistant_->toLaserMetadata(localized_scan->scan, 
+                                            localized_scan->scanner_offset);
+      dataset_->Add(lasers_[frame].getLaser(), true);
+    } catch (tf2::TransformException & e) {
+      RCLCPP_ERROR(get_logger(), "Failed to compute laser pose[%s], "
+        "aborting initialization (%s)", frame.c_str(), e.what());
+      return nullptr;
+    }
+  }
+
+  return lasers_[frame].getLaser();
+}
 
 /*****************************************************************************/
 void MultiRobotSlamToolbox::publishLocalizedScan( 
