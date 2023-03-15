@@ -31,12 +31,20 @@ public:
   ~MultiRobotSlamToolbox() {};
 
 protected:
+  void publishLocalizedScan( 
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan, const Pose2 &offset,
+    const Pose2 & pose, const Matrix3 & cov,
+    const rclcpp::Time & t);
+
   // callbacks
   void laserCallback(sensor_msgs::msg::LaserScan::ConstSharedPtr scan) override;
   bool deserializePoseGraphCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override;
+  std::shared_ptr<rclcpp::Publisher<slam_toolbox::msg::LocalizedLaserScan>> localized_scan_pub_;
+  std::string localized_scan_topic_;
+  std::string current_ns_;
 };
 
 }  // namespace slam_toolbox
