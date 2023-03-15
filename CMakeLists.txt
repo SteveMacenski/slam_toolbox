@@ -74,6 +74,7 @@ set(libraries
     toolbox_common
     SlamToolboxPlugin
     ceres_solver_plugin
+    multirobot_slam_toolbox
     async_slam_toolbox
     sync_slam_toolbox
     localization_slam_toolbox
@@ -233,6 +234,11 @@ rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typ
 target_link_libraries(toolbox_common PUBLIC "${cpp_typesupport_target}")
 
 #### Mapping executibles
+add_library(multirobot_slam_toolbox src/slam_toolbox_multirobot.cpp)
+target_link_libraries(multirobot_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
+add_executable(multirobot_slam_toolbox_node src/slam_toolbox_multirobot_node.cpp)
+target_link_libraries(multirobot_slam_toolbox_node multirobot_slam_toolbox)
+
 add_library(async_slam_toolbox src/slam_toolbox_async.cpp)
 target_link_libraries(async_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 add_executable(async_slam_toolbox_node src/slam_toolbox_async_node.cpp)
@@ -279,7 +285,8 @@ rclcpp_components_register_nodes(lifelong_slam_toolbox "slam_toolbox::LifelongSl
 rclcpp_components_register_nodes(map_and_localization_slam_toolbox "slam_toolbox::MapAndLocalizationSlamToolbox")
 
 #### Install
-install(TARGETS async_slam_toolbox_node
+install(TARGETS multirobot_slam_toolbox_node
+                async_slam_toolbox_node
                 sync_slam_toolbox_node
                 localization_slam_toolbox_node
                 map_and_localization_slam_toolbox_node
