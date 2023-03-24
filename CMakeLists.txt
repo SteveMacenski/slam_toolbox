@@ -194,6 +194,7 @@ install(TARGETS async_slam_toolbox_node
                 map_and_localization_slam_toolbox_node
                 merge_maps_kinematic
                 ${libraries}
+                kartoSlamToolbox
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -224,7 +225,7 @@ install(FILES solver_plugins.xml rviz_plugins.xml
 )
 
 ament_export_include_directories(include)
-ament_export_libraries(${libraries})
+ament_export_libraries(${libraries} kartoSlamToolbox)
 ament_export_dependencies(${dependencies})
 ament_export_targets(SlamToolboxPlugin HAS_LIBRARY_TARGET)
 ament_package()
