@@ -62,7 +62,7 @@ void MultiRobotSlamToolbox::laserCallback(
     Matrix3 covariance;
     covariance.SetToIdentity();
     publishLocalizedScan(scan, laser->GetOffsetPose(), 
-        range_scan->GetCorrectedPose(), covariance, scan->header.stamp);
+        range_scan->GetOdometricPose(), covariance, scan->header.stamp);
   }
 }
 
