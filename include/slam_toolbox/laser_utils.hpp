@@ -37,18 +37,20 @@ inline std::vector<double> scanToReadings(
   const bool & inverted)
 {
   std::vector<double> readings;
+  float range_min = scan.range_min;
+  float range_max = scan.range_max;
 
   if (inverted) {
     for (std::vector<float>::const_reverse_iterator it = scan.ranges.rbegin();
       it != scan.ranges.rend(); ++it)
     {
-      readings.push_back(*it);
+      readings.push_back(karto::math::InRange(*it, range_min, range_max) ? *it : NAN);
     }
   } else {
     for (std::vector<float>::const_iterator it = scan.ranges.begin(); it != scan.ranges.end();
       ++it)
     {
-      readings.push_back(*it);
+      readings.push_back(karto::math::InRange(*it, range_min, range_max) ? *it : NAN);
     }
   }
 
