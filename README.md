@@ -111,6 +111,37 @@ To minimize the amount of changes required for moving to this mode over AMCL, we
 
 In summary, this approach I dub `elastic pose-graph localization` is where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using the scan matcher, but not update the underlaying map long-term should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The lifelong mapping/continuous slam mode above will do better if you'd like to modify the underlying graph while moving. This method of localization might not be suitable for all applications, it does require quite a bit of tuning for your particular robot and needs high quality odometry. If in doubt, you're always welcome to use other 2D map localizers in the ecosystem like AMCL. For most beginners or users looking for a good out of the box experience, I'd recommend AMCL. 
 
+# Multi-Robot SLAM
+![multirobot_slam](/images/multi-robot_mapping.gif?raw=true "Multi-Robot SLAM")
+
+*multirobot_slam_toolbox_node* extends slam_toolbox for multi-robot mapping and localization. Slam_toolbox instances are run on each robot under unique namespaces and pose graph data are shared between the nodes through */localized_scan* topic. Each slam_toolbox instance publishes transform of host robot and peers in the network. Peer transform frame names are prefixed with the namespace of the peer.
+
+Initially the robots should start close to each other, in the same orientation, as scan matching is used to find the connection between different pose graphs. This however is not required in simulation environments such as gazebo, as all robots' odometry is referenced to a gazebo's global frame. 
+
+![multirobot_slam_architecture](/images/multi-robot_architecture.png?raw=true "Multi-Robot SLAM Node Architecture")
+
+### Running Multi-Robot SLAM with turtlebot3 simulation
+
+Install and launch turtlebot3 multirobot simulation as described in the [navigation2 documentation](https://navigation.ros.org/getting_started/index.html)
+
+```shell
+ros2 launch nav2_bringup tb3_simulation_launch.py headless:=False
+```
+
+In two seperate terminals, launch two *multirobot_slam_toolbox_node* instances for robot1 and robot2.
+
+```shell
+ros2 launch slam_toolbox online_async_multirobot_launch.py namespace:=robot1
+ros2 launch slam_toolbox online_async_multirobot_launch.py namespace:=robot2
+```
+
+In another two seperate terminals, run *teleop_twist_keyboard* to control the robots. The merged map will appear on both rviz windows when moving the robots around in the environment.
+
+```shell
+ros2 run teleop_twist_keyboard teleop_twist_keyboard __ns:=/robot1
+ros2 run teleop_twist_keyboard teleop_twist_keyboard __ns:=/robot2
+```
+
 ## Tools 
 
 ### Plugin based Optimizers
