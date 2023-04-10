@@ -125,7 +125,7 @@ Initially the robots should start close to each other, in the same orientation, 
 Install and launch turtlebot3 multirobot simulation as described in the [navigation2 documentation](https://navigation.ros.org/getting_started/index.html)
 
 ```shell
-ros2 launch nav2_bringup tb3_simulation_launch.py headless:=False
+ros2 launch nav2_bringup multi_tb3_simulation_launch.py headless:=False
 ```
 
 In two seperate terminals, launch two *multirobot_slam_toolbox_node* instances for robot1 and robot2.
