@@ -623,8 +623,8 @@ kt_double ScanMatcher::MatchScan(
     Vector2<kt_double> fineSearchResolution(m_pCorrelationGrid->GetResolution(),
       m_pCorrelationGrid->GetResolution());
     bestResponse = CorrelateScan(pScan, rMean, fineSearchOffset, fineSearchResolution,
-        0.5 * m_pMapper->m_pCoarseAngleResolution->GetValue(),
         m_pMapper->m_pFineSearchAngleOffset->GetValue(),
+        0.5 * m_pMapper->m_pCoarseAngleResolution->GetValue(),
         doPenalize, rMean, rCovariance, true);
   }
 
