@@ -150,7 +150,7 @@ LocalizedRangeScan * LocalizationSlamToolbox::addScan(
 {
   boost::mutex::scoped_lock l(pose_mutex_);
 
-  if (PROCESS_LOCALIZATION && process_near_pose_) {
+  if (processor_type_ == PROCESS_LOCALIZATION && process_near_pose_) {
     processor_type_ = PROCESS_NEAR_REGION;
   }
 
