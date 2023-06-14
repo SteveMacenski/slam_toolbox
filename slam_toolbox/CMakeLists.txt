@@ -62,8 +62,7 @@ catkin_package(
       ${TBB_INCLUDE_DIRS}
     LIBRARIES
       ceres_solver_plugin
-      toolbox_lib
-      slam_toolbox_rviz_plugin
+      slam_toolbox_rviz
     CATKIN_DEPENDS
       message_filters
       nav_msgs
