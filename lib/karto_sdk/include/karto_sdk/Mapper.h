@@ -1996,7 +1996,7 @@ public:
    *
    * @return true if the scan was added successfully, false otherwise
    */
-  virtual kt_bool Process(LocalizedRangeScan * pScan);
+  virtual kt_bool Process(LocalizedRangeScan * pScan, Matrix3 * covariance = nullptr);
 
   /**
    * Process an Object
@@ -2004,9 +2004,9 @@ public:
   virtual kt_bool Process(Object * pObject);
 
   // processors
-  kt_bool ProcessAtDock(LocalizedRangeScan * pScan);
-  kt_bool ProcessAgainstNode(LocalizedRangeScan * pScan, const int & nodeId);
-  kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool addScanToLocalizationBuffer = false);
+  kt_bool ProcessAtDock(LocalizedRangeScan * pScan, Matrix3 * covariance = nullptr);
+  kt_bool ProcessAgainstNode(LocalizedRangeScan * pScan, const int & nodeId, Matrix3 * covariance = nullptr);
+  kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool addScanToLocalizationBuffer = false, Matrix3 * covariance = nullptr);
   kt_bool ProcessLocalization(LocalizedRangeScan * pScan);
   kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan> *);
   void AddScanToLocalizationBuffer(LocalizedRangeScan * pScan, Vertex<LocalizedRangeScan> * scan_vertex);
