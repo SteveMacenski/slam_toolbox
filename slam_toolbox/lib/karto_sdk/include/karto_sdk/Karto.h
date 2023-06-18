@@ -51,6 +51,8 @@
 #include <boost/serialization/array.hpp>
 #include <boost/version.hpp>
 
+#include <Eigen/Core>
+
 #ifdef USE_POCO
 #include <Poco/Mutex.h>
 #endif
@@ -2460,6 +2462,18 @@ namespace karto
       memcpy(m_Matrix, rOther.m_Matrix, 9*sizeof(kt_double));
     }
 
+   /**
+    * Copy constructor for equivalent Eigen type
+    */
+    inline Matrix3(const Eigen::Matrix3d & rOther)
+    {
+      for (Eigen::Index i = 0; i < rOther.rows(); ++i) {
+        for (Eigen::Index j = 0; j < rOther.cols(); ++j) {
+          m_Matrix[i][j] = rOther(i, j);
+        }
+      }
+    }
+
   public:
     /**
      * Sets this matrix to identity matrix
@@ -2610,6 +2624,16 @@ namespace karto
       }
 
       return converter.str();
+    }
+
+    inline Eigen::Matrix3d ToEigen() const
+    {
+      Eigen::Matrix3d matrix;
+      matrix <<
+          m_Matrix[0][0], m_Matrix[0][1], m_Matrix[0][2],
+          m_Matrix[1][0], m_Matrix[1][1], m_Matrix[1][2],
+          m_Matrix[2][0], m_Matrix[2][1], m_Matrix[2][2];
+      return matrix;
     }
 
   public:

@@ -46,6 +46,7 @@ LifelongSlamToolbox::LifelongSlamToolbox(ros::NodeHandle& nh)
   nh.param("lifelong_constraint_multiplier", constraint_scale_, 0.05);
   nh.param("lifelong_nearby_penalty", nearby_penalty_, 0.001);
   nh.param("lifelong_candidates_scale", candidates_scale_, 0.03);
+  nh.param("lifelong_node_marginalization", node_marginalization_, false);
 
   checkIsNotNormalized(iou_thresh_);
   checkIsNotNormalized(constraint_scale_);
@@ -297,14 +298,20 @@ void LifelongSlamToolbox::removeFromSlamGraph(
   Vertex<LocalizedRangeScan>* vertex)
 /*****************************************************************************/
 {
-  smapper_->getMapper()->RemoveNodeFromGraph(vertex);
+  if (node_marginalization_)
+  {
+    smapper_->getMapper()->MarginalizeNodeFromGraph(vertex);
+  }
+  else
+  {
+    smapper_->getMapper()->RemoveNodeFromGraph(vertex);
+  }
   smapper_->getMapper()->GetMapperSensorManager()->RemoveScan(
     vertex->GetObject());
   dataset_->RemoveData(vertex->GetObject());
   vertex->RemoveObject();
   delete vertex;
   vertex = nullptr;
-  // LTS what do we do about the contraints that node had about it?Nothing?Transfer?
 }
 
 /*****************************************************************************/

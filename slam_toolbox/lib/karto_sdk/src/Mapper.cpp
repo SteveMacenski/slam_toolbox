@@ -27,7 +27,12 @@
 #include <assert.h>
 #include <boost/serialization/vector.hpp>
 
+#include <Eigen/Core>
+#include <Eigen/Dense>
+
 #include "karto_sdk/Mapper.h"
+#include "karto_sdk/contrib/ChowLiuTreeApprox.h"
+#include "karto_sdk/contrib/EigenExtensions.h"
 
 BOOST_CLASS_EXPORT(karto::MapperGraph);
 BOOST_CLASS_EXPORT(karto::Graph<karto::LocalizedRangeScan>);
@@ -1659,6 +1664,28 @@ namespace karto
     return pEdge;
   }
 
+  kt_bool MapperGraph::AddEdge(Edge<LocalizedRangeScan> * pEdge)
+  {
+    using IteratorT = std::map<int, Vertex<LocalizedRangeScan> *>::iterator;
+
+    LocalizedRangeScan * pSourceScan = pEdge->GetSource()->GetObject();
+    LocalizedRangeScan * pTargetScan = pEdge->GetTarget()->GetObject();
+    IteratorT v1 = m_Vertices[pSourceScan->GetSensorName()]
+                   .find(pSourceScan->GetStateId());
+    IteratorT v2 = m_Vertices[pTargetScan->GetSensorName()]
+                   .find(pTargetScan->GetStateId());
+
+    if (v1 == m_Vertices[pSourceScan->GetSensorName()].end() ||
+        v2 == m_Vertices[pSourceScan->GetSensorName()].end())
+    {
+      std::cout << "AddEdge: At least one vertex is invalid." << std::endl;
+      return false;
+    }
+
+    Graph<LocalizedRangeScan>::AddEdge(pEdge);
+    return true;
+  }
+
   void MapperGraph::LinkScans(LocalizedRangeScan* pFromScan, LocalizedRangeScan* pToScan,
                               const Pose2& rMean, const Matrix3& rCovariance)
   {
@@ -3027,38 +3054,113 @@ namespace karto
     return;
   }
 
+  kt_bool Mapper::MarginalizeNodeFromGraph(
+      Vertex<LocalizedRangeScan> * vertex_to_marginalize)
+  {
+    // Marginalization is carried out as proposed in section 5 of:
+    //
+    //   Kretzschmar, Henrik, and Cyrill Stachniss. “Information-Theoretic
+    //   Compression of Pose Graphs for Laser-Based SLAM.” The International
+    //   Journal of Robotics Research, vol. 31, no. 11, Sept. 2012,
+    //   pp. 1219–1230, doi:10.1177/0278364912455072.
+
+    // (1) Fetch information matrix from solver.
+    std::unordered_map<int, Eigen::Index> ordering;
+    const Eigen::SparseMatrix<double> information_matrix =
+        m_pScanOptimizer->GetInformationMatrix(&ordering);
+    // (2) Marginalize variable from information matrix.
+    constexpr Eigen::Index block_size = 3;
+    auto block_index_of = [&](Vertex<LocalizedRangeScan> * vertex) {
+      return ordering[vertex->GetObject()->GetUniqueId()];
+    };
+    const Eigen::Index marginalized_block_index =
+        block_index_of(vertex_to_marginalize);
+    const Eigen::SparseMatrix<double> marginal_information_matrix =
+        contrib::ComputeMarginalInformationMatrix(
+            information_matrix, marginalized_block_index, block_size);
+    // (3) Compute marginal covariance *local* to the elimination clique
+    // i.e. by only inverting the relevant marginal information submatrix.
+    // This is an approximation for the sake of performance.
+    std::vector<Vertex<LocalizedRangeScan> *> elimination_clique =
+        vertex_to_marginalize->GetAdjacentVertices();
+    std::vector<Eigen::Index> elimination_clique_indices;  // need all indices
+    elimination_clique_indices.reserve(elimination_clique.size() * block_size);
+    for (Vertex<LocalizedRangeScan> * vertex : elimination_clique) {
+      Eigen::Index block_index = block_index_of(vertex);
+      if (block_index > marginalized_block_index) {
+        block_index -= block_size;  // adjust for block removed
+      }
+      for (Eigen::Index offset = 0; offset < block_size; ++offset) {
+        elimination_clique_indices.push_back(block_index + offset);
+      }
+    }
+    const Eigen::MatrixXd local_marginal_covariance_matrix =
+        contrib::ComputeGeneralizedInverse(
+            contrib::ArrangeView(marginal_information_matrix,
+                                 elimination_clique_indices,
+                                 elimination_clique_indices));
+    // (4) Remove node for marginalized variable.
+    RemoveNodeFromGraph(vertex_to_marginalize);
+    // (5) Remove all edges in the subgraph induced by the elimination clique.
+    for (Vertex<LocalizedRangeScan> * vertex : elimination_clique) {
+      for (Edge<LocalizedRangeScan> * edge : vertex->GetEdges()) {
+        Vertex<LocalizedRangeScan> * other_vertex =
+            edge->GetSource() == vertex ?
+            edge->GetTarget() : edge->GetSource();
+        const auto it = std::find(
+            elimination_clique.begin(),
+            elimination_clique.end(),
+            other_vertex);
+        if (it != elimination_clique.end()) {
+          RemoveEdgeFromGraph(edge);
+        }
+      }
+    }
+    // (6) Compute Chow-Liu tree approximation to the elimination clique.
+    std::vector<Edge<LocalizedRangeScan> *> chow_liu_tree_approximation =
+        contrib::ComputeChowLiuTreeApproximation(
+            elimination_clique, local_marginal_covariance_matrix);
+    // (7) Push tree edges to graph and solver (as constraints).
+    for (Edge<LocalizedRangeScan> * edge : chow_liu_tree_approximation) {
+      bool edge_added = m_pGraph->AddEdge(edge);
+      assert(edge_added);  // otherwise internal logic is broken
+      m_pScanOptimizer->AddConstraint(edge);
+    }
+    return true;
+  }
+
+  kt_bool Mapper::RemoveEdgeFromGraph(Edge<LocalizedRangeScan> * edge_to_remove)
+  {
+    Vertex<LocalizedRangeScan> * source = edge_to_remove->GetSource();
+    Vertex<LocalizedRangeScan> * target = edge_to_remove->GetTarget();
+    source->RemoveEdge(edge_to_remove);
+    target->RemoveEdge(edge_to_remove);
+    m_pScanOptimizer->RemoveConstraint(
+        source->GetObject()->GetUniqueId(),
+        target->GetObject()->GetUniqueId());
+    m_pGraph->RemoveEdge(edge_to_remove);
+    delete edge_to_remove;
+    return true;
+  }
+
   kt_bool Mapper::RemoveNodeFromGraph(Vertex<LocalizedRangeScan>* vertex_to_remove)
   {
     // 1) delete edges in adjacent vertices, graph, and optimizer
-    std::vector<Vertex<LocalizedRangeScan>*> adjVerts =
-      vertex_to_remove->GetAdjacentVertices();
-    for (int i = 0; i != adjVerts.size(); i++)
-    {
-      std::vector<Edge<LocalizedRangeScan>*> adjEdges = adjVerts[i]->GetEdges();
+    std::vector<Vertex<LocalizedRangeScan> *> vertices =
+        vertex_to_remove->GetAdjacentVertices();
+    for (Vertex<LocalizedRangeScan> * vertex : vertices) {
       bool found = false;
-      for (int j=0; j!=adjEdges.size(); j++)
-      {
-        if (adjEdges[j]->GetTarget() == vertex_to_remove ||
-          adjEdges[j]->GetSource() == vertex_to_remove)
+      for (Edge<LocalizedRangeScan> * edge : vertex->GetEdges()) {
+        if (edge->GetTarget() == vertex_to_remove ||
+            edge->GetSource() == vertex_to_remove)
         {
-          adjVerts[i]->RemoveEdge(j);
+          vertex->RemoveEdge(edge);
           m_pScanOptimizer->RemoveConstraint(
-            adjEdges[j]->GetSource()->GetObject()->GetUniqueId(),
-            adjEdges[j]->GetTarget()->GetObject()->GetUniqueId()); 
-          std::vector<Edge<LocalizedRangeScan>*> edges = m_pGraph->GetEdges();
-          std::vector<Edge<LocalizedRangeScan>*>::iterator edgeGraphIt =
-            std::find(edges.begin(), edges.end(), adjEdges[j]);
-
-          if (edgeGraphIt == edges.end())
-          {
-            std::cout << "Edge not found in graph to remove!" << std::endl;
-            continue;
-          }
-
-          int posEdge = edgeGraphIt - edges.begin();
-          m_pGraph->RemoveEdge(posEdge); // remove from graph
-          delete *edgeGraphIt; // free hat!
-          *edgeGraphIt = NULL;
+              edge->GetSource()->GetObject()->GetUniqueId(),
+              edge->GetTarget()->GetObject()->GetUniqueId());
+          m_pGraph->RemoveEdge(edge);
+          delete edge;
+          edge = nullptr;
           found = true;
         }
       }

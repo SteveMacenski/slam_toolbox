@@ -24,6 +24,7 @@
 #include <queue>
 
 #include <Eigen/Core>
+#include <Eigen/Sparse>
 
 #include "tbb/parallel_for.h"
 #include "tbb/parallel_do.h"
@@ -141,18 +142,35 @@ namespace karto
   class LinkInfo : public EdgeLabel
   {
   public:
+    LinkInfo()
+    {
+    }
+
     /**
      * Constructs a link between the given poses
      * @param rPose1
      * @param rPose2
      * @param rCovariance
      */
-    LinkInfo()
-    {
-    }
     LinkInfo(const Pose2& rPose1, const Pose2& rPose2, const Matrix3& rCovariance)
     {
       Update(rPose1, rPose2, rCovariance);
+    }
+
+    /**
+     * Constructs a link
+     * @param rPose1
+     * @param rPose2
+     * @param rPoseDifference
+     * @param rCovariance
+     */
+    LinkInfo(const Pose2 & rPose1, const Pose2 & rPose2,
+             const Pose2 & rPoseDifference,
+             const Matrix3 & rCovariance)
+      : m_Pose1(rPose1), m_Pose2(rPose2),
+        m_PoseDifference(rPoseDifference),
+        m_Covariance(rCovariance)
+    {
     }
 
     /**
@@ -292,6 +310,19 @@ namespace karto
       m_Edges[idx] = NULL;
       m_Edges.erase(m_Edges.begin() + idx);
       return;
+    }
+
+    /**
+     * Removes an edge
+     */
+    inline void RemoveEdge(Edge<T> * pEdge)
+    {
+      auto it = std::find(m_Edges.begin(), m_Edges.end(), pEdge);
+      if (it == m_Edges.end()) {
+        std::cout << "Edge not connected to vertex!" << std::endl;
+        return;
+      }
+      RemoveEdge(std::distance(m_Edges.begin(), it));
     }
 
     /**
@@ -632,6 +663,19 @@ namespace karto
       m_Edges.erase(m_Edges.begin() + idx);
     }
 
+    /**
+     * Removes an edge of the graph
+     * @param pEdge
+     */
+    inline void RemoveEdge(Edge<T>* pEdge)
+    {
+      auto it = std::find(m_Edges.begin(), m_Edges.end(), pEdge);
+      if (it == m_Edges.end()) {
+        std::cout << "Edge not found in graph!" << std::endl;
+        return;
+      }
+      RemoveEdge(std::distance(m_Edges.begin(), it));
+    }
 
     /**
      * Deletes the graph data
@@ -745,6 +789,11 @@ namespace karto
     Edge<LocalizedRangeScan>* AddEdge(LocalizedRangeScan* pSourceScan,
                                       LocalizedRangeScan* pTargetScan,
                                       kt_bool& rIsNewEdge);
+
+    /**
+     * Adds an edge to the graph, as-is.
+     */
+    kt_bool AddEdge(Edge<LocalizedRangeScan> * edge);
 
     /**
      * Link scan to last scan and nearby chains of scans
@@ -1023,11 +1072,17 @@ namespace karto
     /**
      * Get graph stored
      */
-    virtual std::unordered_map<int, Eigen::Vector3d>* getGraph()
+    virtual std::unordered_map<int, Eigen::Map<Eigen::Vector3d>> GetGraph()
     {
       std::cout << "getGraph method not implemented for this solver type. Graph visualization unavailable." << std::endl;
-      return nullptr;
+      return {};
     }
+
+    /**
+     * Get information matrix associated with the graph
+     */
+    virtual Eigen::SparseMatrix<double> GetInformationMatrix(
+        std::unordered_map<int, Eigen::Index> * /* ordering */) const = 0;
 
     /**
      * Modify a node's pose
@@ -1996,6 +2051,7 @@ namespace karto
     kt_bool ProcessAgainstNodesNearBy(LocalizedRangeScan* pScan, kt_bool addScanToLocalizationBuffer = false, Matrix3 * covariance = nullptr);
     kt_bool ProcessLocalization(LocalizedRangeScan * pScan, Matrix3 * covariance = nullptr);
     kt_bool RemoveNodeFromGraph(Vertex<LocalizedRangeScan>*);
+    kt_bool MarginalizeNodeFromGraph(Vertex<LocalizedRangeScan>*);
     void AddScanToLocalizationBuffer(LocalizedRangeScan* pScan, Vertex<LocalizedRangeScan>* scan_vertex);
     void ClearLocalizationBuffer();
 
@@ -2084,6 +2140,8 @@ namespace karto
      * the scan is the first scan to be added
      */
     kt_bool HasMovedEnough(LocalizedRangeScan* pScan, LocalizedRangeScan* pLastScan) const;
+
+    kt_bool RemoveEdgeFromGraph(Edge<LocalizedRangeScan> *);
 
   public:
     /////////////////////////////////////////////

@@ -16,10 +16,11 @@ namespace solver_plugins
 
 /*****************************************************************************/
 CeresSolver::CeresSolver() : 
- nodes_(new std::unordered_map<int, Eigen::Vector3d>()),
-  blocks_(new std::unordered_map<std::size_t,
-    ceres::ResidualBlockId>()),
-  problem_(NULL), was_constant_set_(false)
+  problem_(nullptr), was_constant_set_(false),
+  parameter_blocks_(new ParameterBlockMap()),
+  residual_blocks_(new ResidualBlockMap()),
+  parameter_block_pool_(sizeof(double) * 3u),
+  first_parameter_block_(nullptr)
 /*****************************************************************************/
 {
   ros::NodeHandle nh("~");
@@ -33,11 +34,10 @@ CeresSolver::CeresSolver() :
   nh.getParam("mode", mode);
   nh.getParam("debug_logging", debug_logging_);
 
-  corrections_.clear();
-  first_node_ = nodes_->end();
-
   // formulate problem
-  angle_local_parameterization_ = AngleLocalParameterization::Create();
+  local_parameterization_ = new ceres::ProductParameterization(
+      new ceres::IdentityParameterization(2),
+      AngleLocalParameterization::Create());
 
   // choose loss function default squared loss (NULL)
   loss_function_ = NULL;
@@ -144,25 +144,31 @@ CeresSolver::CeresSolver() :
   }
 
   problem_ = new ceres::Problem(options_problem_);
-
-  return;
 }
 
 /*****************************************************************************/
 CeresSolver::~CeresSolver()
 /*****************************************************************************/
 {
-  if ( loss_function_ != NULL)
+  if (loss_function_ != NULL)
   {
     delete loss_function_;
   }
-  if (nodes_ != NULL)
+  if (residual_blocks_ != NULL)
   {
-    delete nodes_;
+    delete residual_blocks_;
+  }
+  if (parameter_blocks_ != NULL)
+  {
+    delete parameter_blocks_;
   }
   if (problem_ != NULL)
   {
     delete problem_;  
+  }
+  if (local_parameterization_ != NULL)
+  {
+    delete local_parameterization_;
   }
 }
 
@@ -170,9 +176,9 @@ CeresSolver::~CeresSolver()
 void CeresSolver::Compute()
 /*****************************************************************************/
 {
-  boost::mutex::scoped_lock lock(nodes_mutex_);
+  boost::mutex::scoped_lock lock(mutex_);
 
-  if (nodes_->size() == 0)
+  if (parameter_blocks_->empty())
   {
     ROS_ERROR("CeresSolver: Ceres was called when there are no nodes."
       " This shouldn't happen.");
@@ -180,14 +186,12 @@ void CeresSolver::Compute()
   }
 
   // populate contraint for static initial pose
-  if (!was_constant_set_ && first_node_ != nodes_->end())
+  if (!was_constant_set_ && first_parameter_block_ != nullptr)
   {
-    ROS_DEBUG("CeresSolver: Setting first node as a constant pose:"
-      "%0.2f, %0.2f, %0.2f.", first_node_->second(0),
-      first_node_->second(1), first_node_->second(2));
-    problem_->SetParameterBlockConstant(&first_node_->second(0));
-    problem_->SetParameterBlockConstant(&first_node_->second(1));
-    problem_->SetParameterBlockConstant(&first_node_->second(2));
+    ROS_DEBUG("CeresSolver: Setting node as a constant pose:"
+      "%0.2f, %0.2f, %0.2f.", first_parameter_block_[0],
+      first_parameter_block_[1], first_parameter_block_[2]);
+    problem_->SetParameterBlockConstant(first_parameter_block_);
     was_constant_set_ = !was_constant_set_;
   }
 
@@ -211,15 +215,16 @@ void CeresSolver::Compute()
   {
     corrections_.clear();
   }
-  corrections_.reserve(nodes_->size());
+  corrections_.reserve(parameter_blocks_->size());
+
   karto::Pose2 pose;
-  ConstGraphIterator iter = nodes_->begin();
-  for ( iter; iter != nodes_->end(); ++iter )
+  ParameterBlockMap::left_const_iterator it = parameter_blocks_->left.begin();
+  for (; it != parameter_blocks_->left.end(); ++it)
   {
-    pose.SetX(iter->second(0));
-    pose.SetY(iter->second(1));
-    pose.SetHeading(iter->second(2));
-    corrections_.push_back(std::make_pair(iter->first, pose));
+    pose.SetX(it->second[0]);
+    pose.SetY(it->second[1]);
+    pose.SetHeading(it->second[2]);
+    corrections_.push_back(std::make_pair(it->first, pose));
   }
 
   return;
@@ -233,6 +238,33 @@ const karto::ScanSolver::IdPoseVector& CeresSolver::GetCorrections() const
 }
 
 /*****************************************************************************/
+Eigen::SparseMatrix<double> CeresSolver::GetInformationMatrix(
+    std::unordered_map<int, Eigen::Index> * ordering) const
+/****************************************************************************/
+{
+  if (ordering)
+  {
+    Eigen::Index index = 0u;
+    std::vector<double*> parameter_blocks;
+    problem_->GetParameterBlocks(&parameter_blocks);
+    for (double * block : parameter_blocks)
+    {
+      (*ordering)[parameter_blocks_->right.at(block)] = index;
+      index += problem_->ParameterBlockSize(block);
+    }
+  }
+  ceres::CRSMatrix jacobian_data;
+  problem_->Evaluate(ceres::Problem::EvaluateOptions(),
+                     nullptr, nullptr, nullptr, &jacobian_data);
+  Eigen::SparseMatrix<double> jacobian(
+    problem_->NumResiduals(), problem_->NumParameters());
+  jacobian.setFromTriplets(
+    CRSMatrixIterator::begin(jacobian_data),
+    CRSMatrixIterator::end(jacobian_data));
+  return jacobian.transpose() * jacobian;
+}
+
+/*****************************************************************************/
 void CeresSolver::Clear()
 /*****************************************************************************/
 {
@@ -243,7 +275,7 @@ void CeresSolver::Clear()
 void CeresSolver::Reset()
 /*****************************************************************************/
 {
-  boost::mutex::scoped_lock lock(nodes_mutex_);
+  boost::mutex::scoped_lock lock(mutex_);
 
   corrections_.clear();
   was_constant_set_ = false;
@@ -253,22 +285,31 @@ void CeresSolver::Reset()
     delete problem_;
   }
 
-  if (nodes_)
+  if (local_parameterization_)
   {
-    delete nodes_;
+    delete local_parameterization_;
   }
 
-  if (blocks_)
+  if (parameter_blocks_)
   {
-    delete blocks_;
+    delete parameter_blocks_;
   }
 
-  nodes_ = new std::unordered_map<int, Eigen::Vector3d>();
-  blocks_ = new std::unordered_map<std::size_t, ceres::ResidualBlockId>();
+  if (residual_blocks_)
+  {
+    delete residual_blocks_;
+  }
+
+  parameter_block_pool_.purge_memory();
+
+  parameter_blocks_ = new ParameterBlockMap();
+  residual_blocks_ = new ResidualBlockMap();
+  first_parameter_block_ = nullptr;
+
   problem_ = new ceres::Problem(options_problem_);
-  first_node_ = nodes_->end();
-
-  angle_local_parameterization_ = AngleLocalParameterization::Create();
+  local_parameterization_ = new ceres::ProductParameterization(
+      new ceres::IdentityParameterization(2),
+      AngleLocalParameterization::Create());
 }
 
 /*****************************************************************************/
@@ -280,18 +321,18 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
   {
     return;
   }
-  
-  karto::Pose2 pose = pVertex->GetObject()->GetCorrectedPose();
-  Eigen::Vector3d pose2d(pose.GetX(), pose.GetY(), pose.GetHeading());
 
+  boost::mutex::scoped_lock lock(mutex_);
   const int id = pVertex->GetObject()->GetUniqueId();
-
-  boost::mutex::scoped_lock lock(nodes_mutex_);
-  nodes_->insert(std::pair<int,Eigen::Vector3d>(id,pose2d));
-
-  if (nodes_->size() == 1)
+  const karto::Pose2 pose = pVertex->GetObject()->GetCorrectedPose();
+  double* parameter_block =
+      static_cast<double *>(parameter_block_pool_.malloc());
+  Eigen::Map<Eigen::Vector3d> parameter_block_as_vector(parameter_block);
+  parameter_block_as_vector << pose.GetX(), pose.GetY(), pose.GetHeading();
+  parameter_blocks_->insert(ParameterBlockMap::value_type(id, parameter_block));
+  if (parameter_blocks_->size() == 1)
   {
-    first_node_ = nodes_->find(id);
+    first_parameter_block_ = parameter_block;
   }
 }
 
@@ -299,21 +340,24 @@ void CeresSolver::AddNode(karto::Vertex<karto::LocalizedRangeScan>* pVertex)
 void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
 /*****************************************************************************/
 {
-  // get IDs in graph for this edge
-  boost::mutex::scoped_lock lock(nodes_mutex_);
-
   if (!pEdge)
   {
     return;
   }
 
-  const int node1 = pEdge->GetSource()->GetObject()->GetUniqueId();
-  GraphIterator node1it = nodes_->find(node1);
-  const int node2 = pEdge->GetTarget()->GetObject()->GetUniqueId();
-  GraphIterator node2it = nodes_->find(node2);
+  // get IDs in graph for this edge
+  boost::mutex::scoped_lock lock(mutex_);
 
-  if (node1it == nodes_->end() || 
-      node2it == nodes_->end() || node1it == node2it)
+  ParameterBlockMap::left_const_iterator node1it =
+    parameter_blocks_->left.find(
+      pEdge->GetSource()->GetObject()->GetUniqueId());
+  ParameterBlockMap::left_const_iterator node2it =
+    parameter_blocks_->left.find(
+      pEdge->GetTarget()->GetObject()->GetUniqueId());
+
+  if (node1it == parameter_blocks_->left.end() ||
+      node2it == parameter_blocks_->left.end() ||
+      node1it == node2it)
   {
     ROS_WARN("CeresSolver: Failed to add constraint, could not find nodes.");
     return;
@@ -322,44 +366,49 @@ void CeresSolver::AddConstraint(karto::Edge<karto::LocalizedRangeScan>* pEdge)
   // extract transformation
   karto::LinkInfo* pLinkInfo = (karto::LinkInfo*)(pEdge->GetLabel());
   karto::Pose2 diff = pLinkInfo->GetPoseDifference();
-  Eigen::Vector3d pose2d(diff.GetX(), diff.GetY(), diff.GetHeading());
 
-  karto::Matrix3 precisionMatrix = pLinkInfo->GetCovariance().Inverse();
-  Eigen::Matrix3d information;
-  information(0, 0) = precisionMatrix(0, 0);
-  information(0, 1) = information(1, 0) = precisionMatrix(0, 1);
-  information(0, 2) = information(2, 0) = precisionMatrix(0, 2);
-  information(1, 1) = precisionMatrix(1, 1);
-  information(1, 2) = information(2, 1) = precisionMatrix(1, 2);
-  information(2, 2) = precisionMatrix(2, 2);
-  Eigen::Matrix3d sqrt_information = information.llt().matrixU();
-
+  Eigen::Matrix3d sqrt_information =
+    pLinkInfo->GetCovariance().Inverse().ToEigen().llt().matrixU();
   // populate residual and parameterization for heading normalization
-  ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create(pose2d(0), 
-    pose2d(1), pose2d(2), sqrt_information);
-  ceres::ResidualBlockId block = problem_->AddResidualBlock(
-   cost_function, loss_function_, 
-   &node1it->second(0), &node1it->second(1), &node1it->second(2),
-   &node2it->second(0), &node2it->second(1), &node2it->second(2));
-  problem_->SetParameterization(&node1it->second(2),
-    angle_local_parameterization_);
-  problem_->SetParameterization(&node2it->second(2),
-    angle_local_parameterization_);
+  ceres::CostFunction* cost_function = PoseGraph2dErrorTerm::Create(
+    diff.GetX(), diff.GetY(), diff.GetHeading(), sqrt_information);
+  ceres::ResidualBlockId residual_block = problem_->AddResidualBlock(
+    cost_function, loss_function_, node1it->second, node2it->second);
+  problem_->SetParameterization(node1it->second, local_parameterization_);
+  problem_->SetParameterization(node2it->second, local_parameterization_);
 
-  blocks_->insert(std::pair<std::size_t, ceres::ResidualBlockId>(
-    GetHash(node1, node2), block));
-  return;
+  residual_blocks_->emplace(
+      GetHash(node1it->first, node1it->first), residual_block);
 }
 
 /*****************************************************************************/
 void CeresSolver::RemoveNode(kt_int32s id)
 /*****************************************************************************/
 {
-  boost::mutex::scoped_lock lock(nodes_mutex_);
-  GraphIterator nodeit = nodes_->find(id);
-  if (nodeit != nodes_->end())
+  boost::mutex::scoped_lock lock(mutex_);
+  ParameterBlockMap::left_iterator it =
+      parameter_blocks_->left.find(id);
+  if (it != parameter_blocks_->left.end())
   {
-    nodes_->erase(nodeit);
+    problem_->RemoveParameterBlock(it->second);
+    parameter_block_pool_.free(it->second);
+    if (it->second == first_parameter_block_)
+    {
+      it = parameter_blocks_->left.erase(it);
+      if (it != parameter_blocks_->left.end())
+      {
+        first_parameter_block_ = it->second;
+      }
+      else
+      {
+        first_parameter_block_ = nullptr;
+      }
+      was_constant_set_ = false;
+    }
+    else
+    {
+      parameter_blocks_->left.erase(it);
+    }
   }
   else
   {
@@ -371,20 +420,20 @@ void CeresSolver::RemoveNode(kt_int32s id)
 void CeresSolver::RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
 /*****************************************************************************/
 {
-  boost::mutex::scoped_lock lock(nodes_mutex_);
-  std::unordered_map<std::size_t, ceres::ResidualBlockId>::iterator it_a =
-    blocks_->find(GetHash(sourceId, targetId));
-  std::unordered_map<std::size_t, ceres::ResidualBlockId>::iterator it_b =
-    blocks_->find(GetHash(targetId, sourceId));
-  if (it_a != blocks_->end())
+  boost::mutex::scoped_lock lock(mutex_);
+  ResidualBlockMap::iterator it_a =
+    residual_blocks_->find(GetHash(sourceId, targetId));
+  ResidualBlockMap::iterator it_b =
+    residual_blocks_->find(GetHash(targetId, sourceId));
+  if (it_a != residual_blocks_->end())
   {
     problem_->RemoveResidualBlock(it_a->second);  
-    blocks_->erase(it_a);
+    residual_blocks_->erase(it_a);
   }
-  else if (it_b != blocks_->end())
+  else if (it_b != residual_blocks_->end())
   {
     problem_->RemoveResidualBlock(it_b->second);
-    blocks_->erase(it_b);
+    residual_blocks_->erase(it_b);
   }
   else
   {
@@ -397,13 +446,15 @@ void CeresSolver::RemoveConstraint(kt_int32s sourceId, kt_int32s targetId)
 void CeresSolver::ModifyNode(const int& unique_id, Eigen::Vector3d pose)
 /*****************************************************************************/
 {
-  boost::mutex::scoped_lock lock(nodes_mutex_);
-  GraphIterator it = nodes_->find(unique_id);
-  if (it != nodes_->end())
+  boost::mutex::scoped_lock lock(mutex_);
+  ParameterBlockMap::left_iterator it =
+    parameter_blocks_->left.find(unique_id);
+  if (it != parameter_blocks_->left.end())
   {
-    double yaw_init = it->second(2);
-    it->second = pose;
-    it->second(2) += yaw_init;
+    Eigen::Map<Eigen::Vector3d> parameter_block_as_vector(it->second);
+    double yaw_init = parameter_block_as_vector(2);
+    parameter_block_as_vector = pose;
+    parameter_block_as_vector(2) += yaw_init;
   }
 }
 
@@ -411,20 +462,27 @@ void CeresSolver::ModifyNode(const int& unique_id, Eigen::Vector3d pose)
 void CeresSolver::GetNodeOrientation(const int& unique_id, double& pose)
 /*****************************************************************************/
 {
-  boost::mutex::scoped_lock lock(nodes_mutex_);
-  GraphIterator it = nodes_->find(unique_id);
-  if (it != nodes_->end())
+  boost::mutex::scoped_lock lock(mutex_);
+  ParameterBlockMap::left_const_iterator it =
+    parameter_blocks_->left.find(unique_id);
+  if (it != parameter_blocks_->left.end())
   {
-    pose = it->second(2);
+    pose = it->second[2];
   }
 }
 
 /*****************************************************************************/
-std::unordered_map<int, Eigen::Vector3d>* CeresSolver::getGraph()
+std::unordered_map<int, Eigen::Map<Eigen::Vector3d>> CeresSolver::GetGraph()
 /*****************************************************************************/
 {
-  boost::mutex::scoped_lock lock(nodes_mutex_);
-  return nodes_;
+  boost::mutex::scoped_lock lock(mutex_);
+  std::unordered_map<int, Eigen::Map<Eigen::Vector3d>> graph;
+  ParameterBlockMap::left_const_iterator it = parameter_blocks_->left.begin();
+  for (; it != parameter_blocks_->left.end(); ++it)
+  {
+    graph.emplace(it->first, Eigen::Map<Eigen::Vector3d>(it->second));
+  }
+  return graph;
 }
 
 } // end namespace

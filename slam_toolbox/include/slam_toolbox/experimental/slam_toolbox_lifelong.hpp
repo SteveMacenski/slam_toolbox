@@ -63,6 +63,7 @@ protected:
   double candidates_scale_;
   double iou_match_;
   double nearby_penalty_;
+  bool node_marginalization_;
 };
 
 }
