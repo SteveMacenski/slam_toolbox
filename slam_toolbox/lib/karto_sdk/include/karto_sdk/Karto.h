@@ -2177,7 +2177,8 @@ namespace karto
      */
     inline kt_double HeadingDifference(const Pose2& rOther) const
     {
-      return fabs(m_Heading - rOther.m_Heading) < M_PI ? fabs(m_Heading - rOther.m_Heading) : 2*M_PI - fabs(m_Heading - rOther.m_Heading);
+      const double h_Diff = fmod((m_Heading - rOther.m_Heading) + M_PI, 2.0 * M_PI);
+      return (h_Diff <= 0.0) ? fabs(h_Diff + M_PI) : fabs(h_Diff - M_PI);
     }
     
   public:
