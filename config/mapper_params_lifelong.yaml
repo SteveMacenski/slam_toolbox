@@ -15,6 +15,7 @@ slam_toolbox:
     map_frame: map
     base_frame: base_footprint
     scan_topic: /scan
+    use_map_saver: true
     mode: mapping
 
     # lifelong params
