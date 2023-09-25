@@ -61,8 +61,10 @@ void SlamToolbox::configure()
   pose_helper_ = std::make_unique<pose_utils::GetPoseHelper>(
     tf_.get(), base_frame_, odom_frame_);
   scan_holder_ = std::make_unique<laser_utils::ScanHolder>(lasers_);
-  map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(),
-      map_name_);
+  if (use_map_saver_) {
+    map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(),
+        map_name_);
+  }
   closure_assistant_ =
     std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
     shared_from_this(), smapper_->getMapper(), scan_holder_.get(),
@@ -143,6 +145,9 @@ void SlamToolbox::setParams()
   }
   map_name_ = std::string("/map");
   map_name_ = this->declare_parameter("map_name", map_name_);
+
+  use_map_saver_ = true;
+  use_map_saver_ = this->declare_parameter("use_map_saver", use_map_saver_);
 
   scan_topic_ = std::string("/scan");
   scan_topic_ = this->declare_parameter("scan_topic", scan_topic_);
