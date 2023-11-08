@@ -20,7 +20,7 @@ You can find this work [here](https://joss.theoj.org/papers/10.21105/joss.02783)
 
 # Introduction
 
-Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/), maintained whil at Samsung Research, and largely in his free time. 
+Slam Toolbox is a set of tools and capabilities for 2D SLAM built by [Steve Macenski](https://www.linkedin.com/in/steve-macenski-41a985101) while at [Simbe Robotics](https://www.simberobotics.com/), maintained while at Samsung Research, and largely in his free time. 
 
 This project contains the ability to do most everything any other available SLAM library, both free and paid, and more. This includes:
 - Ordinary point-and-shoot 2D SLAM mobile robotics folks expect (start, map, save pgm file) with some nice built in utilities like saving maps
@@ -37,7 +37,7 @@ This project contains the ability to do most everything any other available SLAM
 
 For running on live production robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
 
-This package has been benchmarked mapping building at 5x+ realtime up to about 30,000 sqft and 3x realtime up to about 60,000 sqft. with the largest area (I'm aware of) used was a 200,000 sq.ft. building in synchronous mode (e.i. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
+This package has been benchmarked mapping building at 5x+ real-time up to about 30,000 sq. ft. and 3x real-time up to about 60,000 sq. ft. with the largest area (I'm aware of) used was a 200,000 sq. ft. building in synchronous mode (i.e. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
 The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/) in Oakland, California. Thanks to [Silicon Valley Robotics](https://svrobo.org/) & Circuit Launch for being a testbed for some of this work.
 
@@ -79,8 +79,8 @@ LifeLong mapping is the concept of being able to map a space, completely or part
 
 Our lifelong mapping consists of a few key steps
 - Serialization and Deserialization to store and reload map information
-- KD-Tree search matching to locate the robot in its position on reinitalization
-- pose-graph optimizition based SLAM with 2D scan matching abstraction 
+- KD-Tree search matching to locate the robot in its position on reinitialization
+- pose-graph optimization based SLAM with 2D scan matching abstraction 
 
 This will allow the user to create and update existing maps, then serialize the data for use in other mapping sessions, something sorely lacking from most SLAM implementations and nearly all planar SLAM implementations. Other good libraries that do this include RTab-Map and Cartographer, though they themselves have their own quirks that make them (in my opinion) unusable for production robotics applications. This library provides the mechanics to save not only the data, but the pose graph, and associated metadata to work with. This has been used to create maps by merging techniques (taking 2 or more serialized objects and creating 1 globally consistent one) as well as continuous mapping techniques (updating 1, same, serialized map object over time and refining it). The major benefit of this over RTab-Map or Cartographer is the maturity of the underlying (but heavily modified) `open_karto` library the project is based on. The scan matcher of Karto is well known as an extremely good matcher for 2D laser scans and modified versions of Karto can be found in companies across the world. 
 
@@ -89,21 +89,21 @@ Slam Toolbox supports all the major modes:
 - Starting at any particular node - select a node ID to start near
 - Starting in any particular area - indicate current pose in the map frame to start at, like AMCL 
 
-In the RVIZ interface (see section below) you'll be able to re-localize in a map or continue mapping graphically or programatically using ROS services. 
+In the RVIZ interface (see section below) you'll be able to re-localize in a map or continue mapping graphically or programmatically using ROS services. 
 
 On time of writing: there a **highly** experimental implementation of what I call "true lifelong" mapping that does support the method for removing nodes over time as well as adding nodes, this results in a true ability to map for life since the computation is bounded by removing extraneous or outdated information. Its recommended to run the non-full LifeLong mapping mode in the cloud for the increased computational burdens if you'd like to be continuously refining a map. However a real and desperately needed application of this is to have multi-session mapping to update just a section of the map or map half an area at a time to create a full (and then static) map for AMCL or Slam Toolbox localization mode, which this will handle in spades. The immediate plan is to create a mode within LifeLong mapping to decay old nodes to bound the computation and allow it to run on the edge by refining the experimental node. Continuing mapping (lifelong) should be used to build a complete map then switch to the pose-graph deformation localization mode until node decay is implemented, and **you should not see any substantial performance impacts**. 
 
 
 # Localization
 
-<!-- map refind local area localization Gif here-->
+<!-- map refined local area localization Gif here-->
 
 Localization mode consists of 3 things:
 - Loads existing serialized map into the node
 - Maintains a rolling buffer of recent scans in the pose-graph
 - After expiring from the buffer scans are removed and the underlying map is not affected
 
-Localization methods on image map files has been around for years and works relatively well. There has not been a great deal of work in academia to refine these algorithms to a degree that satesfies me. However SLAM is a rich and well benchmarked topic. The inspiration of this work was the concept of "Can we make localization, SLAM again?" such that we can take advantage of all the nice things about SLAM for localization, but remove the unbounded computational increase. 
+Localization methods on image map files has been around for years and works relatively well. There has not been a great deal of work in academia to refine these algorithms to a degree that satisfies me. However SLAM is a rich and well benchmarked topic. The inspiration of this work was the concept of "Can we make localization, SLAM again?" such that we can take advantage of all the nice things about SLAM for localization, but remove the unbounded computational increase. 
 
 To enable, set `mode: localization` in the configuration file to allow for the Ceres plugin to set itself correctly to be able to quickly add *and remove* nodes and constraints from the pose graph, but isn't strictly required, but a performance optimization. The localization mode will automatically load your pose graph, take the first scan and match it against the local area to further refine your estimated position, and start localizing. 
 
@@ -159,11 +159,11 @@ If you're a weirdo like me and you want to see how I came up with the settings I
 
 ![ceres_solver_comparison](https://user-images.githubusercontent.com/14944147/41576505-a6802d76-733c-11e8-8eca-334da2c8bd50.png)
 
-The data sets present solve time vs number of nodes in the pose graph on a large dataset, as that is not open source, but suffice to say that the settings I recommend work well. I think anyone would be hardset in a normal application to exceed or find that another solver type is better (that super low curve on the bottom one, yeah, that's it). Benchmark on a low power 7th gen i7 machine.
+The data sets present solve time vs number of nodes in the pose graph on a large dataset, as that is not open source, but suffice to say that the settings I recommend work well. I think anyone would be hard set in a normal application to exceed or find that another solver type is better (that super low curve on the bottom one, yeah, that's it). Benchmark on a low power 7th gen i7 machine.
 
 It can map _very_ large spaces with reasonable CPU and memory consumption. My default settings increase O(N) on number of elements in the pose graph. I recommend from extensive testing to use the `SPARSE_NORMAL_CHOLESKY` solver with Ceres and the `SCHUR_JACOBI` preconditioner. Using `LM` at the trust region strategy is comparable to the dogleg subspace strategy, but `LM` is much better supported so why argue with it. 
 
-You can get away without a loss function if your odometry is good (ie likelihood for outliers is extremely low). If you have an abnormal application or expect wheel slippage, I might recommend a `HuberLoss` function, which is a really good catch-all loss function if you're looking for a place to start. All these options and more are available from the ROS parameter server.
+You can get away without a loss function if your odometry is good (i.e. likelihood for outliers is extremely low). If you have an abnormal application or expect wheel slippage, I might recommend a `HuberLoss` function, which is a really good catch-all loss function if you're looking for a place to start. All these options and more are available from the ROS parameter server.
 
 # API
 
@@ -207,7 +207,7 @@ The following settings and options are exposed to you. My default configuration 
 
 `ceres_preconditioner` - The preconditioner to use with that solver. Options: `JACOBI`, `IDENTITY` (none), `SCHUR_JACOBI`. Defaults to `JACOBI`.
 
-`ceres_trust_strategy` - The trust region strategy. Line searach strategies are not exposed because they perform poorly for this use. Options: `LEVENBERG_MARQUARDT`, `DOGLEG`. Default: `LEVENBERG_MARQUARDT`.
+`ceres_trust_strategy` - The trust region strategy. Line search strategies are not exposed because they perform poorly for this use. Options: `LEVENBERG_MARQUARDT`, `DOGLEG`. Default: `LEVENBERG_MARQUARDT`.
 
 `ceres_dogleg_type` - The dogleg strategy to use if the trust strategy is `DOGLEG`. Options: `TRADITIONAL_DOGLEG`, `SUBSPACE_DOGLEG`. Default: `TRADITIONAL_DOGLEG`
 
@@ -223,7 +223,7 @@ The following settings and options are exposed to you. My default configuration 
 
 `base_frame` - Base frame
 
-`scan_topic` - scan topic, *absolute* path, ei `/scan` not `scan`
+`scan_topic` - scan topic, *absolute* path, i.e. `/scan` not `scan`
 
 `scan_queue_size` - The number of scan messages to queue up before throwing away old ones. Should always be set to 1 in async mode
 
@@ -251,7 +251,7 @@ The following settings and options are exposed to you. My default configuration 
 
 `resolution` - Resolution of the 2D occupancy map to generate
 
-`max_laser_range` - Maximum laser range to use for 2D occupancy map rastering
+`max_laser_range` - Maximum laser range to use for 2D occupancy map rasterizing
 
 `minimum_time_interval` - The minimum duration of time between scans to be processed in synchronous mode
 
@@ -297,7 +297,7 @@ The following settings and options are exposed to you. My default configuration 
 
 `correlation_search_space_smear_deviation` - Amount of multimodal smearing to smooth out responses
 
-`loop_search_space_dimension` - Size of the search grid over the loop closure algorith
+`loop_search_space_dimension` - Size of the search grid over the loop closure algorithm
 
 `loop_search_space_resolution` - Search grid resolution to do loop closure over
 
@@ -346,7 +346,7 @@ In order to do some operations quickly for continued mapping and localization, I
 
 ## Brief incursion into snaps
 
-Snap are completely isolated containerized packages that one can run through the Canonical organization on a large number of Linux distributions. They're similar to Docker containers but it doesn't share the kernel or any of the libraries, and rather has everything internal as essentially a seperate partitioned operating system based on Ubuntu Core. 
+Snap are completely isolated containerized packages that one can run through the Canonical organization on a large number of Linux distributions. They're similar to Docker containers but it doesn't share the kernel or any of the libraries, and rather has everything internal as essentially a separate partitioned operating system based on Ubuntu Core. 
 
 We package up slam toolbox in this way for a nice multiple-on speed up in execution from a couple of pretty nuanced reasons in this particular project, but generally speaking you shouldn't expect a speedup from a snap. 
 
