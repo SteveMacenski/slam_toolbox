@@ -44,6 +44,7 @@ protected:
 
 private:
   rclcpp::Logger logger_;
+  std::string namespace_str_;
   rclcpp::Service<slam_toolbox::srv::SaveMap>::SharedPtr server_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sub_;
   std::string service_name_, map_name_;

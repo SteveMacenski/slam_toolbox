@@ -26,7 +26,8 @@ namespace map_saver
 /*****************************************************************************/
 template<class NodeT>
 MapSaver::MapSaver(NodeT node, const std::string & map_name)
-: logger_(node->get_logger()), map_name_(map_name), received_map_(false)
+: logger_(node->get_logger()), namespace_str_(node->get_namespace()),
+  map_name_(map_name), received_map_(false)
 /*****************************************************************************/
 {
   server_ = node->template create_service<slam_toolbox::srv::SaveMap>(
@@ -63,9 +64,8 @@ bool MapSaver::saveMapCallback(
 
   const std::string name = req->name.data;
   std::string set_namespace;
-  const std::string namespace_str = std::string(node_->get_namespace());
-  if (!namespace_str.empty()) {
-    set_namespace = " -r __ns:=" + namespace_str;
+  if (!namespace_str_.empty()) {
+    set_namespace = " -r __ns:=" + namespace_str_;
   }
 
   if (name != "") {

@@ -277,7 +277,10 @@ void SlamToolbox::setParams()
   map_name_ = this->get_parameter("map_name").as_string();
 
   use_map_saver_ = true;
-  use_map_saver_ = this->declare_parameter("use_map_saver", use_map_saver_);
+  if (!this->has_parameter("use_map_saver")) {
+    this->declare_parameter("use_map_saver", use_map_saver_);
+  }
+  use_map_saver_ = this->get_parameter("use_map_saver").as_bool();
 
   scan_topic_ = std::string("/scan");
   if (!this->has_parameter("scan_topic")) {
