@@ -14,6 +14,7 @@ slam_toolbox:
     map_frame: map
     base_frame: base_footprint
     scan_topic: /scan
+    use_map_saver: true
     mode: mapping #localization
 
     # if you'd like to immediately start continuing a map at a given pose
@@ -31,7 +32,7 @@ slam_toolbox:
     max_laser_range: 20.0 #for rastering images
     minimum_time_interval: 0.5
     transform_timeout: 0.2
-    tf_buffer_duration: 30.
+    tf_buffer_duration: 30.0
     stack_size_to_use: 40000000 #// program needs a larger stack size to serialize large maps
     enable_interactive_mode: true
 

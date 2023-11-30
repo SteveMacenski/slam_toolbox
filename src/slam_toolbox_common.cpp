@@ -78,9 +78,10 @@ CallbackReturn SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
   pose_helper_ = std::make_unique<pose_utils::GetPoseHelper>(
     tf_.get(), base_frame_, odom_frame_);
   scan_holder_ = std::make_unique<laser_utils::ScanHolder>(lasers_);
-  map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(),
-      map_name_);
-
+  if (use_map_saver_) {
+    map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(),
+        map_name_);
+  }
   loadPoseGraphByParams();
   return CallbackReturn::SUCCESS;
 }
@@ -274,6 +275,9 @@ void SlamToolbox::setParams()
     this->declare_parameter("map_name", map_name_);
   }
   map_name_ = this->get_parameter("map_name").as_string();
+
+  use_map_saver_ = true;
+  use_map_saver_ = this->declare_parameter("use_map_saver", use_map_saver_);
 
   scan_topic_ = std::string("/scan");
   if (!this->has_parameter("scan_topic")) {

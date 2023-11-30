@@ -33,6 +33,7 @@ find_package(rviz_ogre_vendor REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(interactive_markers REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
+find_package(rclcpp_components REQUIRED)
 
 #karto_sdk lib
 set(BUILD_SHARED_LIBS ON)
@@ -62,6 +63,7 @@ set(dependencies
   rviz_rendering
   interactive_markers
   Qt5
+  rclcpp_components
 )
 
 set(libraries
@@ -189,6 +191,12 @@ target_link_libraries(merge_maps_kinematic kartoSlamToolbox toolbox_common)
 #  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
 #endif()
 
+rclcpp_components_register_nodes(async_slam_toolbox "slam_toolbox::AsynchronousSlamToolbox")
+rclcpp_components_register_nodes(sync_slam_toolbox "slam_toolbox::SynchronousSlamToolbox")
+rclcpp_components_register_nodes(localization_slam_toolbox "slam_toolbox::LocalizationSlamToolbox")
+rclcpp_components_register_nodes(lifelong_slam_toolbox "slam_toolbox::LifelongSlamToolbox")
+rclcpp_components_register_nodes(map_and_localization_slam_toolbox "slam_toolbox::MapAndLocalizationSlamToolbox")
+
 #### Install
 install(TARGETS async_slam_toolbox_node
                 sync_slam_toolbox_node
@@ -197,6 +205,7 @@ install(TARGETS async_slam_toolbox_node
                 lifelong_slam_toolbox_node
                 merge_maps_kinematic
                 ${libraries}
+                kartoSlamToolbox
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
@@ -216,6 +225,7 @@ install(DIRECTORY include/
 
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
+  PATTERN "lifelong_launch.py" EXCLUDE
 )
 
 install(DIRECTORY config
@@ -227,7 +237,7 @@ install(FILES solver_plugins.xml rviz_plugins.xml
 )
 
 ament_export_include_directories(include)
-ament_export_libraries(${libraries})
+ament_export_libraries(${libraries} kartoSlamToolbox)
 ament_export_dependencies(${dependencies})
 ament_export_targets(SlamToolboxPlugin HAS_LIBRARY_TARGET)
 ament_package()

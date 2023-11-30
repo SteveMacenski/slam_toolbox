@@ -35,14 +35,3 @@ target_link_libraries(kartoSlamToolbox ${Boost_LIBRARIES} TBB::tbb)
 install(DIRECTORY include/
 	DESTINATION include/
 )
-
-install(TARGETS kartoSlamToolbox
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
-)
-
-ament_export_libraries(kartoSlamToolbox)
-ament_export_include_directories(include)
-ament_export_dependencies(${dependencies})
-ament_package()
