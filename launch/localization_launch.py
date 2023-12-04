@@ -1,6 +1,4 @@
 
-# Modified slowrunner: to take params_file parameter
-
 import os
 
 from launch import LaunchDescription
