@@ -44,6 +44,23 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
   minimum_time_interval_(std::chrono::nanoseconds(0))
 /*****************************************************************************/
 {
+  int stack_size = 40'000'000;
+  {
+    rcl_interfaces::msg::ParameterDescriptor descriptor;
+    descriptor.read_only = true;
+    this->declare_parameter(
+      "stack_size_to_use", rclcpp::ParameterType::PARAMETER_INTEGER, descriptor);
+    if (this->get_parameter("stack_size_to_use", stack_size)) {
+      RCLCPP_INFO(get_logger(), "Node using stack size %i", (int)stack_size);
+      const rlim_t max_stack_size = stack_size;
+      struct rlimit stack_limit;
+      getrlimit(RLIMIT_STACK, &stack_limit);
+      if (stack_limit.rlim_cur < stack_size) {
+        stack_limit.rlim_cur = stack_size;
+      }
+      setrlimit(RLIMIT_STACK, &stack_limit);
+    }
+  }
 }
 
 /*****************************************************************************/
@@ -350,7 +367,6 @@ void SlamToolbox::setParams()
     this->declare_parameter("paused_new_measurements", false);
   }
   this->set_parameter(rclcpp::Parameter("paused_new_measurements", false));
-
 }
 
 /*****************************************************************************/
