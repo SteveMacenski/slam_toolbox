@@ -61,6 +61,38 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
       setrlimit(RLIMIT_STACK, &stack_limit);
     }
   }
+  // server side never times out from lifecycle manager
+  this->declare_parameter(bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true);
+  this->set_parameter(
+    rclcpp::Parameter(
+      bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true));
+}
+
+/*****************************************************************************/
+void SlamToolbox::createBond()
+/*****************************************************************************/
+{
+  RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
+
+  bond_ = std::make_unique<bond::Bond>(
+    std::string("bond"),
+    this->get_name(),
+    shared_from_this());
+
+  bond_->setHeartbeatPeriod(0.10);
+  bond_->setHeartbeatTimeout(4.0);
+  bond_->start();
+}
+
+/*****************************************************************************/
+void SlamToolbox::destroyBond()
+/*****************************************************************************/
+{
+  RCLCPP_INFO(get_logger(), "Destroying bond (%s) to lifecycle manager.", this->get_name());
+
+  if (bond_) {
+    bond_.reset();
+  }
 }
 
 /*****************************************************************************/
@@ -129,6 +161,12 @@ CallbackReturn SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
       this, transform_publish_period)));
   threads_.push_back(std::make_unique<boost::thread>(
       boost::bind(&SlamToolbox::publishVisualizations, this)));
+
+  if (use_lifecycle_manager_) {
+    // create bond connection
+    createBond();
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -158,6 +196,12 @@ CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
   sstm_.reset();
   sst_.reset();
   pose_pub_.reset();
+
+  if (use_lifecycle_manager_) {
+    // destroy bond connection
+    destroyBond();
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
@@ -298,6 +342,12 @@ void SlamToolbox::setParams()
     this->declare_parameter("use_map_saver", use_map_saver_);
   }
   use_map_saver_ = this->get_parameter("use_map_saver").as_bool();
+
+  use_lifecycle_manager_ = false;
+  if (!this->has_parameter("use_lifecycle_manager")) {
+    this->declare_parameter("use_lifecycle_manager", use_lifecycle_manager_);
+  }
+  use_lifecycle_manager_ = this->get_parameter("use_lifecycle_manager").as_bool();
 
   scan_topic_ = std::string("/scan");
   if (!this->has_parameter("scan_topic")) {

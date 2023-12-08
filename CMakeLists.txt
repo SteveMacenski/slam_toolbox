@@ -26,6 +26,8 @@ find_package(std_srvs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(bondcpp REQUIRED)
+find_package(bond REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
@@ -56,6 +58,8 @@ set(dependencies
   std_srvs
   builtin_interfaces
   rclcpp_lifecycle
+  bondcpp
+  bond
   lifecycle_msgs
   rviz_common
   rviz_default_plugins

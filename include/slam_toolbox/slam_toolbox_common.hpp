@@ -31,6 +31,8 @@
 
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "bondcpp/bond.hpp"
+#include "bond/msg/constants.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "message_filters/subscriber.h"
@@ -66,6 +68,11 @@ public:
   SlamToolbox();
   virtual ~SlamToolbox();
   virtual void loadPoseGraphByParams();
+
+  // Create bond connection for nav2 lifecycle manager
+  void createBond();
+  // Destroy bond connection for nav2 lifecycle manager
+  void destroyBond();
 
   CallbackReturn on_configure(const rclcpp_lifecycle::State &) override;
   CallbackReturn on_activate(const rclcpp_lifecycle::State &) override;
@@ -153,6 +160,7 @@ protected:
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_;
   bool use_map_saver_;
+  bool use_lifecycle_manager_;
   rclcpp::Duration transform_timeout_, minimum_time_interval_;
   std_msgs::msg::Header scan_header;
   int throttle_scans_, scan_queue_size_;
@@ -187,6 +195,9 @@ protected:
   // pluginlib
   pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;
   std::shared_ptr<karto::ScanSolver> solver_;
+
+  // Connection to tell that server is still up
+  std::unique_ptr<bond::Bond> bond_{nullptr};
 };
 
 }  // namespace slam_toolbox
