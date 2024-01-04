@@ -32,7 +32,7 @@
 #include "tbb/blocked_range.h"
 
 #include "Eigen/Core"
-#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "Karto.h"  // NOLINT
 #include "nanoflann_adaptors.h"  // NOLINT
 
@@ -979,7 +979,7 @@ public:
    */
   virtual void Compute() = 0;
 
-  virtual void Configure(rclcpp::Node::SharedPtr node) = 0;
+  virtual void Configure(rclcpp_lifecycle::LifecycleNode::SharedPtr node) = 0;
 
   /**
    * Get corrected poses after optimization

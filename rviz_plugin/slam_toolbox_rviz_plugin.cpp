@@ -51,7 +51,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget * parent)
     "/slam_toolbox/paused_new_measurements", paused_measure);
   interactive = ros_node_->declare_parameter(
     "/slam_toolbox/interactive_mode", interactive);
-    
+
   _initialposeSub =
     ros_node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "/initialpose", 10,
@@ -252,7 +252,7 @@ SlamToolboxPlugin::~SlamToolboxPlugin()
   _thread->join();
   _thread.reset();
 }
-  
+
 /*****************************************************************************/
 void SlamToolboxPlugin::InitialPoseCallback(
   const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
@@ -553,21 +553,33 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
   auto node = std::make_shared<rclcpp::Node>("SlamToolboxStateUpdateNode");
   auto parameters_client =
     std::make_shared<rclcpp::SyncParametersClient>(node, "slam_toolbox");
+  auto log_trigger = true;
 
   while (rclcpp::ok()) {
     auto parameters = parameters_client->get_parameters(
-      {"paused_new_measurements", "interactive_mode"});
-    paused_measure = parameters[0].as_bool();
-    interactive = parameters[1].as_bool();
+      {"paused_new_measurements", "interactive_mode"}, std::chrono::seconds(1));
+    if (parameters.empty()) {
+      RCLCPP_INFO_THROTTLE(
+        ros_node_->get_logger(), *ros_node_->get_clock(), 5000,
+        "Waiting for the slam_toolbox node configuration.");
+      log_trigger = true;
+    } else {
+      RCLCPP_INFO_EXPRESSION(
+        ros_node_->get_logger(), log_trigger,
+        "Start the slam_toolbox node state check.");
+      log_trigger = false;
 
-    bool oldState = _check1->blockSignals(true);
-    _check1->setChecked(interactive);
-    _check1->blockSignals(oldState);
+      paused_measure = parameters[0].as_bool();
+      interactive = parameters[1].as_bool();
 
-    oldState = _check2->blockSignals(true);
-    _check2->setChecked(!paused_measure);
-    _check2->blockSignals(oldState);
+      bool oldState = _check1->blockSignals(true);
+      _check1->setChecked(interactive);
+      _check1->blockSignals(oldState);
 
+      oldState = _check2->blockSignals(true);
+      _check2->setChecked(!paused_measure);
+      _check2->blockSignals(oldState);
+    }
     r.sleep();
   }
 }

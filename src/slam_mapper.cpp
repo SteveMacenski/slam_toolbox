@@ -93,7 +93,8 @@ karto::Pose2 SMapper::toKartoPose(const tf2::Transform & pose) const
 }
 
 /*****************************************************************************/
-void SMapper::configure(const rclcpp::Node::SharedPtr & node)
+template<class NodeT>
+void SMapper::configure(const NodeT & node)
 /*****************************************************************************/
 {
   bool use_scan_matching = true;
@@ -377,5 +378,9 @@ void SMapper::Reset()
 {
   mapper_->Reset();
 }
+
+// explicit instantiation for the supported template types
+template void SMapper::configure(const rclcpp::Node::SharedPtr &);
+template void SMapper::configure(const rclcpp_lifecycle::LifecycleNode::SharedPtr &);
 
 }  // namespace mapper_utils

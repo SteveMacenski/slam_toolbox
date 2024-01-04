@@ -25,6 +25,10 @@ find_package(std_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(builtin_interfaces REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
+find_package(bondcpp REQUIRED)
+find_package(bond REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(rviz_common REQUIRED)
 find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
@@ -53,6 +57,10 @@ set(dependencies
   std_msgs
   std_srvs
   builtin_interfaces
+  rclcpp_lifecycle
+  bondcpp
+  bond
+  lifecycle_msgs
   rviz_common
   rviz_default_plugins
   rviz_ogre_vendor
@@ -126,7 +134,7 @@ rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typ
 target_link_libraries(SlamToolboxPlugin "${cpp_typesupport_target}")
 target_compile_definitions(SlamToolboxPlugin PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 target_compile_definitions(SlamToolboxPlugin PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY")
-pluginlib_export_plugin_description_file(rviz_common rviz_plugins.xml) 
+pluginlib_export_plugin_description_file(rviz_common rviz_plugins.xml)
 
 #### Ceres Plugin
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
@@ -200,6 +208,7 @@ install(TARGETS async_slam_toolbox_node
                 sync_slam_toolbox_node
                 localization_slam_toolbox_node
                 map_and_localization_slam_toolbox_node
+                lifelong_slam_toolbox_node
                 merge_maps_kinematic
                 ${libraries}
                 kartoSlamToolbox

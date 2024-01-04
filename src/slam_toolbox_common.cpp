@@ -35,7 +35,7 @@ SlamToolbox::SlamToolbox()
 
 /*****************************************************************************/
 SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
-: Node("slam_toolbox", "", options),
+: rclcpp_lifecycle::LifecycleNode("slam_toolbox", "", options),
   solver_loader_("slam_toolbox", "karto::ScanSolver"),
   processor_type_(PROCESS),
   first_measurement_(true),
@@ -44,18 +44,84 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
   minimum_time_interval_(std::chrono::nanoseconds(0))
 /*****************************************************************************/
 {
-  smapper_ = std::make_unique<mapper_utils::SMapper>();
-  dataset_ = std::make_unique<Dataset>();
+  int stack_size = 40'000'000;
+  {
+    rcl_interfaces::msg::ParameterDescriptor descriptor;
+    descriptor.read_only = true;
+    this->declare_parameter(
+      "stack_size_to_use", rclcpp::ParameterType::PARAMETER_INTEGER, descriptor);
+    if (this->get_parameter("stack_size_to_use", stack_size)) {
+      RCLCPP_INFO(get_logger(), "Node using stack size %i", (int)stack_size);
+      const rlim_t max_stack_size = stack_size;
+      struct rlimit stack_limit;
+      getrlimit(RLIMIT_STACK, &stack_limit);
+      if (stack_limit.rlim_cur < stack_size) {
+        stack_limit.rlim_cur = stack_size;
+      }
+      setrlimit(RLIMIT_STACK, &stack_limit);
+    }
+  }
+  // server side never times out from lifecycle manager
+  this->declare_parameter(bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true);
+  this->set_parameter(
+    rclcpp::Parameter(
+      bond::msg::Constants::DISABLE_HEARTBEAT_TIMEOUT_PARAM, true));
 }
 
 /*****************************************************************************/
-void SlamToolbox::configure()
+void SlamToolbox::createBond()
 /*****************************************************************************/
 {
+  RCLCPP_INFO(get_logger(), "Creating bond (%s) to lifecycle manager.", this->get_name());
+
+  bond_ = std::make_unique<bond::Bond>(
+    std::string("bond"),
+    this->get_name(),
+    shared_from_this());
+
+  bond_->setHeartbeatPeriod(0.10);
+  bond_->setHeartbeatTimeout(4.0);
+  bond_->start();
+}
+
+/*****************************************************************************/
+void SlamToolbox::destroyBond()
+/*****************************************************************************/
+{
+  RCLCPP_INFO(get_logger(), "Destroying bond (%s) to lifecycle manager.", this->get_name());
+
+  if (bond_) {
+    bond_.reset();
+  }
+}
+
+/*****************************************************************************/
+CallbackReturn SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
+/*****************************************************************************/
+{
+  RCLCPP_INFO(get_logger(), "Configuring");
+  processor_type_ = PROCESS;
+  first_measurement_ = true;
+  process_near_pose_ = nullptr;
+  smapper_ = std::make_unique<mapper_utils::SMapper>();
+  dataset_ = std::make_unique<Dataset>();
+
   setParams();
-  setROSInterfaces();
   setSolver();
 
+  double tmp_val = 30.0;
+  if (!this->has_parameter("tf_buffer_duration")) {
+    this->declare_parameter("tf_buffer_duration", tmp_val);
+  }
+  tmp_val = this->get_parameter("tf_buffer_duration").as_double();
+  tf_ = std::make_unique<tf2_ros::Buffer>(this->get_clock(),
+      tf2::durationFromSec(tmp_val));
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    get_node_base_interface(),
+    get_node_timers_interface());
+  tf_->setCreateTimerInterface(timer_interface);
+  tfL_ = std::make_unique<tf2_ros::TransformListener>(*tf_);
+  tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(shared_from_this());
   laser_assistant_ = std::make_unique<laser_utils::LaserAssistant>(
     shared_from_this(), tf_.get(), base_frame_);
   pose_helper_ = std::make_unique<pose_utils::GetPoseHelper>(
@@ -65,6 +131,20 @@ void SlamToolbox::configure()
     map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(),
         map_name_);
   }
+  loadPoseGraphByParams();
+  return CallbackReturn::SUCCESS;
+}
+
+/*****************************************************************************/
+CallbackReturn SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
+/*****************************************************************************/
+{
+  RCLCPP_INFO(get_logger(), "Activating");
+  setROSInterfaces();
+
+  sst_->on_activate();
+  sstm_->on_activate();
+  pose_pub_->on_activate();
   closure_assistant_ =
     std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
     shared_from_this(), smapper_->getMapper(), scan_holder_.get(),
@@ -72,14 +152,87 @@ void SlamToolbox::configure()
   reprocessing_transform_.setIdentity();
 
   double transform_publish_period = 0.05;
-  transform_publish_period =
-    this->declare_parameter("transform_publish_period",
-      transform_publish_period);
+  if (!this->has_parameter("transform_publish_period")) {
+    this->declare_parameter("transform_publish_period", transform_publish_period);
+  }
+  transform_publish_period = this->get_parameter("transform_publish_period").as_double();
   threads_.push_back(std::make_unique<boost::thread>(
       boost::bind(&SlamToolbox::publishTransformLoop,
       this, transform_publish_period)));
   threads_.push_back(std::make_unique<boost::thread>(
       boost::bind(&SlamToolbox::publishVisualizations, this)));
+
+  if (use_lifecycle_manager_) {
+    // create bond connection
+    createBond();
+  }
+
+  return CallbackReturn::SUCCESS;
+}
+
+/*****************************************************************************/
+CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
+/*****************************************************************************/
+{
+  RCLCPP_INFO(get_logger(), "Deactivating");
+  for (int i = 0; i != threads_.size(); i++) {
+    threads_[i]->interrupt();
+    threads_[i]->join();
+    threads_[i].reset();
+  }
+  threads_.clear();
+  closure_assistant_.reset();
+  sst_->on_deactivate();
+  sstm_->on_deactivate();
+  pose_pub_->on_deactivate();
+
+  // reset interfaces
+  scan_filter_.reset();
+  scan_filter_sub_.reset();
+  ssDesserialize_.reset();
+  ssSerialize_.reset();
+  ssPauseMeasurements_.reset();
+  ssMap_.reset();
+  sstm_.reset();
+  sst_.reset();
+  pose_pub_.reset();
+
+  if (use_lifecycle_manager_) {
+    // destroy bond connection
+    destroyBond();
+  }
+
+  return CallbackReturn::SUCCESS;
+}
+
+/*****************************************************************************/
+CallbackReturn SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
+/*****************************************************************************/
+{
+  RCLCPP_INFO(get_logger(), "Cleaning up");
+  smapper_.reset();
+  dataset_.reset();
+  map_saver_.reset();
+  pose_helper_.reset();
+  laser_assistant_.reset();
+  scan_holder_.reset();
+  solver_.reset();
+
+  tfB_.reset();
+  tfL_.reset();
+  tf_.reset();
+
+  lasers_.clear();
+  return CallbackReturn::SUCCESS;
+}
+
+/*****************************************************************************/
+CallbackReturn
+SlamToolbox::on_shutdown(const rclcpp_lifecycle::State & state)
+/*****************************************************************************/
+{
+  RCLCPP_INFO(get_logger(), "Shutting down");
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
@@ -87,8 +240,11 @@ SlamToolbox::~SlamToolbox()
 /*****************************************************************************/
 {
   for (int i = 0; i != threads_.size(); i++) {
+    threads_[i]->interrupt();
     threads_[i]->join();
+    threads_[i].reset();
   }
+  threads_.clear();
 
   smapper_.reset();
   dataset_.reset();
@@ -98,6 +254,22 @@ SlamToolbox::~SlamToolbox()
   laser_assistant_.reset();
   scan_holder_.reset();
   solver_.reset();
+
+  scan_filter_.reset();
+  scan_filter_sub_.reset();
+  ssDesserialize_.reset();
+  ssSerialize_.reset();
+  ssPauseMeasurements_.reset();
+  ssMap_.reset();
+  sstm_.reset();
+  sst_.reset();
+  pose_pub_.reset();
+
+  tfB_.reset();
+  tfL_.reset();
+  tf_.reset();
+
+  lasers_.clear();
 }
 
 /*****************************************************************************/
@@ -106,7 +278,10 @@ void SlamToolbox::setSolver()
 {
   // Set solver to be used in loop closure
   std::string solver_plugin = std::string("solver_plugins::CeresSolver");
-  solver_plugin = this->declare_parameter("solver_plugin", solver_plugin);
+  if (!this->has_parameter("solver_plugin")) {
+    this->declare_parameter("solver_plugin", solver_plugin);
+  }
+  solver_plugin = this->get_parameter("solver_plugin").as_string();
 
   try {
     solver_ = solver_loader_.createSharedInstance(solver_plugin);
@@ -127,36 +302,70 @@ void SlamToolbox::setParams()
 {
   map_to_odom_.setIdentity();
   odom_frame_ = std::string("odom");
-  odom_frame_ = this->declare_parameter("odom_frame", odom_frame_);
+  if (!this->has_parameter("odom_frame")) {
+    this->declare_parameter("odom_frame", odom_frame_);
+  }
+  odom_frame_ = this->get_parameter("odom_frame").as_string();
 
   map_frame_ = std::string("map");
-  map_frame_ = this->declare_parameter("map_frame", map_frame_);
+  if (!this->has_parameter("map_frame")) {
+    this->declare_parameter("map_frame", map_frame_);
+  }
+  map_frame_ = this->get_parameter("map_frame").as_string();
 
   base_frame_ = std::string("base_footprint");
-  base_frame_ = this->declare_parameter("base_frame", base_frame_);
+  if (!this->has_parameter("base_frame")) {
+    this->declare_parameter("base_frame", base_frame_);
+  }
+  base_frame_ = this->get_parameter("base_frame").as_string();
 
   resolution_ = 0.05;
-  resolution_ = this->declare_parameter("resolution", resolution_);
+  if (!this->has_parameter("resolution")) {
+    this->declare_parameter("resolution", resolution_);
+  }
+  resolution_ = this->get_parameter("resolution").as_double();
   if (resolution_ <= 0.0) {
     RCLCPP_WARN(this->get_logger(),
       "You've set resolution of map to be zero or negative,"
       "this isn't allowed so it will be set to default value 0.05.");
     resolution_ = 0.05;
   }
+
   map_name_ = std::string("/map");
-  map_name_ = this->declare_parameter("map_name", map_name_);
+  if (!this->has_parameter("map_name")) {
+    this->declare_parameter("map_name", map_name_);
+  }
+  map_name_ = this->get_parameter("map_name").as_string();
 
   use_map_saver_ = true;
-  use_map_saver_ = this->declare_parameter("use_map_saver", use_map_saver_);
+  if (!this->has_parameter("use_map_saver")) {
+    this->declare_parameter("use_map_saver", use_map_saver_);
+  }
+  use_map_saver_ = this->get_parameter("use_map_saver").as_bool();
+
+  use_lifecycle_manager_ = false;
+  if (!this->has_parameter("use_lifecycle_manager")) {
+    this->declare_parameter("use_lifecycle_manager", use_lifecycle_manager_);
+  }
+  use_lifecycle_manager_ = this->get_parameter("use_lifecycle_manager").as_bool();
 
   scan_topic_ = std::string("/scan");
-  scan_topic_ = this->declare_parameter("scan_topic", scan_topic_);
+  if (!this->has_parameter("scan_topic")) {
+    this->declare_parameter("scan_topic", scan_topic_);
+  }
+  scan_topic_ = this->get_parameter("scan_topic").as_string();
 
-  scan_queue_size_ = 1.0;
-  scan_queue_size_ = this->declare_parameter("scan_queue_size", scan_queue_size_);
+  scan_queue_size_ = 1;
+  if (!this->has_parameter("scan_queue_size")) {
+    this->declare_parameter("scan_queue_size", scan_queue_size_);
+  }
+  scan_queue_size_ = this->get_parameter("scan_queue_size").as_int();
 
   throttle_scans_ = 1;
-  throttle_scans_ = this->declare_parameter("throttle_scans", throttle_scans_);
+  if (!this->has_parameter("throttle_scans")) {
+    this->declare_parameter("throttle_scans", throttle_scans_);
+  }
+  throttle_scans_ = this->get_parameter("throttle_scans").as_int();
   if (throttle_scans_ == 0) {
     RCLCPP_WARN(this->get_logger(),
       "You've set throttle_scans to be zero,"
@@ -164,48 +373,56 @@ void SlamToolbox::setParams()
     throttle_scans_ = 1;
   }
   position_covariance_scale_ = 1.0;
-  position_covariance_scale_ = this->declare_parameter("position_covariance_scale", position_covariance_scale_);
+  if (!this->has_parameter("position_covariance_scale")) {
+    this->declare_parameter("position_covariance_scale", position_covariance_scale_);
+  }
+  position_covariance_scale_ = this->get_parameter("position_covariance_scale").as_double();
 
   yaw_covariance_scale_ = 1.0;
-  yaw_covariance_scale_ = this->declare_parameter("yaw_covariance_scale", yaw_covariance_scale_);
+  if (!this->has_parameter("yaw_covariance_scale")) {
+    this->declare_parameter("yaw_covariance_scale", yaw_covariance_scale_);
+  }
+  yaw_covariance_scale_ = this->get_parameter("yaw_covariance_scale").as_double();
 
   enable_interactive_mode_ = false;
-  enable_interactive_mode_ = this->declare_parameter("enable_interactive_mode",
-      enable_interactive_mode_);
+  if (!this->has_parameter("enable_interactive_mode")) {
+    this->declare_parameter("enable_interactive_mode", enable_interactive_mode_);
+  }
+  enable_interactive_mode_ = this->get_parameter("enable_interactive_mode").as_bool();
 
   double tmp_val = 0.5;
-  tmp_val = this->declare_parameter("transform_timeout", tmp_val);
+  if (!this->has_parameter("transform_timeout")) {
+    this->declare_parameter("transform_timeout", tmp_val);
+  }
+  tmp_val = this->get_parameter("transform_timeout").as_double();
   transform_timeout_ = rclcpp::Duration::from_seconds(tmp_val);
-  tmp_val = this->declare_parameter("minimum_time_interval", tmp_val);
+  if (!this->has_parameter("minimum_time_interval")) {
+    this->declare_parameter("minimum_time_interval", tmp_val);
+  }
+  tmp_val = this->get_parameter("minimum_time_interval").as_double();
   minimum_time_interval_ = rclcpp::Duration::from_seconds(tmp_val);
 
   bool debug = false;
-  debug = this->declare_parameter("debug_logging", debug);
+  if (!this->has_parameter("debug_logging")) {
+    this->declare_parameter("debug_logging", debug);
+  }
+  debug = this->get_parameter("debug_logging").as_bool();
   if (debug) {
     rcutils_ret_t rtn = rcutils_logging_set_logger_level("logger_name",
         RCUTILS_LOG_SEVERITY_DEBUG);
   }
 
   smapper_->configure(shared_from_this());
-  this->declare_parameter("paused_new_measurements",rclcpp::ParameterType::PARAMETER_BOOL);
-  this->set_parameter({"paused_new_measurements", false});
+  if (!this->has_parameter("paused_new_measurements")) {
+    this->declare_parameter("paused_new_measurements", false);
+  }
+  this->set_parameter(rclcpp::Parameter("paused_new_measurements", false));
 }
 
 /*****************************************************************************/
 void SlamToolbox::setROSInterfaces()
 /*****************************************************************************/
 {
-  double tmp_val = 30.;
-  tmp_val = this->declare_parameter("tf_buffer_duration", tmp_val);
-  tf_ = std::make_unique<tf2_ros::Buffer>(this->get_clock(),
-      tf2::durationFromSec(tmp_val));
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    get_node_base_interface(),
-    get_node_timers_interface());
-  tf_->setCreateTimerInterface(timer_interface);
-  tfL_ = std::make_unique<tf2_ros::TransformListener>(*tf_);
-  tfB_ = std::make_unique<tf2_ros::TransformBroadcaster>(shared_from_this());
-
   pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "pose", 10);
   sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -231,15 +448,18 @@ void SlamToolbox::setROSInterfaces()
     std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   scan_filter_sub_ =
-    std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan>>(
+    std::make_unique<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
+      rclcpp_lifecycle::LifecycleNode>>(
     shared_from_this().get(), scan_topic_, rmw_qos_profile_sensor_data);
   scan_filter_ =
     std::make_unique<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>(
-    *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_, shared_from_this(),
+    *scan_filter_sub_, *tf_, odom_frame_, scan_queue_size_,
+    get_node_logging_interface(), get_node_clock_interface(),
     tf2::durationFromSec(transform_timeout_.seconds()));
   scan_filter_->registerCallback(
     std::bind(&SlamToolbox::laserCallback, this, std::placeholders::_1));
 }
+
 
 /*****************************************************************************/
 void SlamToolbox::publishTransformLoop(
@@ -252,6 +472,7 @@ void SlamToolbox::publishTransformLoop(
 
   rclcpp::Rate r(1.0 / transform_publish_period);
   while (rclcpp::ok()) {
+    boost::this_thread::interruption_point();
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
       rclcpp::Time scan_timestamp = scan_header.stamp;
@@ -284,12 +505,15 @@ void SlamToolbox::publishVisualizations()
   og.info.origin.orientation.w = 1.0;
   og.header.frame_id = map_frame_;
 
-  double map_update_interval = 10;
-  map_update_interval = this->declare_parameter("map_update_interval",
-      map_update_interval);
+  double map_update_interval = 10.0;
+  if (!this->has_parameter("map_update_interval")) {
+    this->declare_parameter("map_update_interval", map_update_interval);
+  }
+  map_update_interval = this->get_parameter("map_update_interval").as_double();
   rclcpp::Rate r(1.0 / map_update_interval);
 
   while (rclcpp::ok()) {
+    boost::this_thread::interruption_point();
     updateMap();
     if (!isPaused(VISUALIZING_GRAPH)) {
       boost::mutex::scoped_lock lock(smapper_mutex_);
@@ -332,9 +556,17 @@ bool SlamToolbox::shouldStartWithPoseGraph(
 /*****************************************************************************/
 {
   // if given a map to load at run time, do it.
-  this->declare_parameter("map_file_name", std::string(""));
-  auto map_start_pose = this->declare_parameter("map_start_pose",rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY);
-  auto map_start_at_dock = this->declare_parameter("map_start_at_dock",rclcpp::ParameterType::PARAMETER_BOOL);
+  if (!this->has_parameter("map_start_pose")) {
+    this->declare_parameter("map_start_pose", std::vector<double>());
+  }
+  auto map_start_pose = this->get_parameter("map_start_pose").get_parameter_value();
+  if (!this->has_parameter("map_start_at_dock")) {
+    this->declare_parameter("map_start_at_dock", false);
+  }
+  auto map_start_at_dock = this->get_parameter("map_start_at_dock").get_parameter_value();
+  if (!this->has_parameter("map_file_name")) {
+    this->declare_parameter("map_file_name", std::string(""));
+  }
   filename = this->get_parameter("map_file_name").as_string();
   if (!filename.empty()) {
     std::vector<double> read_pose;

@@ -39,27 +39,66 @@ LifelongSlamToolbox::LifelongSlamToolbox(rclcpp::NodeOptions options)
 : SlamToolbox(options)
 /*****************************************************************************/
 {
+  RCLCPP_WARN(get_logger(), "Lifelong mapping mode in SLAM Toolbox is considered "
+    "experimental and should be understood before proceeding. Please visit: "
+    "https://github.com/SteveMacenski/slam_toolbox/wiki/"
+    "Experimental-Lifelong-Mapping-Node for more information.");
+}
+
+/*****************************************************************************/
+CallbackReturn
+LifelongSlamToolbox::on_configure(const rclcpp_lifecycle::State & state)
+/*****************************************************************************/
+{
+  SlamToolbox::on_configure(state);
+
   use_tree_ = false;
-  use_tree_ = this->declare_parameter("lifelong_search_use_tree", use_tree_);
+  if (!this->has_parameter("lifelong_search_use_tree")) {
+    this->declare_parameter("lifelong_search_use_tree", use_tree_);
+  }
+  use_tree_ = this->get_parameter("lifelong_search_use_tree").as_bool();
+
   iou_thresh_ = 0.10;
-  iou_thresh_ = this->declare_parameter("lifelong_minimum_score", iou_thresh_);
+  if (!this->has_parameter("lifelong_minimum_score")) {
+    this->declare_parameter("lifelong_minimum_score", iou_thresh_);
+  }
+  iou_thresh_ = this->get_parameter("lifelong_minimum_score").as_double();
+
   iou_match_ = 0.85;
-  iou_match_ = this->declare_parameter("lifelong_iou_match", iou_match_);
+  if (!this->has_parameter("lifelong_iou_match")) {
+    this->declare_parameter("lifelong_iou_match", iou_match_);
+  }
+  iou_match_ = this->get_parameter("lifelong_iou_match").as_double();
+
   removal_score_ = 0.10;
-  removal_score_ = this->declare_parameter("lifelong_node_removal_score",
-      removal_score_);
+  if (!this->has_parameter("lifelong_node_removal_score")) {
+    this->declare_parameter("lifelong_node_removal_score", removal_score_);
+  }
+  removal_score_ = this->get_parameter("lifelong_node_removal_score").as_double();
+
   overlap_scale_ = 0.5;
-  overlap_scale_ = this->declare_parameter("lifelong_overlap_score_scale",
-      overlap_scale_);
+  if (!this->has_parameter("lifelong_overlap_score_scale")) {
+    this->declare_parameter("lifelong_overlap_score_scale", overlap_scale_);
+  }
+  overlap_scale_ = this->get_parameter("lifelong_overlap_score_scale").as_double();
+
   constraint_scale_ = 0.05;
-  constraint_scale_ = this->declare_parameter("lifelong_constraint_multiplier",
-      constraint_scale_);
+  if (!this->has_parameter("lifelong_constraint_multiplier")) {
+    this->declare_parameter("lifelong_constraint_multiplier", constraint_scale_);
+  }
+  constraint_scale_ = this->get_parameter("lifelong_constraint_multiplier").as_double();
+
   nearby_penalty_ = 0.001;
-  nearby_penalty_ = this->declare_parameter("lifelong_nearby_penalty",
-      nearby_penalty_);
+  if (!this->has_parameter("lifelong_nearby_penalty")) {
+    this->declare_parameter("lifelong_nearby_penalty", nearby_penalty_);
+  }
+  nearby_penalty_ = this->get_parameter("lifelong_nearby_penalty").as_double();
+
   candidates_scale_ = 0.03;
-  candidates_scale_ = this->declare_parameter("lifelong_candidates_scale",
-      candidates_scale_);
+  if (!this->has_parameter("lifelong_candidates_scale")) {
+    this->declare_parameter("lifelong_candidates_scale", candidates_scale_);
+  }
+  candidates_scale_ = this->get_parameter("lifelong_candidates_scale").as_double();
 
   checkIsNotNormalized(iou_thresh_);
   checkIsNotNormalized(constraint_scale_);
@@ -69,13 +108,9 @@ LifelongSlamToolbox::LifelongSlamToolbox(rclcpp::NodeOptions options)
   checkIsNotNormalized(nearby_penalty_);
   checkIsNotNormalized(candidates_scale_);
 
-  RCLCPP_WARN(get_logger(), "Lifelong mapping mode in SLAM Toolbox is considered "
-    "experimental and should be understood before proceeding. Please visit: "
-    "https://github.com/SteveMacenski/slam_toolbox/wiki/"
-    "Experimental-Lifelong-Mapping-Node for more information.");
-
   // in lifelong mode, we cannot have interactive mode enabled
   enable_interactive_mode_ = false;
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
