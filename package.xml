@@ -37,6 +37,10 @@
   <build_depend>qtbase5-dev</build_depend>
   <build_depend>builtin_interfaces</build_depend>
   <build_depend>rosidl_default_generators</build_depend>
+  <build_depend>lifecycle_msgs</build_depend>
+  <build_depend>bondcpp</build_depend>
+  <build_depend>bond</build_depend>
+  <build_depend>rclcpp_lifecycle</build_depend>
   <depend>rviz_common</depend>
   <depend>rviz_default_plugins</depend>
   <depend>rviz_ogre_vendor</depend>
@@ -65,6 +69,10 @@
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>rosidl_default_generators</exec_depend>
+  <exec_depend>lifecycle_msgs</exec_depend>
+  <exec_depend>bondcpp</exec_depend>
+  <exec_depend>bond</exec_depend>
+  <exec_depend>rclcpp_lifecycle</exec_depend>
 
   <exec_depend>libqt5-core</exec_depend>
   <exec_depend>libqt5-gui</exec_depend>

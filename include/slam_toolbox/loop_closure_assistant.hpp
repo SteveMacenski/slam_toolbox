@@ -29,6 +29,7 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "interactive_markers/interactive_marker_server.hpp"
 #include "interactive_markers/menu_handler.hpp"
 
@@ -44,8 +45,9 @@ using namespace ::toolbox_types;  // NOLINT
 class LoopClosureAssistant
 {
 public:
+  template<class NodeT>
   LoopClosureAssistant(
-    rclcpp::Node::SharedPtr node, karto::Mapper * mapper,
+    NodeT node, karto::Mapper * mapper,
     laser_utils::ScanHolder * scan_holder, PausedState & state,
     ProcessType & processor_type);
 
@@ -58,11 +60,11 @@ public:
 private:
   bool manualLoopClosureCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<slam_toolbox::srv::LoopClosure::Request> req, 
+    const std::shared_ptr<slam_toolbox::srv::LoopClosure::Request> req,
     std::shared_ptr<slam_toolbox::srv::LoopClosure::Response> resp);
   bool clearChangesCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<slam_toolbox::srv::Clear::Request> req, 
+    const std::shared_ptr<slam_toolbox::srv::Clear::Request> req,
     std::shared_ptr<slam_toolbox::srv::Clear::Response> resp);
   bool interactiveModeCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
@@ -86,10 +88,13 @@ private:
   std::unique_ptr<interactive_markers::InteractiveMarkerServer> interactive_server_;
   boost::mutex interactive_mutex_;
   bool interactive_mode_, enable_interactive_mode_;
-  rclcpp::Node::SharedPtr node_;
   std::string map_frame_;
   PausedState & state_;
   ProcessType & processor_type_;
+
+  rclcpp::Clock::SharedPtr clock_;
+  rclcpp::Logger logger_;
+  rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface_;
 };
 
 }   // namespace loop_closure_assistant

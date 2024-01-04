@@ -23,6 +23,7 @@
 #include <memory>
 #include <chrono>
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
 
 namespace map_saver
@@ -32,7 +33,8 @@ namespace map_saver
 class MapSaver
 {
 public:
-  MapSaver(rclcpp::Node::SharedPtr node, const std::string & service_name);
+  template<class NodeT>
+  MapSaver(NodeT node, const std::string & map_name);
 
 protected:
   bool saveMapCallback(
@@ -41,7 +43,8 @@ protected:
     std::shared_ptr<slam_toolbox::srv::SaveMap::Response> response);
 
 private:
-  rclcpp::Node::SharedPtr node_;
+  rclcpp::Logger logger_;
+  std::string namespace_str_;
   rclcpp::Service<slam_toolbox::srv::SaveMap>::SharedPtr server_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sub_;
   std::string service_name_, map_name_;

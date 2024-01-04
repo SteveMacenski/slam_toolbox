@@ -28,12 +28,6 @@ SynchronousSlamToolbox::SynchronousSlamToolbox(rclcpp::NodeOptions options)
 : SlamToolbox(options)
 /*****************************************************************************/
 {
-  ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>("slam_toolbox/clear_queue",
-      std::bind(&SynchronousSlamToolbox::clearQueueCallback, this,
-      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
-
-  threads_.push_back(std::make_unique<boost::thread>(
-      boost::bind(&SynchronousSlamToolbox::run, this)));
 }
 
 /*****************************************************************************/
@@ -42,6 +36,7 @@ void SynchronousSlamToolbox::run()
 {
   rclcpp::Rate r(100);
   while (rclcpp::ok()) {
+    boost::this_thread::interruption_point();
     if (!isPaused(PROCESSING)) {
       PosedScan scan_w_pose(nullptr, karto::Pose2()); // dummy, updated in critical section
       bool queue_empty = true;
@@ -67,6 +62,33 @@ void SynchronousSlamToolbox::run()
 
     r.sleep();
   }
+}
+
+/*****************************************************************************/
+CallbackReturn
+SynchronousSlamToolbox::on_activate(const rclcpp_lifecycle::State & state)
+/*****************************************************************************/
+{
+  SlamToolbox::on_activate(state);
+  ssClear_ = this->create_service<slam_toolbox::srv::ClearQueue>(
+    "slam_toolbox/clear_queue",
+    std::bind(
+      &SynchronousSlamToolbox::clearQueueCallback, this,
+      std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+  threads_.push_back(
+    std::make_unique<boost::thread>(
+      boost::bind(&SynchronousSlamToolbox::run, this)));
+  return CallbackReturn::SUCCESS;
+}
+
+/*****************************************************************************/
+CallbackReturn
+SynchronousSlamToolbox::on_deactivate(const rclcpp_lifecycle::State & state)
+/*****************************************************************************/
+{
+  SlamToolbox::on_deactivate(state);
+  ssClear_.reset();
+  return CallbackReturn::SUCCESS;
 }
 
 /*****************************************************************************/
