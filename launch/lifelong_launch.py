@@ -22,7 +22,7 @@ def generate_launch_description():
                     'Ignored when use_lifecycle_manager is true.')
     declare_use_lifecycle_manager = DeclareLaunchArgument(
         'use_lifecycle_manager', default_value='false',
-        description='Enable bond connection duaring node activation')
+        description='Enable bond connection during node activation')
 
     start_lifelong_slam_toolbox_node = LifecycleNode(
           parameters=[
