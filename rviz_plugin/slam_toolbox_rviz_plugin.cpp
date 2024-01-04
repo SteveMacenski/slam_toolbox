@@ -553,18 +553,21 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
   auto node = std::make_shared<rclcpp::Node>("SlamToolboxStateUpdateNode");
   auto parameters_client =
     std::make_shared<rclcpp::SyncParametersClient>(node, "slam_toolbox");
+  auto log_trigger = true;
 
   while (rclcpp::ok()) {
     auto parameters = parameters_client->get_parameters(
       {"paused_new_measurements", "interactive_mode"}, std::chrono::seconds(1));
     if (parameters.empty()) {
-      RCLCPP_INFO_ONCE(
-        ros_node_->get_logger(),
+      RCLCPP_INFO_THROTTLE(
+        ros_node_->get_logger(), *ros_node_->get_clock(), 5000,
         "Waiting for the slam_toolbox node configuration.");
+      log_trigger = true;
     } else {
-      RCLCPP_INFO_ONCE(
-        ros_node_->get_logger(),
+      RCLCPP_INFO_EXPRESSION(
+        ros_node_->get_logger(), log_trigger,
         "Start the slam_toolbox node state check.");
+      log_trigger = false;
 
       paused_measure = parameters[0].as_bool();
       interactive = parameters[1].as_bool();
