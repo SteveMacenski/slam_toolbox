@@ -359,6 +359,19 @@ void CeresSolver::RemoveNode(kt_int32s id)
   GraphIterator nodeit = nodes_->find(id);
   if (nodeit != nodes_->end())
   {
+    if (problem_->HasParameterBlock(&nodeit->second(0)) &&
+        problem_->HasParameterBlock(&nodeit->second(1)) &&
+        problem_->HasParameterBlock(&nodeit->second(2)))
+    {
+      problem_->RemoveParameterBlock(&nodeit->second(0));
+      problem_->RemoveParameterBlock(&nodeit->second(1));
+      problem_->RemoveParameterBlock(&nodeit->second(2));
+      ROS_DEBUG("RemoveNode: Removed node id %d", nodeit->first);
+    }
+    else
+    {
+      ROS_ERROR("RemoveNode: Failed to remove parameter blocks for node id %d", nodeit->first);
+    }
     nodes_->erase(nodeit);
   }
   else
