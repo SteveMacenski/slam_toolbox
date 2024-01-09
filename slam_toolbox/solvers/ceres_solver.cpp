@@ -370,7 +370,7 @@ void CeresSolver::RemoveNode(kt_int32s id)
     }
     else
     {
-      ROS_ERROR("RemoveNode: Failed to remove parameter blocks for node id %d", nodeit->first);
+      ROS_DEBUG("RemoveNode: Failed to remove parameter blocks for node id %d", nodeit->first);
     }
     nodes_->erase(nodeit);
   }
