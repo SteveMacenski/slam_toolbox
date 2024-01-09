@@ -207,11 +207,18 @@ void MergeMapsKinematic::transformScan(
   BoundingBox2 bbox = (*iter)->GetBoundingBox();
   const Vector2<kt_double> bbox_min_corr =
     applyCorrection(bbox.GetMinimum(), submap_correction);
-  bbox.SetMinimum(bbox_min_corr);
   const Vector2<kt_double> bbox_max_corr =
     applyCorrection(bbox.GetMaximum(), submap_correction);
-  bbox.SetMaximum(bbox_max_corr);
-  (*iter)->SetBoundingBox(bbox);
+  Vector2<kt_double> bbox_min_right_corr{bbox.GetMaximum().GetX(),bbox.GetMinimum().GetY()};
+  bbox_min_right_corr = applyCorrection(bbox_min_right_corr, submap_correction);
+  Vector2<kt_double> bbox_max_left_corr{bbox.GetMinimum().GetX(),bbox.GetMaximum().GetY()};
+  bbox_max_left_corr = applyCorrection(bbox_max_left_corr, submap_correction);
+  BoundingBox2 transformed_bbox;
+  transformed_bbox.Add(bbox_min_corr);
+  transformed_bbox.Add(bbox_max_corr);
+  transformed_bbox.Add(bbox_min_right_corr);
+  transformed_bbox.Add(bbox_max_left_corr);
+  (*iter)->SetBoundingBox(transformed_bbox);
 
   // TRANSFORM UNFILTERED POINTS USED
   PointVectorDouble UPR_vec = (*iter)->GetPointReadings();
