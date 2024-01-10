@@ -416,6 +416,7 @@ bool SlamToolbox::shouldProcessScan(
   static ros::Time last_scan_time = ros::Time(0.);
   static const double dist_thresh_sq = smapper_->getMapper()->getParamMinimumTravelDistance()*
                                        smapper_->getMapper()->getParamMinimumTravelDistance();
+  static const double head_thresh = smapper_->getMapper()->getParamMinimumTravelHeading();
 
   // we give it a pass on the first measurement to get the ball rolling
   if (first_measurement_)
@@ -446,8 +447,8 @@ bool SlamToolbox::shouldProcessScan(
 
   // check moved enough, within 10% for correction error
   const double sq_dist_to_last_accepted_pose = last_pose.SquaredDistance(pose);
-
-  if(sq_dist_to_last_accepted_pose < 0.8 * dist_thresh_sq || scan->header.seq < 5)
+  const double head_to_last_accepted_pose = last_pose.HeadingDifference(pose) / M_PI * 180;
+  if((sq_dist_to_last_accepted_pose < 0.8 * dist_thresh_sq && head_to_last_accepted_pose < head_thresh) || scan->header.seq < 5)
   {
     return false;
   }
