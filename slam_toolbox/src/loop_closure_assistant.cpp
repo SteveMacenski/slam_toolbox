@@ -119,6 +119,12 @@ void LoopClosureAssistant::processInteractiveFeedback(const
     scan_publisher_.publish(scan);
   }
 }
+/*****************************************************************************/
+void LoopClosureAssistant::setMapper(karto::Mapper *mapper)
+/*****************************************************************************/
+{
+  mapper_ = mapper;
+}
 
 /*****************************************************************************/
 void LoopClosureAssistant::publishGraph()
@@ -139,34 +145,156 @@ void LoopClosureAssistant::publishGraph()
     interactive_mode = interactive_mode_;
   }
 
-  visualization_msgs::MarkerArray marray;
-  visualization_msgs::Marker m = vis_utils::toMarker(map_frame_,
-    "slam_toolbox", 0.1);
+    if (!mapper_->GetGraph())
+      ROS_ERROR_STREAM("Invalid pointer");
 
-  for (ConstGraphIterator it = graph->begin(); it != graph->end(); ++it)
-  {
-    m.id = it->first + 1;
-    m.pose.position.x = it->second(0);
-    m.pose.position.y = it->second(1);
+    const auto &vertices = mapper_->GetGraph()->GetVertices();
 
-    if (interactive_mode && enable_interactive_mode_)
+    const auto &edges = mapper_->GetGraph()->GetEdges();
+
+    const auto &localization_vertices = mapper_->GetLocalizationVertices();
+
+    int first_localization_id = std::numeric_limits<int>::max();
+    if (!localization_vertices.empty())
     {
-      visualization_msgs::InteractiveMarker int_marker =
-        vis_utils::toInteractiveMarker(m, 0.3);
-      interactive_server_->insert(int_marker,
+      first_localization_id = localization_vertices.front().vertex->GetObject()->GetUniqueId();
+    }
+
+    visualization_msgs::MarkerArray marray;
+
+    // clear existing markers to account for any removed nodes
+    visualization_msgs::Marker clear;
+    clear.header.stamp = ros::Time::now();
+    clear.action = visualization_msgs::Marker::DELETEALL;
+    marray.markers.push_back(clear);
+
+    visualization_msgs::Marker slam_node = vis_utils::toMarker(map_frame_, "slam_nodes", 0.1);
+    visualization_msgs::Marker loc_node = vis_utils::toMarker(map_frame_, "loc_nodes", 0.1);
+
+    // add map nodes
+    for (const auto &sensor_name : vertices)
+    {
+      for (const auto &vertex : sensor_name.second)
+      {
+
+        visualization_msgs::Marker m;
+        if (vertex.first < first_localization_id)
+          m = slam_node;
+        else
+        {
+          m = loc_node;
+          m.color.r = 0.0;
+          m.color.b = 0.0;
+        }
+
+        const auto &pose = vertex.second->GetObject()->GetCorrectedPose();
+        m.id = vertex.first + 1;
+        m.pose.position.x = pose.GetX();
+        m.pose.position.y = pose.GetY();
+
+        if (interactive_mode && enable_interactive_mode_)
+        {
+          visualization_msgs::InteractiveMarker int_marker =
+              vis_utils::toInteractiveMarker(m, 0.3);
+          interactive_server_->insert(int_marker,
         boost::bind(
         &LoopClosureAssistant::processInteractiveFeedback,
         this, _1));
+        }
+        else
+        {
+          marray.markers.push_back(m);
+        }
+      }
     }
-    else
-    {
-      marray.markers.push_back(m);
-    }
-  }
 
-  // if disabled, clears out old markers
-  interactive_server_->applyChanges();
-  marker_publisher_.publish(marray);
+    // add line markers for graph edges
+    visualization_msgs::Marker edges_marker = vis_utils::getMarker(map_frame_,"intra_slam_edges", edges.size() * 2);
+    visualization_msgs::Marker edges_marker_inter = vis_utils::getMarker(map_frame_,"inter_slam_edges", edges.size() * 2);
+    visualization_msgs::Marker loc_edges_marker = vis_utils::getMarker(map_frame_,"intra_loc_edges", localization_vertices.size() * 3);
+    visualization_msgs::Marker inter_loc_edges_marker = vis_utils::getMarker(map_frame_,"inter_loc_edges", localization_vertices.size() * 3);
+
+    geometry_msgs::Point prevSourcePoint, prevTargetPoint;
+    
+    for (const auto &edge : edges)
+    {
+      bool isInter = false;
+
+      std_msgs::ColorRGBA color;
+
+      color.a = 0.3;
+
+      int source_id = edge->GetSource()->GetObject()->GetUniqueId();
+      const auto &pose0 = edge->GetSource()->GetObject()->GetCorrectedPose();
+      geometry_msgs::Point sourcePoint;
+      sourcePoint.x = pose0.GetX();
+      sourcePoint.y = pose0.GetY();
+
+      int target_id = edge->GetTarget()->GetObject()->GetUniqueId();
+      const auto &pose1 = edge->GetTarget()->GetObject()->GetCorrectedPose();
+      geometry_msgs::Point targetPoint;
+      targetPoint.x = pose1.GetX();
+      targetPoint.y = pose1.GetY();
+      if (prevTargetPoint == targetPoint) //checking for inter constraints
+      {
+        isInter = true;
+        color = (source_id >= first_localization_id) ? vis_utils::getColor(1, 0, 1) : vis_utils::getColor(0, 1, 1);
+      }
+      else
+      {
+        color = vis_utils::getColor(1, 1, 0); 
+      }
+
+      prevSourcePoint = sourcePoint;
+      prevTargetPoint = targetPoint;
+
+      if (source_id >= first_localization_id || target_id >= first_localization_id)
+      {
+        if (isInter)
+        {
+          inter_loc_edges_marker.colors.push_back(color); 
+          inter_loc_edges_marker.colors.push_back(color);
+          inter_loc_edges_marker.points.push_back(sourcePoint);
+          inter_loc_edges_marker.points.push_back(targetPoint);
+        }
+        else
+        {
+          loc_edges_marker.colors.push_back(color);
+          loc_edges_marker.colors.push_back(color);
+          loc_edges_marker.points.push_back(sourcePoint);
+          loc_edges_marker.points.push_back(targetPoint);
+        }
+      }
+      else
+      {
+        color.g = 0;
+        if (isInter)
+        {
+          edges_marker_inter.colors.push_back(color);
+          edges_marker_inter.colors.push_back(color);
+          edges_marker_inter.points.push_back(sourcePoint);
+          edges_marker_inter.points.push_back(targetPoint);
+        }
+        else
+        {
+          edges_marker.colors.push_back(color);
+          edges_marker.colors.push_back(color);
+          edges_marker.points.push_back(sourcePoint);
+          edges_marker.points.push_back(targetPoint);
+        }
+      }
+    }
+   
+    marray.markers.push_back(edges_marker_inter);
+    marray.markers.push_back(edges_marker);
+     if(inter_loc_edges_marker.points.size() > 0)  // to avoid error when mapping
+    marray.markers.push_back(inter_loc_edges_marker);
+     if (loc_edges_marker.points.size() > 0)
+    marray.markers.push_back(loc_edges_marker);
+
+    // if disabled, clears out old markers
+    interactive_server_->applyChanges();
+    marker_publisher_.publish(marray);
   return;
 }
 

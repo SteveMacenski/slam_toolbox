@@ -2056,7 +2056,15 @@ namespace karto
     {
       return m_pMapperSensorManager;
     }
-
+    
+    /**
+     * Gets the localization vertices
+     * @return localization vertices
+     */
+    const LocalizationScanVertices &GetLocalizationVertices()
+    {
+      return m_LocalizationScanVertices;
+    }
     /**
      * Tries to close a loop using the given scan with the scans from the given sensor
      * @param pScan

@@ -638,6 +638,7 @@ void SlamToolbox::loadSerializedPoseGraph(
   smapper_->setMapper(mapper.release());
   smapper_->configure(nh_);
   dataset_.reset(dataset.release());
+  closure_assistant_->setMapper(smapper_->getMapper());
 
   if (!smapper_->getMapper())
   {
