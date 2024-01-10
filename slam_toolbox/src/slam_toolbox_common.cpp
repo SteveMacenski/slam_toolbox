@@ -584,6 +584,7 @@ bool SlamToolbox::serializePoseGraphCallback(
   slam_toolbox_msgs::SerializePoseGraph::Response &resp)
 /*****************************************************************************/
 {
+  bool success = false;
   std::string filename = req.filename;
 
   // if we're inside the snap, we need to write to commonly accessible space
@@ -593,7 +594,8 @@ bool SlamToolbox::serializePoseGraphCallback(
   }
 
   boost::mutex::scoped_lock lock(smapper_mutex_);
-  serialization::write(filename, *smapper_->getMapper(), *dataset_);
+  success = serialization::write(filename, *smapper_->getMapper(), *dataset_);
+  resp.success = success;
   return true;
 }
 
@@ -706,6 +708,7 @@ bool SlamToolbox::deserializePoseGraphCallback(
   {
     ROS_ERROR("Deserialization called without valid processor type set. "
       "Undefined behavior!");
+    resp.success = false;
     return false;
   }
 
@@ -714,6 +717,7 @@ bool SlamToolbox::deserializePoseGraphCallback(
   if (filename.empty())
   {
     ROS_WARN("No map file given!");
+    resp.success = false;
     return true;
   }
 
@@ -730,6 +734,7 @@ bool SlamToolbox::deserializePoseGraphCallback(
   {
     ROS_ERROR("DeserializePoseGraph: Failed to read "
       "file: %s.", filename.c_str());
+    resp.success = false;
     return true;
   }
   ROS_DEBUG("DeserializePoseGraph: Successfully read file.");
@@ -755,9 +760,11 @@ bool SlamToolbox::deserializePoseGraphCallback(
         req.initial_pose.y, req.initial_pose.theta);
       break;
     default:
+      resp.success = false;
       ROS_FATAL("Deserialization called without valid processor type set.");
   }
 
+  resp.success = true;
   return true;
 }
 

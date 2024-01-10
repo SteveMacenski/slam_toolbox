@@ -47,6 +47,7 @@ bool MapSaver::saveMapCallback(
   {
     ROS_WARN("Map Saver: Cannot save map, no map yet received on topic %s.",
       map_name_.c_str());
+    resp.success = false;
     return false;
   }
 
@@ -62,6 +63,7 @@ bool MapSaver::saveMapCallback(
     int rc = system("rosrun map_server map_saver");
   }
   ros::Duration(1.0).sleep();
+  resp.success = true;
   return true;
 }
 
