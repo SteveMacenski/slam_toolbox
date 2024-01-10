@@ -234,6 +234,8 @@ bool MergeMapsKinematic::mergeMapCallback(
 /*****************************************************************************/
 {
   ROS_INFO("Merging maps!");
+  std::unique_ptr<karto::Mapper> merged_mapper = std::make_unique<karto::Mapper>();
+  std::unique_ptr<karto::Dataset> merged_dataset = std::make_unique<karto::Dataset>();
 
   // transform all the scans into the new global map coordinates 
   int id = 0;
@@ -248,8 +250,24 @@ bool MergeMapsKinematic::mergeMapCallback(
       tf2::Transform submap_correction = submap_marker_transform_[id];
       transformScan(iter, submap_correction);
       transformed_scans.push_back((*iter));
+
+      if (iter == it_LRV->begin() && id != 1) {
+        merged_mapper->ProcessAgainstNodesNearBy(*iter);
+      }
+      else {
+        merged_mapper->Process(*iter);
+      }
+
     }
   }
+  
+  std::vector<std::unique_ptr<karto::Dataset> >::iterator it;
+  for (it = dataset_vec_.begin(); it != dataset_vec_.end(); ++it){
+      karto::LaserRangeFinder* laser = dynamic_cast<karto::LaserRangeFinder*>(
+        it->get()->GetLasers()[0]);
+      merged_dataset->Add(laser, true);
+  }
+
 
   // create the map
   nav_msgs::GetMap::Response map;
@@ -267,6 +285,21 @@ bool MergeMapsKinematic::mergeMapCallback(
   map.map.header.frame_id = "map";
   sstS_[0].publish(map.map);
   sstmS_[0].publish(map.map.info);
+
+  merged_mapper->GetGraph()->CorrectPoses();
+  std::string filename = req.filename;
+  
+  if (filename.empty())
+  {
+    ROS_INFO("save pose graph as \"mergedmap\" ");
+    filename = "mergedmap";
+    
+  }
+  if (snap_utils::isInSnap())
+  {
+    filename = snap_utils::getSnapPath() + std::string("/") + filename;
+  }
+  serialization::write(filename, *merged_mapper, *merged_dataset);
 }
 
 /*****************************************************************************/

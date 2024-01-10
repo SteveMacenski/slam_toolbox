@@ -142,6 +142,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _line5 = new QLineEdit();
   _line6 = new QLineEdit();
   _line7 = new QLineEdit();
+  _line8 = new QLineEdit();
 
   _button1->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _button2->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
@@ -160,6 +161,8 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _line5->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _line6->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   _line7->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+  _line8->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
 
   _hbox1->addWidget(_check1);
   _hbox1->addWidget(_label1);
@@ -178,6 +181,7 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget* parent):
   _hbox5->addWidget(_line2);
 
   _hbox6->addWidget(_button6);
+  _hbox6->addWidget(_line8);
 
   _hbox7->addWidget(_button7);
   _hbox7->addWidget(_line3);
@@ -293,6 +297,7 @@ void SlamToolboxPlugin::GenerateMap()
 /*****************************************************************************/
 {
   slam_toolbox_msgs::MergeMaps msg;
+  msg.request.filename = _line8->text().toStdString();
   if (!_merge.call(msg))
   {
     ROS_WARN("MergeMaps: Failed to merge maps, is service running?");

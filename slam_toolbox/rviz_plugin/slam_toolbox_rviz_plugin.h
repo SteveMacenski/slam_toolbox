@@ -115,6 +115,7 @@ protected:
   QLineEdit* _line5;
   QLineEdit* _line6;
   QLineEdit* _line7;
+  QLineEdit* _line8;
 
   QCheckBox* _check1;
   QCheckBox* _check2;
