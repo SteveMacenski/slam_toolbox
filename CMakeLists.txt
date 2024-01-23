@@ -31,6 +31,7 @@ find_package(rviz_ogre_vendor REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(interactive_markers REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
+find_package(rclcpp_components REQUIRED)
 
 #karto_sdk lib
 set(BUILD_SHARED_LIBS ON)
@@ -58,6 +59,7 @@ set(dependencies
   rviz_rendering
   interactive_markers
   Qt5
+  rclcpp_components
 )
 
 set(libraries
@@ -186,6 +188,12 @@ target_link_libraries(merge_maps_kinematic kartoSlamToolbox toolbox_common)
 #  ament_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
 #  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
 #endif()
+
+rclcpp_components_register_nodes(async_slam_toolbox "slam_toolbox::AsynchronousSlamToolbox")
+rclcpp_components_register_nodes(sync_slam_toolbox "slam_toolbox::SynchronousSlamToolbox")
+rclcpp_components_register_nodes(localization_slam_toolbox "slam_toolbox::LocalizationSlamToolbox")
+rclcpp_components_register_nodes(lifelong_slam_toolbox "slam_toolbox::LifelongSlamToolbox")
+rclcpp_components_register_nodes(map_and_localization_slam_toolbox "slam_toolbox::MapAndLocalizationSlamToolbox")
 
 #### Install
 install(TARGETS async_slam_toolbox_node

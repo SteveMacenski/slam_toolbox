@@ -90,7 +90,7 @@ void LoopClosureAssistant::processInteractiveFeedback(const
     return;
   }
 
-  const int id = std::stoi(feedback->marker_name, nullptr, 10) - 1;
+  const int id = std::stoi(feedback->marker_name, nullptr, 10);
 
   // was depressed, something moved, and now released
   if (feedback->event_type ==
