@@ -979,14 +979,14 @@ void SlamToolbox::loadSerializedPoseGraph(
   smapper_->configure(shared_from_this());
   dataset_.reset(dataset.release());
 
-  closure_assistant_->setMapper(smapper_->getMapper());
-
   if (!smapper_->getMapper()) {
     RCLCPP_FATAL(get_logger(),
       "loadSerializedPoseGraph: Could not properly load "
       "a valid mapping object. Did you modify something by hand?");
     exit(-1);
   }
+
+  closure_assistant_->setMapper(smapper_->getMapper());
 
   if (dataset_->GetLasers().size() < 1) {
     RCLCPP_FATAL(get_logger(), "loadSerializedPoseGraph: Cannot deserialize "
