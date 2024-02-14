@@ -131,6 +131,10 @@ CallbackReturn SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
     map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(),
         map_name_);
   }
+  closure_assistant_ =
+    std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
+    shared_from_this(), smapper_->getMapper(), scan_holder_.get(),
+    state_, processor_type_);
   loadPoseGraphByParams();
   return CallbackReturn::SUCCESS;
 }
@@ -145,10 +149,6 @@ CallbackReturn SlamToolbox::on_activate(const rclcpp_lifecycle::State &)
   sst_->on_activate();
   sstm_->on_activate();
   pose_pub_->on_activate();
-  closure_assistant_ =
-    std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
-    shared_from_this(), smapper_->getMapper(), scan_holder_.get(),
-    state_, processor_type_);
   reprocessing_transform_.setIdentity();
 
   double transform_publish_period = 0.05;
@@ -624,7 +624,7 @@ LaserRangeFinder * SlamToolbox::getLaser(
 bool SlamToolbox::updateMap()
 /*****************************************************************************/
 {
-  if (sst_->get_subscription_count() == 0) {
+  if (!sst_ || !sst_->is_activated() || sst_->get_subscription_count() == 0) {
     return true;
   }
   boost::mutex::scoped_lock lock(smapper_mutex_);
