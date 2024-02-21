@@ -181,7 +181,6 @@ CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
     threads_[i].reset();
   }
   threads_.clear();
-  closure_assistant_.reset();
   sst_->on_deactivate();
   sstm_->on_deactivate();
   pose_pub_->on_deactivate();
@@ -210,6 +209,7 @@ CallbackReturn SlamToolbox::on_cleanup(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "Cleaning up");
+  closure_assistant_.reset();
   smapper_.reset();
   dataset_.reset();
   map_saver_.reset();
