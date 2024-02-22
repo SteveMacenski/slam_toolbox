@@ -152,6 +152,23 @@ bool SynchronousSlamToolbox::deserializePoseGraphCallback(
   return SlamToolbox::deserializePoseGraphCallback(request_header, req, resp);
 }
 
+/*****************************************************************************/
+bool SynchronousSlamToolbox::resetCallback(
+  const std::shared_ptr<rmw_request_id_t> request_header,
+  const std::shared_ptr<slam_toolbox::srv::Reset::Request> req,
+  std::shared_ptr<slam_toolbox::srv::Reset::Response> resp)
+/*****************************************************************************/
+{
+  {
+    boost::mutex::scoped_lock lock(q_mutex_);
+    // Clear the scan queue.
+    while (!q_.empty()) {
+      q_.pop();
+    }
+  }
+  return SlamToolbox::resetCallback(request_header, req, resp);
+}
+
 }  // namespace slam_toolbox
 
 #include "rclcpp_components/register_node_macro.hpp"

@@ -104,6 +104,7 @@ add_definitions(${EIGEN3_DEFINITIONS})
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   srvs/Pause.srv
+  srvs/Reset.srv
   srvs/ClearQueue.srv
   srvs/ToggleInteractive.srv
   srvs/Clear.srv
