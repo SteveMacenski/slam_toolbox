@@ -1094,11 +1094,11 @@ bool SlamToolbox::resetCallback(
   first_measurement_ = true;
 
   // Pause new measurements processing if requested.
-  if (req->pause_new_measurements)
-  {
+  if (req->pause_new_measurements) {
     state_.set(NEW_MEASUREMENTS, true);
     this->set_parameter({"paused_new_measurements", true});
-    RCLCPP_INFO(get_logger(), "SlamToolbox: Toggled to pause taking new measurements after reset.");
+    RCLCPP_INFO(get_logger(),
+      "SlamToolbox: Toggled to pause taking new measurements after reset.");
   }
 
   resp->result = resp->RESULT_SUCCESS;
