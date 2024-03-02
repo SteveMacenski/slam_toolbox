@@ -263,7 +263,7 @@ The following settings and options are exposed to you. My default configuration 
 
 `minimum_travel_distance` - Minimum distance of travel before processing a new scan
 
-`localization_on_configure` - Set to true to set the localization mode to localization during node on_configure transition. Only applies to `map_and_localization_slam_toolbox` node.
+`localization_on_configure` - Set to true to set the localization mode to localization during node on_configure transition. Set to false to set the localization mode to mapping instead. Only applies to `map_and_localization_slam_toolbox` node.
 
 ## Matcher Params
 
