@@ -26,6 +26,7 @@ MapAndLocalizationSlamToolbox::MapAndLocalizationSlamToolbox(rclcpp::NodeOptions
 : LocalizationSlamToolbox(options)
 /*****************************************************************************/
 {
+  this->declare_parameter("localization_on_configure", false);
 }
 
 /*****************************************************************************/
@@ -34,7 +35,7 @@ MapAndLocalizationSlamToolbox::on_configure(const rclcpp_lifecycle::State & stat
 /*****************************************************************************/
 {
   SlamToolbox::on_configure(state);
-  toggleMode(false);
+  toggleMode(this->get_parameter("localization_on_configure").as_bool());
 
   // disable interactive mode
   enable_interactive_mode_ = false;
