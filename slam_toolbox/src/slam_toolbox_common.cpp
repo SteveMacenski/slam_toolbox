@@ -156,6 +156,7 @@ void SlamToolbox::setROSInterfaces(ros::NodeHandle& node)
   ssPauseMeasurements_ = node.advertiseService("pause_new_measurements", &SlamToolbox::pauseNewMeasurementsCallback, this);
   ssSerialize_ = node.advertiseService("serialize_map", &SlamToolbox::serializePoseGraphCallback, this);
   ssDesserialize_ = node.advertiseService("deserialize_map", &SlamToolbox::deserializePoseGraphCallback, this);
+  ssReset_ = node.advertiseService("reset", &SlamToolbox::resetCallback, this);
   scan_filter_sub_ = std::make_unique<message_filters::Subscriber<sensor_msgs::LaserScan> >(node, scan_topic_, 5);
   scan_filter_ = std::make_unique<tf2_ros::MessageFilter<sensor_msgs::LaserScan> >(*scan_filter_sub_, *tf_, odom_frame_, 5, node);
   scan_filter_->registerCallback(boost::bind(&SlamToolbox::laserCallback, this, _1));
@@ -794,6 +795,31 @@ bool SlamToolbox::deserializePoseGraphCallback(
       ROS_FATAL("Deserialization called without valid processor type set.");
   }
 
+  return true;
+}
+
+/*****************************************************************************/
+bool SlamToolbox::resetCallback(
+  slam_toolbox_msgs::Reset::Request  &req,
+  slam_toolbox_msgs::Reset::Response &resp)
+/*****************************************************************************/
+{
+  boost::mutex::scoped_lock lock(smapper_mutex_);
+  // Reset the map.
+  smapper_->Reset();
+  smapper_->getMapper()->getScanSolver()->Reset();
+
+  // Ensure we will process the next available scan.
+  first_measurement_ = true;
+
+  // Pause new measurements processing if requested.
+  if (req.pause_new_measurements) {
+    state_.set(NEW_MEASUREMENTS, true);
+    nh_.setParam("paused_new_measurements", true);
+    ROS_INFO("SlamToolbox: Toggled to pause taking new measurements after reset.");
+  }
+
+  resp.result = true;
   return true;
 }
 

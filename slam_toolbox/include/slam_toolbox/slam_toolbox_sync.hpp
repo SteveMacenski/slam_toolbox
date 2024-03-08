@@ -37,6 +37,8 @@ protected:
   bool clearQueueCallback(slam_toolbox_msgs::ClearQueue::Request& req, slam_toolbox_msgs::ClearQueue::Response& resp);
   virtual bool deserializePoseGraphCallback(slam_toolbox_msgs::DeserializePoseGraph::Request& req,
     slam_toolbox_msgs::DeserializePoseGraph::Response& resp) override final;
+  virtual bool resetCallback(slam_toolbox_msgs::Reset::Request& req,
+    slam_toolbox_msgs::Reset::Response& resp) override final;
 
   std::queue<PosedScan> q_;
   ros::ServiceServer ssClear_;

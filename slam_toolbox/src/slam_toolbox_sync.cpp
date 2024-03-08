@@ -135,4 +135,20 @@ bool SynchronousSlamToolbox::deserializePoseGraphCallback(
   return SlamToolbox::deserializePoseGraphCallback(req, resp);
 }
 
+/*****************************************************************************/
+bool SynchronousSlamToolbox::resetCallback(
+    slam_toolbox_msgs::Reset::Request& req,
+    slam_toolbox_msgs::Reset::Response& resp)
+/*****************************************************************************/
+{
+  {
+    boost::mutex::scoped_lock lock(q_mutex_);
+    // Clear the scan queue.
+    while (!q_.empty()) {
+      q_.pop();
+    }
+  }
+  return SlamToolbox::resetCallback(req, resp);
+}
+
 } // end namespace
