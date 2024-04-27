@@ -41,7 +41,8 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
   first_measurement_(true),
   process_near_pose_(nullptr),
   transform_timeout_(rclcpp::Duration::from_seconds(0.5)),
-  minimum_time_interval_(std::chrono::nanoseconds(0))
+  minimum_time_interval_(std::chrono::nanoseconds(0)),
+  stop_threads_(false)
 /*****************************************************************************/
 {
   int stack_size = 40'000'000;
@@ -240,6 +241,8 @@ SlamToolbox::on_shutdown(const rclcpp_lifecycle::State & state)
 SlamToolbox::~SlamToolbox()
 /*****************************************************************************/
 {
+  stop_threads_.store(true);
+  
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->interrupt();
     threads_[i]->join();
@@ -518,7 +521,7 @@ void SlamToolbox::publishVisualizations()
   map_update_interval = this->get_parameter("map_update_interval").as_double();
   rclcpp::Rate r(1.0 / map_update_interval);
 
-  while (rclcpp::ok()) {
+  while (!stop_threads_.load() /*atomic*/) {
     boost::this_thread::interruption_point();
     updateMap();
     if (!isPaused(VISUALIZING_GRAPH)) {
