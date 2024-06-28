@@ -176,6 +176,7 @@ CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
 /*****************************************************************************/
 {
   RCLCPP_INFO(get_logger(), "Deactivating");
+  stop_threads_.store(true);
   for (int i = 0; i != threads_.size(); i++) {
     threads_[i]->interrupt();
     threads_[i]->join();
