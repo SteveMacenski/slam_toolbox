@@ -66,7 +66,7 @@ karto::OccupancyGrid * SMapper::getOccupancyGrid(const double & resolution)
   karto::OccupancyGrid * occ_grid = nullptr;
   return karto::OccupancyGrid::CreateFromScans(
     mapper_->GetAllProcessedScans(),
-    resolution);
+    resolution, (kt_int32u)mapper_->getParamMinPassThrough(), (kt_double)mapper_->getParamOccupancyThreshold());
 }
 
 /*****************************************************************************/
@@ -355,6 +355,21 @@ void SMapper::configure(const NodeT & node)
   }
   node->get_parameter("use_response_expansion", use_response_expansion);
   mapper_->setParamUseResponseExpansion(use_response_expansion);
+
+
+  int min_pass_through = 2;
+  if (!node->has_parameter("min_pass_through")) {
+    node->declare_parameter("min_pass_through", min_pass_through);
+  }
+  node->get_parameter("min_pass_through", min_pass_through);
+  mapper_->setParamMinPassThrough(min_pass_through);
+
+  double occupancy_threshold = 0.1;
+  if (!node->has_parameter("occupancy_threshold")) {
+    node->declare_parameter("occupancy_threshold", occupancy_threshold);
+  }
+  node->get_parameter("occupancy_threshold", occupancy_threshold);
+  mapper_->setParamOccupancyThreshold(occupancy_threshold);
 }
 
 /*****************************************************************************/
