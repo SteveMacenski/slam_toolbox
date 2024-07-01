@@ -2408,8 +2408,9 @@ protected:
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumAnglePenalty);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumDistancePenalty);
     ar & BOOST_SERIALIZATION_NVP(m_pUseResponseExpansion);
-    ar & BOOST_SERIALIZATION_NVP(m_pMinPassThrough);
-    ar & BOOST_SERIALIZATION_NVP(m_pOccupancyThreshold);
+// NOTE: the following two lines are commented out to avoid breaking the serialization of already existing maps
+//    ar & BOOST_SERIALIZATION_NVP(m_pMinPassThrough); 
+//    ar & BOOST_SERIALIZATION_NVP(m_pOccupancyThreshold);
     std::cout << "**Finished serializing Mapper**\n";
   }
 

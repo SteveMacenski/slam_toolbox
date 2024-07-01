@@ -324,6 +324,10 @@ The following settings and options are exposed to you. My default configuration 
 
 `use_response_expansion` - Whether to automatically increase the search grid size if no viable match is found
 
+`min_pass_through` - Number of beams that must pass through a cell before it will be considered to be occupied or unoccupied. This prevents stray beams from messing up the map.
+
+`occupancy_threshold` - Minimum ratio of beams hitting cell to beams passing through cell to be marked as occupied
+
 # Install
 
 ROSDep will take care of the major things
