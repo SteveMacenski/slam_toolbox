@@ -300,7 +300,7 @@ void MergeMapsKinematic::kartoToROSOccupancyGrid(
 /*****************************************************************************/
 {
   OccupancyGrid * occ_grid = NULL;
-  occ_grid = OccupancyGrid::CreateFromScans(scans, resolution_);
+  occ_grid = OccupancyGrid::CreateFromScans(scans, resolution_, 2, 0.1);
   if (!occ_grid) {
     RCLCPP_INFO(get_logger(),
       "MergeMapsKinematic: Could not make occupancy grid.");

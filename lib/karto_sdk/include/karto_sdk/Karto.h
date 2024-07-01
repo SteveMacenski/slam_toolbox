@@ -5946,7 +5946,7 @@ public:
    */
   static OccupancyGrid * CreateFromScans(
     const LocalizedRangeScanVector & rScans,
-    kt_double resolution)
+    kt_double resolution, kt_int32u min_pass_through, kt_double occupancy_threshold)
   {
     if (rScans.empty()) {
       return NULL;
@@ -5956,6 +5956,8 @@ public:
     Vector2<kt_double> offset;
     ComputeDimensions(rScans, resolution, width, height, offset);
     OccupancyGrid * pOccupancyGrid = new OccupancyGrid(width, height, offset, resolution);
+    pOccupancyGrid->SetMinPassThrough(min_pass_through); 
+    pOccupancyGrid->SetOccupancyThreshold(occupancy_threshold); 
     pOccupancyGrid->CreateFromScans(rScans);
 
     return pOccupancyGrid;

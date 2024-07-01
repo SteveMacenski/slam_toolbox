@@ -2285,12 +2285,24 @@ void Mapper::InitializeParameters()
     "Minimum value of the distance penalty multiplier so scores do not "
     "become too small.",
     0.5, GetParameterManager());
-
+  
   m_pUseResponseExpansion = new Parameter<kt_bool>(
     "UseResponseExpansion",
     "Whether to increase the search space if no good matches are initially "
     "found.",
     false, GetParameterManager());
+
+  m_pMinPassThrough = new Parameter<kt_int32u>(
+    "MinPassThrough",
+    "Number of beams that must pass through a cell before it will be considered to be occupied "
+    "or unoccupied.  This prevents stray beams from messing up the map. "
+    "found.",
+    2, GetParameterManager());
+  
+  m_pOccupancyThreshold = new Parameter<kt_double>(
+    "OccupancyThreshold",
+    "Minimum ratio of beams hitting cell to beams passing through cell to be marked as occupied",
+    0.1, GetParameterManager());
 }
 /* Adding in getters and setters here for easy parameter access */
 
@@ -2447,6 +2459,16 @@ bool Mapper::getParamUseResponseExpansion()
   return static_cast<bool>(m_pUseResponseExpansion->GetValue());
 }
 
+int Mapper::getParamMinPassThrough()
+{
+  return static_cast<int>(m_pMinPassThrough->GetValue());
+}
+
+double Mapper::getParamOccupancyThreshold()
+{
+  return static_cast<double>(m_pOccupancyThreshold->GetValue());
+}
+
 /* Setters for parameters */
 // General Parameters
 void Mapper::setParamUseScanMatching(bool b)
@@ -2597,6 +2619,16 @@ void Mapper::setParamMinimumDistancePenalty(double d)
 void Mapper::setParamUseResponseExpansion(bool b)
 {
   m_pUseResponseExpansion->SetValue((kt_bool)b);
+}
+
+void Mapper::setParamMinPassThrough(int i)
+{
+  m_pMinPassThrough->SetValue((kt_int32u)i);
+}
+
+void Mapper::setParamOccupancyThreshold(double d)
+{
+  m_pOccupancyThreshold->SetValue((kt_double)d);
 }
 
 
