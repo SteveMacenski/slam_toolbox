@@ -88,7 +88,9 @@ LaserMetadata LaserAssistant::toLaserMetadata(sensor_msgs::msg::LaserScan scan)
   return toLaserMetadata(scan, readLaserPose());
 }
 
-LaserMetadata LaserAssistant::toLaserMetadata(sensor_msgs::msg::LaserScan scan, geometry_msgs::msg::TransformStamped laser_pose)
+LaserMetadata LaserAssistant::toLaserMetadata(
+  sensor_msgs::msg::LaserScan scan,
+  geometry_msgs::msg::TransformStamped laser_pose)
 {
   scan_ = scan;
   frame_ = scan_.header.frame_id;
@@ -191,13 +193,13 @@ bool LaserAssistant::isInverted(double & mountingYaw)
     laser_pose_.transform.translation.y,
     laser_pose_.transform.translation.z, mountingYaw);
 
-    tf2::Vector3 laser_orient;
-    tf2::Transform laser_pose;
-    tf2::convert(laser_pose_.transform, laser_pose);
-    laser_orient.setY(0.);
-    laser_orient.setZ(0.);
-    laser_orient.setZ(1 + laser_pose_.transform.translation.z); // TOOD can remove addition of laser_pose z component
-    laser_orient = laser_pose * laser_orient;
+  tf2::Vector3 laser_orient;
+  tf2::Transform laser_pose;
+  tf2::convert(laser_pose_.transform, laser_pose);
+  laser_orient.setY(0.);
+  laser_orient.setZ(0.);
+  laser_orient.setZ(1 + laser_pose_.transform.translation.z);  // TOOD can remove addition of laser_pose z component
+  laser_orient = laser_pose * laser_orient;
 
   if (laser_orient.vector.z <= 0) {
     RCLCPP_DEBUG(

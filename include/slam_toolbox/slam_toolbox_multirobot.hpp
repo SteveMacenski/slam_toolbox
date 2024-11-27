@@ -18,6 +18,7 @@
 #define SLAM_TOOLBOX__SLAM_TOOLBOX_MULTIROBOT_HPP_
 
 #include <memory>
+#include <string>
 #include "slam_toolbox/slam_toolbox_common.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
 
@@ -28,13 +29,16 @@ class MultiRobotSlamToolbox : public SlamToolbox
 {
 public:
   explicit MultiRobotSlamToolbox(rclcpp::NodeOptions);
-  ~MultiRobotSlamToolbox() {};
+  ~MultiRobotSlamToolbox() {}
 
 protected:
-  LocalizedRangeScan * addExternalScan(LaserRangeFinder * laser,
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan, Pose2 & odom_pose);
-  void publishLocalizedScan( 
-    const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan, const Pose2 &offset,
+  LocalizedRangeScan * addExternalScan(
+    LaserRangeFinder * laser,
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
+    Pose2 & odom_pose);
+  void publishLocalizedScan(
+    const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
+    const Pose2 & offset,
     const Pose2 & pose, const Matrix3 & cov,
     const rclcpp::Time & t);
 
@@ -44,10 +48,12 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp) override;
-  void localizedScanCallback(slam_toolbox::msg::LocalizedLaserScan::ConstSharedPtr localized_scan);
-  LaserRangeFinder * getLaser(const slam_toolbox::msg::LocalizedLaserScan::ConstSharedPtr localized_scan);
+  void localizedScanCallback(
+    slam_toolbox::msg::LocalizedLaserScan::ConstSharedPtr localized_scan);
+  LaserRangeFinder * getLaser(
+    const slam_toolbox::msg::LocalizedLaserScan::ConstSharedPtr localized_scan);
   using SlamToolbox::getLaser;
-  
+
   std::shared_ptr<rclcpp::Publisher<slam_toolbox::msg::LocalizedLaserScan>> localized_scan_pub_;
   rclcpp::Subscription<slam_toolbox::msg::LocalizedLaserScan>::SharedPtr localized_scan_sub_;
   std::string localized_scan_topic_;

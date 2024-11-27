@@ -24,13 +24,14 @@ MultiRobotSlamToolbox::MultiRobotSlamToolbox(rclcpp::NodeOptions options)
 : SlamToolbox(options), localized_scan_topic_("/localized_scan")
 /*****************************************************************************/
 {
-    current_ns_ = this->get_namespace() + 1;
+  current_ns_ = this->get_namespace() + 1;
 
-    localized_scan_pub_ = this->create_publisher<slam_toolbox::msg::LocalizedLaserScan>(
+  localized_scan_pub_ = this->create_publisher<slam_toolbox::msg::LocalizedLaserScan>(
     localized_scan_topic_, 10);
-    localized_scan_sub_ = this->create_subscription<slam_toolbox::msg::LocalizedLaserScan>(
-        localized_scan_topic_, 10, std::bind(&MultiRobotSlamToolbox::localizedScanCallback, 
-        this, std::placeholders::_1));
+  localized_scan_sub_ = this->create_subscription<slam_toolbox::msg::LocalizedLaserScan>(
+    localized_scan_topic_, 10, std::bind(
+      &MultiRobotSlamToolbox::localizedScanCallback,
+      this, std::placeholders::_1));
 }
 
 /*****************************************************************************/
@@ -51,18 +52,19 @@ void MultiRobotSlamToolbox::laserCallback(
   LaserRangeFinder * laser = getLaser(scan);
 
   if (!laser) {
-    RCLCPP_WARN(get_logger(), "Failed to create laser device for"
+    RCLCPP_WARN(
+      get_logger(), "Failed to create laser device for"
       " %s; discarding scan", scan->header.frame_id.c_str());
     return;
   }
 
   LocalizedRangeScan * range_scan = addScan(laser, scan, pose);
-  if (range_scan != nullptr)
-  {
+  if (range_scan != nullptr) {
     Matrix3 covariance;
     covariance.SetToIdentity();
-    publishLocalizedScan(scan, laser->GetOffsetPose(), 
-        range_scan->GetOdometricPose(), covariance, scan->header.stamp);
+    publishLocalizedScan(
+      scan, laser->GetOffsetPose(),
+      range_scan->GetOdometricPose(), covariance, scan->header.stamp);
   }
 }
 
@@ -70,11 +72,13 @@ void MultiRobotSlamToolbox::laserCallback(
 void MultiRobotSlamToolbox::localizedScanCallback(
   slam_toolbox::msg::LocalizedLaserScan::ConstSharedPtr localized_scan)
 {
-  std::string scan_ns = localized_scan->scan.header.frame_id.substr(0, 
-                          localized_scan->scan.header.frame_id.find('/'));
-  if (scan_ns == current_ns_) return; // Ignore callbacks from ourself
+  std::string scan_ns = localized_scan->scan.header.frame_id.substr(
+    0, localized_scan->scan.header.frame_id.find('/'));
+  if (scan_ns == current_ns_) {
+    return;  // Ignore callbacks from ourself
+  }
 
-  sensor_msgs::msg::LaserScan::ConstSharedPtr scan = 
+  sensor_msgs::msg::LaserScan::ConstSharedPtr scan =
     std::make_shared<sensor_msgs::msg::LaserScan>(localized_scan->scan);
   Pose2 pose;
   pose.SetX(localized_scan->pose.pose.pose.position.x);
@@ -85,14 +89,14 @@ void MultiRobotSlamToolbox::localizedScanCallback(
 
   LaserRangeFinder * laser = getLaser(localized_scan);
   if (!laser) {
-    RCLCPP_WARN(get_logger(), "Failed to create device for received localizedScanner"
+    RCLCPP_WARN(
+      get_logger(), "Failed to create device for received localizedScanner"
       " %s; discarding scan", scan->header.frame_id.c_str());
     return;
   }
   LocalizedRangeScan * range_scan = addExternalScan(laser, scan, pose);
-  
-  if (range_scan != nullptr)
-  {
+
+  if (range_scan != nullptr) {
     // Publish transform
     pose = range_scan->GetCorrectedPose();
     tf2::Quaternion q(0., 0., 0., 1.0);
@@ -134,7 +138,8 @@ LocalizedRangeScan * MultiRobotSlamToolbox::addExternalScan(
   } else if (processor_type_ == PROCESS_NEAR_REGION) {
     boost::mutex::scoped_lock l(pose_mutex_);
     if (!process_near_pose_) {
-      RCLCPP_ERROR(get_logger(), "Process near region called without a "
+      RCLCPP_ERROR(
+        get_logger(), "Process near region called without a "
         "valid region request. Ignoring scan.");
       return nullptr;
     }
@@ -146,8 +151,8 @@ LocalizedRangeScan * MultiRobotSlamToolbox::addExternalScan(
     update_reprocessing_transform = true;
     processor_type_ = PROCESS;
   } else {
-    RCLCPP_FATAL(get_logger(),
-      "SlamToolbox: No valid processor type set! Exiting.");
+    RCLCPP_FATAL(
+      get_logger(), "SlamToolbox: No valid processor type set! Exiting.");
     exit(-1);
   }
 
@@ -173,11 +178,12 @@ LaserRangeFinder * MultiRobotSlamToolbox::getLaser(
   const std::string & frame = localized_scan->scan.header.frame_id;
   if (lasers_.find(frame) == lasers_.end()) {
     try {
-      lasers_[frame] = laser_assistant_->toLaserMetadata(localized_scan->scan, 
-                                            localized_scan->scanner_offset);
+      lasers_[frame] = laser_assistant_->toLaserMetadata(
+        localized_scan->scan, localized_scan->scanner_offset);
       dataset_->Add(lasers_[frame].getLaser(), true);
     } catch (tf2::TransformException & e) {
-      RCLCPP_ERROR(get_logger(), "Failed to compute laser pose[%s], "
+      RCLCPP_ERROR(
+        get_logger(), "Failed to compute laser pose[%s], "
         "aborting initialization (%s)", frame.c_str(), e.what());
       return nullptr;
     }
@@ -187,7 +193,7 @@ LaserRangeFinder * MultiRobotSlamToolbox::getLaser(
 }
 
 /*****************************************************************************/
-void MultiRobotSlamToolbox::publishLocalizedScan( 
+void MultiRobotSlamToolbox::publishLocalizedScan(
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
   const Pose2 & offset,
   const Pose2 & pose,
@@ -195,7 +201,7 @@ void MultiRobotSlamToolbox::publishLocalizedScan(
   const rclcpp::Time & t)
 /*****************************************************************************/
 {
-  slam_toolbox::msg::LocalizedLaserScan scan_msg; 
+  slam_toolbox::msg::LocalizedLaserScan scan_msg;
 
   scan_msg.scan = *scan;
 
@@ -218,11 +224,11 @@ void MultiRobotSlamToolbox::publishLocalizedScan(
   scan_msg.pose.header.stamp = t;
 
   // Set prefixed frame names
-  scan_msg.scan.header.frame_id = (*(scan->header.frame_id.cbegin()) == '/') ? 
+  scan_msg.scan.header.frame_id = (*(scan->header.frame_id.cbegin()) == '/') ?
     current_ns_ + scan->header.frame_id :
     current_ns_ + "/" + scan->header.frame_id;
 
-  scan_msg.pose.header.frame_id = (*(map_frame_.cbegin()) == '/') ? 
+  scan_msg.pose.header.frame_id = (*(map_frame_.cbegin()) == '/') ?
     current_ns_ + map_frame_ :
     current_ns_ + "/" + map_frame_;
 
@@ -243,7 +249,8 @@ bool MultiRobotSlamToolbox::deserializePoseGraphCallback(
 /*****************************************************************************/
 {
   if (req->match_type == procType::LOCALIZE_AT_POSE) {
-    RCLCPP_WARN(get_logger(), "Requested a localization deserialization "
+    RCLCPP_WARN(
+      get_logger(), "Requested a localization deserialization "
       "in non-localization mode.");
     return false;
   }
@@ -251,4 +258,4 @@ bool MultiRobotSlamToolbox::deserializePoseGraphCallback(
   return SlamToolbox::deserializePoseGraphCallback(request_header, req, resp);
 }
 
-}
+}  // namespace slam_toolbox
