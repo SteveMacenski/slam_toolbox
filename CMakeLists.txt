@@ -103,17 +103,17 @@ include_directories(include lib/karto_sdk/include
 add_definitions(${EIGEN3_DEFINITIONS})
 
 rosidl_generate_interfaces(${PROJECT_NAME}
-  srvs/Pause.srv
-  srvs/Reset.srv
-  srvs/ClearQueue.srv
-  srvs/ToggleInteractive.srv
-  srvs/Clear.srv
-  srvs/SaveMap.srv
-  srvs/LoopClosure.srv
-  srvs/MergeMaps.srv
-  srvs/AddSubmap.srv
-  srvs/DeserializePoseGraph.srv
-  srvs/SerializePoseGraph.srv
+  srv/Pause.srv
+  srv/Reset.srv
+  srv/ClearQueue.srv
+  srv/ToggleInteractive.srv
+  srv/Clear.srv
+  srv/SaveMap.srv
+  srv/LoopClosure.srv
+  srv/MergeMaps.srv
+  srv/AddSubmap.srv
+  srv/DeserializePoseGraph.srv
+  srv/SerializePoseGraph.srv
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs nav_msgs visualization_msgs
 )
 
