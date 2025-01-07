@@ -52,7 +52,7 @@ An overview of how the map was generated is presented below:
 
 # Support and Contribution
 
-If you have any questions on use or configuration, please post your questions on [ROS Answers](answers.ros.org) and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
+If you have any questions on use or configuration, please post your questions on [Robotics Stack Exchange](https://robotics.stackexchange.com) and someone from the community will work their hardest to get back to you. Tangible issues in the codebase or feature requests should be made with GitHub issues.  
 
 If you're interested in contributing to this project in a substantial way, please file a public GitHub issue on your new feature / patch. If for some reason the development of this feature is sensitive, please email the maintainers at their email addresses listed in the `package.xml` file. 
 
