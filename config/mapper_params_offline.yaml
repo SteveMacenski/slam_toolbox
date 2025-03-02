@@ -65,3 +65,5 @@ slam_toolbox:
     minimum_angle_penalty: 0.9
     minimum_distance_penalty: 0.5
     use_response_expansion: true
+    min_pass_through: 2
+    occupancy_threshold: 0.1
