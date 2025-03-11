@@ -35,7 +35,11 @@ void MergeMapsKinematic::configure()
 /*****************************************************************************/
 {
   resolution_ = 0.05;
+  min_pass_through_ = 2;
+  occupancy_threshold_ = 0.1;
   resolution_ = this->declare_parameter("resolution", resolution_);
+  min_pass_through_ = this->declare_parameter("min_pass_through", min_pass_through_);
+  occupancy_threshold_ = this->declare_parameter("occupancy_threshold", occupancy_threshold_);
   auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
 
   sstS_.push_back(this->create_publisher<nav_msgs::msg::OccupancyGrid>(
@@ -300,7 +304,7 @@ void MergeMapsKinematic::kartoToROSOccupancyGrid(
 /*****************************************************************************/
 {
   OccupancyGrid * occ_grid = NULL;
-  occ_grid = OccupancyGrid::CreateFromScans(scans, resolution_, 2, 0.1);
+  occ_grid = OccupancyGrid::CreateFromScans(scans, resolution_, min_pass_through_, occupancy_threshold_);
   if (!occ_grid) {
     RCLCPP_INFO(get_logger(),
       "MergeMapsKinematic: Could not make occupancy grid.");
