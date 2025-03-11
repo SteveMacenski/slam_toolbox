@@ -103,6 +103,8 @@ private:
   std::map<int, tf2::Transform> submap_marker_transform_;
   std::map<int, tf2::Transform> prev_submap_marker_transform_;
   double resolution_;
+  int min_pass_through_;
+  double occupancy_threshold_;
   int num_submaps_;
 };
 
