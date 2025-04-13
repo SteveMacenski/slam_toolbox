@@ -406,13 +406,13 @@ void CeresSolver::RemoveNode(kt_int32s id)
       problem_->RemoveParameterBlock(&nodeit->second(1));
       problem_->RemoveParameterBlock(&nodeit->second(2));
       RCLCPP_DEBUG(
-        node_->get_logger(),
+        logger_,
         "RemoveNode: Removed node id %d" ,nodeit->first);
     }
     else
     {
       RCLCPP_DEBUG(
-        node_->get_logger(),
+        logger_,
         "RemoveNode: Missing parameter blocks for "
         "node id %d", nodeit->first);
     }
