@@ -68,12 +68,14 @@ slam_toolbox:
     # Correlation Parameters - Correlation Parameters
     correlation_search_space_dimension: 0.5
     correlation_search_space_resolution: 0.01
-    correlation_search_space_smear_deviation: 0.1 
+    correlation_search_space_smear_deviation: 0.1
+    correlation_search_space_coarse_resolution_multiplier: 10
 
     # Correlation Parameters - Loop Closure Parameters
     loop_search_space_dimension: 8.0
     loop_search_space_resolution: 0.05
     loop_search_space_smear_deviation: 0.03
+    loop_search_space_coarse_resolution_multiplier: 10
 
     # Scan Matcher Parameters
     distance_variance_penalty: 0.5      
