@@ -304,11 +304,15 @@ The following settings and options are exposed to you. My default configuration 
 
 `correlation_search_space_smear_deviation` - Amount of multimodal smearing to smooth out responses
 
+`correlation_search_space_coarse_resolution_multiplier` - Multiplier applied to the fine scan search translational resolution to get the coarse search resolution
+
 `loop_search_space_dimension` - Size of the search grid over the loop closure algorithm
 
 `loop_search_space_resolution` - Search grid resolution to do loop closure over
 
 `loop_search_space_smear_deviation` - Amount of multimodal smearing to smooth out responses
+
+`loop_search_space_coarse_resolution_multiplier` - Multiplier applied to the fine scan search translational resolution to get the coarse search resolution
 
 `distance_variance_penalty` - A penalty to apply to a matched scan as it differs from the odometric pose
 
