@@ -957,8 +957,6 @@ void ScanMatcher::ComputePositionalCovariance(
     }
   }
 
-
-
   if (norm > KT_TOLERANCE) {
     kt_double varianceXX = accumulatedVarianceXX / norm;
     kt_double varianceXY = accumulatedVarianceXY / norm;
