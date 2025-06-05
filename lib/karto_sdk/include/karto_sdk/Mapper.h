@@ -1344,6 +1344,7 @@ public:
     kt_double searchSize,
     kt_double resolution,
     kt_double smearDeviation,
+    kt_int32u resolutionMultiplier,
     kt_double rangeThreshold);
 
   /**
@@ -1498,6 +1499,7 @@ private:
   std::vector<kt_double> m_yPoses;
   Pose2 m_rSearchCenter;
   kt_double m_searchAngleOffset;
+  kt_int32u m_nResolutionMultiplier;
   kt_int32u m_nAngles;
   kt_double m_searchAngleResolution;
   kt_bool m_doPenalize;
@@ -1520,6 +1522,7 @@ private:
     ar & BOOST_SERIALIZATION_NVP(m_nAngles);
     ar & BOOST_SERIALIZATION_NVP(m_searchAngleResolution);
     ar & BOOST_SERIALIZATION_NVP(m_doPenalize);
+    // ar & BOOST_SERIALIZATION_NVP(m_nResolutionMultiplier);
 
     // Note - m_pPoseResponse is generally only ever defined within the
     // execution of ScanMatcher::CorrelateScan and used as a temporary
@@ -2311,6 +2314,11 @@ protected:
    */
   Parameter<kt_double> * m_pCorrelationSearchSpaceSmearDeviation;
 
+  /**
+   * The multiplier applied to the fine scan search translational resolution to get the coarse search resolution.
+   * The default value is 10.
+   */
+  Parameter<kt_int32u> * m_pCorrelationSearchSpaceCoarseResolutionMultiplier;
 
   //////////////////////////////////////////////////////////////////////////////
   //    CorrelationParameters loopCorrelationParameters;
@@ -2333,6 +2341,12 @@ protected:
    */
   Parameter<kt_double> * m_pLoopSearchSpaceSmearDeviation;
 
+  /**
+   * The multiplier applied to the fine scan search translational resolution to get the coarse search resolution.
+   * The default value is 10.
+   */
+  Parameter<kt_int32u> * m_pLoopSearchSpaceCoarseResolutionMultiplier;
+
   //////////////////////////////////////////////////////////////////////////////
   // ScanMatcherParameters;
 
@@ -2343,7 +2357,7 @@ protected:
   Parameter<kt_double> * m_pAngleVariancePenalty;
 
   // The range of angles to search during a coarse search and a finer search
-  Parameter<kt_double> * m_pFineSearchAngleOffset;
+  Parameter<kt_double> * m_pFineSearchAngleResolution;
   Parameter<kt_double> * m_pCoarseSearchAngleOffset;
 
   // Resolution of angles to search during a coarse search
@@ -2402,13 +2416,15 @@ protected:
     ar & BOOST_SERIALIZATION_NVP(m_pLoopSearchSpaceSmearDeviation);
     ar & BOOST_SERIALIZATION_NVP(m_pDistanceVariancePenalty);
     ar & BOOST_SERIALIZATION_NVP(m_pAngleVariancePenalty);
-    ar & BOOST_SERIALIZATION_NVP(m_pFineSearchAngleOffset);
+    ar & BOOST_SERIALIZATION_NVP(m_pFineSearchAngleResolution);
     ar & BOOST_SERIALIZATION_NVP(m_pCoarseSearchAngleOffset);
     ar & BOOST_SERIALIZATION_NVP(m_pCoarseAngleResolution);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumAnglePenalty);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumDistancePenalty);
     ar & BOOST_SERIALIZATION_NVP(m_pUseResponseExpansion);
-// NOTE: the following two lines are commented out to avoid breaking the serialization of already existing maps
+// NOTE: the following four lines are commented out to avoid breaking the serialization of already existing maps
+//    ar & BOOST_SERIALIZATION_NVP(m_pCorrelationSearchSpaceCoarseResolutionMultiplier);
+//    ar & BOOST_SERIALIZATION_NVP(m_pLoopSearchSpaceCoarseResolutionMultiplier);
 //    ar & BOOST_SERIALIZATION_NVP(m_pMinPassThrough); 
 //    ar & BOOST_SERIALIZATION_NVP(m_pOccupancyThreshold);
     std::cout << "**Finished serializing Mapper**\n";
@@ -2440,11 +2456,13 @@ public:
   double getParamCorrelationSearchSpaceDimension();
   double getParamCorrelationSearchSpaceResolution();
   double getParamCorrelationSearchSpaceSmearDeviation();
+  int getParamCorrelationSearchSpaceCoarseResolutionMultiplier();
 
   // Correlation Parameters - Loop Closure Parameters
   double getParamLoopSearchSpaceDimension();
   double getParamLoopSearchSpaceResolution();
   double getParamLoopSearchSpaceSmearDeviation();
+  int getParamLoopSearchSpaceCoarseResolutionMultiplier();
 
   // Scan Matcher Parameters
   double getParamDistanceVariancePenalty();
@@ -2480,11 +2498,13 @@ public:
   void setParamCorrelationSearchSpaceDimension(double d);
   void setParamCorrelationSearchSpaceResolution(double d);
   void setParamCorrelationSearchSpaceSmearDeviation(double d);
+  void setParamCorrelationSearchSpaceCoarseResolutionMultiplier(int i);
 
   // Correlation Parameters - Loop Closure Parameters
   void setParamLoopSearchSpaceDimension(double d);
   void setParamLoopSearchSpaceResolution(double d);
   void setParamLoopSearchSpaceSmearDeviation(double d);
+  void setParamLoopSearchSpaceCoarseResolutionMultiplier(int i);
 
   // Scan Matcher Parameters
   void setParamDistanceVariancePenalty(double d);

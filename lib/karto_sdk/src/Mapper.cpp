@@ -476,7 +476,7 @@ ScanMatcher::~ScanMatcher()
 
 ScanMatcher * ScanMatcher::Create(
   Mapper * pMapper, kt_double searchSize, kt_double resolution,
-  kt_double smearDeviation, kt_double rangeThreshold)
+  kt_double smearDeviation, kt_int32u resolutionMultiplier, kt_double rangeThreshold)
 {
   // invalid parameters
   if (resolution <= 0) {
@@ -489,6 +489,9 @@ ScanMatcher * ScanMatcher::Create(
     return NULL;
   }
   if (rangeThreshold <= 0) {
+    return NULL;
+  }
+  if (resolutionMultiplier < 1) {
     return NULL;
   }
 
@@ -517,6 +520,7 @@ ScanMatcher * ScanMatcher::Create(
   pScanMatcher->m_pCorrelationGrid = pCorrelationGrid;
   pScanMatcher->m_pSearchSpaceProbs = pSearchSpaceProbs;
   pScanMatcher->m_pGridLookup = new GridIndexLookup<kt_int8u>(pCorrelationGrid);
+  pScanMatcher->m_nResolutionMultiplier = resolutionMultiplier;
 
   return pScanMatcher;
 }
@@ -581,8 +585,9 @@ kt_double ScanMatcher::MatchScan(
     0.5 * (searchDimensions.GetY() - 1) * m_pCorrelationGrid->GetResolution());
 
   // a coarse search only checks half the cells in each dimension
-  Vector2<kt_double> coarseSearchResolution(2 * m_pCorrelationGrid->GetResolution(),
-    2 * m_pCorrelationGrid->GetResolution());
+  Vector2<kt_double> coarseSearchResolution(
+    m_nResolutionMultiplier * m_pCorrelationGrid->GetResolution(),
+    m_nResolutionMultiplier * m_pCorrelationGrid->GetResolution());
 
   // actual scan-matching
   kt_double bestResponse = CorrelateScan(pScan, scanPose, coarseSearchOffset,
@@ -624,7 +629,7 @@ kt_double ScanMatcher::MatchScan(
       m_pCorrelationGrid->GetResolution());
     bestResponse = CorrelateScan(pScan, rMean, fineSearchOffset, fineSearchResolution,
         0.5 * m_pMapper->m_pCoarseAngleResolution->GetValue(),
-        m_pMapper->m_pFineSearchAngleOffset->GetValue(),
+        m_pMapper->m_pFineSearchAngleResolution->GetValue(),
         doPenalize, rMean, rCovariance, true);
   }
 
@@ -734,20 +739,26 @@ kt_double ScanMatcher::CorrelateScan(
   // calculate position arrays
 
   m_xPoses.clear();
-  kt_int32u nX = static_cast<kt_int32u>(math::Round(rSearchSpaceOffset.GetX() *
-    2.0 / rSearchSpaceResolution.GetX()) + 1);
+  kt_double nXSteps = rSearchSpaceOffset.GetX() * 2.0 / rSearchSpaceResolution.GetX();
+  kt_int32u nX = static_cast<kt_int32u>(math::Floor(nXSteps) + 1);
   kt_double startX = -rSearchSpaceOffset.GetX();
   for (kt_int32u xIndex = 0; xIndex < nX; xIndex++) {
     m_xPoses.push_back(startX + xIndex * rSearchSpaceResolution.GetX());
   }
+  if (nXSteps - math::Floor(nXSteps) >= 0.5) {
+    m_xPoses.push_back(-startX);
+  }
   assert(math::DoubleEqual(m_xPoses.back(), -startX));
 
   m_yPoses.clear();
-  kt_int32u nY = static_cast<kt_int32u>(math::Round(rSearchSpaceOffset.GetY() *
-    2.0 / rSearchSpaceResolution.GetY()) + 1);
+  kt_double nYSteps = rSearchSpaceOffset.GetY() * 2.0 / rSearchSpaceResolution.GetY();
+  kt_int32u nY = static_cast<kt_int32u>(math::Floor(nYSteps) + 1);
   kt_double startY = -rSearchSpaceOffset.GetY();
   for (kt_int32u yIndex = 0; yIndex < nY; yIndex++) {
     m_yPoses.push_back(startY + yIndex * rSearchSpaceResolution.GetY());
+  }
+  if (nYSteps - math::Floor(nYSteps) >= 0.5) {
+    m_yPoses.push_back(-startY);
   }
   assert(math::DoubleEqual(m_yPoses.back(), -startY));
 
@@ -901,21 +912,35 @@ void ScanMatcher::ComputePositionalCovariance(
   kt_double offsetX = rSearchSpaceOffset.GetX();
   kt_double offsetY = rSearchSpaceOffset.GetY();
 
+  std::vector<kt_double> xPoses;
+  kt_double nXSteps = offsetX * 2.0 / rSearchSpaceResolution.GetX();
   kt_int32u nX =
-    static_cast<kt_int32u>(math::Round(offsetX * 2.0 / rSearchSpaceResolution.GetX()) + 1);
+    static_cast<kt_int32u>(math::Floor(nXSteps) + 1);
   kt_double startX = -offsetX;
+  for (kt_int32u xIndex = 0; xIndex < nX; xIndex++) {
+    xPoses.push_back(startX + xIndex * rSearchSpaceResolution.GetX());
+  }
+  if (nXSteps - math::Floor(nXSteps) >= 0.5) {
+    xPoses.push_back(-startX);
+  }
   assert(math::DoubleEqual(startX + (nX - 1) * rSearchSpaceResolution.GetX(), -startX));
 
+  std::vector<kt_double> yPoses;
+  kt_double nYSteps = offsetY * 2.0 / rSearchSpaceResolution.GetY();
   kt_int32u nY =
-    static_cast<kt_int32u>(math::Round(offsetY * 2.0 / rSearchSpaceResolution.GetY()) + 1);
+    static_cast<kt_int32u>(math::Floor(nYSteps) + 1);
   kt_double startY = -offsetY;
+  for (kt_int32u yIndex = 0; yIndex < nY; yIndex++) {
+    yPoses.push_back(startY + yIndex * rSearchSpaceResolution.GetY());
+  }
+  if (nYSteps - math::Floor(nYSteps) >= 0.5) {
+    yPoses.push_back(-startY);
+  }
   assert(math::DoubleEqual(startY + (nY - 1) * rSearchSpaceResolution.GetY(), -startY));
 
-  for (kt_int32u yIndex = 0; yIndex < nY; yIndex++) {
-    kt_double y = startY + yIndex * rSearchSpaceResolution.GetY();
-
-    for (kt_int32u xIndex = 0; xIndex < nX; xIndex++) {
-      kt_double x = startX + xIndex * rSearchSpaceResolution.GetX();
+  for (kt_double y: yPoses) {
+    
+    for (kt_double x: xPoses) {
 
       Vector2<kt_int32s> gridPoint =
         m_pSearchSpaceProbs->WorldToGrid(Vector2<kt_double>(rSearchCenter.GetX() + x,
@@ -931,6 +956,8 @@ void ScanMatcher::ComputePositionalCovariance(
       }
     }
   }
+
+
 
   if (norm > KT_TOLERANCE) {
     kt_double varianceXX = accumulatedVarianceXX / norm;
@@ -1397,7 +1424,9 @@ MapperGraph::MapperGraph(Mapper * pMapper, kt_double rangeThreshold)
   m_pLoopScanMatcher = ScanMatcher::Create(pMapper,
     m_pMapper->m_pLoopSearchSpaceDimension->GetValue(),
     m_pMapper->m_pLoopSearchSpaceResolution->GetValue(),
-    m_pMapper->m_pLoopSearchSpaceSmearDeviation->GetValue(), rangeThreshold);
+    m_pMapper->m_pLoopSearchSpaceSmearDeviation->GetValue(),
+    m_pMapper->m_pCorrelationSearchSpaceCoarseResolutionMultiplier->GetValue(),
+    rangeThreshold);
   assert(m_pLoopScanMatcher);
 
   m_pTraversal = new BreadthFirstTraversal<LocalizedRangeScan>(this);
@@ -2037,7 +2066,9 @@ void MapperGraph::UpdateLoopScanMatcher(kt_double rangeThreshold)
   m_pLoopScanMatcher = ScanMatcher::Create(m_pMapper,
     m_pMapper->m_pLoopSearchSpaceDimension->GetValue(),
     m_pMapper->m_pLoopSearchSpaceResolution->GetValue(),
-    m_pMapper->m_pLoopSearchSpaceSmearDeviation->GetValue(), rangeThreshold);
+    m_pMapper->m_pLoopSearchSpaceSmearDeviation->GetValue(),
+    m_pMapper->m_pCorrelationSearchSpaceCoarseResolutionMultiplier->GetValue(),
+    rangeThreshold);
   assert(m_pLoopScanMatcher);
 }
 
@@ -2224,6 +2255,11 @@ void Mapper::InitializeParameters()
     "smoother response.",
     0.03, GetParameterManager());
 
+  m_pCorrelationSearchSpaceCoarseResolutionMultiplier = new Parameter<kt_int32u>(
+    "CorrelationSearchSpaceCoarseResolutionMultiplier",
+    "The multiplier applied to the fine scan search translational resolution "
+    "to get the coarse search resolution",
+    10, GetParameterManager());
 
   //////////////////////////////////////////////////////////////////////////////
   //    CorrelationParameters loopCorrelationParameters;
@@ -2244,6 +2280,12 @@ void Mapper::InitializeParameters()
     "smoother response.",
     0.03, GetParameterManager());
 
+  m_pLoopSearchSpaceCoarseResolutionMultiplier = new Parameter<kt_int32u>(
+    "LoopSearchSpaceCoarseResolutionMultiplier",
+    "The multiplier applied to the fine scan search translational resolution "
+    "to get the coarse search resolution",
+    10, GetParameterManager());
+
   //////////////////////////////////////////////////////////////////////////////
   // ScanMatcherParameters;
 
@@ -2259,7 +2301,7 @@ void Mapper::InitializeParameters()
     "See DistanceVariancePenalty.",
     math::Square(math::DegreesToRadians(20)), GetParameterManager());
 
-  m_pFineSearchAngleOffset = new Parameter<kt_double>(
+  m_pFineSearchAngleResolution = new Parameter<kt_double>(
     "FineSearchAngleOffset",
     "The range of angles to search during a fine search.",
     math::DegreesToRadians(0.2), GetParameterManager());
@@ -2405,6 +2447,11 @@ double Mapper::getParamCorrelationSearchSpaceSmearDeviation()
   return static_cast<double>(m_pCorrelationSearchSpaceSmearDeviation->GetValue());
 }
 
+int Mapper::getParamCorrelationSearchSpaceCoarseResolutionMultiplier()
+{
+  return static_cast<int>(m_pCorrelationSearchSpaceCoarseResolutionMultiplier->GetValue());
+}
+
 // Correlation Parameters - Loop Correlation Parameters
 
 double Mapper::getParamLoopSearchSpaceDimension()
@@ -2422,6 +2469,11 @@ double Mapper::getParamLoopSearchSpaceSmearDeviation()
   return static_cast<double>(m_pLoopSearchSpaceSmearDeviation->GetValue());
 }
 
+int Mapper::getParamLoopSearchSpaceCoarseResolutionMultiplier()
+{
+  return static_cast<int>(m_pLoopSearchSpaceCoarseResolutionMultiplier->GetValue());
+}
+
 // ScanMatcher Parameters
 
 double Mapper::getParamDistanceVariancePenalty()
@@ -2436,7 +2488,7 @@ double Mapper::getParamAngleVariancePenalty()
 
 double Mapper::getParamFineSearchAngleOffset()
 {
-  return static_cast<double>(m_pFineSearchAngleOffset->GetValue());
+  return static_cast<double>(m_pFineSearchAngleResolution->GetValue());
 }
 
 double Mapper::getParamCoarseSearchAngleOffset()
@@ -2567,6 +2619,10 @@ void Mapper::setParamCorrelationSearchSpaceSmearDeviation(double d)
   m_pCorrelationSearchSpaceSmearDeviation->SetValue((kt_double)d);
 }
 
+void Mapper::setParamCorrelationSearchSpaceCoarseResolutionMultiplier(int i)
+{
+  m_pCorrelationSearchSpaceCoarseResolutionMultiplier->SetValue((kt_int32u)i);
+}
 
 // Correlation Parameters - Loop Closure Parameters
 void Mapper::setParamLoopSearchSpaceDimension(double d)
@@ -2584,6 +2640,10 @@ void Mapper::setParamLoopSearchSpaceSmearDeviation(double d)
   m_pLoopSearchSpaceSmearDeviation->SetValue((kt_double)d);
 }
 
+void Mapper::setParamLoopSearchSpaceCoarseResolutionMultiplier(int i)
+{
+  m_pLoopSearchSpaceCoarseResolutionMultiplier->SetValue((kt_int32u)i);
+}
 
 // Scan Matcher Parameters
 void Mapper::setParamDistanceVariancePenalty(double d)
@@ -2598,7 +2658,7 @@ void Mapper::setParamAngleVariancePenalty(double d)
 
 void Mapper::setParamFineSearchAngleOffset(double d)
 {
-  m_pFineSearchAngleOffset->SetValue((kt_double)d);
+  m_pFineSearchAngleResolution->SetValue((kt_double)d);
 }
 
 void Mapper::setParamCoarseSearchAngleOffset(double d)
@@ -2651,6 +2711,7 @@ void Mapper::Initialize(kt_double rangeThreshold)
     m_pCorrelationSearchSpaceDimension->GetValue(),
     m_pCorrelationSearchSpaceResolution->GetValue(),
     m_pCorrelationSearchSpaceSmearDeviation->GetValue(),
+    m_pCorrelationSearchSpaceCoarseResolutionMultiplier->GetValue(),
     rangeThreshold);
   assert(m_pSequentialScanMatcher);
 

@@ -90,6 +90,16 @@ inline kt_double Round(kt_double value)
 }
 
 /**
+ * Floor function
+ * @param value
+ * @return floors value to the nearest whole number (as double)
+ */
+inline kt_double Floor(kt_double value)
+{
+  return floor(value);
+}
+
+/**
  * Binary minimum function
  * @param value1
  * @param value2
