@@ -629,7 +629,7 @@ kt_double ScanMatcher::MatchScan(
       m_pCorrelationGrid->GetResolution());
     bestResponse = CorrelateScan(pScan, rMean, fineSearchOffset, fineSearchResolution,
         0.5 * m_pMapper->m_pCoarseAngleResolution->GetValue(),
-        m_pMapper->m_pFineSearchAngleResolution->GetValue(),
+        m_pMapper->m_pFineSearchAngleOffset->GetValue(),
         doPenalize, rMean, rCovariance, true);
   }
 
@@ -939,7 +939,7 @@ void ScanMatcher::ComputePositionalCovariance(
   assert(math::DoubleEqual(startY + (nY - 1) * rSearchSpaceResolution.GetY(), -startY));
 
   for (kt_double y: yPoses) {
-    
+
     for (kt_double x: xPoses) {
 
       Vector2<kt_int32s> gridPoint =
@@ -2301,7 +2301,7 @@ void Mapper::InitializeParameters()
     "See DistanceVariancePenalty.",
     math::Square(math::DegreesToRadians(20)), GetParameterManager());
 
-  m_pFineSearchAngleResolution = new Parameter<kt_double>(
+  m_pFineSearchAngleOffset = new Parameter<kt_double>(
     "FineSearchAngleOffset",
     "The range of angles to search during a fine search.",
     math::DegreesToRadians(0.2), GetParameterManager());
@@ -2488,7 +2488,7 @@ double Mapper::getParamAngleVariancePenalty()
 
 double Mapper::getParamFineSearchAngleOffset()
 {
-  return static_cast<double>(m_pFineSearchAngleResolution->GetValue());
+  return static_cast<double>(m_pFineSearchAngleOffset->GetValue());
 }
 
 double Mapper::getParamCoarseSearchAngleOffset()
@@ -2658,7 +2658,7 @@ void Mapper::setParamAngleVariancePenalty(double d)
 
 void Mapper::setParamFineSearchAngleOffset(double d)
 {
-  m_pFineSearchAngleResolution->SetValue((kt_double)d);
+  m_pFineSearchAngleOffset->SetValue((kt_double)d);
 }
 
 void Mapper::setParamCoarseSearchAngleOffset(double d)
