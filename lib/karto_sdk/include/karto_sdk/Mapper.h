@@ -2316,7 +2316,7 @@ protected:
 
   /**
    * The multiplier applied to the fine scan search translational resolution to get the coarse search resolution.
-   * The default value is 10.
+   * The default value is 2.
    */
   Parameter<kt_int32u> * m_pCorrelationSearchSpaceCoarseResolutionMultiplier;
 
@@ -2343,7 +2343,7 @@ protected:
 
   /**
    * The multiplier applied to the fine scan search translational resolution to get the coarse search resolution.
-   * The default value is 10.
+   * The default value is 2.
    */
   Parameter<kt_int32u> * m_pLoopSearchSpaceCoarseResolutionMultiplier;
 

@@ -2257,7 +2257,7 @@ void Mapper::InitializeParameters()
     "CorrelationSearchSpaceCoarseResolutionMultiplier",
     "The multiplier applied to the fine scan search translational resolution "
     "to get the coarse search resolution",
-    10, GetParameterManager());
+    2, GetParameterManager());
 
   //////////////////////////////////////////////////////////////////////////////
   //    CorrelationParameters loopCorrelationParameters;
@@ -2282,7 +2282,7 @@ void Mapper::InitializeParameters()
     "LoopSearchSpaceCoarseResolutionMultiplier",
     "The multiplier applied to the fine scan search translational resolution "
     "to get the coarse search resolution",
-    10, GetParameterManager());
+    2, GetParameterManager());
 
   //////////////////////////////////////////////////////////////////////////////
   // ScanMatcherParameters;
