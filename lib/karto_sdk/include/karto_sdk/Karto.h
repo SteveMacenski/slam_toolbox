@@ -5191,6 +5191,10 @@ private:
  * Type declaration of range readings vector
  */
 typedef std::vector<kt_double> RangeReadingsVector;
+/**
+ * Type declaration of reflected readings vector
+ */
+typedef std::vector<kt_double> IntensityReadingsVector;
 
 /**
  * LaserRangeScan representing the range readings from a laser range finder sensor.
@@ -5210,7 +5214,8 @@ public:
   LaserRangeScan(const Name & rSensorName)  // NOLINT
   : SensorData(rSensorName),
     m_pRangeReadings(NULL),
-    m_NumberOfRangeReadings(0)
+    m_NumberOfRangeReadings(0),
+    m_pIntensityReadings(NULL)
   {
   }
 
@@ -5226,7 +5231,8 @@ public:
   LaserRangeScan(const Name & rSensorName, const RangeReadingsVector & rRangeReadings)
   : SensorData(rSensorName),
     m_pRangeReadings(NULL),
-    m_NumberOfRangeReadings(0)
+    m_NumberOfRangeReadings(0),
+    m_pIntensityReadings(NULL)
   {
     assert(rSensorName.ToString() != "");
 
@@ -5234,12 +5240,33 @@ public:
   }
 
   /**
+   * Constructs a scan from the given sensor with the given readings
+   * @param rSensorName
+   * @param rRangeReadings
+   * @param IntensityReadingsVector
+   */
+  LaserRangeScan(const Name & rSensorName,
+    const RangeReadingsVector & rRangeReadings,
+    const IntensityReadingsVector & rIntensityReadings)
+  : SensorData(rSensorName),
+    m_pRangeReadings(NULL),
+    m_NumberOfRangeReadings(0),
+    m_pIntensityReadings(NULL)
+  {
+    assert(rSensorName.ToString() != "");
+
+    SetRangeReadings(rRangeReadings);
+    SetIntensityReadings(rIntensityReadings);
+  }
+  /**
    * Destructor
    */
   virtual ~LaserRangeScan()
   {
     delete[] m_pRangeReadings;
     m_pRangeReadings = nullptr;
+    delete[] m_pIntensityReadings;
+    m_pIntensityReadings = nullptr;
   }
 
 public:
@@ -5298,6 +5325,62 @@ public:
   }
 
   /**
+   * Sets the intensity readings for this scan
+   * @param rIntensityReadings
+   */
+  inline void SetIntensityReadings(const IntensityReadingsVector & rIntensityReadings)
+  {
+
+    std::lock_guard<std::mutex> lock(intensity_mutex_);
+
+    if (!rIntensityReadings.empty())
+    {
+      if (rIntensityReadings.size() != m_NumberOfRangeReadings)
+      {
+        std::stringstream error;
+        error << "Size of intensity array (" << rIntensityReadings.size()
+          << ") does not match with range array size (" << m_NumberOfRangeReadings << ").";
+        std::cerr << "[ERROR] " << error.str() << std::endl;
+        throw Exception(error.str());
+      }
+      
+      if (m_pIntensityReadings != NULL)
+      {
+        std::cerr << "[DEBUG] SetIntensityReadings: deleting previous m_pIntensityReadings." << std::endl;
+        delete[] m_pIntensityReadings;
+        m_pIntensityReadings = NULL;
+      }
+              
+      m_pIntensityReadings = new kt_double[m_NumberOfRangeReadings];
+    
+      for (kt_int32u i = 0; i < m_NumberOfRangeReadings; i++)
+      {
+        m_pIntensityReadings[i] = rIntensityReadings[i];       
+      }
+    }
+    else
+    {
+      // If empty array, delete everything
+      std::cerr << "[DEBUG] SetIntensityReadings: empty array received, deleting m_pIntensityReadings." << std::endl;
+      delete[] m_pIntensityReadings;
+      m_pIntensityReadings = NULL;
+    }
+    
+  }
+
+  inline kt_double * GetIntensityReadings() const
+  {
+  return m_pIntensityReadings;
+  }
+
+  inline IntensityReadingsVector GetIntensityReadingsVector() const
+  {
+  // Build the array from the pointer, using m_NumberOfRangeReadings as the size
+  return IntensityReadingsVector(m_pIntensityReadings, m_pIntensityReadings + m_NumberOfRangeReadings);
+  }
+
+
+  /**
    * Gets the laser range finder sensor that generated this scan
    * @return laser range finder sensor of this scan
    */
@@ -5322,6 +5405,9 @@ private:
 private:
   kt_double * m_pRangeReadings;
   kt_int32u m_NumberOfRangeReadings;
+  kt_double * m_pIntensityReadings;
+  // Agrega aquí el mutex para proteger m_pIntensityReadings
+  std::mutex intensity_mutex_;
 
   friend class boost::serialization::access;
   template<class Archive>
@@ -5334,6 +5420,12 @@ private:
       m_pRangeReadings = new kt_double[m_NumberOfRangeReadings];
     }
     ar & boost::serialization::make_array<kt_double>(m_pRangeReadings, m_NumberOfRangeReadings);
+
+    if (Archive::is_loading::value)
+    {
+      m_pIntensityReadings = new kt_double[m_NumberOfRangeReadings];
+    }
+    ar & boost::serialization::make_array<kt_double>(m_pIntensityReadings, m_NumberOfRangeReadings);
   }
 };    // LaserRangeScan
 
@@ -5421,6 +5513,14 @@ public:
    */
   LocalizedRangeScan(const Name & rSensorName, const RangeReadingsVector & rReadings)
   : LaserRangeScan(rSensorName, rReadings),
+    m_IsDirty(true)
+  {
+  }
+  /**
+   * Constructs a range scan from the given range finder with the given readings and intensities
+   */
+  LocalizedRangeScan(const Name & rSensorName, const RangeReadingsVector & rReadings, const IntensityReadingsVector & iReadings)
+  : LaserRangeScan(rSensorName, rReadings, iReadings),
     m_IsDirty(true)
   {
   }

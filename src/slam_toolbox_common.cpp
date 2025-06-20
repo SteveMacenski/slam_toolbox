@@ -64,6 +64,8 @@ void SlamToolbox::configure()
   if (use_map_saver_) {
     map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(),
         map_name_);
+    intensity_map_saver_ = std::make_unique<intensity_map_saver::IntensityMapSaver>(shared_from_this(),
+        intensity_map_name_);
   }
   closure_assistant_ =
     std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
@@ -94,6 +96,7 @@ SlamToolbox::~SlamToolbox()
   dataset_.reset();
   closure_assistant_.reset();
   map_saver_.reset();
+  intensity_map_saver_.reset();
   pose_helper_.reset();
   laser_assistant_.reset();
   scan_holder_.reset();
@@ -145,6 +148,9 @@ void SlamToolbox::setParams()
   }
   map_name_ = std::string("/map");
   map_name_ = this->declare_parameter("map_name", map_name_);
+
+  intensity_map_name_ = std::string("/intensity_map");
+  intensity_map_name_ = this->declare_parameter("intensity_map_name", intensity_map_name_);
 
   use_map_saver_ = true;
   use_map_saver_ = this->declare_parameter("use_map_saver", use_map_saver_);
@@ -213,6 +219,12 @@ void SlamToolbox::setROSInterfaces()
   sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
     map_name_ + "_metadata",
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  intensity_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    intensity_map_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  intensity_metamap_pub_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
+    intensity_map_name_ + "_metadata",
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
   ssMap_ = this->create_service<nav_msgs::srv::GetMap>("slam_toolbox/dynamic_map",
       std::bind(&SlamToolbox::mapCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
@@ -392,27 +404,49 @@ LaserRangeFinder * SlamToolbox::getLaser(
 bool SlamToolbox::updateMap()
 /*****************************************************************************/
 {
-  if (sst_->get_subscription_count() == 0) {
+  if (sst_->get_subscription_count() > 0) {
+
+    boost::mutex::scoped_lock lock(smapper_mutex_);
+    OccupancyGrid * occ_grid = smapper_->getOccupancyGrid(resolution_);
+    if (!occ_grid) {
+      return false;
+    }
+
+    vis_utils::toNavMap(occ_grid, map_.map);
+
+    // publish map as current
+    map_.map.header.stamp = scan_header.stamp;
+    sst_->publish(
+      std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
+    sstm_->publish(
+      std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
+    
+    delete occ_grid;
+    occ_grid = nullptr;
+
+  }
+  
+  if(intensity_map_pub_->get_subscription_count() > 0){
+
+    slam_toolbox::IntensityGrid * intensity_grid = smapper_->getIntensityGrid(resolution_);
+    if (!intensity_grid) {
+      return false;
+    }
+
+    // Publish the current intensity grid
+    vis_utils::toNavIntensityMap(intensity_grid, map_.map);
+    map_.map.header.stamp = scan_header.stamp;
+    intensity_map_pub_->publish(
+      std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
+    intensity_metamap_pub_->publish(
+      std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
+
+    delete intensity_grid;
+    intensity_grid = nullptr;  
+
+  }
     return true;
-  }
-  boost::mutex::scoped_lock lock(smapper_mutex_);
-  OccupancyGrid * occ_grid = smapper_->getOccupancyGrid(resolution_);
-  if (!occ_grid) {
-    return false;
-  }
 
-  vis_utils::toNavMap(occ_grid, map_.map);
-
-  // publish map as current
-  map_.map.header.stamp = scan_header.stamp;
-  sst_->publish(
-    std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
-  sstm_->publish(
-    std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
-
-  delete occ_grid;
-  occ_grid = nullptr;
-  return true;
 }
 
 /*****************************************************************************/
@@ -489,9 +523,22 @@ LocalizedRangeScan * SlamToolbox::getLocalizedRangeScan(
   tf2::Transform tf_pose_transformed = reprocessing_transform_ * pose_original;
   Pose2 transformed_pose = smapper_->toKartoPose(tf_pose_transformed);
 
-  // create localized range scan
-  LocalizedRangeScan * range_scan = new LocalizedRangeScan(
-    laser->GetName(), readings);
+  //get size intensity from scan
+  std::vector<kt_double> intensities;
+  if (scan->intensities.size() == readings.size()) {
+    intensities.assign(scan->intensities.begin(), scan->intensities.end());
+  } else {
+    intensities.resize(readings.size(), 0.0);
+  }
+
+  LocalizedRangeScan * range_scan = new LocalizedRangeScan(laser->GetName(), readings, intensities);
+
+  // Check if the sizes are equal
+  if (range_scan->GetNumberOfRangeReadings() != intensities.size()) {
+    RCLCPP_INFO(get_logger(), "Discrepancy: GetNumberOfRangeReadings() = %u vs intensities.size() = %zu",
+                 range_scan->GetNumberOfRangeReadings(), intensities.size());
+  }
+
   range_scan->SetOdometricPose(transformed_pose);
   range_scan->SetCorrectedPose(transformed_pose);
   range_scan->SetTime(rclcpp::Time(scan->header.stamp).nanoseconds()/1.e9);

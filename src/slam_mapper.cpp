@@ -20,6 +20,8 @@
 
 #include <memory>
 #include "slam_toolbox/slam_mapper.hpp"
+#include "slam_toolbox/intensity_grid.hpp"
+#include "slam_toolbox/intensity_map_utils.hpp" 
 
 namespace mapper_utils
 {
@@ -67,6 +69,33 @@ karto::OccupancyGrid * SMapper::getOccupancyGrid(const double & resolution)
   return karto::OccupancyGrid::CreateFromScans(
     mapper_->GetAllProcessedScans(),
     resolution, (kt_int32u)mapper_->getParamMinPassThrough(), (kt_double)mapper_->getParamOccupancyThreshold());
+}
+
+/*****************************************************************************/
+slam_toolbox::IntensityGrid* SMapper::getIntensityGrid(const double & resolution)
+/*****************************************************************************/
+{
+  // Create the occupancy grid from scans
+  karto::OccupancyGrid * occ_grid = karto::OccupancyGrid::CreateFromScans(
+      mapper_->GetAllProcessedScans(),
+      resolution);
+
+  // Dimensions and offset of occupancy grid
+  karto::Vector2<kt_double> offset = occ_grid->GetCoordinateConverter()->GetOffset();
+  kt_int32s width = occ_grid->GetWidth();
+  kt_int32s height = occ_grid->GetHeight();
+
+  slam_toolbox::IntensityGrid * intensity_grid = new slam_toolbox::IntensityGrid(width, height, offset, resolution);
+
+  // For each scan update the intensity grid
+  const auto & scans = mapper_->GetAllProcessedScans();
+  for (auto scan : scans) {
+    slam_toolbox::updateIntensityGridFromScan(scan, occ_grid, *intensity_grid);
+  }
+
+  delete occ_grid;
+
+  return intensity_grid;
 }
 
 /*****************************************************************************/
