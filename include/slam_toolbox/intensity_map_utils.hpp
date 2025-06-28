@@ -24,10 +24,12 @@ namespace slam_toolbox {
  * @param scan           Pointer to LocalizedRangeScan (ranges and intensities)
  * @param occ_grid       Pointer to occupancy grid (built) to be used for sizes and conversion
  * @param intensity_grid Reference to IntensityGrid object to update
+ * @param min_intensity_threshold Minimum intensity value to consider (to avoid noise)
  */
 inline void updateIntensityGridFromScan(const karto::LocalizedRangeScan* scan,
                                           const karto::OccupancyGrid* occ_grid,
-                                          slam_toolbox::IntensityGrid & intensity_grid)
+                                          slam_toolbox::IntensityGrid & intensity_grid,
+                                          double min_intensity_threshold)
 {
 
   const kt_double* ranges = scan->GetRangeReadings();
@@ -71,7 +73,7 @@ inline void updateIntensityGridFromScan(const karto::LocalizedRangeScan* scan,
         kt_int8u currentValue = intensity_grid.GetDataPointer()[idx];
         // Convert the beam intensity to an 8-bit integer value (rounded)
         kt_int8u newValue = static_cast<kt_int8u>(std::round(intensities[i]));
-        if(newValue < 45){ //minIntensity
+        if(newValue < min_intensity_threshold){
             continue;
         }
         // TODO: scale the values if they are greater than 255.
