@@ -76,8 +76,10 @@ inline void updateIntensityGridFromScan(const karto::LocalizedRangeScan* scan,
         if(newValue < min_intensity_threshold){
             continue;
         }
-        // TODO: scale the values if they are greater than 255.
-        // Average the values ​​and limit to 255 to avoid overflow
+        // Values not higher than 255
+        if(newValue > 255)
+          newValue = 255;
+                
         kt_int16u avg = static_cast<kt_int16u>(currentValue) + static_cast<kt_int16u>(newValue);
         avg /=2;
         intensity_grid.GetDataPointer()[idx] = static_cast<kt_int8u>(avg);
