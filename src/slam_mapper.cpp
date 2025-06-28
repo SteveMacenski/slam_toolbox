@@ -402,7 +402,7 @@ void SMapper::configure(const rclcpp::Node::SharedPtr & node)
   if (!node->has_parameter("min_intensity_threshold")) {
     node->declare_parameter("min_intensity_threshold", min_intensity_threshold);
     RCLCPP_WARN(node->get_logger(),
-      "The minimum intesity threshold value has been not specified,"
+      "The minimum intensity threshold value has been not specified,"
       "it will be set to default value 40");
   }
   node->get_parameter("min_intensity_threshold", min_intensity_threshold);
