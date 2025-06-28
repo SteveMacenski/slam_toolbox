@@ -78,7 +78,7 @@ slam_toolbox::IntensityGrid* SMapper::getIntensityGrid(const double & resolution
   // Create the occupancy grid from scans
   karto::OccupancyGrid * occ_grid = karto::OccupancyGrid::CreateFromScans(
       mapper_->GetAllProcessedScans(),
-      resolution);
+      resolution, (kt_int32u)mapper_->getParamMinPassThrough(), (kt_double)mapper_->getParamOccupancyThreshold());
 
   // Dimensions and offset of occupancy grid
   karto::Vector2<kt_double> offset = occ_grid->GetCoordinateConverter()->GetOffset();
