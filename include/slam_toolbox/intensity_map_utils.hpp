@@ -132,6 +132,10 @@ inline void updateIntensityGridFromScan(const karto::LocalizedRangeScan* scan,
                 fusedValue = newValue;
                 break;
             case IntensityFusionStrategy::WEIGHTED_MEAN:
+                if (weighted_mean_alpha < 0.0 || weighted_mean_alpha > 1.0) {
+                  std::cerr << "[slam_toolbox] weighted_mean_alpha out of range [0,1], clamping value.\n";
+                  weighted_mean_alpha = std::clamp(weighted_mean_alpha, 0.0, 1.0);
+                }
                 fusedValue = static_cast<kt_int8u>(weighted_mean_alpha * currentValue + (1.0 - weighted_mean_alpha) * newValue);
                 break;
             case IntensityFusionStrategy::MAX:

@@ -90,7 +90,8 @@ slam_toolbox::IntensityGrid* SMapper::getIntensityGrid(const double & resolution
   // For each scan update the intensity grid
   const auto & scans = mapper_->GetAllProcessedScans();
   for (auto scan : scans) {
-    slam_toolbox::updateIntensityGridFromScan(scan, occ_grid, *intensity_grid, min_intensity_threshold_, intensity_fusion_strategy_);
+    slam_toolbox::updateIntensityGridFromScan(scan, occ_grid, *intensity_grid, min_intensity_threshold_, 
+                                              intensity_fusion_strategy_, intensity_weighted_mean_alpha_);
   }
 
   delete occ_grid;
@@ -417,6 +418,16 @@ void SMapper::configure(const rclcpp::Node::SharedPtr & node)
   }
   node->get_parameter("intensity_fusion_strategy", intensity_fusion_strategy);
   intensity_fusion_strategy_ = intensity_fusion_strategy;
+
+  double intensity_weighted_mean_alpha = 0.8;
+  if (!node->has_parameter("intensity_weighted_mean_alpha")) {
+    node->declare_parameter("intensity_weighted_mean_alpha", intensity_weighted_mean_alpha);
+    RCLCPP_WARN(node->get_logger(),
+      "The weighted mean for fusion strategy has not specified,"
+      "it will be set to default value 0.8");
+  }
+  node->get_parameter("intensity_weighted_mean_alpha", intensity_weighted_mean_alpha);
+  intensity_weighted_mean_alpha_ = intensity_weighted_mean_alpha;
 
 }
 

@@ -70,6 +70,7 @@ protected:
 private:
   double min_intensity_threshold_ = 40.0;
   std::string intensity_fusion_strategy_ = "mean";
+  double intensity_weighted_mean_alpha_ = 0.8;
 };
 
 }  // namespace mapper_utils
