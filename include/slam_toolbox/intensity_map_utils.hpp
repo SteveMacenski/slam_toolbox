@@ -5,6 +5,7 @@
 #include "karto_sdk/Karto.h"  
 #include "slam_toolbox/intensity_grid.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
+#include <algorithm>
 
 #ifndef MAP_IDX
 #define MAP_IDX(width, x, y) ((y) * (width) + (x))
@@ -12,24 +13,64 @@
 
 namespace slam_toolbox {
 
+enum class IntensityFusionStrategy {
+    MEAN,
+    REPLACE,
+    WEIGHTED_MEAN,
+    MAX
+};
+
 /**
- * @brief Updates an intensity map from a LocalizedRangeScan and an OccupancyGrid.
+ * @brief Converts a user-supplied string to the corresponding IntensityFusionStrategy enum.
+ *
+ * This function allows the fusion strategy to be specified as a string (e.g. "mean", "replace", "max", "weighted_mean"),
+ * ignoring case. If the string does not match any known strategy, it defaults to MEAN and logs a warning.
+ *
+ * @param strategy_str The user-provided fusion strategy string (case-insensitive).
+ * @param node         Shared pointer to the rclcpp node for logging warnings.
+ * @return IntensityFusionStrategy corresponding to the string, or MEAN if unrecognized.
+ */
+inline IntensityFusionStrategy parseFusionStrategy(
+    const std::string & strategy_str)
+{
+    std::string s = strategy_str;
+    std::transform(s.begin(), s.end(), s.begin(), ::tolower); // Convert to lower case
+
+    if (s == "mean")          return IntensityFusionStrategy::MEAN;
+    if (s == "replace")       return IntensityFusionStrategy::REPLACE;
+    if (s == "weighted_mean") return IntensityFusionStrategy::WEIGHTED_MEAN;
+    if (s == "max")           return IntensityFusionStrategy::MAX;
+
+    return IntensityFusionStrategy::MEAN;
+}
+
+/**
+ * @brief Updates an intensity map from a LocalizedRangeScan and an OccupancyGrid,
+ *        combining new intensity measurements with existing values according to the specified strategy.
  *
  * For each ray in the scan, its endpoint is calculated in world coordinates from the sensor's
- * pose and angle (calculated using the minimum angle and angular resolution of the sensor).
- * That endpoint is then converted to grid coordinates using the occupancy grid's CoordinateConverter.
- * If the cell in the occupancy grid has the value GridStates_Occupied (100), the intensity value (converted to an 8-bit integer, rounded) is copied to that same cell
- * in the intensity grid.
+ * pose and angle. That endpoint is then converted to grid coordinates using the occupancy grid's CoordinateConverter.
+ * If the cell in the occupancy grid is marked as occupied, the intensity value is fused with the current
+ * value in the intensity grid according to the selected fusion strategy.
  *
- * @param scan           Pointer to LocalizedRangeScan (ranges and intensities)
- * @param occ_grid       Pointer to occupancy grid (built) to be used for sizes and conversion
- * @param intensity_grid Reference to IntensityGrid object to update
- * @param min_intensity_threshold Minimum intensity value to consider (to avoid noise)
+ * @param scan                  Pointer to LocalizedRangeScan (ranges and intensities)
+ * @param occ_grid              Pointer to occupancy grid to be used for sizes and conversion
+ * @param intensity_grid        Reference to IntensityGrid object to update
+ * @param min_intensity_threshold  Minimum intensity value to consider (to avoid noise)
+ * @param fusion_strategy       Strategy to fuse new intensity readings with existing grid values:
+ *                             - MEAN: average the current and new values (default)
+ *                             - REPLACE: use the new value directly
+ *                             - WEIGHTED_MEAN: weighted average (see weighted_mean_alpha)
+ *                             - MAX: take the maximum of both values
+ * @param weighted_mean_alpha   Weight of the existing value in WEIGHTED_MEAN strategy (default: 0.8).
+ *                             Ignored for other strategies.
  */
 inline void updateIntensityGridFromScan(const karto::LocalizedRangeScan* scan,
                                           const karto::OccupancyGrid* occ_grid,
                                           slam_toolbox::IntensityGrid & intensity_grid,
-                                          double min_intensity_threshold)
+                                          double min_intensity_threshold,
+                                          const std::string & fusion_strategy_str = "mean",
+                                          double weighted_mean_alpha = 0.8)
 {
 
   const kt_double* ranges = scan->GetRangeReadings();
@@ -79,10 +120,25 @@ inline void updateIntensityGridFromScan(const karto::LocalizedRangeScan* scan,
         // Values not higher than 255
         if(newValue > 255)
           newValue = 255;
-                
-        kt_int16u avg = static_cast<kt_int16u>(currentValue) + static_cast<kt_int16u>(newValue);
-        avg /=2;
-        intensity_grid.GetDataPointer()[idx] = static_cast<kt_int8u>(avg);
+        
+        // Fusion strategy
+        kt_int16u fusedValue = 0;
+        IntensityFusionStrategy fusion_strategy = parseFusionStrategy(fusion_strategy_str);
+        switch (fusion_strategy) {
+            case IntensityFusionStrategy::MEAN:
+                fusedValue = static_cast<kt_int8u>((static_cast<kt_int16u>(currentValue) + newValue) / 2);
+                break;
+            case IntensityFusionStrategy::REPLACE:
+                fusedValue = newValue;
+                break;
+            case IntensityFusionStrategy::WEIGHTED_MEAN:
+                fusedValue = static_cast<kt_int8u>(weighted_mean_alpha * currentValue + (1.0 - weighted_mean_alpha) * newValue);
+                break;
+            case IntensityFusionStrategy::MAX:
+                fusedValue = std::max(currentValue, newValue);
+                break;
+        }
+        intensity_grid.GetDataPointer()[idx] = fusedValue;        
       }
   }
 }

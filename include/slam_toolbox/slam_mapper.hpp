@@ -68,7 +68,8 @@ protected:
   std::unique_ptr<karto::Mapper> mapper_;
   
 private:
-  double min_intensity_threshold_ = 40.0;  
+  double min_intensity_threshold_ = 40.0;
+  std::string intensity_fusion_strategy_ = "mean";
 };
 
 }  // namespace mapper_utils

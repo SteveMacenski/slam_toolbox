@@ -90,7 +90,7 @@ slam_toolbox::IntensityGrid* SMapper::getIntensityGrid(const double & resolution
   // For each scan update the intensity grid
   const auto & scans = mapper_->GetAllProcessedScans();
   for (auto scan : scans) {
-    slam_toolbox::updateIntensityGridFromScan(scan, occ_grid, *intensity_grid, min_intensity_threshold_);
+    slam_toolbox::updateIntensityGridFromScan(scan, occ_grid, *intensity_grid, min_intensity_threshold_, intensity_fusion_strategy_);
   }
 
   delete occ_grid;
@@ -407,6 +407,16 @@ void SMapper::configure(const rclcpp::Node::SharedPtr & node)
   }
   node->get_parameter("min_intensity_threshold", min_intensity_threshold);
   min_intensity_threshold_ = min_intensity_threshold;
+
+  std::string intensity_fusion_strategy = "mean";
+  if (!node->has_parameter("intensity_fusion_strategy")) {
+    node->declare_parameter("intensity_fusion_strategy", intensity_fusion_strategy);
+    RCLCPP_WARN(node->get_logger(),
+      "The intensity fusion strategy has been not specified,"
+      "it will be set to default to MEAN");
+  }
+  node->get_parameter("intensity_fusion_strategy", intensity_fusion_strategy);
+  intensity_fusion_strategy_ = intensity_fusion_strategy;
 
 }
 
