@@ -40,19 +40,6 @@ public:
       GetDataPointer()[gridIndex] = intensity;
     }
   }
-
-  /**
-   * Get intensity value of a cell
-   * @param gridIndex cell index
-   * @return intensity value
-   */
-  inline kt_int8u GetIntensity(kt_int32s gridIndex) const
-  {
-    if (gridIndex >= 0 && gridIndex < GetDataSize()) {
-      return GetDataPointer()[gridIndex];
-    }
-    return 0;
-  }
 };
 
 } // namespace slam_toolbox
