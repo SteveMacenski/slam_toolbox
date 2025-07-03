@@ -100,6 +100,50 @@ slam_toolbox::IntensityGrid* SMapper::getIntensityGrid(const double & resolution
 }
 
 /*****************************************************************************/
+std::pair<karto::OccupancyGrid*, slam_toolbox::IntensityGrid*>
+  SMapper::getOccupancyAndIntensityGrids(const double& resolution)
+/*****************************************************************************/
+{
+  
+  // Create the occupancy grid
+  karto::OccupancyGrid * occ_grid = karto::OccupancyGrid::CreateFromScans(
+    mapper_->GetAllProcessedScans(), resolution,
+    (kt_int32u)mapper_->getParamMinPassThrough(),
+    (kt_double)mapper_->getParamOccupancyThreshold());
+
+  if (!occ_grid) {
+    std::cerr << "ERROR: occ_grid is null. There is probably not scan processed." << std::endl;
+    return {nullptr, nullptr};
+  }
+
+  // Same dimensions for both maps
+  karto::Vector2<kt_double> offset = occ_grid->GetCoordinateConverter()->GetOffset();
+  kt_int32s width = occ_grid->GetWidth();
+  kt_int32s height = occ_grid->GetHeight();
+  
+  slam_toolbox::IntensityGrid * intensity_grid =
+      new slam_toolbox::IntensityGrid(width, height, offset, resolution);  
+  
+  if (!intensity_grid) {
+    std::cerr << "ERROR: intensity_grid is null. There is probably not scan processed." << std::endl;
+    return {occ_grid, nullptr};
+  }
+
+  // Update the intensity grid
+  const auto & scans = mapper_->GetAllProcessedScans();
+  for (auto scan : scans) {
+      slam_toolbox::updateIntensityGridFromScan(
+          scan, occ_grid, *intensity_grid,
+          min_intensity_threshold_,
+          intensity_fusion_strategy_,
+          intensity_weighted_mean_alpha_);
+  }
+
+  return {occ_grid, intensity_grid};
+
+}
+
+/*****************************************************************************/
 tf2::Transform SMapper::toTfPose(const karto::Pose2 & pose) const
 /*****************************************************************************/
 {

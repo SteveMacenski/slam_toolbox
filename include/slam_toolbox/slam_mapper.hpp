@@ -44,6 +44,9 @@ public:
   // get intensity grid from scans
   slam_toolbox::IntensityGrid * getIntensityGrid(const double & resolution);
 
+  // get ocupancy and intensity grid scans
+  std::pair<karto::OccupancyGrid*, slam_toolbox::IntensityGrid*> getOccupancyAndIntensityGrids(const double& resolution);
+
   // convert Karto pose to TF pose
   tf2::Transform toTfPose(const karto::Pose2 & pose) const;
 
