@@ -29,17 +29,6 @@ public:
 
   virtual ~IntensityGrid() {}
 
-  /**
-   * Set an intensity value to a cell
-   * @param gridIndex index
-   * @param intensity intensity value (p.e. 0 a 255)
-   */
-  inline void SetIntensity(kt_int32s gridIndex, kt_int8u intensity)
-  {
-    if (gridIndex >= 0 && gridIndex < GetDataSize()) {
-      GetDataPointer()[gridIndex] = intensity;
-    }
-  }
 };
 
 } // namespace slam_toolbox
