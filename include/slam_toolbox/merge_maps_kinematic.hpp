@@ -72,7 +72,7 @@ private:
     visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback);
   void kartoToROSOccupancyGrid(
     const karto::LocalizedRangeScanVector & scans,
-    nav_msgs::srv::GetMap::Response & map);
+    nav_msgs::srv::GetMap::Response & occ_map,nav_msgs::srv::GetMap::Response & int_map);
   void transformScan(LocalizedRangeScansIt iter, tf2::Transform & submap_correction);
 
   // apply transformation to correct pose
@@ -104,6 +104,7 @@ private:
   double resolution_;
   int min_pass_through_;
   double occupancy_threshold_;
+  int min_intensity_counter_;
   int num_submaps_;
 };
 

@@ -37,9 +37,11 @@ void MergeMapsKinematic::configure()
   resolution_ = 0.05;
   min_pass_through_ = 2;
   occupancy_threshold_ = 0.1;
+  min_intensity_counter_ = 1;
   resolution_ = this->declare_parameter("resolution", resolution_);
   min_pass_through_ = this->declare_parameter("min_pass_through", min_pass_through_);
   occupancy_threshold_ = this->declare_parameter("occupancy_threshold", occupancy_threshold_);
+  min_intensity_counter_ = this->declare_parameter("min_intensity_counter", min_intensity_counter_);
 
   sstS_.push_back(this->create_publisher<nav_msgs::msg::OccupancyGrid>(
       "/map", rclcpp::QoS(1)));
@@ -106,10 +108,10 @@ bool MergeMapsKinematic::addSubmapCallback(
       "/map_metadata_" + std::to_string(num_submaps_), rclcpp::QoS(1)));
   sleep(1.0);
 
-  nav_msgs::srv::GetMap::Response map;
-  nav_msgs::msg::OccupancyGrid & og = map.map;
+  nav_msgs::srv::GetMap::Response occ_map, int_map;
+  nav_msgs::msg::OccupancyGrid & og = occ_map.map;
   try {
-    kartoToROSOccupancyGrid(scans, map);
+    kartoToROSOccupancyGrid(scans, occ_map, int_map);
   } catch (const Exception & e) {
     RCLCPP_WARN(get_logger(), "Failed to build grid to add submap, Exception: %s",
       e.GetErrorMessage().c_str());
@@ -277,9 +279,9 @@ bool MergeMapsKinematic::mergeMapCallback(
   }
 
   // create the map
-  nav_msgs::srv::GetMap::Response map;
+  nav_msgs::srv::GetMap::Response occ_map, int_map;
   try {
-    kartoToROSOccupancyGrid(transformed_scans, map);
+    kartoToROSOccupancyGrid(transformed_scans, occ_map, int_map);
   } catch (const Exception & e) {
     RCLCPP_WARN(get_logger(),
       "Failed to build grid to merge maps together, Exception: %s",
@@ -287,27 +289,27 @@ bool MergeMapsKinematic::mergeMapCallback(
   }
 
   // publish
-  map.map.header.stamp = this->now();
-  map.map.header.frame_id = "map";
-  sstS_[0]->publish(map.map);
-  sstmS_[0]->publish(map.map.info);
+  occ_map.map.header.stamp = this->now();
+  occ_map.map.header.frame_id = "map";
+  sstS_[0]->publish(occ_map.map);
+  sstmS_[0]->publish(occ_map.map.info);
   return true;
 }
 
 /*****************************************************************************/
 void MergeMapsKinematic::kartoToROSOccupancyGrid(
   const LocalizedRangeScanVector & scans,
-  nav_msgs::srv::GetMap::Response & map)
+  nav_msgs::srv::GetMap::Response & occupancy_map, nav_msgs::srv::GetMap::Response & intensity_map)
 /*****************************************************************************/
 {
   OccupancyGrid * occ_grid = NULL;
-  occ_grid = OccupancyGrid::CreateFromScans(scans, resolution_, min_pass_through_, occupancy_threshold_);
+  occ_grid = OccupancyGrid::CreateFromScans(scans, resolution_, min_pass_through_, occupancy_threshold_, min_intensity_counter_);
   if (!occ_grid) {
     RCLCPP_INFO(get_logger(),
       "MergeMapsKinematic: Could not make occupancy grid.");
   } else {
-    map.map.info.resolution = resolution_;
-    vis_utils::toNavMap(occ_grid, map.map);
+    occupancy_map.map.info.resolution = resolution_;
+    vis_utils::toNavMap(occ_grid, occupancy_map.map, intensity_map.map);
   }
 
   delete occ_grid;
