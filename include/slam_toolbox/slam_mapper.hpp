@@ -25,7 +25,6 @@
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
 #include "slam_toolbox/toolbox_types.hpp"
-#include "slam_toolbox/intensity_grid.hpp"
 
 namespace mapper_utils
 {
@@ -40,12 +39,6 @@ public:
 
   // get occupancy grid from scans
   karto::OccupancyGrid * getOccupancyGrid(const double & resolution);
-
-  // get intensity grid from scans
-  slam_toolbox::IntensityGrid * getIntensityGrid(const double & resolution);
-
-  // get ocupancy and intensity grid scans
-  std::pair<karto::OccupancyGrid*, slam_toolbox::IntensityGrid*> getOccupancyAndIntensityGrids(const double& resolution);
 
   // convert Karto pose to TF pose
   tf2::Transform toTfPose(const karto::Pose2 & pose) const;
@@ -69,11 +62,7 @@ public:
 
 protected:
   std::unique_ptr<karto::Mapper> mapper_;
-  
-private:
-  double min_intensity_threshold_ = 40.0;
-  std::string intensity_fusion_strategy_ = "mean";
-  double intensity_weighted_mean_alpha_ = 0.8;
+
 };
 
 }  // namespace mapper_utils

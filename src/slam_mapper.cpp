@@ -20,8 +20,6 @@
 
 #include <memory>
 #include "slam_toolbox/slam_mapper.hpp"
-#include "slam_toolbox/intensity_grid.hpp"
-#include "slam_toolbox/intensity_map_utils.hpp" 
 
 namespace mapper_utils
 {
@@ -68,79 +66,7 @@ karto::OccupancyGrid * SMapper::getOccupancyGrid(const double & resolution)
   karto::OccupancyGrid * occ_grid = nullptr;
   return karto::OccupancyGrid::CreateFromScans(
     mapper_->GetAllProcessedScans(),
-    resolution, (kt_int32u)mapper_->getParamMinPassThrough(), (kt_double)mapper_->getParamOccupancyThreshold());
-}
-
-/*****************************************************************************/
-slam_toolbox::IntensityGrid* SMapper::getIntensityGrid(const double & resolution)
-/*****************************************************************************/
-{
-  // Create the occupancy grid from scans
-  karto::OccupancyGrid * occ_grid = karto::OccupancyGrid::CreateFromScans(
-      mapper_->GetAllProcessedScans(),
-      resolution, (kt_int32u)mapper_->getParamMinPassThrough(), (kt_double)mapper_->getParamOccupancyThreshold());
-
-  // Dimensions and offset of occupancy grid
-  karto::Vector2<kt_double> offset = occ_grid->GetCoordinateConverter()->GetOffset();
-  kt_int32s width = occ_grid->GetWidth();
-  kt_int32s height = occ_grid->GetHeight();
-
-  slam_toolbox::IntensityGrid * intensity_grid = new slam_toolbox::IntensityGrid(width, height, offset, resolution);
-
-  // For each scan update the intensity grid
-  const auto & scans = mapper_->GetAllProcessedScans();
-  for (auto scan : scans) {
-    slam_toolbox::updateIntensityGridFromScan(scan, occ_grid, *intensity_grid, min_intensity_threshold_, 
-                                              intensity_fusion_strategy_, intensity_weighted_mean_alpha_);
-  }
-
-  delete occ_grid;
-
-  return intensity_grid;
-}
-
-/*****************************************************************************/
-std::pair<karto::OccupancyGrid*, slam_toolbox::IntensityGrid*>
-  SMapper::getOccupancyAndIntensityGrids(const double& resolution)
-/*****************************************************************************/
-{
-  
-  // Create the occupancy grid
-  karto::OccupancyGrid * occ_grid = karto::OccupancyGrid::CreateFromScans(
-    mapper_->GetAllProcessedScans(), resolution,
-    (kt_int32u)mapper_->getParamMinPassThrough(),
-    (kt_double)mapper_->getParamOccupancyThreshold());
-
-  if (!occ_grid) {
-    std::cerr << "ERROR: occ_grid is null. There is probably not scan processed." << std::endl;
-    return {nullptr, nullptr};
-  }
-
-  // Same dimensions for both maps
-  karto::Vector2<kt_double> offset = occ_grid->GetCoordinateConverter()->GetOffset();
-  kt_int32s width = occ_grid->GetWidth();
-  kt_int32s height = occ_grid->GetHeight();
-  
-  slam_toolbox::IntensityGrid * intensity_grid =
-      new slam_toolbox::IntensityGrid(width, height, offset, resolution);  
-  
-  if (!intensity_grid) {
-    std::cerr << "ERROR: intensity_grid is null. There is probably not scan processed." << std::endl;
-    return {occ_grid, nullptr};
-  }
-
-  // Update the intensity grid
-  const auto & scans = mapper_->GetAllProcessedScans();
-  for (auto scan : scans) {
-      slam_toolbox::updateIntensityGridFromScan(
-          scan, occ_grid, *intensity_grid,
-          min_intensity_threshold_,
-          intensity_fusion_strategy_,
-          intensity_weighted_mean_alpha_);
-  }
-
-  return {occ_grid, intensity_grid};
-
+    resolution, (kt_int32u)mapper_->getParamMinPassThrough(), (kt_double)mapper_->getParamOccupancyThreshold(), (kt_int32u)mapper_->getParamMinIntensityCnt());
 }
 
 /*****************************************************************************/
@@ -442,36 +368,13 @@ void SMapper::configure(const rclcpp::Node::SharedPtr & node)
   }
   node->get_parameter("occupancy_threshold", occupancy_threshold);
   mapper_->setParamOccupancyThreshold(occupancy_threshold);
-  
-  double min_intensity_threshold = 40;
-  if (!node->has_parameter("min_intensity_threshold")) {
-    node->declare_parameter("min_intensity_threshold", min_intensity_threshold);
-    RCLCPP_WARN(node->get_logger(),
-      "The minimum intensity threshold value has been not specified,"
-      "it will be set to default value 40");
-  }
-  node->get_parameter("min_intensity_threshold", min_intensity_threshold);
-  min_intensity_threshold_ = min_intensity_threshold;
 
-  std::string intensity_fusion_strategy = "mean";
-  if (!node->has_parameter("intensity_fusion_strategy")) {
-    node->declare_parameter("intensity_fusion_strategy", intensity_fusion_strategy);
-    RCLCPP_WARN(node->get_logger(),
-      "The intensity fusion strategy has been not specified,"
-      "it will be set to default to MEAN");
+  int min_intensity_counter = 1;
+  if (!node->has_parameter("min_intensity_counter")) {
+    node->declare_parameter("min_intensity_counter", min_intensity_counter);
   }
-  node->get_parameter("intensity_fusion_strategy", intensity_fusion_strategy);
-  intensity_fusion_strategy_ = intensity_fusion_strategy;
-
-  double intensity_weighted_mean_alpha = 0.8;
-  if (!node->has_parameter("intensity_weighted_mean_alpha")) {
-    node->declare_parameter("intensity_weighted_mean_alpha", intensity_weighted_mean_alpha);
-    RCLCPP_WARN(node->get_logger(),
-      "The weighted mean for fusion strategy has not specified,"
-      "it will be set to default value 0.8");
-  }
-  node->get_parameter("intensity_weighted_mean_alpha", intensity_weighted_mean_alpha);
-  intensity_weighted_mean_alpha_ = intensity_weighted_mean_alpha;
+  node->get_parameter("min_intensity_counter", min_intensity_counter);
+  mapper_->setParamMinPassThrough(min_intensity_counter);
 
 }
 
