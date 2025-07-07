@@ -404,83 +404,38 @@ LaserRangeFinder * SlamToolbox::getLaser(
 bool SlamToolbox::updateMap()
 /*****************************************************************************/
 {
-
   if (sst_->get_subscription_count() > 0 || intensity_map_pub_->get_subscription_count() > 0) {
-    boost::mutex::scoped_lock lock(smapper_mutex_);    
-    auto [occ_grid, intensity_grid] = smapper_->getOccupancyAndIntensityGrids(resolution_);
-
-    if (!occ_grid) {
-        std::cout << "occ_grid is nullptr, exiting" << std::endl;
-        return false;
-    }
-
-    if (sst_->get_subscription_count() > 0) {
-        vis_utils::toNavMap(occ_grid, map_.map);        
-        map_.map.header.stamp = scan_header.stamp;
-        sst_->publish(
-          std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
-        sstm_->publish(
-          std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
-        delete occ_grid;
-    }
-
-    if (intensity_map_pub_->get_subscription_count() > 0) {
-        vis_utils::toNavIntensityMap(intensity_grid, map_.map);
-        map_.map.header.stamp = scan_header.stamp;
-        intensity_map_pub_->publish(
-          std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
-        intensity_metamap_pub_->publish(
-          std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
-        delete intensity_grid;
-    }
-}
-
-    return true;
-
-/* 
-  if (sst_->get_subscription_count() > 0) {
-
     boost::mutex::scoped_lock lock(smapper_mutex_);
     OccupancyGrid * occ_grid = smapper_->getOccupancyGrid(resolution_);
     if (!occ_grid) {
       return false;
     }
 
-    vis_utils::toNavMap(occ_grid, map_.map);
+    nav_msgs::msg::OccupancyGrid intensity_map;
+    intensity_map.header = map_.map.header;
 
-    // publish map as current
-    map_.map.header.stamp = scan_header.stamp;
-    sst_->publish(
-      std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
-    sstm_->publish(
-      std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
+    vis_utils::toNavMap(occ_grid, map_.map, intensity_map);
+
+    if (sst_->get_subscription_count() > 0) {
+      // publish map as current
+      map_.map.header.stamp = scan_header.stamp;
+      sst_->publish(
+        std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
+      sstm_->publish(
+        std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
+    }
+    if (intensity_map_pub_->get_subscription_count() > 0) {
+      intensity_map.header.stamp = scan_header.stamp;
+      intensity_map_pub_->publish(std::make_unique<nav_msgs::msg::OccupancyGrid>(intensity_map));
+      intensity_metamap_pub_->publish(std::make_unique<nav_msgs::msg::MapMetaData>(intensity_map.info));
+    }
     
     delete occ_grid;
     occ_grid = nullptr;
 
   }
-  
-  if(intensity_map_pub_->get_subscription_count() > 0){
 
-    slam_toolbox::IntensityGrid * intensity_grid = smapper_->getIntensityGrid(resolution_);
-    if (!intensity_grid) {
-      return false;
-    }
-
-    // Publish the current intensity grid
-    vis_utils::toNavIntensityMap(intensity_grid, map_.map);
-    map_.map.header.stamp = scan_header.stamp;
-    intensity_map_pub_->publish(
-      std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
-    intensity_metamap_pub_->publish(
-      std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
-
-    delete intensity_grid;
-    intensity_grid = nullptr;  
-
-  }
-    return true;
-*/
+  return true;
 }
 
 /*****************************************************************************/

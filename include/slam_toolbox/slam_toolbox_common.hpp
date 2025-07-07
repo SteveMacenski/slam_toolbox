@@ -49,7 +49,6 @@
 #include "slam_toolbox/map_saver.hpp"
 #include "slam_toolbox/loop_closure_assistant.hpp"
 #include "slam_toolbox/intensity_map_saver.hpp"
-#include "slam_toolbox/intensity_map_utils.hpp"
 
 namespace slam_toolbox
 {
