@@ -82,7 +82,7 @@ void MapAndLocalizationSlamToolbox::toggleMode(bool enable_localization) {
     processor_type_ = PROCESS;
     localization_pose_sub_.reset();
     clear_localization_.reset();
-    map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(), map_name_);
+    map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(), map_topic_name_, intensity_map_topic_name_);
 
     boost::mutex::scoped_lock lock(smapper_mutex_);
     if (smapper_ && !smapper_->getMapper()->GetLocalizationVertices().empty()) {

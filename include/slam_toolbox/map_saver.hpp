@@ -24,6 +24,10 @@
 #include <chrono>
 #include "rclcpp/rclcpp.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
+#include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <message_filters/synchronizer.h>
+
 
 namespace map_saver
 {
@@ -32,20 +36,27 @@ namespace map_saver
 class MapSaver
 {
 public:
-  MapSaver(rclcpp::Node::SharedPtr node, const std::string & service_name);
+  MapSaver(rclcpp::Node::SharedPtr node, const std::string & topic_map_name, const std::string & topic_intensity_map_name);
 
 protected:
   bool saveMapCallback(
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::SaveMap::Request> request,
     std::shared_ptr<slam_toolbox::srv::SaveMap::Response> response);
+  void bothMapsCallback(
+    const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & map,
+    const nav_msgs::msg::OccupancyGrid::ConstSharedPtr & intensity_map);
 
 private:
   rclcpp::Node::SharedPtr node_;
   rclcpp::Service<slam_toolbox::srv::SaveMap>::SharedPtr server_;
-  rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sub_;
-  std::string service_name_, map_name_;
-  bool received_map_;
+  std::shared_ptr<message_filters::Subscriber<nav_msgs::msg::OccupancyGrid>> map_sub_, intensity_map_sub_;
+
+  using SyncPolicy = message_filters::sync_policies::ApproximateTime<nav_msgs::msg::OccupancyGrid, nav_msgs::msg::OccupancyGrid>;
+  std::shared_ptr<message_filters::Synchronizer<SyncPolicy>> sync_;
+  nav_msgs::msg::OccupancyGrid last_map_, last_intensity_map_;
+  std::string topic_map_name_, topic_intensity_map_name_;
+  bool received_map_, received_intensity_map_;
 };
 
 }  // namespace map_saver

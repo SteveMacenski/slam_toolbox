@@ -63,9 +63,7 @@ void SlamToolbox::configure()
   scan_holder_ = std::make_unique<laser_utils::ScanHolder>(lasers_);
   if (use_map_saver_) {
     map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(),
-        map_name_);
-    intensity_map_saver_ = std::make_unique<intensity_map_saver::IntensityMapSaver>(shared_from_this(),
-        intensity_map_name_);
+        map_topic_name_, intensity_map_topic_name_);
   }
   closure_assistant_ =
     std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
@@ -96,7 +94,6 @@ SlamToolbox::~SlamToolbox()
   dataset_.reset();
   closure_assistant_.reset();
   map_saver_.reset();
-  intensity_map_saver_.reset();
   pose_helper_.reset();
   laser_assistant_.reset();
   scan_holder_.reset();
@@ -146,11 +143,11 @@ void SlamToolbox::setParams()
       "this isn't allowed so it will be set to default value 0.05.");
     resolution_ = 0.05;
   }
-  map_name_ = std::string("/map");
-  map_name_ = this->declare_parameter("map_name", map_name_);
+  map_topic_name_ = std::string("/map");
+  map_topic_name_ = this->declare_parameter("map_name", map_topic_name_);
 
-  intensity_map_name_ = std::string("/intensity_map");
-  intensity_map_name_ = this->declare_parameter("intensity_map_name", intensity_map_name_);
+  intensity_map_topic_name_ = std::string("/intensity_map");
+  intensity_map_topic_name_ = this->declare_parameter("intensity_map_name", intensity_map_topic_name_);
 
   use_map_saver_ = true;
   use_map_saver_ = this->declare_parameter("use_map_saver", use_map_saver_);
@@ -215,14 +212,14 @@ void SlamToolbox::setROSInterfaces()
   pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "pose", 10);
   sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    map_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    map_topic_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
-    map_name_ + "_metadata",
+    map_topic_name_ + "_metadata",
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   intensity_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    intensity_map_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    intensity_map_topic_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   intensity_metamap_pub_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
-    intensity_map_name_ + "_metadata",
+    intensity_map_topic_name_ + "_metadata",
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
   ssMap_ = this->create_service<nav_msgs::srv::GetMap>("slam_toolbox/dynamic_map",

@@ -48,7 +48,6 @@
 #include "slam_toolbox/get_pose_helper.hpp"
 #include "slam_toolbox/map_saver.hpp"
 #include "slam_toolbox/loop_closure_assistant.hpp"
-#include "slam_toolbox/intensity_map_saver.hpp"
 
 namespace slam_toolbox
 {
@@ -144,7 +143,7 @@ protected:
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::DeserializePoseGraph>> ssDesserialize_;
 
   // Storage for ROS parameters
-  std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_, intensity_map_name_;
+  std::string odom_frame_, map_frame_, base_frame_, map_topic_name_, scan_topic_, intensity_map_topic_name_;
   bool use_map_saver_;
   rclcpp::Duration transform_timeout_, minimum_time_interval_;
   std_msgs::msg::Header scan_header;
@@ -164,7 +163,6 @@ protected:
   std::unique_ptr<laser_utils::LaserAssistant> laser_assistant_;
   std::unique_ptr<pose_utils::GetPoseHelper> pose_helper_;
   std::unique_ptr<map_saver::MapSaver> map_saver_;
-  std::unique_ptr<intensity_map_saver::IntensityMapSaver> intensity_map_saver_;
   std::unique_ptr<loop_closure_assistant::LoopClosureAssistant> closure_assistant_;
   std::unique_ptr<laser_utils::ScanHolder> scan_holder_;
 
