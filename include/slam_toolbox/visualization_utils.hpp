@@ -140,8 +140,7 @@ inline void toNavMap(
 
   for (kt_int32s y = 0; y < height; y++) {
     for (kt_int32s x = 0; x < width; x++) {
-      kt_int8u occupancy = occ_grid->GetValue(karto::Vector2<kt_int32s>(x, y));
-      //TODO:ANGEL GET VALUE THE INTENSITY PARA X,Y
+      kt_int8u occupancy = occ_grid->GetValue(karto::Vector2<kt_int32s>(x, y));      
       kt_double intensity = occ_grid->getCellIntensity(karto::Vector2<kt_int32s>(x, y));
 
       intensity_map.data[MAP_IDX(intensity_map.info.width, x, y)] = 0;
