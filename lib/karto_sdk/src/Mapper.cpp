@@ -2303,6 +2303,11 @@ void Mapper::InitializeParameters()
     "OccupancyThreshold",
     "Minimum ratio of beams hitting cell to beams passing through cell to be marked as occupied",
     0.1, GetParameterManager());
+
+  m_pMinIntensityCnt = new Parameter<kt_int32u>(
+    "MinIntensityCnt",
+    "Minimum intensity readings to store the intensity in a cell",
+    1, GetParameterManager());  
 }
 /* Adding in getters and setters here for easy parameter access */
 
@@ -2469,6 +2474,11 @@ double Mapper::getParamOccupancyThreshold()
   return static_cast<double>(m_pOccupancyThreshold->GetValue());
 }
 
+int Mapper::getParamMinIntensityCnt()
+{
+  return static_cast<int>(m_pMinIntensityCnt->GetValue());
+}
+
 /* Setters for parameters */
 // General Parameters
 void Mapper::setParamUseScanMatching(bool b)
@@ -2631,6 +2641,10 @@ void Mapper::setParamOccupancyThreshold(double d)
   m_pOccupancyThreshold->SetValue((kt_double)d);
 }
 
+void Mapper::setParamMinIntensityCnt(int i)
+{
+  m_pMinIntensityCnt->SetValue((kt_int32u)i);
+}
 
 void Mapper::Initialize(kt_double rangeThreshold)
 {

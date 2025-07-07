@@ -142,8 +142,11 @@ void CellUpdater::operator()(kt_int32u index)
   kt_int8u * pDataPtr = m_pOccupancyGrid->GetDataPointer();
   kt_int32u * pCellPassCntPtr = m_pOccupancyGrid->m_pCellPassCnt->GetDataPointer();
   kt_int32u * pCellHitCntPtr = m_pOccupancyGrid->m_pCellHitsCnt->GetDataPointer();
+  kt_int32u * pCellIntCnt = m_pOccupancyGrid->m_pIntensityReadingCnt->GetDataPointer();
+  kt_double * pCellCurrentIntValue = m_pOccupancyGrid->m_pCurrentIntensityValue->GetDataPointer();
+  kt_double * pIntensityPtr = m_pOccupancyGrid->m_pIntensityCells->GetDataPointer();
 
-  m_pOccupancyGrid->UpdateCell(&pDataPtr[index], pCellPassCntPtr[index], pCellHitCntPtr[index]);
+  m_pOccupancyGrid->UpdateCell(&pDataPtr[index], pCellPassCntPtr[index], pCellHitCntPtr[index], pCellIntCnt[index], &pCellCurrentIntValue[index], &pIntensityPtr[index]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////

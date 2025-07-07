@@ -5406,7 +5406,6 @@ private:
   kt_double * m_pRangeReadings;
   kt_int32u m_NumberOfRangeReadings;
   kt_double * m_pIntensityReadings;
-  // Agrega aquí el mutex para proteger m_pIntensityReadings
   std::mutex intensity_mutex_;
 
   friend class boost::serialization::access;
@@ -5418,13 +5417,9 @@ private:
 
     if (Archive::is_loading::value) {
       m_pRangeReadings = new kt_double[m_NumberOfRangeReadings];
-    }
-    ar & boost::serialization::make_array<kt_double>(m_pRangeReadings, m_NumberOfRangeReadings);
-
-    if (Archive::is_loading::value)
-    {
       m_pIntensityReadings = new kt_double[m_NumberOfRangeReadings];
     }
+    ar & boost::serialization::make_array<kt_double>(m_pRangeReadings, m_NumberOfRangeReadings);
     ar & boost::serialization::make_array<kt_double>(m_pIntensityReadings, m_NumberOfRangeReadings);
   }
 };    // LaserRangeScan
@@ -6009,7 +6004,10 @@ public:
   : Grid<kt_int8u>(width, height),
     m_pCellPassCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution)),
     m_pCellHitsCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution)),
-    m_pCellUpdater(NULL)
+    m_pCellUpdater(NULL),
+    m_pIntensityCells(Grid<kt_double>::CreateGrid(0, 0, resolution)),
+    m_pCurrentIntensityValue(Grid<kt_double>::CreateGrid(0, 0, resolution)),
+    m_pIntensityReadingCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution))
   {
     m_pCellUpdater = new CellUpdater(this);
 
@@ -6019,6 +6017,7 @@ public:
 
     m_pMinPassThrough = new Parameter<kt_int32u>("MinPassThrough", 2);
     m_pOccupancyThreshold = new Parameter<kt_double>("OccupancyThreshold", 0.1);
+    m_pMinIntensityCnt = new Parameter<kt_int32u>("MinIntensityCnt", 1);
 
     GetCoordinateConverter()->SetScale(1.0 / resolution);
     GetCoordinateConverter()->SetOffset(rOffset);
@@ -6036,6 +6035,13 @@ public:
 
     delete m_pMinPassThrough;
     delete m_pOccupancyThreshold;
+
+    delete m_pCurrentIntensityValue;
+    delete m_pIntensityCells;
+    delete m_pIntensityReadingCnt;
+
+    delete m_pMinIntensityCnt;
+
   }
 
 public:
@@ -6043,10 +6049,12 @@ public:
    * Create an occupancy grid from the given scans using the given resolution
    * @param rScans
    * @param resolution
+   * @param min_pass_through
+   * @param occupancy_threshold
    */
   static OccupancyGrid * CreateFromScans(
     const LocalizedRangeScanVector & rScans,
-    kt_double resolution, kt_int32u min_pass_through, kt_double occupancy_threshold)
+    kt_double resolution, kt_int32u min_pass_through, kt_double occupancy_threshold, kt_int32u min_intensity_cnt)
   {
     if (rScans.empty()) {
       return NULL;
@@ -6058,6 +6066,7 @@ public:
     OccupancyGrid * pOccupancyGrid = new OccupancyGrid(width, height, offset, resolution);
     pOccupancyGrid->SetMinPassThrough(min_pass_through); 
     pOccupancyGrid->SetOccupancyThreshold(occupancy_threshold); 
+    pOccupancyGrid->SetMinIntensityCnt(min_intensity_cnt);
     pOccupancyGrid->CreateFromScans(rScans);
 
     return pOccupancyGrid;
@@ -6078,6 +6087,9 @@ public:
     pOccupancyGrid->GetCoordinateConverter()->SetSize(GetCoordinateConverter()->GetSize());
     pOccupancyGrid->m_pCellPassCnt = m_pCellPassCnt->Clone();
     pOccupancyGrid->m_pCellHitsCnt = m_pCellHitsCnt->Clone();
+    pOccupancyGrid->m_pIntensityCells = m_pIntensityCells->Clone();
+    pOccupancyGrid->m_pCurrentIntensityValue = m_pCurrentIntensityValue->Clone();
+    pOccupancyGrid->m_pIntensityReadingCnt = m_pIntensityReadingCnt->Clone();
 
     return pOccupancyGrid;
   }
@@ -6159,6 +6171,14 @@ public:
     m_pOccupancyThreshold->SetValue(thresh);
   }
 
+  /**
+   * Sets the minimum count of intensity readings in a cell to store it
+   */
+  void SetMinIntensityCnt(kt_int32u count)
+  {
+    m_pMinIntensityCnt->SetValue(count);
+  }
+
 protected:
   /**
    * Get cell hit grid
@@ -6176,6 +6196,31 @@ protected:
   virtual Grid<kt_int32u> * GetCellPassCounts()
   {
     return m_pCellPassCnt;
+  }
+  /**
+   * Get intensity grid data pointer
+   * @return kt_double *
+   */
+  kt_double* GetIntensityDataPointer() {
+    return m_pIntensityCells->GetDataPointer();
+  }
+  /**
+   * Get intensity grid data pointer
+   * @return kt_double *
+   */
+  const kt_double* GetIntensityDataPointer() const {
+    return m_pIntensityCells->GetDataPointer();
+  }
+
+public:
+  /**
+   * Get intensity value
+   * @return kt_double
+   */
+  kt_double getCellIntensity(const Vector2<kt_int32s>& rGrid) const
+  {
+    kt_int32s index = GridIndex(rGrid);
+    return m_pIntensityCells->GetDataPointer()[index];
   }
 
 protected:
@@ -6225,6 +6270,15 @@ protected:
     m_pCellHitsCnt->Resize(GetWidth(), GetHeight());
     m_pCellHitsCnt->GetCoordinateConverter()->SetOffset(GetCoordinateConverter()->GetOffset());
 
+    m_pIntensityCells->Resize(GetWidth(), GetHeight());
+    m_pIntensityCells->GetCoordinateConverter()->SetOffset(GetCoordinateConverter()->GetOffset());
+
+    m_pCurrentIntensityValue->Resize(GetWidth(), GetHeight());
+    m_pCurrentIntensityValue->GetCoordinateConverter()->SetOffset(GetCoordinateConverter()->GetOffset());
+
+    m_pIntensityReadingCnt->Resize(GetWidth(), GetHeight());
+    m_pIntensityReadingCnt->GetCoordinateConverter()->SetOffset(GetCoordinateConverter()->GetOffset());
+
     const_forEach(LocalizedRangeScanVector, &rScans)
     {
       if (*iter == nullptr) {
@@ -6266,6 +6320,7 @@ protected:
       kt_double rangeReading = pScan->GetRangeReadings()[pointIndex];
       kt_bool isEndPointValid = rangeReading < (rangeThreshold - KT_TOLERANCE);
 
+      //TODO:ANGEL:add similar parametrized filter for intensities
       if (rangeReading <= minRange || rangeReading >= maxRange || std::isnan(rangeReading)) {
         // ignore these readings
         pointIndex++;
@@ -6279,7 +6334,9 @@ protected:
         point.SetY(scanPosition.GetY() + ratio * dy);
       }
 
-      kt_bool isInMap = RayTrace(scanPosition, point, isEndPointValid, doUpdate);
+      kt_double intensity = pScan->GetIntensityReadings()[pointIndex];
+
+      kt_bool isInMap = RayTrace(scanPosition, point, isEndPointValid, intensity, doUpdate);
       if (!isInMap) {
         isAllInMap = false;
       }
@@ -6296,6 +6353,7 @@ protected:
    * @param rWorldFrom start position of beam
    * @param rWorldTo end position of beam
    * @param isEndPointValid is the reading within the range threshold?
+   * @param intensityReading intensity reading
    * @param doUpdate whether to update the cells' occupancy status immediately
    * @return returns false if an endpoint fell off the grid, otherwise true
    */
@@ -6303,6 +6361,7 @@ protected:
     const Vector2<kt_double> & rWorldFrom,
     const Vector2<kt_double> & rWorldTo,
     kt_bool isEndPointValid,
+    kt_double intensityReading,
     kt_bool doUpdate = false)
   {
     assert(m_pCellPassCnt != NULL && m_pCellHitsCnt != NULL);
@@ -6326,6 +6385,14 @@ protected:
         pCellPassCntPtr[index]++;
         pCellHitCntPtr[index]++;
 
+        kt_double * pCurrentIntensityValuePtr = m_pCurrentIntensityValue->GetDataPointer();
+        kt_int32u * pIntensityReadingCntPtr = m_pIntensityReadingCnt->GetDataPointer();
+
+        //TODO:ANGEL: Parametrize forms of store the intensity values (maximum, latest, mean)
+        pCurrentIntensityValuePtr[index] += intensityReading;
+        pCurrentIntensityValuePtr[index]/2;
+        pIntensityReadingCntPtr[index]++;
+
         if (doUpdate) {
           (*m_pCellUpdater)(index);
         }
@@ -6340,14 +6407,20 @@ protected:
    * @param pCell
    * @param cellPassCnt
    * @param cellHitCnt
+   * @param pCurrentIntensity
+   * @param pCellIntValue
    */
-  virtual void UpdateCell(kt_int8u * pCell, kt_int32u cellPassCnt, kt_int32u cellHitCnt)
+  virtual void UpdateCell(kt_int8u * pCell, kt_int32u cellPassCnt, kt_int32u cellHitCnt, kt_int32u cellIntCnt,
+    kt_double * pCurrentIntensity, kt_double * pCellIntValue)
   {
     if (cellPassCnt > m_pMinPassThrough->GetValue()) {
       kt_double hitRatio = static_cast<kt_double>(cellHitCnt) / static_cast<kt_double>(cellPassCnt);
 
       if (hitRatio > m_pOccupancyThreshold->GetValue()) {
-        *pCell = GridStates_Occupied;
+        *pCell = GridStates_Occupied;        
+        if (cellIntCnt > m_pMinIntensityCnt->GetValue()) { 
+          *pCellIntValue = *pCurrentIntensity;          
+        }
       } else {
         *pCell = GridStates_Free;
       }
@@ -6368,10 +6441,17 @@ protected:
     kt_int8u * pDataPtr = GetDataPointer();
     kt_int32u * pCellPassCntPtr = m_pCellPassCnt->GetDataPointer();
     kt_int32u * pCellHitCntPtr = m_pCellHitsCnt->GetDataPointer();
+    kt_int32u * pCellIntensityReadingCntPtr = m_pIntensityReadingCnt->GetDataPointer();
+    kt_double * pCellIntensityCurrentValuePtr = m_pCurrentIntensityValue->GetDataPointer();
+    kt_double * pCellIntensityCellsPtr = m_pIntensityCells->GetDataPointer();
 
     kt_int32u nBytes = GetDataSize();
-    for (kt_int32u i = 0; i < nBytes; i++, pDataPtr++, pCellPassCntPtr++, pCellHitCntPtr++) {
-      UpdateCell(pDataPtr, *pCellPassCntPtr, *pCellHitCntPtr);
+    for (kt_int32u i = 0; i < nBytes; i++, pDataPtr++, pCellPassCntPtr++, pCellHitCntPtr++, 
+      pCellIntensityReadingCntPtr++, pCellIntensityCurrentValuePtr++, pCellIntensityCellsPtr++) {      
+      
+      UpdateCell(pDataPtr, *pCellPassCntPtr, *pCellHitCntPtr, *pCellIntensityReadingCntPtr, 
+        pCellIntensityCurrentValuePtr, pCellIntensityCellsPtr);
+          
     }
   }
 
@@ -6381,10 +6461,13 @@ protected:
    * @param height
    */
   virtual void Resize(kt_int32s width, kt_int32s height)
-  {
+  {    
     Grid<kt_int8u>::Resize(width, height);
     m_pCellPassCnt->Resize(width, height);
     m_pCellHitsCnt->Resize(width, height);
+    m_pIntensityCells->Resize(width, height);   
+    m_pCurrentIntensityValue->Resize(width, height);
+    m_pIntensityReadingCnt->Resize(width, height);
   }
 
 protected:
@@ -6397,6 +6480,21 @@ protected:
    * Counters of number of times a beam ended at a cell
    */
   Grid<kt_int32u> * m_pCellHitsCnt;
+
+  /**
+   * Storage of all intensities of the cells
+   */
+  Grid<kt_double> * m_pCurrentIntensityValue;
+
+  /**
+   * Intensities of cells
+   */
+  Grid<kt_double> * m_pIntensityCells;
+
+  /**
+   * Intensities readings of cells counter
+   */
+  Grid<kt_int32u> * m_pIntensityReadingCnt;
 
 private:
   /**
@@ -6422,6 +6520,9 @@ private:
 
   // Minimum ratio of beams hitting cell to beams passing through cell to be marked as occupied
   Parameter<kt_double> * m_pOccupancyThreshold;
+
+  //Minimum counter of intensity readings in a cell to store it
+  Parameter<kt_int32u> * m_pMinIntensityCnt;
 };    // OccupancyGrid
 
 ////////////////////////////////////////////////////////////////////////////////////////
