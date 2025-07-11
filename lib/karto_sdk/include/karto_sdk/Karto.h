@@ -6047,17 +6047,19 @@ public:
    * @param height
    * @param rOffset
    * @param resolution
+   * @param intensity_strategy
    */
   OccupancyGrid(
     kt_int32s width, kt_int32s height, const Vector2<kt_double> & rOffset,
-    kt_double resolution)
+    kt_double resolution, const std::string & intensity_strategy = "mean")
   : Grid<kt_int8u>(width, height),
     m_pCellPassCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution)),
     m_pCellHitsCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution)),
     m_pCellUpdater(NULL),
     m_pIntensityCells(Grid<kt_double>::CreateGrid(0, 0, resolution)),
     m_pCurrentIntensityValue(Grid<kt_double>::CreateGrid(0, 0, resolution)),
-    m_pIntensityReadingCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution))
+    m_pIntensityReadingCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution)),
+    m_pIntensityStorageStrategy(new Parameter<std::string>("IntensityStorageStrategy", intensity_strategy))
   {
     m_pCellUpdater = new CellUpdater(this);
 
@@ -6068,6 +6070,7 @@ public:
     m_pMinPassThrough = new Parameter<kt_int32u>("MinPassThrough", 2);
     m_pOccupancyThreshold = new Parameter<kt_double>("OccupancyThreshold", 0.1);
     m_pMinIntensityCnt = new Parameter<kt_int32u>("MinIntensityCnt", 1);
+    m_pIntensityStorageStrategy = new Parameter<std::string>("IntensityStorageStrategy", "mean");
 
     GetCoordinateConverter()->SetScale(1.0 / resolution);
     GetCoordinateConverter()->SetOffset(rOffset);
@@ -6091,6 +6094,7 @@ public:
     delete m_pIntensityReadingCnt;
 
     delete m_pMinIntensityCnt;
+    delete m_pIntensityStorageStrategy;
 
   }
 
@@ -6102,10 +6106,11 @@ public:
    * @param min_pass_through
    * @param occupancy_threshold
    * @param min_intensity_cnt
+   * @param intensity_strategy
    */
   static OccupancyGrid * CreateFromScans(
     const LocalizedRangeScanVector & rScans,
-    kt_double resolution, kt_int32u min_pass_through, kt_double occupancy_threshold, kt_int32u min_intensity_cnt)
+    kt_double resolution, kt_int32u min_pass_through, kt_double occupancy_threshold, kt_int32u min_intensity_cnt, std::string intensity_strategy)
   {
     if (rScans.empty()) {
       return NULL;
@@ -6118,6 +6123,7 @@ public:
     pOccupancyGrid->SetMinPassThrough(min_pass_through); 
     pOccupancyGrid->SetOccupancyThreshold(occupancy_threshold); 
     pOccupancyGrid->SetMinIntensityCnt(min_intensity_cnt);
+    pOccupancyGrid->SetIntensityStorageStrategy(intensity_strategy);
     pOccupancyGrid->CreateFromScans(rScans);
 
     return pOccupancyGrid;
@@ -6141,6 +6147,7 @@ public:
     pOccupancyGrid->m_pIntensityCells = m_pIntensityCells->Clone();
     pOccupancyGrid->m_pCurrentIntensityValue = m_pCurrentIntensityValue->Clone();
     pOccupancyGrid->m_pIntensityReadingCnt = m_pIntensityReadingCnt->Clone();
+    pOccupancyGrid->m_pIntensityStorageStrategy = m_pIntensityStorageStrategy->Clone();
 
     return pOccupancyGrid;
   }
@@ -6230,6 +6237,14 @@ public:
     m_pMinIntensityCnt->SetValue(count);
   }
 
+  /**
+   * Sets the strategy of store the intensity readings in a cell
+   */
+  void SetIntensityStorageStrategy(std::string strategy)
+  {
+    m_pIntensityStorageStrategy->SetValue(strategy);
+  }
+
 protected:
   /**
    * Get cell hit grid
@@ -6268,7 +6283,7 @@ public:
    * Get intensity value
    * @return kt_double
    */
-  kt_double getCellIntensity(const Vector2<kt_int32s>& rGrid) const
+  kt_double GetCellIntensity(const Vector2<kt_int32s>& rGrid) const
   {
     kt_int32s index = GridIndex(rGrid);
     return m_pIntensityCells->GetDataPointer()[index];
@@ -6446,10 +6461,25 @@ protected:
 
         kt_double * pCurrentIntensityValuePtr = m_pCurrentIntensityValue->GetDataPointer();
         kt_int32u * pIntensityReadingCntPtr = m_pIntensityReadingCnt->GetDataPointer();
+        
+        std::string strategy = m_pIntensityStorageStrategy->GetValue();
 
-        //TODO:ANGEL: Parametrize forms of store the intensity values (maximum, latest, mean)
-        pCurrentIntensityValuePtr[index] += intensityReading;
-        pCurrentIntensityValuePtr[index]/2;
+        if (strategy == "mean"){              
+          pCurrentIntensityValuePtr[index] = (pCurrentIntensityValuePtr[index] * pIntensityReadingCntPtr[index] + 
+            intensityReading) / (pIntensityReadingCntPtr[index] + 1);
+        } else if (strategy == "max"){
+          pCurrentIntensityValuePtr[index] = std::max(pCurrentIntensityValuePtr[index], intensityReading);
+        } else if (strategy == "latest"){
+          pCurrentIntensityValuePtr[index] = intensityReading;
+        } else{
+          static bool warned = false;
+          if("warned"){
+            std::cout << "WARN: The strategy " << strategy << " is not implemented. Using mean online." << std::endl;
+            pCurrentIntensityValuePtr[index] = (pCurrentIntensityValuePtr[index] * pIntensityReadingCntPtr[index] + 
+            intensityReading) / (pIntensityReadingCntPtr[index] + 1);
+            warned = true;
+          }
+        }
         pIntensityReadingCntPtr[index]++;
 
         if (doUpdate) {
@@ -6582,6 +6612,12 @@ private:
 
   //Minimum counter of intensity readings in a cell to store it
   Parameter<kt_int32u> * m_pMinIntensityCnt;
+  
+  //String to define the strategy to store intensity values
+  // "mean": calculate the mean online
+  // "max": storage the max reading
+  // "latest": overwrite with the last reading
+  Parameter<std::string> * m_pIntensityStorageStrategy;
 };    // OccupancyGrid
 
 ////////////////////////////////////////////////////////////////////////////////////////

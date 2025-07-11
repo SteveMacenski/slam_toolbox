@@ -66,7 +66,10 @@ karto::OccupancyGrid * SMapper::getOccupancyGrid(const double & resolution)
   karto::OccupancyGrid * occ_grid = nullptr;
   return karto::OccupancyGrid::CreateFromScans(
     mapper_->GetAllProcessedScans(),
-    resolution, (kt_int32u)mapper_->getParamMinPassThrough(), (kt_double)mapper_->getParamOccupancyThreshold(), (kt_int32u)mapper_->getParamMinIntensityCnt());
+    resolution, (kt_int32u)mapper_->getParamMinPassThrough(),
+    (kt_double)mapper_->getParamOccupancyThreshold(),
+    (kt_int32u)mapper_->getParamMinIntensityCnt(),
+    (std::string)mapper_->getParamIntensityStrategy());
 }
 
 /*****************************************************************************/
@@ -374,7 +377,14 @@ void SMapper::configure(const rclcpp::Node::SharedPtr & node)
     node->declare_parameter("min_intensity_counter", min_intensity_counter);
   }
   node->get_parameter("min_intensity_counter", min_intensity_counter);
-  mapper_->setParamMinPassThrough(min_intensity_counter);
+  mapper_->setParamMinIntensityCnt(min_intensity_counter);
+
+  std::string intensity_strategy = "mean";
+  if (!node->has_parameter("intensity_strategy")) {
+    node->declare_parameter("intensity_strategy", intensity_strategy);
+  }
+  node->get_parameter("intensity_strategy", intensity_strategy);
+  mapper_->setParamIntensityStrategy(intensity_strategy);
 
 }
 

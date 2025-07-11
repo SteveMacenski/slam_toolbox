@@ -105,6 +105,7 @@ private:
   int min_pass_through_;
   double occupancy_threshold_;
   int min_intensity_counter_;
+  std::string intensity_strategy_;
   int num_submaps_;
 };
 
