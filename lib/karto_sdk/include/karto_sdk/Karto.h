@@ -3955,6 +3955,46 @@ public:
   }
 
   /**
+   * Gets this range finder sensor's minimum intensity
+   * @return minimum intensity
+   */
+  inline kt_double GetMinimumIntensity() const
+  {
+    return m_pMinimumIntensity->GetValue();
+  }
+
+  /**
+   * Sets this range finder sensor's minimum intensity
+   * @param minimumIntensity
+   */
+  inline void SetMinimumIntensity(kt_double minimumIntensity)
+  {
+    m_pMinimumIntensity->SetValue(minimumIntensity);
+
+    Update();
+  }
+
+  /**
+   * Gets this range finder sensor's maximum intensity
+   * @return maximum intensity
+   */
+  inline kt_double GetMaximumIntensity() const
+  {
+    return m_pMaximumIntensity->GetValue();
+  }
+
+  /**
+   * Sets this range finder sensor's minimum intensity
+   * @param maximumIntensity
+   */
+  inline void SetMaximumIntensity(kt_double maximumIntensity)
+  {
+    m_pMaximumIntensity->SetValue(maximumIntensity);
+
+    Update();
+  }
+
+  /**
    * Gets this range finder sensor's minimum angle
    * @return minimum angle
    */
@@ -4272,6 +4312,9 @@ private:
     m_pMinimumRange = new Parameter<kt_double>("MinimumRange", 0.0, GetParameterManager());
     m_pMaximumRange = new Parameter<kt_double>("MaximumRange", 80.0, GetParameterManager());
 
+    m_pMinimumIntensity = new Parameter<kt_double>("MinimumIntesity", 0.0, GetParameterManager());
+    m_pMaximumIntensity = new Parameter<kt_double>("MaximumIntensity", 255.0, GetParameterManager());
+
     m_pMinimumAngle = new Parameter<kt_double>("MinimumAngle", -KT_PI_2, GetParameterManager());
     m_pMaximumAngle = new Parameter<kt_double>("MaximumAngle", KT_PI_2, GetParameterManager());
 
@@ -4322,8 +4365,10 @@ private:
 
   Parameter<kt_double> * m_pMinimumRange;
   Parameter<kt_double> * m_pMaximumRange;
-
   Parameter<kt_double> * m_pRangeThreshold;
+
+  Parameter<kt_double> * m_pMinimumIntensity;
+  Parameter<kt_double> * m_pMaximumIntensity;
 
   Parameter<kt_bool> * m_pIs360Laser;
 
@@ -4339,6 +4384,9 @@ private:
     if (Archive::is_loading::value) {
       m_pMinimumRange = new Parameter<kt_double>("MinimumRange", 0.0, GetParameterManager());
       m_pMaximumRange = new Parameter<kt_double>("MaximumRange", 80.0, GetParameterManager());
+
+      m_pMaximumIntensity = new Parameter<kt_double>("MaximumIntensity", 0.0, GetParameterManager());
+      m_pMinimumIntensity = new Parameter<kt_double>("MinimumIntensity", 255.0, GetParameterManager());
 
       m_pMinimumAngle = new Parameter<kt_double>("MinimumAngle", -KT_PI_2, GetParameterManager());
       m_pMaximumAngle = new Parameter<kt_double>("MaximumAngle", KT_PI_2, GetParameterManager());
@@ -4360,6 +4408,8 @@ private:
     ar & BOOST_SERIALIZATION_NVP(m_pAngularResolution);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumRange);
     ar & BOOST_SERIALIZATION_NVP(m_pMaximumRange);
+    ar & BOOST_SERIALIZATION_NVP(m_pMaximumIntensity);
+    ar & BOOST_SERIALIZATION_NVP(m_pMinimumIntensity);
     ar & BOOST_SERIALIZATION_NVP(m_pRangeThreshold);
     ar & BOOST_SERIALIZATION_NVP(m_pIs360Laser);
     ar & BOOST_SERIALIZATION_NVP(m_pType);
@@ -6051,6 +6101,7 @@ public:
    * @param resolution
    * @param min_pass_through
    * @param occupancy_threshold
+   * @param min_intensity_cnt
    */
   static OccupancyGrid * CreateFromScans(
     const LocalizedRangeScanVector & rScans,
@@ -6305,6 +6356,8 @@ protected:
     kt_double rangeThreshold = laserRangeFinder->GetRangeThreshold();
     kt_double maxRange = laserRangeFinder->GetMaximumRange();
     kt_double minRange = laserRangeFinder->GetMinimumRange();
+    kt_double maxIntensity = laserRangeFinder->GetMaximumIntensity();
+    kt_double minIntensity = laserRangeFinder->GetMinimumIntensity();
 
     Vector2<kt_double> scanPosition = pScan->GetSensorPose().GetPosition();
     // get scan point readings
@@ -6320,7 +6373,6 @@ protected:
       kt_double rangeReading = pScan->GetRangeReadings()[pointIndex];
       kt_bool isEndPointValid = rangeReading < (rangeThreshold - KT_TOLERANCE);
 
-      //TODO:ANGEL:add similar parametrized filter for intensities
       if (rangeReading <= minRange || rangeReading >= maxRange || std::isnan(rangeReading)) {
         // ignore these readings
         pointIndex++;
@@ -6334,9 +6386,16 @@ protected:
         point.SetY(scanPosition.GetY() + ratio * dy);
       }
 
-      kt_double intensity = pScan->GetIntensityReadings()[pointIndex];
+      kt_double intensityReading = pScan->GetIntensityReadings()[pointIndex];
+      if (intensityReading <= minIntensity || std::isnan(intensityReading)) {
+        intensityReading = 0;
+      }else if(intensityReading >= maxIntensity){
+        std::cout << "WARN: Intensity Saturated. Value " << intensityReading <<
+        " is higher than maxIntensity param " << maxIntensity << std::endl;
+        intensityReading = maxIntensity;
+      }
 
-      kt_bool isInMap = RayTrace(scanPosition, point, isEndPointValid, intensity, doUpdate);
+      kt_bool isInMap = RayTrace(scanPosition, point, isEndPointValid, intensityReading, doUpdate);
       if (!isInMap) {
         isAllInMap = false;
       }
