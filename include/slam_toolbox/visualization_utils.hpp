@@ -136,14 +136,12 @@ inline void toNavMap(
     intensity_map.info.height = height;
     intensity_map.data.resize(intensity_map.info.width * intensity_map.info.height);
   }
-  intensity_map.data.assign(intensity_map.info.width * intensity_map.info.height, -1);
+  intensity_map.data.assign(intensity_map.info.width * intensity_map.info.height, 0);
 
   for (kt_int32s y = 0; y < height; y++) {
     for (kt_int32s x = 0; x < width; x++) {
       kt_int8u occupancy = occ_grid->GetValue(karto::Vector2<kt_int32s>(x, y));      
-      kt_double intensity = occ_grid->getCellIntensity(karto::Vector2<kt_int32s>(x, y));
-
-      intensity_map.data[MAP_IDX(intensity_map.info.width, x, y)] = 0;
+      kt_double intensity = occ_grid->GetCellIntensity(karto::Vector2<kt_int32s>(x, y));
 
       switch (occupancy) {
         case karto::GridStates_Unknown:
@@ -152,7 +150,6 @@ inline void toNavMap(
         case karto::GridStates_Occupied:
           occupancy_map.data[MAP_IDX(occupancy_map.info.width, x, y)] = 100;
           if(intensity > 0){
-            //TODO:ANGEL:255 should be replaced by maximum intensity value of the scan
             int norm_intensity = std::clamp(static_cast<int>(std::round(100.0 * (intensity / 255))), 0, 100);
             intensity_map.data[MAP_IDX(intensity_map.info.width, x, y)] = norm_intensity;
           }
