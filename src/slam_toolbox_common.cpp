@@ -427,7 +427,7 @@ void SlamToolbox::setROSInterfaces()
 /*****************************************************************************/
 {
   pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
-    "pose", 10);
+    "pose", rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
     map_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
