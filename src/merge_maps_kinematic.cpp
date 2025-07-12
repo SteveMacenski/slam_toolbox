@@ -49,6 +49,10 @@ void MergeMapsKinematic::configure()
       "/map", rclcpp::QoS(1)));
   sstmS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
       "/map_metadata", rclcpp::QoS(1)));
+  sstIS_.push_back(this->create_publisher<nav_msgs::msg::OccupancyGrid>(
+      "/map_intensity", rclcpp::QoS(1)));
+  sstmIS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
+      "/map_intensity_metadata", rclcpp::QoS(1)));
 
   ssMap_ = this->create_service<slam_toolbox::srv::MergeMaps>("slam_toolbox/merge_submaps",
       std::bind(&MergeMapsKinematic::mergeMapCallback, this, std::placeholders::_1,
@@ -108,10 +112,15 @@ bool MergeMapsKinematic::addSubmapCallback(
       "/map_" + std::to_string(num_submaps_), rclcpp::QoS(1)));
   sstmS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
       "/map_metadata_" + std::to_string(num_submaps_), rclcpp::QoS(1)));
+  sstIS_.push_back(this->create_publisher<nav_msgs::msg::OccupancyGrid>(
+      "/map_intensity_" + std::to_string(num_submaps_), rclcpp::QoS(1)));
+  sstmIS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
+      "/map_intensity_metadata_" + std::to_string(num_submaps_), rclcpp::QoS(1)));
   sleep(1.0);
 
   nav_msgs::srv::GetMap::Response occ_map, int_map;
-  nav_msgs::msg::OccupancyGrid & og = occ_map.map;
+  nav_msgs::msg::OccupancyGrid & og_range = occ_map.map;
+  nav_msgs::msg::OccupancyGrid & og_intensity = int_map.map;
   try {
     kartoToROSOccupancyGrid(scans, occ_map, int_map);
   } catch (const Exception & e) {
@@ -122,16 +131,21 @@ bool MergeMapsKinematic::addSubmapCallback(
 
   tf2::Transform transform;
   transform.setIdentity();
-  transform.setOrigin(tf2::Vector3(og.info.origin.position.x +
-    og.info.width * og.info.resolution / 2.0,
-    og.info.origin.position.y + og.info.height * og.info.resolution / 2.0,
+  transform.setOrigin(tf2::Vector3(og_range.info.origin.position.x +
+    og_range.info.width * og_range.info.resolution / 2.0,
+    og_range.info.origin.position.y + og_range.info.height * og_range.info.resolution / 2.0,
     0.));
-  og.info.origin.position.x = -(og.info.width * og.info.resolution / 2.0);
-  og.info.origin.position.y = -(og.info.height * og.info.resolution / 2.0);
-  og.header.stamp = this->now();
-  og.header.frame_id = "map_" + std::to_string(num_submaps_);
-  sstS_[num_submaps_]->publish(og);
-  sstmS_[num_submaps_]->publish(og.info);
+  og_range.info.origin.position.x = -(og_range.info.width * og_range.info.resolution / 2.0);
+  og_range.info.origin.position.y = -(og_range.info.height * og_range.info.resolution / 2.0);
+  og_range.header.stamp = this->now();  
+  og_range.header.frame_id = "map_" + std::to_string(num_submaps_);
+  og_intensity.info = og_range.info;
+  og_intensity.header = og_range.header;
+
+  sstS_[num_submaps_]->publish(og_range);
+  sstmS_[num_submaps_]->publish(og_range.info);
+  sstIS_[num_submaps_]->publish(og_intensity);
+  sstmIS_[num_submaps_]->publish(og_intensity.info);
 
   geometry_msgs::msg::TransformStamped msg;
   msg.transform = tf2::toMsg(transform);
@@ -295,6 +309,12 @@ bool MergeMapsKinematic::mergeMapCallback(
   occ_map.map.header.frame_id = "map";
   sstS_[0]->publish(occ_map.map);
   sstmS_[0]->publish(occ_map.map.info);
+
+  int_map.map.header.stamp = this->now();
+  int_map.map.header.frame_id = "map_intensity";
+  sstIS_[0]->publish(int_map.map);
+  sstmIS_[0]->publish(int_map.map.info);
+
   return true;
 }
 
@@ -312,6 +332,7 @@ void MergeMapsKinematic::kartoToROSOccupancyGrid(
       "MergeMapsKinematic: Could not make occupancy grid.");
   } else {
     occupancy_map.map.info.resolution = resolution_;
+    intensity_map.map.info.resolution = resolution_;
     vis_utils::toNavMap(occ_grid, occupancy_map.map, intensity_map.map);
   }
 

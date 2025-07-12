@@ -84,6 +84,8 @@ private:
   // ROS-y-ness
   std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>>> sstmS_;
   std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>>> sstS_;
+  std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>>> sstmIS_;
+  std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>>> sstIS_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::MergeMaps>> ssMap_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::AddSubmap>> ssSubmap_;
 
