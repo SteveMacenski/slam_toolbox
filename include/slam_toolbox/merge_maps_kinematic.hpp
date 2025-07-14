@@ -34,9 +34,9 @@
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/message_filter.h"
-#include "tf2/LinearMath/Matrix3x3.h"
+#include "tf2/LinearMath/Matrix3x3.hpp"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 #include "../lib/karto_sdk/include/karto_sdk/Mapper.h"
 #include "slam_toolbox/toolbox_types.hpp"

@@ -27,7 +27,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "slam_toolbox/toolbox_types.hpp"
-#include "tf2/utils.h"
+#include "tf2/utils.hpp"
 
 namespace laser_utils
 {
