@@ -122,39 +122,113 @@ qt5_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
 add_library(SlamToolboxPlugin SHARED
   rviz_plugin/slam_toolbox_rviz_plugin.cpp
   ${MOC_FILES})
-ament_target_dependencies(SlamToolboxPlugin
- ${dependencies}
+target_link_libraries(SlamToolboxPlugin PUBLIC
+  ${bond_TARGETS}
+  ${builtin_interfaces_TARGETS}
+  ${lifecycle_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${std_srvs_TARGETS}
+  ${visualization_msgs_TARGETS}
+  bondcpp::bondcpp
+  interactive_markers::interactive_markers
+  message_filters::message_filters
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_components::component
+  rclcpp_components::component_manager
+  rclcpp_lifecycle::rclcpp_lifecycle
+  rviz_common::rviz_common
+  rviz_default_plugins::rviz_default_plugins
+  rviz_rendering::rviz_rendering
+  sensor_msgs::sensor_msgs_library
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::static_transform_broadcaster_node
+  tf2_ros::tf2_ros
+  tf2_sensor_msgs::tf2_sensor_msgs
 )
 target_include_directories(SlamToolboxPlugin PUBLIC
   ${Qt5Widgets_INCLUDE_DIRS}
   ${OGRE_INCLUDE_DIRS}
 )
-target_link_libraries(SlamToolboxPlugin ${QT_LIBRARIES} rviz_common::rviz_common)
+target_link_libraries(SlamToolboxPlugin PUBLIC ${QT_LIBRARIES} rviz_common::rviz_common)
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(SlamToolboxPlugin "${cpp_typesupport_target}")
+target_link_libraries(SlamToolboxPlugin PUBLIC "${cpp_typesupport_target}")
 target_compile_definitions(SlamToolboxPlugin PUBLIC "PLUGINLIB__DISABLE_BOOST_FUNCTIONS")
 target_compile_definitions(SlamToolboxPlugin PRIVATE "RVIZ_DEFAULT_PLUGINS_BUILDING_LIBRARY")
 pluginlib_export_plugin_description_file(rviz_common rviz_plugins.xml)
 
 #### Ceres Plugin
 add_library(ceres_solver_plugin solvers/ceres_solver.cpp)
-ament_target_dependencies(ceres_solver_plugin ${dependencies})
-target_link_libraries(ceres_solver_plugin ${CERES_LIBRARIES}
+target_link_libraries(ceres_solver_plugin PUBLIC
+  ${bond_TARGETS}
+  ${builtin_interfaces_TARGETS}
+  ${lifecycle_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${std_srvs_TARGETS}
+  ${visualization_msgs_TARGETS}
+  bondcpp::bondcpp
+  interactive_markers::interactive_markers
+  message_filters::message_filters
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_components::component
+  rclcpp_components::component_manager
+  rclcpp_lifecycle::rclcpp_lifecycle
+  rviz_common::rviz_common
+  rviz_default_plugins::rviz_default_plugins
+  rviz_rendering::rviz_rendering
+  sensor_msgs::sensor_msgs_library
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::static_transform_broadcaster_node
+  tf2_ros::tf2_ros
+  tf2_sensor_msgs::tf2_sensor_msgs
+)
+target_link_libraries(ceres_solver_plugin PUBLIC ${CERES_LIBRARIES}
                                           ${Boost_LIBRARIES}
                                           kartoSlamToolbox
 )
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(ceres_solver_plugin "${cpp_typesupport_target}")
+target_link_libraries(ceres_solver_plugin PUBLIC "${cpp_typesupport_target}")
 pluginlib_export_plugin_description_file(slam_toolbox solver_plugins.xml)
 
 #### Tool lib for mapping
 add_library(toolbox_common src/slam_toolbox_common.cpp src/map_saver.cpp src/loop_closure_assistant.cpp src/laser_utils.cpp src/slam_mapper.cpp)
-ament_target_dependencies(toolbox_common
-  ${dependencies}
+target_link_libraries(toolbox_common PUBLIC
+  ${bond_TARGETS}
+  ${builtin_interfaces_TARGETS}
+  ${lifecycle_msgs_TARGETS}
+  ${nav_msgs_TARGETS}
+  ${sensor_msgs_TARGETS}
+  ${std_msgs_TARGETS}
+  ${std_srvs_TARGETS}
+  ${visualization_msgs_TARGETS}
+  bondcpp::bondcpp
+  interactive_markers::interactive_markers
+  message_filters::message_filters
+  pluginlib::pluginlib
+  rclcpp::rclcpp
+  rclcpp_components::component
+  rclcpp_components::component_manager
+  rclcpp_lifecycle::rclcpp_lifecycle
+  rviz_common::rviz_common
+  rviz_default_plugins::rviz_default_plugins
+  rviz_rendering::rviz_rendering
+  sensor_msgs::sensor_msgs_library
+  tf2::tf2
+  tf2_geometry_msgs::tf2_geometry_msgs
+  tf2_ros::static_transform_broadcaster_node
+  tf2_ros::tf2_ros
+  tf2_sensor_msgs::tf2_sensor_msgs
 )
-target_link_libraries(toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
+target_link_libraries(toolbox_common PUBLIC kartoSlamToolbox ${Boost_LIBRARIES})
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(toolbox_common "${cpp_typesupport_target}")
+target_link_libraries(toolbox_common PUBLIC "${cpp_typesupport_target}")
 
 #### Mapping executibles
 add_library(async_slam_toolbox src/slam_toolbox_async.cpp)
