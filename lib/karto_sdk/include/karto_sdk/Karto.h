@@ -6404,7 +6404,7 @@ protected:
       kt_double intensityReading = pScan->GetIntensityReadings()[pointIndex];
       if (intensityReading <= minIntensity || std::isnan(intensityReading)) {
         intensityReading = 0;
-      }else if(intensityReading >= maxIntensity){
+      }else if(intensityReading > maxIntensity){
         std::cout << "WARN: Intensity Saturated. Value " << intensityReading <<
         " is higher than maxIntensity param " << maxIntensity << std::endl;
         intensityReading = maxIntensity;
