@@ -84,16 +84,7 @@ set(libraries
 find_package(PkgConfig REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(CHOLMOD REQUIRED)
-if(APPLE)
-  # Manually specify CSparse paths for macOS (Apple)
-  set(CSPARSE_INCLUDE_DIR "/opt/homebrew/include")
-  set(CSPARSE_LIBRARY "/opt/homebrew/lib/libcsparse.dylib")
-  include_directories(${CSPARSE_INCLUDE_DIR})
-else()
-  # Use system-wide or CMake-provided CSparse on other platforms
-  find_package(CSparse REQUIRED)
-endif()
-
+find_package(CSparse REQUIRED)
 find_package(G2O REQUIRED)
 find_package(LAPACK REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
