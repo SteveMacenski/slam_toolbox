@@ -3971,7 +3971,6 @@ public:
   {
     m_pMinimumIntensity->SetValue(minimumIntensity);
 
-    Update();
   }
 
   /**
@@ -3991,7 +3990,6 @@ public:
   {
     m_pMaximumIntensity->SetValue(maximumIntensity);
 
-    Update();
   }
 
   /**
@@ -4384,9 +4382,8 @@ private:
     if (Archive::is_loading::value) {
       m_pMinimumRange = new Parameter<kt_double>("MinimumRange", 0.0, GetParameterManager());
       m_pMaximumRange = new Parameter<kt_double>("MaximumRange", 80.0, GetParameterManager());
-
-      m_pMaximumIntensity = new Parameter<kt_double>("MaximumIntensity", 0.0, GetParameterManager());
-      m_pMinimumIntensity = new Parameter<kt_double>("MinimumIntensity", 255.0, GetParameterManager());
+      m_pMinimumIntensity = new Parameter<kt_double>("MinimumIntensity", 0.0, GetParameterManager());
+      m_pMaximumIntensity = new Parameter<kt_double>("MaximumIntensity", 255.0, GetParameterManager());
 
       m_pMinimumAngle = new Parameter<kt_double>("MinimumAngle", -KT_PI_2, GetParameterManager());
       m_pMaximumAngle = new Parameter<kt_double>("MaximumAngle", KT_PI_2, GetParameterManager());
@@ -5423,12 +5420,6 @@ public:
   return m_pIntensityReadings;
   }
 
-  inline IntensityReadingsVector GetIntensityReadingsVector() const
-  {
-  // Build the array from the pointer, using m_NumberOfRangeReadings as the size
-  return IntensityReadingsVector(m_pIntensityReadings, m_pIntensityReadings + m_NumberOfRangeReadings);
-  }
-
 
   /**
    * Gets the laser range finder sensor that generated this scan
@@ -6402,11 +6393,10 @@ protected:
       }
 
       kt_double intensityReading = pScan->GetIntensityReadings()[pointIndex];
-      if (intensityReading <= minIntensity || std::isnan(intensityReading)) {
+
+      if (intensityReading < minIntensity || std::isnan(intensityReading)) {
         intensityReading = 0;
       }else if(intensityReading > maxIntensity){
-        std::cout << "WARN: Intensity Saturated. Value " << intensityReading <<
-        " is higher than maxIntensity param " << maxIntensity << std::endl;
         intensityReading = maxIntensity;
       }
 
@@ -6464,7 +6454,7 @@ protected:
         
         std::string strategy = m_pIntensityStorageStrategy->GetValue();
 
-        if (strategy == "mean"){              
+        if (strategy == "mean"){
           pCurrentIntensityValuePtr[index] = (pCurrentIntensityValuePtr[index] * pIntensityReadingCntPtr[index] + 
             intensityReading) / (pIntensityReadingCntPtr[index] + 1);
         } else if (strategy == "max"){
@@ -6473,13 +6463,14 @@ protected:
           pCurrentIntensityValuePtr[index] = intensityReading;
         } else{
           static bool warned = false;
-          if("warned"){
+          if(!warned){
             std::cout << "WARN: The strategy " << strategy << " is not implemented. Using mean online." << std::endl;
             pCurrentIntensityValuePtr[index] = (pCurrentIntensityValuePtr[index] * pIntensityReadingCntPtr[index] + 
             intensityReading) / (pIntensityReadingCntPtr[index] + 1);
             warned = true;
           }
         }
+        // increment cell intensity reading count
         pIntensityReadingCntPtr[index]++;
 
         if (doUpdate) {
@@ -6506,9 +6497,9 @@ protected:
       kt_double hitRatio = static_cast<kt_double>(cellHitCnt) / static_cast<kt_double>(cellPassCnt);
 
       if (hitRatio > m_pOccupancyThreshold->GetValue()) {
-        *pCell = GridStates_Occupied;        
-        if (cellIntCnt > m_pMinIntensityCnt->GetValue()) { 
-          *pCellIntValue = *pCurrentIntensity;          
+        *pCell = GridStates_Occupied;
+        if (cellIntCnt >= m_pMinIntensityCnt->GetValue()) {
+          *pCellIntValue = *pCurrentIntensity;
         }
       } else {
         *pCell = GridStates_Free;
