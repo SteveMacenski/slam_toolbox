@@ -501,23 +501,16 @@ LocalizedRangeScan * SlamToolbox::getLocalizedRangeScan(
 /*****************************************************************************/
 {
   // Create a vector of doubles for lib
-  std::vector<kt_double> readings = laser_utils::scanToReadings(
-    *scan, lasers_[scan->header.frame_id].isInverted());
+  std::vector<kt_double> ranges, intensities;
+  laser_utils::scanToReadings(
+    *scan, ranges, intensities, lasers_[scan->header.frame_id].isInverted());
 
   // transform by the reprocessing transform
   tf2::Transform pose_original = smapper_->toTfPose(odom_pose);
   tf2::Transform tf_pose_transformed = reprocessing_transform_ * pose_original;
   Pose2 transformed_pose = smapper_->toKartoPose(tf_pose_transformed);
 
-  //get size intensity from scan
-  std::vector<kt_double> intensities;
-  if (scan->intensities.size() == readings.size()) {
-    intensities.assign(scan->intensities.begin(), scan->intensities.end());
-  } else {
-    intensities.resize(readings.size(), 0.0);
-  }
-
-  LocalizedRangeScan * range_scan = new LocalizedRangeScan(laser->GetName(), readings, intensities);
+  LocalizedRangeScan * range_scan = new LocalizedRangeScan(laser->GetName(), ranges, intensities);
 
   // Check if the sizes are equal
   if (range_scan->GetNumberOfRangeReadings() != intensities.size()) {

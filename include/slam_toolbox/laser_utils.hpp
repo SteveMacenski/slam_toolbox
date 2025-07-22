@@ -32,27 +32,39 @@ namespace laser_utils
 {
 
 // Convert a laser scan to a vector of readings
-inline std::vector<double> scanToReadings(
+inline void scanToReadings(
   const sensor_msgs::msg::LaserScan & scan,
+  std::vector<double> & ranges,
+  std::vector<double> & intensities,
   const bool & inverted)
 {
-  std::vector<double> readings;
+
+  size_t n = scan.ranges.size();
+  ranges.resize(n);
+  intensities.resize(n);
+
+  bool has_intensities = scan.intensities.size() == n;
 
   if (inverted) {
-    for (std::vector<float>::const_reverse_iterator it = scan.ranges.rbegin();
-      it != scan.ranges.rend(); ++it)
-    {
-      readings.push_back(*it);
+    for (size_t i = 0; i < n; ++i) {
+      ranges[i] = static_cast<double>(scan.ranges[n - 1 - i]);
+      if (has_intensities){
+        intensities[i] = static_cast<double>(scan.intensities[n - 1 - i]);
+      }else{
+        intensities[i] = 0.0;
+      }
     }
   } else {
-    for (std::vector<float>::const_iterator it = scan.ranges.begin(); it != scan.ranges.end();
-      ++it)
-    {
-      readings.push_back(*it);
+    for (size_t i = 0; i < n; ++i) {
+      ranges[i] = static_cast<double>(scan.ranges[i]);
+      if (has_intensities){
+        intensities[i] = static_cast<double>(scan.intensities[i]);
+      }else{
+        intensities[i] = 0.0;
+      }
     }
   }
-
-  return readings;
+  
 }
 
 // Store laser scanner information
