@@ -160,6 +160,32 @@ karto::LaserRangeFinder * LaserAssistant::makeLaser(const double & mountingYaw)
     max_laser_range = scan_.range_max;
   }
   laser->SetRangeThreshold(max_laser_range);
+
+  //Intensities
+  double min_laser_intensity = 0.0;
+   if (!node_->has_parameter("min_laser_intensity")) {
+    node_->declare_parameter("min_laser_intensity", min_laser_intensity);
+  }
+  node_->get_parameter("min_laser_intensity", min_laser_intensity);
+
+  double max_laser_intensity = 255.0;
+   if (!node_->has_parameter("max_laser_intensity")) {
+    node_->declare_parameter("max_laser_intensity", max_laser_intensity);
+  }
+  node_->get_parameter("max_laser_intensity", max_laser_intensity);
+
+  if(min_laser_intensity >= max_laser_intensity || min_laser_intensity < 0){
+    RCLCPP_WARN(node_->get_logger(),
+      "minimum and/or maximum laser intensity setting (min:%.1f max:%.1f) not coherent "
+      "of the used Lidar. Setting Min to 0, Max to 255.", min_laser_intensity, max_laser_intensity);
+    min_laser_intensity = 0.0;
+    max_laser_intensity = 255.0;
+  }
+
+  laser->SetMinimumIntensity(min_laser_intensity);
+  laser->SetMaximumIntensity(max_laser_intensity);
+
+
   return laser;
 }
 
