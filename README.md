@@ -222,6 +222,8 @@ The following settings and options are exposed to you. My default configuration 
 
 `scan_topic` - scan topic, *absolute* path, i.e. `/scan` not `scan`
 
+`restamp_tf` - Whether to restamp the TF messages with the current time or use the scan's message. Default False.
+
 `scan_queue_size` - The number of scan messages to queue up before throwing away old ones. Should always be set to 1 in async mode
 
 `use_map_saver` - Instantiate the map saver service and self-subscribe to the map topic

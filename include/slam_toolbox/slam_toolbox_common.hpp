@@ -151,6 +151,7 @@ protected:
   double position_covariance_scale_;
   double yaw_covariance_scale_;
   bool first_measurement_, enable_interactive_mode_;
+  bool restamp_tf_;
 
   // Book keeping
   std::unique_ptr<mapper_utils::SMapper> smapper_;
