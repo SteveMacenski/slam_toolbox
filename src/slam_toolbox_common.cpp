@@ -393,6 +393,12 @@ void SlamToolbox::setParams()
   }
   enable_interactive_mode_ = this->get_parameter("enable_interactive_mode").as_bool();
 
+  restamp_tf_ = false;
+  if (!this->has_parameter("restamp_tf")) {
+    this->declare_parameter("restamp_tf", restamp_tf_);
+  }
+  restamp_tf_ = this->get_parameter("restamp_tf").as_bool();
+
   double tmp_val = 0.5;
   if (!this->has_parameter("transform_timeout")) {
     this->declare_parameter("transform_timeout", tmp_val);
@@ -489,7 +495,11 @@ void SlamToolbox::publishTransformLoop(
         msg.transform = tf2::toMsg(map_to_odom_);
         msg.child_frame_id = odom_frame_;
         msg.header.frame_id = map_frame_;
-        msg.header.stamp = scan_timestamp + transform_timeout_;
+        if (restamp_tf_) {
+          msg.header.stamp = now() + transform_timeout_;
+        } else {
+          msg.header.stamp = scan_timestamp + transform_timeout_;
+        }
         tfB_->sendTransform(msg);
       }
     }
