@@ -3955,6 +3955,44 @@ public:
   }
 
   /**
+   * Gets this range finder sensor's minimum intensity
+   * @return minimum intensity
+   */
+  inline kt_double GetMinimumIntensity() const
+  {
+    return m_pMinimumIntensity->GetValue();
+  }
+
+  /**
+   * Sets this range finder sensor's minimum intensity
+   * @param minimumIntensity
+   */
+  inline void SetMinimumIntensity(kt_double minimumIntensity)
+  {
+    m_pMinimumIntensity->SetValue(minimumIntensity);
+
+  }
+
+  /**
+   * Gets this range finder sensor's maximum intensity
+   * @return maximum intensity
+   */
+  inline kt_double GetMaximumIntensity() const
+  {
+    return m_pMaximumIntensity->GetValue();
+  }
+
+  /**
+   * Sets this range finder sensor's minimum intensity
+   * @param maximumIntensity
+   */
+  inline void SetMaximumIntensity(kt_double maximumIntensity)
+  {
+    m_pMaximumIntensity->SetValue(maximumIntensity);
+
+  }
+
+  /**
    * Gets this range finder sensor's minimum angle
    * @return minimum angle
    */
@@ -4272,6 +4310,9 @@ private:
     m_pMinimumRange = new Parameter<kt_double>("MinimumRange", 0.0, GetParameterManager());
     m_pMaximumRange = new Parameter<kt_double>("MaximumRange", 80.0, GetParameterManager());
 
+    m_pMinimumIntensity = new Parameter<kt_double>("MinimumIntesity", 0.0, GetParameterManager());
+    m_pMaximumIntensity = new Parameter<kt_double>("MaximumIntensity", 255.0, GetParameterManager());
+
     m_pMinimumAngle = new Parameter<kt_double>("MinimumAngle", -KT_PI_2, GetParameterManager());
     m_pMaximumAngle = new Parameter<kt_double>("MaximumAngle", KT_PI_2, GetParameterManager());
 
@@ -4322,8 +4363,10 @@ private:
 
   Parameter<kt_double> * m_pMinimumRange;
   Parameter<kt_double> * m_pMaximumRange;
-
   Parameter<kt_double> * m_pRangeThreshold;
+
+  Parameter<kt_double> * m_pMinimumIntensity;
+  Parameter<kt_double> * m_pMaximumIntensity;
 
   Parameter<kt_bool> * m_pIs360Laser;
 
@@ -4339,6 +4382,8 @@ private:
     if (Archive::is_loading::value) {
       m_pMinimumRange = new Parameter<kt_double>("MinimumRange", 0.0, GetParameterManager());
       m_pMaximumRange = new Parameter<kt_double>("MaximumRange", 80.0, GetParameterManager());
+      m_pMinimumIntensity = new Parameter<kt_double>("MinimumIntensity", 0.0, GetParameterManager());
+      m_pMaximumIntensity = new Parameter<kt_double>("MaximumIntensity", 255.0, GetParameterManager());
 
       m_pMinimumAngle = new Parameter<kt_double>("MinimumAngle", -KT_PI_2, GetParameterManager());
       m_pMaximumAngle = new Parameter<kt_double>("MaximumAngle", KT_PI_2, GetParameterManager());
@@ -4360,6 +4405,8 @@ private:
     ar & BOOST_SERIALIZATION_NVP(m_pAngularResolution);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumRange);
     ar & BOOST_SERIALIZATION_NVP(m_pMaximumRange);
+    ar & BOOST_SERIALIZATION_NVP(m_pMaximumIntensity);
+    ar & BOOST_SERIALIZATION_NVP(m_pMinimumIntensity);
     ar & BOOST_SERIALIZATION_NVP(m_pRangeThreshold);
     ar & BOOST_SERIALIZATION_NVP(m_pIs360Laser);
     ar & BOOST_SERIALIZATION_NVP(m_pType);
@@ -5191,6 +5238,10 @@ private:
  * Type declaration of range readings vector
  */
 typedef std::vector<kt_double> RangeReadingsVector;
+/**
+ * Type declaration of reflected readings vector
+ */
+typedef std::vector<kt_double> IntensityReadingsVector;
 
 /**
  * LaserRangeScan representing the range readings from a laser range finder sensor.
@@ -5210,7 +5261,8 @@ public:
   LaserRangeScan(const Name & rSensorName)  // NOLINT
   : SensorData(rSensorName),
     m_pRangeReadings(NULL),
-    m_NumberOfRangeReadings(0)
+    m_NumberOfRangeReadings(0),
+    m_pIntensityReadings(NULL)
   {
   }
 
@@ -5226,7 +5278,8 @@ public:
   LaserRangeScan(const Name & rSensorName, const RangeReadingsVector & rRangeReadings)
   : SensorData(rSensorName),
     m_pRangeReadings(NULL),
-    m_NumberOfRangeReadings(0)
+    m_NumberOfRangeReadings(0),
+    m_pIntensityReadings(NULL)
   {
     assert(rSensorName.ToString() != "");
 
@@ -5234,12 +5287,33 @@ public:
   }
 
   /**
+   * Constructs a scan from the given sensor with the given readings
+   * @param rSensorName
+   * @param rRangeReadings
+   * @param IntensityReadingsVector
+   */
+  LaserRangeScan(const Name & rSensorName,
+    const RangeReadingsVector & rRangeReadings,
+    const IntensityReadingsVector & rIntensityReadings)
+  : SensorData(rSensorName),
+    m_pRangeReadings(NULL),
+    m_NumberOfRangeReadings(0),
+    m_pIntensityReadings(NULL)
+  {
+    assert(rSensorName.ToString() != "");
+
+    SetRangeReadings(rRangeReadings);
+    SetIntensityReadings(rIntensityReadings);
+  }
+  /**
    * Destructor
    */
   virtual ~LaserRangeScan()
   {
     delete[] m_pRangeReadings;
     m_pRangeReadings = nullptr;
+    delete[] m_pIntensityReadings;
+    m_pIntensityReadings = nullptr;
   }
 
 public:
@@ -5298,6 +5372,56 @@ public:
   }
 
   /**
+   * Sets the intensity readings for this scan
+   * @param rIntensityReadings
+   */
+  inline void SetIntensityReadings(const IntensityReadingsVector & rIntensityReadings)
+  {
+
+    std::lock_guard<std::mutex> lock(intensity_mutex_);
+
+    if (!rIntensityReadings.empty())
+    {
+      if (rIntensityReadings.size() != m_NumberOfRangeReadings)
+      {
+        std::stringstream error;
+        error << "Size of intensity array (" << rIntensityReadings.size()
+          << ") does not match with range array size (" << m_NumberOfRangeReadings << ").";
+        std::cerr << "[ERROR] " << error.str() << std::endl;
+        throw Exception(error.str());
+      }
+      
+      if (m_pIntensityReadings != NULL)
+      {
+        std::cerr << "[DEBUG] SetIntensityReadings: deleting previous m_pIntensityReadings." << std::endl;
+        delete[] m_pIntensityReadings;
+        m_pIntensityReadings = NULL;
+      }
+              
+      m_pIntensityReadings = new kt_double[m_NumberOfRangeReadings];
+    
+      for (kt_int32u i = 0; i < m_NumberOfRangeReadings; i++)
+      {
+        m_pIntensityReadings[i] = rIntensityReadings[i];       
+      }
+    }
+    else
+    {
+      // If empty array, delete everything
+      std::cerr << "[DEBUG] SetIntensityReadings: empty array received, deleting m_pIntensityReadings." << std::endl;
+      delete[] m_pIntensityReadings;
+      m_pIntensityReadings = NULL;
+    }
+    
+  }
+
+  inline kt_double * GetIntensityReadings() const
+  {
+  return m_pIntensityReadings;
+  }
+
+
+  /**
    * Gets the laser range finder sensor that generated this scan
    * @return laser range finder sensor of this scan
    */
@@ -5322,6 +5446,8 @@ private:
 private:
   kt_double * m_pRangeReadings;
   kt_int32u m_NumberOfRangeReadings;
+  kt_double * m_pIntensityReadings;
+  std::mutex intensity_mutex_;
 
   friend class boost::serialization::access;
   template<class Archive>
@@ -5332,8 +5458,10 @@ private:
 
     if (Archive::is_loading::value) {
       m_pRangeReadings = new kt_double[m_NumberOfRangeReadings];
+      m_pIntensityReadings = new kt_double[m_NumberOfRangeReadings];
     }
     ar & boost::serialization::make_array<kt_double>(m_pRangeReadings, m_NumberOfRangeReadings);
+    ar & boost::serialization::make_array<kt_double>(m_pIntensityReadings, m_NumberOfRangeReadings);
   }
 };    // LaserRangeScan
 
@@ -5421,6 +5549,14 @@ public:
    */
   LocalizedRangeScan(const Name & rSensorName, const RangeReadingsVector & rReadings)
   : LaserRangeScan(rSensorName, rReadings),
+    m_IsDirty(true)
+  {
+  }
+  /**
+   * Constructs a range scan from the given range finder with the given readings and intensities
+   */
+  LocalizedRangeScan(const Name & rSensorName, const RangeReadingsVector & rReadings, const IntensityReadingsVector & iReadings)
+  : LaserRangeScan(rSensorName, rReadings, iReadings),
     m_IsDirty(true)
   {
   }
@@ -5902,14 +6038,19 @@ public:
    * @param height
    * @param rOffset
    * @param resolution
+   * @param intensity_strategy
    */
   OccupancyGrid(
     kt_int32s width, kt_int32s height, const Vector2<kt_double> & rOffset,
-    kt_double resolution)
+    kt_double resolution, const std::string & intensity_strategy = "mean")
   : Grid<kt_int8u>(width, height),
     m_pCellPassCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution)),
     m_pCellHitsCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution)),
-    m_pCellUpdater(NULL)
+    m_pCellUpdater(NULL),
+    m_pIntensityCells(Grid<kt_double>::CreateGrid(0, 0, resolution)),
+    m_pCurrentIntensityValue(Grid<kt_double>::CreateGrid(0, 0, resolution)),
+    m_pIntensityReadingCnt(Grid<kt_int32u>::CreateGrid(0, 0, resolution)),
+    m_pIntensityStorageStrategy(new Parameter<std::string>("IntensityStorageStrategy", intensity_strategy))
   {
     m_pCellUpdater = new CellUpdater(this);
 
@@ -5919,6 +6060,8 @@ public:
 
     m_pMinPassThrough = new Parameter<kt_int32u>("MinPassThrough", 2);
     m_pOccupancyThreshold = new Parameter<kt_double>("OccupancyThreshold", 0.1);
+    m_pMinIntensityCnt = new Parameter<kt_int32u>("MinIntensityCnt", 1);
+    m_pIntensityStorageStrategy = new Parameter<std::string>("IntensityStorageStrategy", "mean");
 
     GetCoordinateConverter()->SetScale(1.0 / resolution);
     GetCoordinateConverter()->SetOffset(rOffset);
@@ -5936,6 +6079,14 @@ public:
 
     delete m_pMinPassThrough;
     delete m_pOccupancyThreshold;
+
+    delete m_pCurrentIntensityValue;
+    delete m_pIntensityCells;
+    delete m_pIntensityReadingCnt;
+
+    delete m_pMinIntensityCnt;
+    delete m_pIntensityStorageStrategy;
+
   }
 
 public:
@@ -5943,10 +6094,14 @@ public:
    * Create an occupancy grid from the given scans using the given resolution
    * @param rScans
    * @param resolution
+   * @param min_pass_through
+   * @param occupancy_threshold
+   * @param min_intensity_cnt
+   * @param intensity_strategy
    */
   static OccupancyGrid * CreateFromScans(
     const LocalizedRangeScanVector & rScans,
-    kt_double resolution, kt_int32u min_pass_through, kt_double occupancy_threshold)
+    kt_double resolution, kt_int32u min_pass_through, kt_double occupancy_threshold, kt_int32u min_intensity_cnt, std::string intensity_strategy)
   {
     if (rScans.empty()) {
       return NULL;
@@ -5958,6 +6113,8 @@ public:
     OccupancyGrid * pOccupancyGrid = new OccupancyGrid(width, height, offset, resolution);
     pOccupancyGrid->SetMinPassThrough(min_pass_through); 
     pOccupancyGrid->SetOccupancyThreshold(occupancy_threshold); 
+    pOccupancyGrid->SetMinIntensityCnt(min_intensity_cnt);
+    pOccupancyGrid->SetIntensityStorageStrategy(intensity_strategy);
     pOccupancyGrid->CreateFromScans(rScans);
 
     return pOccupancyGrid;
@@ -5978,6 +6135,10 @@ public:
     pOccupancyGrid->GetCoordinateConverter()->SetSize(GetCoordinateConverter()->GetSize());
     pOccupancyGrid->m_pCellPassCnt = m_pCellPassCnt->Clone();
     pOccupancyGrid->m_pCellHitsCnt = m_pCellHitsCnt->Clone();
+    pOccupancyGrid->m_pIntensityCells = m_pIntensityCells->Clone();
+    pOccupancyGrid->m_pCurrentIntensityValue = m_pCurrentIntensityValue->Clone();
+    pOccupancyGrid->m_pIntensityReadingCnt = m_pIntensityReadingCnt->Clone();
+    pOccupancyGrid->m_pIntensityStorageStrategy = m_pIntensityStorageStrategy->Clone();
 
     return pOccupancyGrid;
   }
@@ -6059,6 +6220,22 @@ public:
     m_pOccupancyThreshold->SetValue(thresh);
   }
 
+  /**
+   * Sets the minimum count of intensity readings in a cell to store it
+   */
+  void SetMinIntensityCnt(kt_int32u count)
+  {
+    m_pMinIntensityCnt->SetValue(count);
+  }
+
+  /**
+   * Sets the strategy of store the intensity readings in a cell
+   */
+  void SetIntensityStorageStrategy(std::string strategy)
+  {
+    m_pIntensityStorageStrategy->SetValue(strategy);
+  }
+
 protected:
   /**
    * Get cell hit grid
@@ -6076,6 +6253,31 @@ protected:
   virtual Grid<kt_int32u> * GetCellPassCounts()
   {
     return m_pCellPassCnt;
+  }
+  /**
+   * Get intensity grid data pointer
+   * @return kt_double *
+   */
+  kt_double* GetIntensityDataPointer() {
+    return m_pIntensityCells->GetDataPointer();
+  }
+  /**
+   * Get intensity grid data pointer
+   * @return kt_double *
+   */
+  const kt_double* GetIntensityDataPointer() const {
+    return m_pIntensityCells->GetDataPointer();
+  }
+
+public:
+  /**
+   * Get intensity value
+   * @return kt_double
+   */
+  kt_double GetCellIntensity(const Vector2<kt_int32s>& rGrid) const
+  {
+    kt_int32s index = GridIndex(rGrid);
+    return m_pIntensityCells->GetDataPointer()[index];
   }
 
 protected:
@@ -6125,6 +6327,15 @@ protected:
     m_pCellHitsCnt->Resize(GetWidth(), GetHeight());
     m_pCellHitsCnt->GetCoordinateConverter()->SetOffset(GetCoordinateConverter()->GetOffset());
 
+    m_pIntensityCells->Resize(GetWidth(), GetHeight());
+    m_pIntensityCells->GetCoordinateConverter()->SetOffset(GetCoordinateConverter()->GetOffset());
+
+    m_pCurrentIntensityValue->Resize(GetWidth(), GetHeight());
+    m_pCurrentIntensityValue->GetCoordinateConverter()->SetOffset(GetCoordinateConverter()->GetOffset());
+
+    m_pIntensityReadingCnt->Resize(GetWidth(), GetHeight());
+    m_pIntensityReadingCnt->GetCoordinateConverter()->SetOffset(GetCoordinateConverter()->GetOffset());
+
     const_forEach(LocalizedRangeScanVector, &rScans)
     {
       if (*iter == nullptr) {
@@ -6151,6 +6362,8 @@ protected:
     kt_double rangeThreshold = laserRangeFinder->GetRangeThreshold();
     kt_double maxRange = laserRangeFinder->GetMaximumRange();
     kt_double minRange = laserRangeFinder->GetMinimumRange();
+    kt_double maxIntensity = laserRangeFinder->GetMaximumIntensity();
+    kt_double minIntensity = laserRangeFinder->GetMinimumIntensity();
 
     Vector2<kt_double> scanPosition = pScan->GetSensorPose().GetPosition();
     // get scan point readings
@@ -6179,7 +6392,15 @@ protected:
         point.SetY(scanPosition.GetY() + ratio * dy);
       }
 
-      kt_bool isInMap = RayTrace(scanPosition, point, isEndPointValid, doUpdate);
+      kt_double intensityReading = pScan->GetIntensityReadings()[pointIndex];
+
+      if (intensityReading < minIntensity || std::isnan(intensityReading)) {
+        intensityReading = 0;
+      }else if(intensityReading > maxIntensity){
+        intensityReading = maxIntensity;
+      }
+
+      kt_bool isInMap = RayTrace(scanPosition, point, isEndPointValid, intensityReading, doUpdate);
       if (!isInMap) {
         isAllInMap = false;
       }
@@ -6196,6 +6417,7 @@ protected:
    * @param rWorldFrom start position of beam
    * @param rWorldTo end position of beam
    * @param isEndPointValid is the reading within the range threshold?
+   * @param intensityReading intensity reading
    * @param doUpdate whether to update the cells' occupancy status immediately
    * @return returns false if an endpoint fell off the grid, otherwise true
    */
@@ -6203,6 +6425,7 @@ protected:
     const Vector2<kt_double> & rWorldFrom,
     const Vector2<kt_double> & rWorldTo,
     kt_bool isEndPointValid,
+    kt_double intensityReading,
     kt_bool doUpdate = false)
   {
     assert(m_pCellPassCnt != NULL && m_pCellHitsCnt != NULL);
@@ -6226,6 +6449,30 @@ protected:
         pCellPassCntPtr[index]++;
         pCellHitCntPtr[index]++;
 
+        kt_double * pCurrentIntensityValuePtr = m_pCurrentIntensityValue->GetDataPointer();
+        kt_int32u * pIntensityReadingCntPtr = m_pIntensityReadingCnt->GetDataPointer();
+        
+        std::string strategy = m_pIntensityStorageStrategy->GetValue();
+
+        if (strategy == "mean"){
+          pCurrentIntensityValuePtr[index] = (pCurrentIntensityValuePtr[index] * pIntensityReadingCntPtr[index] + 
+            intensityReading) / (pIntensityReadingCntPtr[index] + 1);
+        } else if (strategy == "max"){
+          pCurrentIntensityValuePtr[index] = std::max(pCurrentIntensityValuePtr[index], intensityReading);
+        } else if (strategy == "latest"){
+          pCurrentIntensityValuePtr[index] = intensityReading;
+        } else{
+          static bool warned = false;
+          if(!warned){
+            std::cout << "WARN: The strategy " << strategy << " is not implemented. Using mean online." << std::endl;
+            pCurrentIntensityValuePtr[index] = (pCurrentIntensityValuePtr[index] * pIntensityReadingCntPtr[index] + 
+            intensityReading) / (pIntensityReadingCntPtr[index] + 1);
+            warned = true;
+          }
+        }
+        // increment cell intensity reading count
+        pIntensityReadingCntPtr[index]++;
+
         if (doUpdate) {
           (*m_pCellUpdater)(index);
         }
@@ -6240,14 +6487,20 @@ protected:
    * @param pCell
    * @param cellPassCnt
    * @param cellHitCnt
+   * @param pCurrentIntensity
+   * @param pCellIntValue
    */
-  virtual void UpdateCell(kt_int8u * pCell, kt_int32u cellPassCnt, kt_int32u cellHitCnt)
+  virtual void UpdateCell(kt_int8u * pCell, kt_int32u cellPassCnt, kt_int32u cellHitCnt, kt_int32u cellIntCnt,
+    kt_double * pCurrentIntensity, kt_double * pCellIntValue)
   {
     if (cellPassCnt > m_pMinPassThrough->GetValue()) {
       kt_double hitRatio = static_cast<kt_double>(cellHitCnt) / static_cast<kt_double>(cellPassCnt);
 
       if (hitRatio > m_pOccupancyThreshold->GetValue()) {
         *pCell = GridStates_Occupied;
+        if (cellIntCnt >= m_pMinIntensityCnt->GetValue()) {
+          *pCellIntValue = *pCurrentIntensity;
+        }
       } else {
         *pCell = GridStates_Free;
       }
@@ -6268,10 +6521,17 @@ protected:
     kt_int8u * pDataPtr = GetDataPointer();
     kt_int32u * pCellPassCntPtr = m_pCellPassCnt->GetDataPointer();
     kt_int32u * pCellHitCntPtr = m_pCellHitsCnt->GetDataPointer();
+    kt_int32u * pCellIntensityReadingCntPtr = m_pIntensityReadingCnt->GetDataPointer();
+    kt_double * pCellIntensityCurrentValuePtr = m_pCurrentIntensityValue->GetDataPointer();
+    kt_double * pCellIntensityCellsPtr = m_pIntensityCells->GetDataPointer();
 
     kt_int32u nBytes = GetDataSize();
-    for (kt_int32u i = 0; i < nBytes; i++, pDataPtr++, pCellPassCntPtr++, pCellHitCntPtr++) {
-      UpdateCell(pDataPtr, *pCellPassCntPtr, *pCellHitCntPtr);
+    for (kt_int32u i = 0; i < nBytes; i++, pDataPtr++, pCellPassCntPtr++, pCellHitCntPtr++, 
+      pCellIntensityReadingCntPtr++, pCellIntensityCurrentValuePtr++, pCellIntensityCellsPtr++) {      
+      
+      UpdateCell(pDataPtr, *pCellPassCntPtr, *pCellHitCntPtr, *pCellIntensityReadingCntPtr, 
+        pCellIntensityCurrentValuePtr, pCellIntensityCellsPtr);
+          
     }
   }
 
@@ -6281,10 +6541,13 @@ protected:
    * @param height
    */
   virtual void Resize(kt_int32s width, kt_int32s height)
-  {
+  {    
     Grid<kt_int8u>::Resize(width, height);
     m_pCellPassCnt->Resize(width, height);
     m_pCellHitsCnt->Resize(width, height);
+    m_pIntensityCells->Resize(width, height);   
+    m_pCurrentIntensityValue->Resize(width, height);
+    m_pIntensityReadingCnt->Resize(width, height);
   }
 
 protected:
@@ -6297,6 +6560,21 @@ protected:
    * Counters of number of times a beam ended at a cell
    */
   Grid<kt_int32u> * m_pCellHitsCnt;
+
+  /**
+   * Storage of all intensities of the cells
+   */
+  Grid<kt_double> * m_pCurrentIntensityValue;
+
+  /**
+   * Intensities of cells
+   */
+  Grid<kt_double> * m_pIntensityCells;
+
+  /**
+   * Intensities readings of cells counter
+   */
+  Grid<kt_int32u> * m_pIntensityReadingCnt;
 
 private:
   /**
@@ -6322,6 +6600,15 @@ private:
 
   // Minimum ratio of beams hitting cell to beams passing through cell to be marked as occupied
   Parameter<kt_double> * m_pOccupancyThreshold;
+
+  //Minimum counter of intensity readings in a cell to store it
+  Parameter<kt_int32u> * m_pMinIntensityCnt;
+  
+  //String to define the strategy to store intensity values
+  // "mean": calculate the mean online
+  // "max": storage the max reading
+  // "latest": overwrite with the last reading
+  Parameter<std::string> * m_pIntensityStorageStrategy;
 };    // OccupancyGrid
 
 ////////////////////////////////////////////////////////////////////////////////////////

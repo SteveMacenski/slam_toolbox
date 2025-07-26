@@ -102,7 +102,8 @@ inline visualization_msgs::msg::InteractiveMarker toInteractiveMarker(
 
 inline void toNavMap(
   const karto::OccupancyGrid * occ_grid,
-  nav_msgs::msg::OccupancyGrid & map)
+  nav_msgs::msg::OccupancyGrid & occupancy_map,
+  nav_msgs::msg::OccupancyGrid & intensity_map)
 {
   // Translate to ROS format
   kt_int32s width = occ_grid->GetWidth();
@@ -110,30 +111,51 @@ inline void toNavMap(
   karto::Vector2<kt_double> offset =
     occ_grid->GetCoordinateConverter()->GetOffset();
 
-  if (map.info.width != (unsigned int) width ||
-    map.info.height != (unsigned int) height ||
-    map.info.origin.position.x != offset.GetX() ||
-    map.info.origin.position.y != offset.GetY())
+  intensity_map.header = occupancy_map.header;
+  intensity_map.info = occupancy_map.info;
+
+  if (occupancy_map.info.width != (unsigned int) width ||
+    occupancy_map.info.height != (unsigned int) height ||
+    occupancy_map.info.origin.position.x != offset.GetX() ||
+    occupancy_map.info.origin.position.y != offset.GetY())
   {
-    map.info.origin.position.x = offset.GetX();
-    map.info.origin.position.y = offset.GetY();
-    map.info.width = width;
-    map.info.height = height;
-    map.data.resize(map.info.width * map.info.height);
+    occupancy_map.info.origin.position.x = offset.GetX();
+    occupancy_map.info.origin.position.y = offset.GetY();
+    occupancy_map.info.width = width;
+    occupancy_map.info.height = height;
+    occupancy_map.data.resize(occupancy_map.info.width * occupancy_map.info.height);
   }
+  if (intensity_map.info.width != (unsigned int) width ||
+    intensity_map.info.height != (unsigned int) height ||
+    intensity_map.info.origin.position.x != offset.GetX() ||
+    intensity_map.info.origin.position.y != offset.GetY())
+  {
+    intensity_map.info.origin.position.x = offset.GetX();
+    intensity_map.info.origin.position.y = offset.GetY();
+    intensity_map.info.width = width;
+    intensity_map.info.height = height;
+    intensity_map.data.resize(intensity_map.info.width * intensity_map.info.height);
+  }
+  intensity_map.data.assign(intensity_map.info.width * intensity_map.info.height, 0);
 
   for (kt_int32s y = 0; y < height; y++) {
     for (kt_int32s x = 0; x < width; x++) {
-      kt_int8u value = occ_grid->GetValue(karto::Vector2<kt_int32s>(x, y));
-      switch (value) {
+      kt_int8u occupancy = occ_grid->GetValue(karto::Vector2<kt_int32s>(x, y));      
+      kt_double intensity = occ_grid->GetCellIntensity(karto::Vector2<kt_int32s>(x, y));
+
+      switch (occupancy) {
         case karto::GridStates_Unknown:
-          map.data[MAP_IDX(map.info.width, x, y)] = -1;
+          occupancy_map.data[MAP_IDX(occupancy_map.info.width, x, y)] = -1;
           break;
         case karto::GridStates_Occupied:
-          map.data[MAP_IDX(map.info.width, x, y)] = 100;
+          occupancy_map.data[MAP_IDX(occupancy_map.info.width, x, y)] = 100;
+          if(intensity > 0){
+            int norm_intensity = std::clamp(static_cast<int>(std::round(100.0 * (intensity / 255))), 0, 100);
+            intensity_map.data[MAP_IDX(intensity_map.info.width, x, y)] = norm_intensity;
+          }
           break;
         case karto::GridStates_Free:
-          map.data[MAP_IDX(map.info.width, x, y)] = 0;
+          occupancy_map.data[MAP_IDX(occupancy_map.info.width, x, y)] = 0;
           break;
       }
     }

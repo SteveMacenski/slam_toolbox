@@ -72,7 +72,7 @@ private:
     visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback);
   void kartoToROSOccupancyGrid(
     const karto::LocalizedRangeScanVector & scans,
-    nav_msgs::srv::GetMap::Response & map);
+    nav_msgs::srv::GetMap::Response & occ_map,nav_msgs::srv::GetMap::Response & int_map);
   void transformScan(LocalizedRangeScansIt iter, tf2::Transform & submap_correction);
 
   // apply transformation to correct pose
@@ -84,6 +84,8 @@ private:
   // ROS-y-ness
   std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>>> sstmS_;
   std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>>> sstS_;
+  std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::MapMetaData>>> sstmIS_;
+  std::vector<std::shared_ptr<rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>>> sstIS_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::MergeMaps>> ssMap_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::AddSubmap>> ssSubmap_;
 
@@ -104,6 +106,8 @@ private:
   double resolution_;
   int min_pass_through_;
   double occupancy_threshold_;
+  int min_intensity_counter_;
+  std::string intensity_strategy_;
   int num_submaps_;
 };
 

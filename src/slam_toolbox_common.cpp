@@ -63,7 +63,7 @@ void SlamToolbox::configure()
   scan_holder_ = std::make_unique<laser_utils::ScanHolder>(lasers_);
   if (use_map_saver_) {
     map_saver_ = std::make_unique<map_saver::MapSaver>(shared_from_this(),
-        map_name_);
+        map_topic_name_, intensity_map_topic_name_);
   }
   closure_assistant_ =
     std::make_unique<loop_closure_assistant::LoopClosureAssistant>(
@@ -143,8 +143,11 @@ void SlamToolbox::setParams()
       "this isn't allowed so it will be set to default value 0.05.");
     resolution_ = 0.05;
   }
-  map_name_ = std::string("/map");
-  map_name_ = this->declare_parameter("map_name", map_name_);
+  map_topic_name_ = std::string("/map");
+  map_topic_name_ = this->declare_parameter("map_name", map_topic_name_);
+
+  intensity_map_topic_name_ = std::string("/intensity_map");
+  intensity_map_topic_name_ = this->declare_parameter("intensity_map_name", intensity_map_topic_name_);
 
   use_map_saver_ = true;
   use_map_saver_ = this->declare_parameter("use_map_saver", use_map_saver_);
@@ -215,10 +218,16 @@ void SlamToolbox::setROSInterfaces()
   pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "pose", 10);
   sst_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-    map_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+    map_topic_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
   sstm_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
-    map_name_ + "_metadata",
+    map_topic_name_ + "_metadata",
     rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  intensity_map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    intensity_map_topic_name_, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+  intensity_metamap_pub_ = this->create_publisher<nav_msgs::msg::MapMetaData>(
+    intensity_map_topic_name_ + "_metadata",
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
+
   ssMap_ = this->create_service<nav_msgs::srv::GetMap>("slam_toolbox/dynamic_map",
       std::bind(&SlamToolbox::mapCallback, this, std::placeholders::_1,
       std::placeholders::_2, std::placeholders::_3));
@@ -402,26 +411,37 @@ LaserRangeFinder * SlamToolbox::getLaser(
 bool SlamToolbox::updateMap()
 /*****************************************************************************/
 {
-  if (sst_->get_subscription_count() == 0) {
-    return true;
+  if (sst_->get_subscription_count() > 0 || intensity_map_pub_->get_subscription_count() > 0) {
+    boost::mutex::scoped_lock lock(smapper_mutex_);
+    OccupancyGrid * occ_grid = smapper_->getOccupancyGrid(resolution_);
+    if (!occ_grid) {
+      return false;
+    }
+
+    nav_msgs::msg::OccupancyGrid intensity_map;
+    intensity_map.header = map_.map.header;
+
+    vis_utils::toNavMap(occ_grid, map_.map, intensity_map);
+
+    if (sst_->get_subscription_count() > 0) {
+      // publish map as current
+      map_.map.header.stamp = scan_header.stamp;
+      sst_->publish(
+        std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
+      sstm_->publish(
+        std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
+    }
+    if (intensity_map_pub_->get_subscription_count() > 0) {
+      intensity_map.header.stamp = scan_header.stamp;
+      intensity_map_pub_->publish(std::make_unique<nav_msgs::msg::OccupancyGrid>(intensity_map));
+      intensity_metamap_pub_->publish(std::make_unique<nav_msgs::msg::MapMetaData>(intensity_map.info));
+    }
+    
+    delete occ_grid;
+    occ_grid = nullptr;
+
   }
-  boost::mutex::scoped_lock lock(smapper_mutex_);
-  OccupancyGrid * occ_grid = smapper_->getOccupancyGrid(resolution_);
-  if (!occ_grid) {
-    return false;
-  }
 
-  vis_utils::toNavMap(occ_grid, map_.map);
-
-  // publish map as current
-  map_.map.header.stamp = scan_header.stamp;
-  sst_->publish(
-    std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
-  sstm_->publish(
-    std::move(std::make_unique<nav_msgs::msg::MapMetaData>(map_.map.info)));
-
-  delete occ_grid;
-  occ_grid = nullptr;
   return true;
 }
 
@@ -491,17 +511,23 @@ LocalizedRangeScan * SlamToolbox::getLocalizedRangeScan(
 /*****************************************************************************/
 {
   // Create a vector of doubles for lib
-  std::vector<kt_double> readings = laser_utils::scanToReadings(
-    *scan, lasers_[scan->header.frame_id].isInverted());
+  std::vector<kt_double> ranges, intensities;
+  laser_utils::scanToReadings(
+    *scan, ranges, intensities, lasers_[scan->header.frame_id].isInverted());
 
   // transform by the reprocessing transform
   tf2::Transform pose_original = smapper_->toTfPose(odom_pose);
   tf2::Transform tf_pose_transformed = reprocessing_transform_ * pose_original;
   Pose2 transformed_pose = smapper_->toKartoPose(tf_pose_transformed);
 
-  // create localized range scan
-  LocalizedRangeScan * range_scan = new LocalizedRangeScan(
-    laser->GetName(), readings);
+  LocalizedRangeScan * range_scan = new LocalizedRangeScan(laser->GetName(), ranges, intensities);
+
+  // Check if the sizes are equal
+  if (range_scan->GetNumberOfRangeReadings() != intensities.size()) {
+    RCLCPP_INFO(get_logger(), "Discrepancy: GetNumberOfRangeReadings() = %u vs intensities.size() = %zu",
+                 range_scan->GetNumberOfRangeReadings(), intensities.size());
+  }
+
   range_scan->SetOdometricPose(transformed_pose);
   range_scan->SetCorrectedPose(transformed_pose);
   range_scan->SetTime(rclcpp::Time(scan->header.stamp).nanoseconds()/1.e9);

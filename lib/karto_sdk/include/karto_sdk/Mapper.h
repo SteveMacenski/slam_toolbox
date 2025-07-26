@@ -2364,6 +2364,12 @@ protected:
   // Minimum ratio of beams hitting cell to beams passing through cell to be marked as occupied
   Parameter<kt_double> * m_pOccupancyThreshold;
 
+  // Minimum intensity readings count to store the intensity value to a cell
+  Parameter<kt_int32u> * m_pMinIntensityCnt;
+
+  // Strategy to store intensity readings in a cell
+  Parameter<std::string> * m_pIntensityStrategy;
+
   friend class boost::serialization::access;
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
@@ -2411,6 +2417,8 @@ protected:
 // NOTE: the following two lines are commented out to avoid breaking the serialization of already existing maps
 //    ar & BOOST_SERIALIZATION_NVP(m_pMinPassThrough); 
 //    ar & BOOST_SERIALIZATION_NVP(m_pOccupancyThreshold);
+//    ar & BOOST_SERIALIZATION_NVP(m_pMinIntensityCnt);
+//    ar & BOOST_SERIALIZATION_NVP(m_pIntensityStorageStrategy);
     std::cout << "**Finished serializing Mapper**\n";
   }
 
@@ -2456,6 +2464,8 @@ public:
   bool getParamUseResponseExpansion();
   int getParamMinPassThrough();
   double getParamOccupancyThreshold();
+  int getParamMinIntensityCnt();
+  std::string getParamIntensityStrategy();
 
   /* Setters */
   // General Parameters
@@ -2496,6 +2506,8 @@ public:
   void setParamUseResponseExpansion(bool b);
   void setParamMinPassThrough(int i);
   void setParamOccupancyThreshold(double d);
+  void setParamMinIntensityCnt(int i);
+  void setParamIntensityStrategy(std::string s);
 };
 BOOST_SERIALIZATION_ASSUME_ABSTRACT(Mapper)
 }  // namespace karto

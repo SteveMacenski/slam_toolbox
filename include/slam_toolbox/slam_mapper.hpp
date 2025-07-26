@@ -62,6 +62,7 @@ public:
 
 protected:
   std::unique_ptr<karto::Mapper> mapper_;
+
 };
 
 }  // namespace mapper_utils
