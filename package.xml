@@ -29,6 +29,7 @@
   <build_depend>std_msgs</build_depend>
   <build_depend>suitesparse</build_depend>
   <build_depend>liblapack-dev</build_depend>
+  <build_depend>libomp-dev</build_depend>
   <build_depend>libceres-dev</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>tbb</build_depend>
@@ -61,6 +62,7 @@
   <exec_depend>std_msgs</exec_depend>
   <exec_depend>suitesparse</exec_depend>
   <exec_depend>liblapack-dev</exec_depend>
+  <exec_depend>libomp-dev</exec_depend>
   <exec_depend>libceres-dev</exec_depend>
   <exec_depend>tf2_geometry_msgs</exec_depend>
   <exec_depend>tbb</exec_depend>
