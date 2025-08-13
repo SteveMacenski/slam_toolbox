@@ -87,6 +87,7 @@ find_package(CHOLMOD REQUIRED)
 find_package(CSparse REQUIRED)
 find_package(G2O REQUIRED)
 find_package(LAPACK REQUIRED)
+find_package(OpenMP REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
