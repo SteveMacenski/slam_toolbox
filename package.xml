@@ -30,7 +30,6 @@
   <build_depend>suitesparse</build_depend>
   <build_depend>liblapack-dev</build_depend>
   <build_depend>libceres-dev</build_depend>
-  <build_depend>ceres-solver</build_depend>
   <build_depend>tf2_geometry_msgs</build_depend>
   <build_depend>tbb</build_depend>
   <build_depend>libqt5-core</build_depend>

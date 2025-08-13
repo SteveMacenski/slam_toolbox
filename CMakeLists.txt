@@ -36,7 +36,6 @@ find_package(rviz_rendering REQUIRED)
 find_package(interactive_markers REQUIRED)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
 find_package(rclcpp_components REQUIRED)
-find_package(OpenMP REQUIRED)
 
 #karto_sdk lib
 set(BUILD_SHARED_LIBS ON)
@@ -88,6 +87,7 @@ find_package(CHOLMOD REQUIRED)
 find_package(CSparse REQUIRED)
 find_package(G2O REQUIRED)
 find_package(LAPACK REQUIRED)
+find_package(OpenMP REQUIRED)
 find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -193,7 +193,6 @@ target_link_libraries(ceres_solver_plugin PUBLIC
 target_link_libraries(ceres_solver_plugin PUBLIC ${CERES_LIBRARIES}
                                           ${Boost_LIBRARIES}
                                           kartoSlamToolbox
-                                          OpenMP::OpenMP_CXX
 )
 rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
 target_link_libraries(ceres_solver_plugin PUBLIC "${cpp_typesupport_target}")
