@@ -35,12 +35,12 @@
 #include "bond/msg/constants.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
-#include "message_filters/subscriber.hpp"
+#include "message_filters/subscriber.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "tf2_ros/message_filter.h"
-#include "tf2/LinearMath/Matrix3x3.hpp"
+#include "tf2/LinearMath/Matrix3x3.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2_sensor_msgs/tf2_sensor_msgs.hpp"
 
@@ -52,7 +52,13 @@
 #include "slam_toolbox/laser_utils.hpp"
 #include "slam_toolbox/get_pose_helper.hpp"
 #include "slam_toolbox/map_saver.hpp"
-#include "slam_toolbox/loop_closure_assistant.hpp"
+#include "slam_toolbox/loop_closure_assistant.hpp" 
+#include "slam_toolbox/msg/pose_graph.hpp"
+#include "slam_toolbox/msg/graph_node.hpp"
+#include "slam_toolbox/msg/graph_edge.hpp"
+#include "slam_toolbox/msg/new_node_event.hpp"
+#include "slam_toolbox/msg/loop_closure_event.hpp"
+
 
 namespace slam_toolbox
 {
@@ -104,10 +110,6 @@ protected:
     const std::shared_ptr<rmw_request_id_t> request_header,
     const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp);
-  virtual bool resetCallback(
-    const std::shared_ptr<rmw_request_id_t> request_header,
-    const std::shared_ptr<slam_toolbox::srv::Reset::Request> req,
-    std::shared_ptr<slam_toolbox::srv::Reset::Response> resp);
 
   // Loaders
   void loadSerializedPoseGraph(std::unique_ptr<karto::Mapper> &, std::unique_ptr<karto::Dataset> &);
@@ -137,6 +139,10 @@ protected:
     const Pose2 & pose,
     const Matrix3 & cov,
     const rclcpp::Time & t);
+  void publishPoseGraph();
+  uint64_t graph_revision_ = 0;
+  void publishNewNodeEvent(const karto::LocalizedRangeScan* lrs);
+
 
   // pausing bits
   bool isPaused(const PausedApplication & app);
@@ -149,17 +155,25 @@ protected:
   std::unique_ptr<tf2_ros::Buffer> tf_;
   std::unique_ptr<tf2_ros::TransformListener> tfL_;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
-  std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan>> scan_filter_sub_;
+  std::unique_ptr<message_filters::Subscriber<sensor_msgs::msg::LaserScan,
+    rclcpp_lifecycle::LifecycleNode>> scan_filter_sub_;
   std::unique_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>> scan_filter_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::OccupancyGrid>> sst_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::MapMetaData>> sstm_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<
+      slam_toolbox::msg::PoseGraph>> pose_graph_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<
+      slam_toolbox::msg::NewNodeEvent>> new_node_event_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<
+      slam_toolbox::msg::LoopClosureEvent>> loop_closure_event_pub_;
+
+
   std::shared_ptr<rclcpp::Service<nav_msgs::srv::GetMap>> ssMap_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::Pause>> ssPauseMeasurements_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::SerializePoseGraph>> ssSerialize_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::DeserializePoseGraph>> ssDesserialize_;
-  std::shared_ptr<rclcpp::Service<slam_toolbox::srv::Reset>> ssReset_;
 
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_;
@@ -173,7 +187,6 @@ protected:
   double position_covariance_scale_;
   double yaw_covariance_scale_;
   bool first_measurement_, enable_interactive_mode_;
-  bool restamp_tf_;
 
   // Book keeping
   std::unique_ptr<mapper_utils::SMapper> smapper_;
@@ -186,6 +199,8 @@ protected:
   std::unique_ptr<map_saver::MapSaver> map_saver_;
   std::unique_ptr<loop_closure_assistant::LoopClosureAssistant> closure_assistant_;
   std::unique_ptr<laser_utils::ScanHolder> scan_holder_;
+  // Listener that captures automatic loop closure events from Karto
+  std::unique_ptr<karto::MapperLoopClosureListener> loop_closure_listener_;
 
   // Internal state
   std::vector<std::unique_ptr<boost::thread>> threads_;
