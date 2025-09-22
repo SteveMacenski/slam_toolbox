@@ -117,13 +117,13 @@ void LoopClosureAssistant::processInteractiveFeedback(const
     sensor_msgs::msg::LaserScan scan = scan_holder_->getCorrectedScan(id);
 
     // get correct orientation
-    tf2::Quaternion quat(0.,0.,0.,1.0), msg_quat(0.,0.,0.,1.0);
+    tf2::Quaternion quat(0., 0., 0., 1.0), msg_quat(0., 0., 0., 1.0);
     double node_yaw, first_node_yaw;
     solver_->GetNodeOrientation(id, node_yaw);
     solver_->GetNodeOrientation(0, first_node_yaw);
-    tf2::Quaternion q1(0.,0.,0.,1.0);
+    tf2::Quaternion q1(0., 0., 0., 1.0);
     q1.setEuler(0., 0., node_yaw - 3.14159);
-    tf2::Quaternion q2(0.,0.,0.,1.0);
+    tf2::Quaternion q2(0., 0., 0., 1.0);
     q2.setEuler(0., 0., 3.14159);
     quat *= q1;
     quat *= q2;
@@ -305,7 +305,7 @@ bool LoopClosureAssistant::manualLoopClosureCallback(
     for (it; it != moved_nodes_.end(); ++it)
     {
       moveNode(it->first,
-        Eigen::Vector3d(it->second(0),it->second(1), it->second(2)));
+        Eigen::Vector3d(it->second(0), it->second(1), it->second(2)));
     }
   }
 
@@ -404,7 +404,7 @@ void LoopClosureAssistant::addMovedNodes(const int & id, Eigen::Vector3d vec)
   RCLCPP_INFO(
     logger_,
     "LoopClosureAssistant: Node %i new manual loop closure "
-    "pose has been recorded.",id);
+    "pose has been recorded.", id);
   boost::mutex::scoped_lock lock(moved_nodes_mutex_);
   moved_nodes_[id] = vec;
 }
