@@ -36,6 +36,11 @@ DecentralizedMultiRobotSlamToolbox::DecentralizedMultiRobotSlamToolbox(rclcpp::N
     throw std::runtime_error("Namespace required");
   }
 
+  if (!this->has_parameter("scan_share_topic")) {
+    this->declare_parameter("scan_share_topic", "/localized_scan");
+  }
+  localized_scan_topic_ = this->get_parameter("scan_share_topic").as_string();
+  RCLCPP_INFO(get_logger(), "Sharing scans on:  %s topic", localized_scan_topic_.c_str());
 
   localized_scan_pub_ = this->create_publisher<slam_toolbox::msg::LocalizedLaserScan>(
     localized_scan_topic_, 10);
