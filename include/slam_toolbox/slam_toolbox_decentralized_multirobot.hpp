@@ -1,6 +1,6 @@
 /*
- * multirobot_slam_toolbox
- * Copyright Work Modifications (c) 2023, Achala Athukorala
+ * Decentralized multirobot_slam_toolbox
+ * Copyright Work Modifications (c) 2025, Achala Athukorala
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
@@ -14,8 +14,8 @@
  *
  */
 
-#ifndef SLAM_TOOLBOX__SLAM_TOOLBOX_MULTIROBOT_HPP_
-#define SLAM_TOOLBOX__SLAM_TOOLBOX_MULTIROBOT_HPP_
+#ifndef SLAM_TOOLBOX__SLAM_TOOLBOX_DECENTRALIZED_MULTIROBOT_HPP_
+#define SLAM_TOOLBOX__SLAM_TOOLBOX_DECENTRALIZED_MULTIROBOT_HPP_
 
 #include <memory>
 #include <string>
@@ -25,11 +25,11 @@
 namespace slam_toolbox
 {
 
-class MultiRobotSlamToolbox : public SlamToolbox
+class DecentralizedMultiRobotSlamToolbox : public SlamToolbox
 {
 public:
-  explicit MultiRobotSlamToolbox(rclcpp::NodeOptions);
-  ~MultiRobotSlamToolbox() {}
+  explicit DecentralizedMultiRobotSlamToolbox(rclcpp::NodeOptions);
+  ~DecentralizedMultiRobotSlamToolbox() {}
 
 protected:
   LocalizedRangeScan * addExternalScan(
@@ -62,4 +62,4 @@ protected:
 
 }  // namespace slam_toolbox
 
-#endif   // SLAM_TOOLBOX__SLAM_TOOLBOX_MULTIROBOT_HPP_
+#endif   // SLAM_TOOLBOX__SLAM_TOOLBOX_DECENTRALIZED_MULTIROBOT_HPP_
