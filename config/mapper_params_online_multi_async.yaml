@@ -10,7 +10,7 @@ $(var namespace)/slam_toolbox:
     ceres_loss_function: None
 
     # ROS Parameters
-    odom_frame: odom
+    odom_frame: global_odom
     map_frame: map
     base_frame: base_footprint
     scan_topic: scan
