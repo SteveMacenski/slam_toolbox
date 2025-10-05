@@ -41,9 +41,7 @@ int main(int argc, char ** argv)
   }
 
   rclcpp::NodeOptions options;
-  auto async_node = std::make_shared<slam_toolbox::MultiRobotSlamToolbox>(options);
-  async_node->configure();
-  async_node->loadPoseGraphByParams();
+  auto async_node = std::make_shared<slam_toolbox::DecentralizedMultiRobotSlamToolbox>(options);
   rclcpp::spin(async_node->get_node_base_interface());
   rclcpp::shutdown();
   return 0;

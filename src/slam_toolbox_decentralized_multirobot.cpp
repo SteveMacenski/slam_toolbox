@@ -1,6 +1,6 @@
 /*
- * multirobot_slam_toolbox
- * Copyright Work Modifications (c) 2023, Achala Athukorala
+ * Decentralized multirobot_slam_toolbox
+ * Copyright Work Modifications (c) 2025, Achala Athukorala
  *
  * THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE
  * COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY
@@ -14,14 +14,14 @@
  *
  */
 
-#include "slam_toolbox/slam_toolbox_multirobot.hpp"
+#include "slam_toolbox/slam_toolbox_decentralized_multirobot.hpp"
 
 namespace slam_toolbox
 {
 
 /*****************************************************************************/
-MultiRobotSlamToolbox::MultiRobotSlamToolbox(rclcpp::NodeOptions options)
-: SlamToolbox(options), localized_scan_topic_("/localized_scan")
+DecentralizedMultiRobotSlamToolbox::DecentralizedMultiRobotSlamToolbox(rclcpp::NodeOptions options)
+: SlamToolbox(options)
 /*****************************************************************************/
 {
   current_ns_ = this->get_namespace() + 1;
@@ -30,12 +30,12 @@ MultiRobotSlamToolbox::MultiRobotSlamToolbox(rclcpp::NodeOptions options)
     localized_scan_topic_, 10);
   localized_scan_sub_ = this->create_subscription<slam_toolbox::msg::LocalizedLaserScan>(
     localized_scan_topic_, 10, std::bind(
-      &MultiRobotSlamToolbox::localizedScanCallback,
+      &DecentralizedMultiRobotSlamToolbox::localizedScanCallback,
       this, std::placeholders::_1));
 }
 
 /*****************************************************************************/
-void MultiRobotSlamToolbox::laserCallback(
+void DecentralizedMultiRobotSlamToolbox::laserCallback(
   sensor_msgs::msg::LaserScan::ConstSharedPtr scan)
 /*****************************************************************************/
 {
@@ -69,7 +69,7 @@ void MultiRobotSlamToolbox::laserCallback(
 }
 
 /*****************************************************************************/
-void MultiRobotSlamToolbox::localizedScanCallback(
+void DecentralizedMultiRobotSlamToolbox::localizedScanCallback(
   slam_toolbox::msg::LocalizedLaserScan::ConstSharedPtr localized_scan)
 {
   std::string scan_ns = localized_scan->scan.header.frame_id.substr(
@@ -112,7 +112,7 @@ void MultiRobotSlamToolbox::localizedScanCallback(
 }
 
 /*****************************************************************************/
-LocalizedRangeScan * MultiRobotSlamToolbox::addExternalScan(
+LocalizedRangeScan * DecentralizedMultiRobotSlamToolbox::addExternalScan(
   LaserRangeFinder * laser,
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
   Pose2 & odom_pose)
@@ -171,7 +171,7 @@ LocalizedRangeScan * MultiRobotSlamToolbox::addExternalScan(
 }
 
 /*****************************************************************************/
-LaserRangeFinder * MultiRobotSlamToolbox::getLaser(
+LaserRangeFinder * DecentralizedMultiRobotSlamToolbox::getLaser(
   const slam_toolbox::msg::LocalizedLaserScan::ConstSharedPtr localized_scan)
 /*****************************************************************************/
 {
@@ -193,7 +193,7 @@ LaserRangeFinder * MultiRobotSlamToolbox::getLaser(
 }
 
 /*****************************************************************************/
-void MultiRobotSlamToolbox::publishLocalizedScan(
+void DecentralizedMultiRobotSlamToolbox::publishLocalizedScan(
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
   const Pose2 & offset,
   const Pose2 & pose,
@@ -242,7 +242,7 @@ void MultiRobotSlamToolbox::publishLocalizedScan(
 }
 
 /*****************************************************************************/
-bool MultiRobotSlamToolbox::deserializePoseGraphCallback(
+bool DecentralizedMultiRobotSlamToolbox::deserializePoseGraphCallback(
   const std::shared_ptr<rmw_request_id_t> request_header,
   const std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req,
   std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Response> resp)
