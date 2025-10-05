@@ -192,13 +192,14 @@ bool LaserAssistant::isInverted(double & mountingYaw)
     frame_.c_str(), laser_pose_.transform.translation.x,
     laser_pose_.transform.translation.y,
     laser_pose_.transform.translation.z, mountingYaw);
-
+  
+  // For external scanners, we cannot query tf topic. Hence using laser_pose_
   tf2::Vector3 laser_orient;
   tf2::Transform laser_pose;
   tf2::convert(laser_pose_.transform, laser_pose);
   laser_orient.setY(0.);
   laser_orient.setZ(0.);
-  laser_orient.setZ(1 + laser_pose_.transform.translation.z);  // TOOD can remove addition of laser_pose z component
+  laser_orient.setZ(1 + laser_pose_.transform.translation.z);
   laser_orient = laser_pose * laser_orient;
 
   if (laser_orient.z() <= 0) {
