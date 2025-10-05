@@ -201,7 +201,7 @@ bool LaserAssistant::isInverted(double & mountingYaw)
   laser_orient.setZ(1 + laser_pose_.transform.translation.z);  // TOOD can remove addition of laser_pose z component
   laser_orient = laser_pose * laser_orient;
 
-  if (laser_orient.vector.z <= 0) {
+  if (laser_orient.z() <= 0) {
     RCLCPP_DEBUG(
       logger_, "laser is mounted upside-down");
     return true;
