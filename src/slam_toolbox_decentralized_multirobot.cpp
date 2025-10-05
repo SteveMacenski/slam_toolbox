@@ -96,12 +96,11 @@ void DecentralizedMultiRobotSlamToolbox::localizedScanCallback(
 
   sensor_msgs::msg::LaserScan::ConstSharedPtr scan =
     std::make_shared<sensor_msgs::msg::LaserScan>(localized_scan->scan);
-  Pose2 pose;
-  pose.SetX(localized_scan->pose.pose.pose.position.x);
-  pose.SetY(localized_scan->pose.pose.pose.position.y);
   tf2::Quaternion quat_tf;
   tf2::convert(localized_scan->pose.pose.pose.orientation, quat_tf);
-  pose.SetHeading(tf2::getYaw(quat_tf));
+  Pose2 pose(localized_scan->pose.pose.pose.position.x,
+    localized_scan->pose.pose.pose.position.y,
+    tf2::getYaw(quat_tf));
 
   LaserRangeFinder * laser = getLaser(localized_scan);
   if (!laser) {
