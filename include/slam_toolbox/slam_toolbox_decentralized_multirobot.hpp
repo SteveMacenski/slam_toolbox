@@ -57,7 +57,7 @@ protected:
   std::shared_ptr<rclcpp::Publisher<slam_toolbox::msg::LocalizedLaserScan>> localized_scan_pub_;
   rclcpp::Subscription<slam_toolbox::msg::LocalizedLaserScan>::SharedPtr localized_scan_sub_;
   std::string localized_scan_topic_;
-  std::string current_ns_;
+  std::string host_ns_;
 };
 
 }  // namespace slam_toolbox

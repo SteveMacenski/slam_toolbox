@@ -24,7 +24,18 @@ DecentralizedMultiRobotSlamToolbox::DecentralizedMultiRobotSlamToolbox(rclcpp::N
 : SlamToolbox(options)
 /*****************************************************************************/
 {
-  current_ns_ = this->get_namespace() + 1;
+  /** For decentralized multi-robot slam, each robot runs a slam_toolbox instance
+   *  Each slam_toolbox instace should be run with a unique namespace
+   *  This namespace acts as the 'identity' of the particular slam_toolbox instance
+   */
+  host_ns_ = this->get_namespace(); 
+  // Remove namespace leading slash
+  if (!host_ns_.empty() && host_ns_.front() == '/') host_ns_.erase(0,1); 
+  if (host_ns_.empty()) {
+    RCLCPP_ERROR(get_logger(), "This node must run in a non-root namespace (e.g., /robot1).");
+    throw std::runtime_error("Namespace required");
+  }
+
 
   localized_scan_pub_ = this->create_publisher<slam_toolbox::msg::LocalizedLaserScan>(
     localized_scan_topic_, 10);
@@ -74,7 +85,7 @@ void DecentralizedMultiRobotSlamToolbox::localizedScanCallback(
 {
   std::string scan_ns = localized_scan->scan.header.frame_id.substr(
     0, localized_scan->scan.header.frame_id.find('/'));
-  if (scan_ns == current_ns_) {
+  if (scan_ns == host_ns_) {
     return;  // Ignore callbacks from ourself
   }
 
@@ -223,20 +234,20 @@ void DecentralizedMultiRobotSlamToolbox::publishLocalizedScan(
   scan_msg.pose.pose.covariance[35] = cov(2, 2) * yaw_covariance_scale_;      // yaw
   scan_msg.pose.header.stamp = t;
 
-  // Set prefixed frame names
+  // Prefix frame names with unique robot namespace identifier
   scan_msg.scan.header.frame_id = (*(scan->header.frame_id.cbegin()) == '/') ?
-    current_ns_ + scan->header.frame_id :
-    current_ns_ + "/" + scan->header.frame_id;
+    host_ns_ + scan->header.frame_id :
+    host_ns_ + "/" + scan->header.frame_id;
 
   scan_msg.pose.header.frame_id = (*(map_frame_.cbegin()) == '/') ?
-    current_ns_ + map_frame_ :
-    current_ns_ + "/" + map_frame_;
+    host_ns_ + map_frame_ :
+    host_ns_ + "/" + map_frame_;
 
   scan_msg.scanner_offset.child_frame_id = scan_msg.scan.header.frame_id;
 
   scan_msg.scanner_offset.header.frame_id = (*(base_frame_.cbegin()) == '/') ?
-    current_ns_ + base_frame_ :
-    current_ns_ + "/" + base_frame_;
+    host_ns_ + base_frame_ :
+    host_ns_ + "/" + base_frame_;
 
   localized_scan_pub_->publish(scan_msg);
 }
