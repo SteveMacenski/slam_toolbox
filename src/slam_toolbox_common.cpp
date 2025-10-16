@@ -754,9 +754,11 @@ bool SlamToolbox::shouldProcessScan(
 {
   static Pose2 last_pose;
   static rclcpp::Time last_scan_time = rclcpp::Time(0.);
-  static double min_dist2 =
+  static double min_dist2 = 0.81 * // within 10% for correction error
     smapper_->getMapper()->getParamMinimumTravelDistance() *
     smapper_->getMapper()->getParamMinimumTravelDistance();
+  static double min_rotation = 0.9 * // within 10% for correction error
+    smapper_->getMapper()->getParamMinimumTravelHeadingInRadians();
   static int scan_ctr = 0;
   scan_ctr++;
 
@@ -783,9 +785,14 @@ bool SlamToolbox::shouldProcessScan(
     return false;
   }
 
-  // check moved enough, within 10% for correction error
+  if (scan_ctr < 5) {
+    return false;
+  }
+
+  // check if the movement is enough
   const double dist2 = last_pose.SquaredDistance(pose);
-  if (dist2 < 0.8 * min_dist2 || scan_ctr < 5) {
+  const double heading_diff = fabs(math::NormalizeAngle(pose.GetHeading() - last_pose.GetHeading()));
+  if (dist2 < min_dist2 && heading_diff < min_rotation) {
     return false;
   }
 
