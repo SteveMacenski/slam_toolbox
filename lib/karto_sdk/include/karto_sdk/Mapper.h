@@ -2424,6 +2424,7 @@ public:
   double getParamMinimumTimeInterval();
   double getParamMinimumTravelDistance();
   double getParamMinimumTravelHeading();
+  double getParamMinimumTravelHeadingInRadians();
   int getParamScanBufferSize();
   double getParamScanBufferMaximumScanDistance();
   double getParamLinkMatchMinimumResponseFine();
