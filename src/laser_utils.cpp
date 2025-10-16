@@ -81,20 +81,16 @@ LaserAssistant::~LaserAssistant()
 {
 }
 
-LaserMetadata LaserAssistant::toLaserMetadata(sensor_msgs::msg::LaserScan scan)
-{
-  scan_ = scan;
-  frame_ = scan_.header.frame_id;
-  return toLaserMetadata(scan, readLaserPose());
-}
 
 LaserMetadata LaserAssistant::toLaserMetadata(
   sensor_msgs::msg::LaserScan scan,
-  geometry_msgs::msg::TransformStamped laser_pose)
+  std::optional<geometry_msgs::msg::TransformStamped> laser_pose)
 {
   scan_ = scan;
   frame_ = scan_.header.frame_id;
-  laser_pose_ = laser_pose;
+
+  // If laser pose passed explicitly, use it. Otherwise extract pose from TF data
+  laser_pose_ = laser_pose ? *laser_pose : readLaserPose();
 
   double mountingYaw;
   bool inverted = isInverted(mountingYaw);

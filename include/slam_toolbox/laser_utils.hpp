@@ -81,10 +81,9 @@ public:
     NodeT node, tf2_ros::Buffer * tf,
     const std::string & base_frame);
   ~LaserAssistant();
-  LaserMetadata toLaserMetadata(sensor_msgs::msg::LaserScan scan);
   LaserMetadata toLaserMetadata(
     sensor_msgs::msg::LaserScan scan,
-    geometry_msgs::msg::TransformStamped laser_pose);
+    std::optional<geometry_msgs::msg::TransformStamped> laser_pose = std::nullopt);
 
 private:
   karto::LaserRangeFinder * makeLaser(const double & mountingYaw);
