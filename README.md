@@ -178,6 +178,9 @@ The following are the services/topics that are exposed for use. See the rviz plu
 |-----|----|----|
 | map  | `nav_msgs/OccupancyGrid` | occupancy grid representation of the pose-graph at `map_update_interval` frequency | 
 | pose | `geometry_msgs/PoseWithCovarianceStamped` | pose of the base_frame in the configured map_frame along with the covariance calculated from the scan match |
+| /slam_toolbox/new_node_event | `slam_toolbox/msg/NewNodeEvent` | event message triggered on new pose graph node |
+| /slam_toolbox/loop_closure_event | `slam_toolbox/msg/LoopClosureEvent` | event message triggered on loop closure |
+| /slam_toolbox/pose_graph | `slam_toolbox/msg/PoseGraph` | minimal pose graph message: nodes, edges, poses only. No sensor data. Published on new node / loop closure event. |
 
 ## Exposed Services
 
