@@ -74,13 +74,17 @@ void DecentralizedMultiRobotSlamToolbox::laserCallback(
     return;
   }
 
-  LocalizedRangeScan * range_scan = addScan(laser, scan, pose);
-  if (range_scan != nullptr) {
-    Matrix3 covariance;
-    covariance.SetToIdentity();
-    publishLocalizedScan(
-      scan, laser->GetOffsetPose(),
-      range_scan->GetOdometricPose(), covariance, scan->header.stamp);
+  // Note: When paused, only host scan processing will be paused.
+  // Scan data from peers will still be processed -> refer to localizedScanCallback
+  if (shouldProcessScan(scan, pose)) {
+    LocalizedRangeScan * range_scan = addScan(laser, scan, pose);
+    if (range_scan != nullptr) {
+      Matrix3 covariance;
+      covariance.SetToIdentity();
+      publishLocalizedScan(
+        scan, laser->GetOffsetPose(),
+        range_scan->GetOdometricPose(), covariance, scan->header.stamp);
+    }
   }
 }
 
