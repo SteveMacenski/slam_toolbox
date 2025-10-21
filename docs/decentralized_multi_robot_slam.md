@@ -59,13 +59,12 @@ The above image shows two examples of centralized and decentralized SLAM approac
 In multi-robot SLAM architectures that rely on a **centralized** backends:
 - All robots stream data to a single server that performs map fusion and graph optimization.
 - While easy to manage, it scales poorly and becomes a single point of failure.
-- Bandwidth requirements are high because every robot sends raw sensor data to one node.
+- Bandwidth requirements are often high because every robot sends raw or semi-processed data to the central node.
 
 A **decentralized** (or distributed) architecture shifts computation to the edge:
 - Each robot performs its own local SLAM independently.
-- Robots exchange only minimal information (e.g., localized scans, key poses) needed to align their maps.
+- Robots can exchange only minimal information (e.g., localized scans, key poses) needed to align their maps.
 - The system remains functional even if part of the network drops out.
-- Bandwidth usage scales linearly with the number of peer connections rather than quadratically with all-to-all scan sharing.
 
 
 ## 3) Decentralized Multi-Robot SLAM
