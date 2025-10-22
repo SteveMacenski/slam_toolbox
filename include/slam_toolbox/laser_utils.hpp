@@ -81,11 +81,14 @@ public:
     NodeT node, tf2_ros::Buffer * tf,
     const std::string & base_frame);
   ~LaserAssistant();
-  LaserMetadata toLaserMetadata(sensor_msgs::msg::LaserScan scan);
+  LaserMetadata toLaserMetadata(
+    sensor_msgs::msg::LaserScan scan,
+    std::optional<geometry_msgs::msg::TransformStamped> laser_pose = std::nullopt);
 
 private:
   karto::LaserRangeFinder * makeLaser(const double & mountingYaw);
   bool isInverted(double & mountingYaw);
+  geometry_msgs::msg::TransformStamped readLaserPose();
 
   rclcpp::Logger logger_;
   rclcpp::node_interfaces::NodeParametersInterface::SharedPtr parameters_interface_;

@@ -71,6 +71,19 @@ If you have previously existing serialized files (e.g. not `pgm` maps, but `.pos
 
 More of the conversation can be seen on tickets #198 and #281. I apologize for the inconvenience, however this solves a very large bug that was impacting a large number of users. I've worked hard to make sure there's a viable path forward for everyone.
 
+# Multi-Robot SLAM
+
+`decentralized_multirobot_slam_toolbox_node` extends slam_toolbox for multi-robot mapping. Each robot runs its own slam_toolbox instance under a unique namespace; localized scans are exchanged to align peer pose graphs over a shared global frame.
+
+👉 See **[docs/decentralized_multi_robot_slam.md](docs/decentralized_multi_robot_slam.md)** for details on:
+- Multi-Robot mapping
+- Decentralized multi-robot slam architecture
+- How to set up the shared global frame
+- What topics are shared (and why)
+- Example launch files & demo package
+
+![multirobot_slam](images/decentralized_multirobot/multi-robot_mapping.gif?raw=true "Multi-Robot SLAM")
+
 # LifeLong Mapping
 
 <!--  Continuing mapping Gif here-->
@@ -110,6 +123,7 @@ To enable, set `mode: localization` in the configuration file to allow for the C
 To minimize the amount of changes required for moving to this mode over AMCL, we also expose a subscriber to the `/initialpose` topic used by AMCL to relocalize to a position, which also hooks up to the `2D Pose Estimation` tool in RVIZ. This way you can enter localization mode with our approach but continue to use the same API as you expect from AMCL for ease of integration.
 
 In summary, this approach I dub `elastic pose-graph localization` is where we take existing map pose-graphs and localized with-in them with a rolling window of recent scans. This way we can localize in an existing map using the scan matcher, but not update the underlaying map long-term should something go wrong. It can be considered a replacement to AMCL and results is not needing any .pgm maps ever again. The lifelong mapping/continuous slam mode above will do better if you'd like to modify the underlying graph while moving. This method of localization might not be suitable for all applications, it does require quite a bit of tuning for your particular robot and needs high quality odometry. If in doubt, you're always welcome to use other 2D map localizers in the ecosystem like AMCL. For most beginners or users looking for a good out of the box experience, I'd recommend AMCL. 
+
 
 ## Tools 
 
