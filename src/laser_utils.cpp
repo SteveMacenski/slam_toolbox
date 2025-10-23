@@ -81,10 +81,16 @@ LaserAssistant::~LaserAssistant()
 {
 }
 
-LaserMetadata LaserAssistant::toLaserMetadata(sensor_msgs::msg::LaserScan scan)
+
+LaserMetadata LaserAssistant::toLaserMetadata(
+  sensor_msgs::msg::LaserScan scan,
+  std::optional<geometry_msgs::msg::TransformStamped> laser_pose)
 {
   scan_ = scan;
   frame_ = scan_.header.frame_id;
+
+  // If laser pose passed explicitly, use it. Otherwise extract pose from TF data
+  laser_pose_ = laser_pose ? *laser_pose : readLaserPose();
 
   double mountingYaw;
   bool inverted = isInverted(mountingYaw);
@@ -95,9 +101,11 @@ LaserMetadata LaserAssistant::toLaserMetadata(sensor_msgs::msg::LaserScan scan)
 
 karto::LaserRangeFinder * LaserAssistant::makeLaser(const double & mountingYaw)
 {
+  std::string laser_name = scan_.header.frame_id;
+  std::replace(laser_name.begin(), laser_name.end(), '/', ' ');
   karto::LaserRangeFinder * laser =
     karto::LaserRangeFinder::CreateLaserRangeFinder(
-    karto::LaserRangeFinder_Custom, karto::Name("Custom Described Lidar"));
+    karto::LaserRangeFinder_Custom, karto::Name("Custom Described Lidar : " + laser_name));
   laser->SetOffsetPose(karto::Pose2(laser_pose_.transform.translation.x,
     laser_pose_.transform.translation.y, mountingYaw));
   
@@ -174,12 +182,6 @@ karto::LaserRangeFinder * LaserAssistant::makeLaser(const double & mountingYaw)
 
 bool LaserAssistant::isInverted(double & mountingYaw)
 {
-  geometry_msgs::msg::TransformStamped laser_ident;
-  laser_ident.header.stamp = scan_.header.stamp;
-  laser_ident.header.frame_id = frame_;
-  laser_ident.transform.rotation.w = 1.0;
-
-  laser_pose_ = tf_->transform(laser_ident, base_frame_);
   mountingYaw = tf2::getYaw(laser_pose_.transform.rotation);
 
   RCLCPP_DEBUG(
@@ -187,21 +189,33 @@ bool LaserAssistant::isInverted(double & mountingYaw)
     frame_.c_str(), laser_pose_.transform.translation.x,
     laser_pose_.transform.translation.y,
     laser_pose_.transform.translation.z, mountingYaw);
+  
+  // For external scanners, we cannot query tf topic. Hence using laser_pose_
+  tf2::Vector3 laser_orient;
+  tf2::Transform laser_pose;
+  tf2::convert(laser_pose_.transform, laser_pose);
+  laser_orient.setY(0.);
+  laser_orient.setZ(0.);
+  laser_orient.setZ(1 + laser_pose_.transform.translation.z);
+  laser_orient = laser_pose * laser_orient;
 
-  geometry_msgs::msg::Vector3Stamped laser_orient;
-  laser_orient.vector.z = laser_orient.vector.y = 0.;
-  laser_orient.vector.z = 1 + laser_pose_.transform.translation.z;
-  laser_orient.header.stamp = scan_.header.stamp;
-  laser_orient.header.frame_id = base_frame_;
-  laser_orient = tf_->transform(laser_orient, frame_);
-
-  if (laser_orient.vector.z <= 0) {
+  if (laser_orient.z() <= 0) {
     RCLCPP_DEBUG(
       logger_, "laser is mounted upside-down");
     return true;
   }
 
   return false;
+}
+
+geometry_msgs::msg::TransformStamped LaserAssistant::readLaserPose()
+{
+  geometry_msgs::msg::TransformStamped laser_ident;
+  laser_ident.header.stamp = scan_.header.stamp;
+  laser_ident.header.frame_id = frame_;
+  laser_ident.transform.rotation.w = 1.0;
+
+  return tf_->transform(laser_ident, base_frame_);
 }
 
 ScanHolder::ScanHolder(std::map<std::string, laser_utils::LaserMetadata> & lasers)
