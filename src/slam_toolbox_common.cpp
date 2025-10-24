@@ -411,6 +411,13 @@ void SlamToolbox::setParams()
   tmp_val = this->get_parameter("minimum_time_interval").as_double();
   minimum_time_interval_ = rclcpp::Duration::from_seconds(tmp_val);
 
+  check_minimum_travels_precisely_ = false;
+  if (!this->has_parameter("check_minimum_travels_precisely")) {
+    this->declare_parameter("check_minimum_travels_precisely", check_minimum_travels_precisely_);
+  }
+  check_minimum_travels_precisely_ =
+    this->get_parameter("check_minimum_travels_precisely").as_bool();
+
   bool debug = false;
   if (!this->has_parameter("debug_logging")) {
     this->declare_parameter("debug_logging", debug);
@@ -754,10 +761,10 @@ bool SlamToolbox::shouldProcessScan(
 {
   static Pose2 last_pose;
   static rclcpp::Time last_scan_time = rclcpp::Time(0.);
-  static double min_dist2 = 0.81 * // within 10% for correction error
+  static double min_dist2 =
     smapper_->getMapper()->getParamMinimumTravelDistance() *
     smapper_->getMapper()->getParamMinimumTravelDistance();
-  static double min_rotation = 0.9 * // within 10% for correction error
+  static double min_rotation =
     smapper_->getMapper()->getParamMinimumTravelHeadingInRadians();
   static int scan_ctr = 0;
   scan_ctr++;
@@ -785,14 +792,21 @@ bool SlamToolbox::shouldProcessScan(
     return false;
   }
 
+  // for initial stabilization
   if (scan_ctr < 5) {
     return false;
   }
 
   // check if the movement is enough
   const double dist2 = last_pose.SquaredDistance(pose);
-  const double heading_diff = fabs(math::NormalizeAngle(pose.GetHeading() - last_pose.GetHeading()));
-  if (dist2 < min_dist2 && heading_diff < min_rotation) {
+  if (check_minimum_travels_precisely_) {
+    const double heading_diff =
+      fabs(math::NormalizeAngle(pose.GetHeading() - last_pose.GetHeading()));
+    if (dist2 < min_dist2 && heading_diff < min_rotation) {
+      return false;
+    }
+  } else if (dist2 < 0.8 * min_dist2) {
+    // within 10% for correction error, min heading is occasionally checked in the mapper
     return false;
   }
 
