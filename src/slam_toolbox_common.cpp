@@ -544,7 +544,7 @@ void SlamToolbox::loadPoseGraphByParams()
 /*****************************************************************************/
 {
   std::string filename;
-  geometry_msgs::msg::Pose2D pose;
+  geometry_msgs::msg::Pose pose;
   bool dock = false;
   if (shouldStartWithPoseGraph(filename, pose, dock)) {
     std::shared_ptr<slam_toolbox::srv::DeserializePoseGraph::Request> req =
@@ -568,7 +568,7 @@ void SlamToolbox::loadPoseGraphByParams()
 /*****************************************************************************/
 bool SlamToolbox::shouldStartWithPoseGraph(
   std::string & filename,
-  geometry_msgs::msg::Pose2D & pose, bool & start_at_dock)
+  geometry_msgs::msg::Pose & pose, bool & start_at_dock)
 /*****************************************************************************/
 {
   // if given a map to load at run time, do it.
@@ -593,13 +593,20 @@ bool SlamToolbox::shouldStartWithPoseGraph(
         RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Incorrect "
           "number of arguments for map starting pose. Must be in format: "
           "[x, y, theta]. Starting at the origin");
-        pose.x = 0.;
-        pose.y = 0.;
-        pose.theta = 0.;
+        pose.position.x = 0.;
+        pose.position.y = 0.;
+        pose.position.z = 0.;
+        pose.orientation.w = 1.0;
+        pose.orientation.x = 0.0;
+        pose.orientation.y = 0.0;
+        pose.orientation.z = 0.0;
       } else {
-        pose.x = read_pose[0];
-        pose.y = read_pose[1];
-        pose.theta = read_pose[2];
+        pose.position.x = read_pose[0];
+        pose.position.y = read_pose[1];
+        pose.position.z = 0.0;
+        tf2::Quaternion q;
+        q.setRPY(0.0, 0.0, read_pose[2]);
+        pose.orientation = tf2::toMsg(q);
       }
     } else if (map_start_at_dock.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET) {
       start_at_dock = map_start_at_dock.get<bool>();
@@ -1072,13 +1079,13 @@ bool SlamToolbox::deserializePoseGraphCallback(
       break;
     case procType::START_AT_GIVEN_POSE:
       processor_type_ = PROCESS_NEAR_REGION;
-      process_near_pose_ = std::make_unique<Pose2>(req->initial_pose.x,
-          req->initial_pose.y, req->initial_pose.theta);
+      process_near_pose_ = std::make_unique<Pose2>(req->initial_pose.position.x,
+          req->initial_pose.position.y, tf2::getYaw(req->initial_pose.orientation));
       break;
     case procType::LOCALIZE_AT_POSE:
       processor_type_ = PROCESS_LOCALIZATION;
-      process_near_pose_ = std::make_unique<Pose2>(req->initial_pose.x,
-          req->initial_pose.y, req->initial_pose.theta);
+      process_near_pose_ = std::make_unique<Pose2>(req->initial_pose.position.x,
+          req->initial_pose.position.y, tf2::getYaw(req->initial_pose.orientation));
       break;
     default:
       RCLCPP_FATAL(get_logger(),

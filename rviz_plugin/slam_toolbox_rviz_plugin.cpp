@@ -21,6 +21,7 @@
 // ROS
 #include <tf2_ros/transform_listener.h>
 #include <tf2/convert.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 // QT
 #include <QPushButton>
 #include <QCheckBox>
@@ -307,9 +308,12 @@ void SlamToolboxPlugin::DeserializeMap()
     try
     {
       request->match_type = procType::START_AT_GIVEN_POSE;
-      request->initial_pose.x = std::stod(_line5->text().toStdString());
-      request->initial_pose.y = std::stod(_line6->text().toStdString());
-      request->initial_pose.theta = std::stod(_line7->text().toStdString());
+      request->initial_pose.position.x = std::stod(_line5->text().toStdString());
+      request->initial_pose.position.y = std::stod(_line6->text().toStdString());
+      request->initial_pose.position.z = 0.0;
+      tf2::Quaternion q;
+      q.setRPY(0.0, 0.0, std::stod(_line7->text().toStdString()));
+      request->initial_pose.orientation = tf2::toMsg(q);
     }
     catch (const std::invalid_argument& ia)
     {
@@ -320,9 +324,12 @@ void SlamToolboxPlugin::DeserializeMap()
     try
     {
       request->match_type = procType::LOCALIZE_AT_POSE;
-      request->initial_pose.x = std::stod(_line5->text().toStdString());
-      request->initial_pose.y = std::stod(_line6->text().toStdString());
-      request->initial_pose.theta = std::stod(_line7->text().toStdString());
+      request->initial_pose.position.x = std::stod(_line5->text().toStdString());
+      request->initial_pose.position.y = std::stod(_line6->text().toStdString());
+      request->initial_pose.position.z = 0.0;
+      tf2::Quaternion q;
+      q.setRPY(0.0, 0.0, std::stod(_line7->text().toStdString()));
+      request->initial_pose.orientation = tf2::toMsg(q);
     }
     catch (const std::invalid_argument& ia)
     {
