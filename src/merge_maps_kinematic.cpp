@@ -40,11 +40,12 @@ void MergeMapsKinematic::configure()
   resolution_ = this->declare_parameter("resolution", resolution_);
   min_pass_through_ = this->declare_parameter("min_pass_through", min_pass_through_);
   occupancy_threshold_ = this->declare_parameter("occupancy_threshold", occupancy_threshold_);
+  auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
 
   sstS_.push_back(this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-      "/map", rclcpp::QoS(1)));
+      "/map_m", qos));
   sstmS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
-      "/map_metadata", rclcpp::QoS(1)));
+      "/map_m_metadata", qos));
 
   ssMap_ = this->create_service<slam_toolbox::srv::MergeMaps>("slam_toolbox/merge_submaps",
       std::bind(&MergeMapsKinematic::mergeMapCallback, this, std::placeholders::_1,
@@ -58,6 +59,31 @@ void MergeMapsKinematic::configure()
   interactive_server_ =
     std::make_unique<interactive_markers::InteractiveMarkerServer>(
     "merge_maps_tool", shared_from_this());
+
+  // timer to publish TFs for submaps
+  tf_timer_ = this->create_wall_timer(
+  std::chrono::milliseconds(500),
+  [this]() {
+    if (feedback_active_) return;
+    std::lock_guard<std::mutex> lock(tf_mutex_);   // protect shared access
+    if (submap_marker_transform_.empty()) return;
+
+    auto stamp = this->now();
+    for (int id = 1; id <= num_submaps_; ++id) {
+      // --- Publish TF ---
+      geometry_msgs::msg::TransformStamped tf_msg;
+      tf_msg.header.stamp = stamp;
+      tf_msg.header.frame_id = "map";
+      tf_msg.child_frame_id = "map_" + std::to_string(id);
+      tf_msg.transform = tf2::toMsg(submap_marker_transform_[id]);
+      tfB_->sendTransform(tf_msg);
+      if (last_maps_.count(id)) {
+        auto map = last_maps_[id];
+        map.header.stamp = stamp;
+        sstS_[id]->publish(map);
+      }
+    }
+  });
 }
 
 /*****************************************************************************/
@@ -98,12 +124,13 @@ bool MergeMapsKinematic::addSubmapCallback(
   LocalizedRangeScanVector scans = mapper->GetAllProcessedScans();
   scans_vec_.push_back(scans);
   num_submaps_++;
+  auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
 
   // create and publish map with marker that will move the map around
   sstS_.push_back(this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-      "/map_" + std::to_string(num_submaps_), rclcpp::QoS(1)));
+      "/map_" + std::to_string(num_submaps_), qos));
   sstmS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
-      "/map_metadata_" + std::to_string(num_submaps_), rclcpp::QoS(1)));
+      "/map_metadata_" + std::to_string(num_submaps_), qos));
   sleep(1.0);
 
   nav_msgs::srv::GetMap::Response map;
@@ -117,6 +144,7 @@ bool MergeMapsKinematic::addSubmapCallback(
   }
 
   tf2::Transform transform;
+  auto stamp = this->now();
   transform.setIdentity();
   transform.setOrigin(tf2::Vector3(og.info.origin.position.x +
     og.info.width * og.info.resolution / 2.0,
@@ -124,21 +152,21 @@ bool MergeMapsKinematic::addSubmapCallback(
     0.));
   og.info.origin.position.x = -(og.info.width * og.info.resolution / 2.0);
   og.info.origin.position.y = -(og.info.height * og.info.resolution / 2.0);
-  og.header.stamp = this->now();
-  og.header.frame_id = "map_" + std::to_string(num_submaps_);
+  og.header.stamp = stamp;
+  og.header.frame_id = "/map_" + std::to_string(num_submaps_);
   sstS_[num_submaps_]->publish(og);
   sstmS_[num_submaps_]->publish(og.info);
+  last_maps_[num_submaps_] = og;
 
   geometry_msgs::msg::TransformStamped msg;
   msg.transform = tf2::toMsg(transform);
   msg.child_frame_id = "/map_" + std::to_string(num_submaps_);
   msg.header.frame_id = "/map";
-  msg.header.stamp = this->now();
+  msg.header.stamp = stamp;
   tfB_->sendTransform(msg);
 
-  submap_marker_transform_[num_submaps_] =
-    tf2::Transform(tf2::Quaternion(0., 0., 0., 1.0),
-      tf2::Vector3(0, 0, 0));  // no initial correction -- identity mat
+  submap_marker_transform_[num_submaps_] = transform;
+  prev_submap_marker_transform_ = submap_marker_transform_;
   submap_locations_[num_submaps_] =
     Eigen::Vector3d(transform.getOrigin().getX(),
       transform.getOrigin().getY(), 0.);
@@ -270,11 +298,12 @@ bool MergeMapsKinematic::mergeMapCallback(
     for (LocalizedRangeScansIt iter = it_LRV->begin();
       iter != it_LRV->end(); ++iter)
     {
-      tf2::Transform submap_correction = submap_marker_transform_[id];
+      tf2::Transform submap_correction = submap_marker_transform_[id] * prev_submap_marker_transform_[id].inverse();
       transformScan(iter, submap_correction);
       transformed_scans.push_back((*iter));
     }
   }
+  prev_submap_marker_transform_ = submap_marker_transform_;
 
   // create the map
   nav_msgs::srv::GetMap::Response map;
@@ -288,7 +317,7 @@ bool MergeMapsKinematic::mergeMapCallback(
 
   // publish
   map.map.header.stamp = this->now();
-  map.map.header.frame_id = "map";
+  map.map.header.frame_id = "/map";
   sstS_[0]->publish(map.map);
   sstmS_[0]->publish(map.map.info);
   return true;
@@ -318,32 +347,41 @@ void MergeMapsKinematic::processInteractiveFeedback(
   visualization_msgs::msg::InteractiveMarkerFeedback::ConstSharedPtr feedback)
 /*****************************************************************************/
 {
+  if (feedback->event_type == visualization_msgs::msg::InteractiveMarkerFeedback::MOUSE_DOWN)
+    feedback_active_ = true;
+  else if (feedback->event_type == visualization_msgs::msg::InteractiveMarkerFeedback::MOUSE_UP)
+    feedback_active_ = false;
+  std::lock_guard<std::mutex> lock(tf_mutex_);
+
   const int id = std::stoi(feedback->marker_name, nullptr, 10);
 
+  tf2::Quaternion quat(feedback->pose.orientation.x,
+    feedback->pose.orientation.y,
+    feedback->pose.orientation.z,
+    feedback->pose.orientation.w);
+  
   if (feedback->event_type ==
     visualization_msgs::msg::InteractiveMarkerFeedback::MOUSE_UP &&
     feedback->mouse_point_valid)
   {
     tf2Scalar yaw = tf2::getYaw(feedback->pose.orientation);
-    tf2::Quaternion quat(0., 0., 0., 1.0);
     tf2::fromMsg(feedback->pose.orientation, quat);  // relative
 
     tf2::Transform previous_submap_correction;
     previous_submap_correction.setIdentity();
     previous_submap_correction.setOrigin(tf2::Vector3(submap_locations_[id](0),
       submap_locations_[id](1), 0.));
-
+    previous_submap_correction.setRotation(submap_marker_transform_[id].getRotation());
     // update internal knowledge of submap locations
     submap_locations_[id] = Eigen::Vector3d(feedback->pose.position.x,
         feedback->pose.position.y,
-        submap_locations_[id](2) + yaw);
+        0.0);
 
     // add the map_N frame there
     tf2::Transform new_submap_location;
-    new_submap_location.setOrigin(tf2::Vector3(submap_locations_[id](0),
-      submap_locations_[id](1), 0.));
+    new_submap_location.setOrigin(tf2::Vector3(feedback->pose.position.x,
+      feedback->pose.position.y, 0.));
     new_submap_location.setRotation(quat);
-
     geometry_msgs::msg::TransformStamped msg;
     msg.transform = tf2::toMsg(new_submap_location);
     msg.child_frame_id = "/map_" + std::to_string(id);
@@ -351,15 +389,13 @@ void MergeMapsKinematic::processInteractiveFeedback(
     msg.header.stamp = this->now();
     tfB_->sendTransform(msg);
 
-    submap_marker_transform_[id] = submap_marker_transform_[id] *
-      previous_submap_correction.inverse() * new_submap_location;
+    submap_marker_transform_[id] = new_submap_location;
   }
 
   if (feedback->event_type ==
     visualization_msgs::msg::InteractiveMarkerFeedback::POSE_UPDATE)
   {
     tf2Scalar yaw = tf2::getYaw(feedback->pose.orientation);
-    tf2::Quaternion quat(0., 0., 0., 1.0);
     tf2::fromMsg(feedback->pose.orientation, quat);  // relative
 
     // add the map_N frame there

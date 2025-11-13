@@ -74,6 +74,10 @@ private:
     const karto::LocalizedRangeScanVector & scans,
     nav_msgs::srv::GetMap::Response & map);
   void transformScan(LocalizedRangeScansIt iter, tf2::Transform & submap_correction);
+  
+  rclcpp::TimerBase::SharedPtr tf_timer_;
+  std::atomic_bool feedback_active_{false};
+  std::mutex tf_mutex_;
 
   // apply transformation to correct pose
   karto::Pose2 applyCorrection(const karto::Pose2 & pose, const tf2::Transform & submap_correction);
@@ -100,7 +104,9 @@ private:
   // state
   std::map<int, Eigen::Vector3d> submap_locations_;
   std::vector<karto::LocalizedRangeScanVector> scans_vec_;
-  std::map<int, tf2::Transform> submap_marker_transform_;
+  std::map<int, tf2::Transform> submap_marker_transform_, prev_submap_marker_transform_;
+  std::unordered_map<int, nav_msgs::msg::OccupancyGrid> last_maps_;
+
   double resolution_;
   int min_pass_through_;
   double occupancy_threshold_;
