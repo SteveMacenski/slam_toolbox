@@ -43,9 +43,9 @@ void MergeMapsKinematic::configure()
   auto qos = rclcpp::QoS(rclcpp::KeepLast(1)).transient_local();
 
   sstS_.push_back(this->create_publisher<nav_msgs::msg::OccupancyGrid>(
-      "/map_m", qos));
+      "/map", qos));
   sstmS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
-      "/map_m_metadata", qos));
+      "/map_metadata", qos));
 
   ssMap_ = this->create_service<slam_toolbox::srv::MergeMaps>("slam_toolbox/merge_submaps",
       std::bind(&MergeMapsKinematic::mergeMapCallback, this, std::placeholders::_1,
