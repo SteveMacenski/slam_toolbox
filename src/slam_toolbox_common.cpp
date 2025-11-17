@@ -593,13 +593,7 @@ bool SlamToolbox::shouldStartWithPoseGraph(
         RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Incorrect "
           "number of arguments for map starting pose. Must be in format: "
           "[x, y, theta]. Starting at the origin");
-        pose.position.x = 0.;
-        pose.position.y = 0.;
-        pose.position.z = 0.;
-        pose.orientation.w = 1.0;
-        pose.orientation.x = 0.0;
-        pose.orientation.y = 0.0;
-        pose.orientation.z = 0.0;
+        pose = geometry_msgs::msg::Pose();
       } else {
         pose.position.x = read_pose[0];
         pose.position.y = read_pose[1];
