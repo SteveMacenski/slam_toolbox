@@ -128,7 +128,7 @@ protected:
     const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
     karto::Pose2 & karto_pose);
   bool shouldStartWithPoseGraph(
-    std::string & filename, geometry_msgs::msg::Pose2D & pose,
+    std::string & filename, geometry_msgs::msg::Pose & pose,
     bool & start_at_dock);
   bool shouldProcessScan(
     const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
