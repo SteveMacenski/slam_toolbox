@@ -218,8 +218,8 @@ CallbackReturn SlamToolbox::on_deactivate(const rclcpp_lifecycle::State &)
   sst_.reset();
   pose_pub_.reset();
   pose_graph_pub_.reset();
-  new_node_event_pub_->reset();
-  loop_closure_event_pub_->reset();
+  new_node_event_pub_.reset();
+  loop_closure_event_pub_.reset();
   ssReset_.reset();
 
   if (use_lifecycle_manager_) {
@@ -1028,23 +1028,23 @@ void SlamToolbox::publishPoseGraph()
   msg->edges.reserve(mapper_edges.size());
 
   // Populate edges - use const references and minimize dynamic_cast
-  for (const auto * edge : mapper_edges)
+  for (auto * edge : mapper_edges)
   {
     if (!edge) { continue; }
 
-    const auto * src = edge->GetSource();
-    const auto * dst = edge->GetTarget();
+    auto * src = edge->GetSource();
+    auto * dst = edge->GetTarget();
     if (!src || !dst) { continue; }
 
-    const auto * src_obj = src->GetObject();
-    const auto * dst_obj = dst->GetObject();
+    auto * src_obj = src->GetObject();
+    auto * dst_obj = dst->GetObject();
     if (!src_obj || !dst_obj) { continue; }
 
-    const karto::EdgeLabel * base_label = edge->GetLabel();
+    karto::EdgeLabel * base_label = edge->GetLabel();
     if (!base_label) { continue; }
 
     // Dynamic cast is expensive - only do it once per edge
-    const auto * link_info = dynamic_cast<const karto::LinkInfo *>(base_label);
+    auto * link_info = dynamic_cast<karto::LinkInfo *>(base_label);
     if (!link_info) { continue; }
 
     slam_toolbox::msg::GraphEdge edge_msg;
