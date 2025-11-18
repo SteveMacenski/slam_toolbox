@@ -284,7 +284,7 @@ The following settings and options are exposed to you. My default configuration 
 
 `minimum_travel_heading` - Minimum changing in heading to justify an update.
 
-`check_minimum_travels_precisely` - Whether to always check if either *`minimum_travel_distance`* or *`minimum_travel_heading`* is satisfied. With the default value *`false`*, the behavior suits most cases where, for example, rotational odometry is poor.
+`check_min_dist_and_heading_precisely` - Whether to always check if either *`minimum_travel_distance`* or *`minimum_travel_heading`* is satisfied. With the default value *`false`*, the behavior suits most cases where, for example, rotational odometry is poor.
 
 `localization_on_configure` - Set to true to set the localization mode to localization during node on_configure transition. Set to false to set the localization mode to mapping instead. Only applies to `map_and_localization_slam_toolbox` node.
 

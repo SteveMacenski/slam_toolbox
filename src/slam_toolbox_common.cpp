@@ -411,12 +411,12 @@ void SlamToolbox::setParams()
   tmp_val = this->get_parameter("minimum_time_interval").as_double();
   minimum_time_interval_ = rclcpp::Duration::from_seconds(tmp_val);
 
-  check_minimum_travels_precisely_ = false;
-  if (!this->has_parameter("check_minimum_travels_precisely")) {
-    this->declare_parameter("check_minimum_travels_precisely", check_minimum_travels_precisely_);
+  check_min_dist_and_heading_precisely_ = false;
+  if (!this->has_parameter("check_min_dist_and_heading_precisely")) {
+    this->declare_parameter("check_min_dist_and_heading_precisely", check_min_dist_and_heading_precisely_);
   }
-  check_minimum_travels_precisely_ =
-    this->get_parameter("check_minimum_travels_precisely").as_bool();
+  check_min_dist_and_heading_precisely_ =
+    this->get_parameter("check_min_dist_and_heading_precisely").as_bool();
 
   bool debug = false;
   if (!this->has_parameter("debug_logging")) {
@@ -799,7 +799,7 @@ bool SlamToolbox::shouldProcessScan(
 
   // check if the movement is enough
   const double dist2 = last_pose.SquaredDistance(pose);
-  if (check_minimum_travels_precisely_) {
+  if (check_min_dist_and_heading_precisely_) {
     const double heading_diff =
       fabs(math::NormalizeAngle(pose.GetHeading() - last_pose.GetHeading()));
     if (dist2 < min_dist2 && heading_diff < min_rotation) {
