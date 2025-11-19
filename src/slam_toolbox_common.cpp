@@ -988,7 +988,6 @@ void SlamToolbox::publishPoseGraph()
   const VerticeMap & mapper_vertices = graph->GetVertices();
 
   // Reserve space for nodes to avoid reallocation
-  // Single pass: count and reserve in one loop
   size_t total_nodes = 0;
   for (const auto& vertex_map : mapper_vertices) {
     total_nodes += vertex_map.second.size();
@@ -1086,13 +1085,73 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
   slam_toolbox::msg::NewNodeEvent ev;
   ev.stamp = scan_header.stamp;
   ev.new_node_id = lrs->GetUniqueId();
-  ev.pose.position.x = lrs->GetCorrectedPose().GetX();
-  ev.pose.position.y = lrs->GetCorrectedPose().GetY();
+  
+  const karto::Pose2 & corrected_pose = lrs->GetCorrectedPose();
+  ev.pose.position.x = corrected_pose.GetX();
+  ev.pose.position.y = corrected_pose.GetY();
   ev.pose.position.z = 0.0;
-
+  
   tf2::Quaternion quat;
-  quat.setRPY(0.0, 0.0, lrs->GetCorrectedPose().GetHeading());
+  quat.setRPY(0.0, 0.0, corrected_pose.GetHeading());
   ev.pose.orientation = tf2::toMsg(quat);
+
+  // Find ALL edges that have this new node as target
+  auto * graph = smapper_->getMapper()->GetGraph();
+  if (graph) {
+    const EdgeVector & mapper_edges = graph->GetEdges();
+    
+    // Collect all incoming edges to the new node
+    std::vector<slam_toolbox::msg::GraphEdge> incoming_edges;
+    
+    // Iterate through all edges to find those targeting the new node
+    for (auto it = mapper_edges.rbegin(); it != mapper_edges.rend(); ++it) {
+      auto * edge = *it;
+      if (!edge) { continue; }
+      
+      auto * src = edge->GetSource();
+      auto * dst = edge->GetTarget();
+      if (!src || !dst) { continue; }
+      
+      auto * src_obj = src->GetObject();
+      auto * dst_obj = dst->GetObject();
+      if (!src_obj || !dst_obj) { continue; }
+      
+      // Check if this edge has the new node as target
+      if (dst_obj->GetUniqueId() == lrs->GetUniqueId()) {
+        slam_toolbox::msg::GraphEdge edge_msg;
+        edge_msg.source_id = src_obj->GetUniqueId();
+        edge_msg.target_id = dst_obj->GetUniqueId();
+
+        karto::EdgeLabel * base_label = edge->GetLabel();
+        if (base_label) {
+          auto * link_info = dynamic_cast<karto::LinkInfo *>(base_label);
+          if (link_info) {
+            const karto::Pose2 & rel_pose = link_info->GetPoseDifference();
+            edge_msg.relative_pose.position.x = rel_pose.GetX();
+            edge_msg.relative_pose.position.y = rel_pose.GetY();
+            edge_msg.relative_pose.position.z = 0.0;
+            
+            tf2::Quaternion edge_quat;
+            edge_quat.setRPY(0.0, 0.0, rel_pose.GetHeading());
+            edge_msg.relative_pose.orientation = tf2::toMsg(edge_quat);
+
+            const karto::Matrix3 & cov = link_info->GetCovariance();
+            for (int r = 0; r < 3; ++r) {
+              for (int c = 0; c < 3; ++c) {
+                edge_msg.covariance[r * 3 + c] = cov(r, c);
+              }
+            }
+          }
+        }
+        
+        incoming_edges.push_back(edge_msg);
+        // Continue iterating to collect all incoming edges (including loop closures)
+      }
+    }
+    
+    // Assign all collected edges to the event message
+    ev.edges = incoming_edges;
+  }
 
   new_node_event_pub_->publish(ev);
 }
