@@ -1095,58 +1095,57 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
 
   auto * graph = smapper_->getMapper()->GetGraph();
   if (graph) {
-    auto * new_vertex = graph->GetVertex(const_cast<karto::LocalizedRangeScan*>(lrs));
-    if (new_vertex) {
-      // Get edges connected to this vertex only (not all edges in graph)
-      const EdgeVector & node_edges = new_vertex->GetEdges();
+    // Get all edges from the graph
+    const EdgeVector & all_edges = graph->GetEdges();
+    
+    // Find the incoming edge to the new node (where target is the new node)
+    // Search from the end for efficiency: newest nodes have most recent edges
+    for (auto it = all_edges.rbegin(); it != all_edges.rend(); ++it) {
+      auto * edge = *it;
+      if (!edge) { continue; }
 
-      // Find the incoming edge to the new node (where target is the new node)
-      for (auto * edge : node_edges) {
-        if (!edge) { continue; }
+      auto * target_vertex = edge->GetTarget();
+      if (!target_vertex) { continue; }
 
-        auto * target_vertex = edge->GetTarget();
-        if (!target_vertex) { continue; }
+      auto * target_scan = target_vertex->GetObject();
+      if (!target_scan) { continue; }
 
-        auto * target_scan = target_vertex->GetObject();
-        if (!target_scan) { continue; }
+      // Check if this edge's target is the new node (incoming edge)
+      if (target_scan->GetUniqueId() == ev.new_node_id) {
+        auto * source_vertex = edge->GetSource();
+        if (!source_vertex) { continue; }
 
-        // Check if this edge's target is the new node (incoming edge)
-        if (target_scan->GetUniqueId() == ev.new_node_id) {
-          auto * source_vertex = edge->GetSource();
-          if (!source_vertex) { continue; }
+        auto * source_scan = source_vertex->GetObject();
+        if (!source_scan) { continue; }
 
-          auto * source_scan = source_vertex->GetObject();
-          if (!source_scan) { continue; }
+        // Populate the single edge for the new node event
+        ev.edge.source_id = source_scan->GetUniqueId();
+        ev.edge.target_id = target_scan->GetUniqueId();
 
-          // Populate the single edge for the new node event
-          ev.edge.source_id = source_scan->GetUniqueId();
-          ev.edge.target_id = target_scan->GetUniqueId();
+        karto::EdgeLabel * edge_label = edge->GetLabel();
+        if (!edge_label) { continue; }
 
-          karto::EdgeLabel * edge_label = edge->GetLabel();
-          if (!edge_label) { continue; }
+        auto * link_info = dynamic_cast<karto::LinkInfo *>(edge_label);
+        if (!link_info) { continue; }
 
-          auto * link_info = dynamic_cast<karto::LinkInfo *>(edge_label);
-          if (!link_info) { continue; }
+        const karto::Pose2 & rel_pose = link_info->GetPoseDifference();
+        ev.edge.relative_pose.position.x = rel_pose.GetX();
+        ev.edge.relative_pose.position.y = rel_pose.GetY();
+        ev.edge.relative_pose.position.z = 0.0;
 
-          const karto::Pose2 & rel_pose = link_info->GetPoseDifference();
-          ev.edge.relative_pose.position.x = rel_pose.GetX();
-          ev.edge.relative_pose.position.y = rel_pose.GetY();
-          ev.edge.relative_pose.position.z = 0.0;
+        tf2::Quaternion edge_quat;
+        edge_quat.setRPY(0.0, 0.0, rel_pose.GetHeading());
+        ev.edge.relative_pose.orientation = tf2::toMsg(edge_quat);
 
-          tf2::Quaternion edge_quat;
-          edge_quat.setRPY(0.0, 0.0, rel_pose.GetHeading());
-          ev.edge.relative_pose.orientation = tf2::toMsg(edge_quat);
-
-          const karto::Matrix3 & cov = link_info->GetCovariance();
-          for (int r = 0; r < 3; ++r) {
-            for (int c = 0; c < 3; ++c) {
-              ev.edge.covariance[r * 3 + c] = cov(r, c);
-            }
+        const karto::Matrix3 & cov = link_info->GetCovariance();
+        for (int r = 0; r < 3; ++r) {
+          for (int c = 0; c < 3; ++c) {
+            ev.edge.covariance[r * 3 + c] = cov(r, c);
           }
-
-          // Found the incoming edge to the new node, exit loop
-          break;
         }
+
+        // Found the incoming edge to the new node, exit loop
+        break;
       }
     }
   }
