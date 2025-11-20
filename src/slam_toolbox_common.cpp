@@ -644,7 +644,7 @@ bool SlamToolbox::shouldStartWithPoseGraph(
         RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Incorrect "
           "number of arguments for map starting pose. Must be in format: "
           "[x, y, theta]. Starting at the origin");
-        geometry_msgs::msg::Pose pose;
+        pose = geometry_msgs::msg::Pose();
       } else {
         pose.position.x = read_pose[0];
         pose.position.y = read_pose[1];
@@ -995,10 +995,8 @@ void SlamToolbox::publishPoseGraph()
   msg->nodes.reserve(total_nodes);
 
   // Populate nodes - use const references and cache repeated calls
-  for (const auto& vertex_map : mapper_vertices)
-  {
-    for (const auto& vertex : vertex_map.second)
-    {
+  for (const auto& vertex_map : mapper_vertices) {
+    for (const auto& vertex : vertex_map.second) {
       if (!vertex.second) { continue; }
       const auto * lrs = vertex.second->GetObject();
       if (!lrs) { continue; }
@@ -1027,8 +1025,7 @@ void SlamToolbox::publishPoseGraph()
   msg->edges.reserve(mapper_edges.size());
 
   // Populate edges - use const references and minimize dynamic_cast
-  for (auto * edge : mapper_edges)
-  {
+  for (auto * edge : mapper_edges) {
     if (!edge) { continue; }
 
     auto * src = edge->GetSource();
@@ -1085,12 +1082,12 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
   slam_toolbox::msg::NewNodeEvent ev;
   ev.stamp = scan_header.stamp;
   ev.new_node_id = lrs->GetUniqueId();
-  
+
   const karto::Pose2 & corrected_pose = lrs->GetCorrectedPose();
   ev.pose.position.x = corrected_pose.GetX();
   ev.pose.position.y = corrected_pose.GetY();
   ev.pose.position.z = 0.0;
-  
+
   tf2::Quaternion quat;
   quat.setRPY(0.0, 0.0, corrected_pose.GetHeading());
   ev.pose.orientation = tf2::toMsg(quat);
@@ -1099,23 +1096,23 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
   auto * graph = smapper_->getMapper()->GetGraph();
   if (graph) {
     const EdgeVector & mapper_edges = graph->GetEdges();
-    
+
     // Collect all incoming edges to the new node
     std::vector<slam_toolbox::msg::GraphEdge> incoming_edges;
-    
+
     // Iterate through all edges to find those targeting the new node
     for (auto it = mapper_edges.rbegin(); it != mapper_edges.rend(); ++it) {
       auto * edge = *it;
       if (!edge) { continue; }
-      
+
       auto * src = edge->GetSource();
       auto * dst = edge->GetTarget();
       if (!src || !dst) { continue; }
-      
+
       auto * src_obj = src->GetObject();
       auto * dst_obj = dst->GetObject();
       if (!src_obj || !dst_obj) { continue; }
-      
+
       // Check if this edge has the new node as target
       if (dst_obj->GetUniqueId() == lrs->GetUniqueId()) {
         slam_toolbox::msg::GraphEdge edge_msg;
@@ -1130,7 +1127,7 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
             edge_msg.relative_pose.position.x = rel_pose.GetX();
             edge_msg.relative_pose.position.y = rel_pose.GetY();
             edge_msg.relative_pose.position.z = 0.0;
-            
+
             tf2::Quaternion edge_quat;
             edge_quat.setRPY(0.0, 0.0, rel_pose.GetHeading());
             edge_msg.relative_pose.orientation = tf2::toMsg(edge_quat);
@@ -1143,12 +1140,12 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
             }
           }
         }
-        
+
         incoming_edges.push_back(edge_msg);
         // Continue iterating to collect all incoming edges (including loop closures)
       }
     }
-    
+
     // Assign all collected edges to the event message
     ev.edges = incoming_edges;
   }

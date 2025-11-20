@@ -26,4 +26,4 @@ void LoopClosureListener::EndLoopClosure(const std::string & /*rInfo*/) {
   }
 }
 
-} // namespace slam_toolbox
+}  // namespace slam_toolbox

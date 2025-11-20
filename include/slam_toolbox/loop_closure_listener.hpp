@@ -29,4 +29,4 @@ private:
   std::function<void()> loop_closure_callback_;
 };
 
-} // namespace slam_toolbox
+}  // namespace slam_toolbox
