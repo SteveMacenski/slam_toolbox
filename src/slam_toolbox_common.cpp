@@ -1155,7 +1155,6 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
 
   new_node_event_pub_->publish(ev);
 }
-  }
 
 /*****************************************************************************/
 bool SlamToolbox::mapCallback(
