@@ -1095,40 +1095,39 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
 
   auto * graph = smapper_->getMapper()->GetGraph();
   if (graph) {
-    auto * new_vertex = graph->GetVertex(ev.new_node_id);
+    auto * new_vertex = graph->GetVertex(const_cast<karto::LocalizedRangeScan*>(lrs));
     if (new_vertex) {
-      // Use const reference to avoid copying the edge vector
+      // Get edges connected to this vertex only (not all edges in graph)
       const EdgeVector & node_edges = new_vertex->GetEdges();
 
-      // Find the incoming edge to the new node (sequential edge from previous node)
+      // Find the incoming edge to the new node (where target is the new node)
       for (auto * edge : node_edges) {
         if (!edge) { continue; }
 
-        auto * dst = edge->GetTarget();
-        if (!dst) { continue; }
+        auto * target_vertex = edge->GetTarget();
+        if (!target_vertex) { continue; }
 
-        auto * dst_obj = dst->GetObject();
-        if (!dst_obj) { continue; }
+        auto * target_scan = target_vertex->GetObject();
+        if (!target_scan) { continue; }
 
-        // Check if this is an incoming edge (target is the new node itself)
-        if (dst_obj->GetUniqueId() == ev.new_node_id) {
-          auto * src = edge->GetSource();
-          if (!src) { continue; }
+        // Check if this edge's target is the new node (incoming edge)
+        if (target_scan->GetUniqueId() == ev.new_node_id) {
+          auto * source_vertex = edge->GetSource();
+          if (!source_vertex) { continue; }
 
-          auto * src_obj = src->GetObject();
-          if (!src_obj) { continue; }
+          auto * source_scan = source_vertex->GetObject();
+          if (!source_scan) { continue; }
 
-          ev.edge.source_id = src_obj->GetUniqueId();
-          ev.edge.target_id = dst_obj->GetUniqueId();
+          // Populate the single edge for the new node event
+          ev.edge.source_id = source_scan->GetUniqueId();
+          ev.edge.target_id = target_scan->GetUniqueId();
 
-          karto::EdgeLabel * base_label = edge->GetLabel();
-          if (!base_label) { continue; }
+          karto::EdgeLabel * edge_label = edge->GetLabel();
+          if (!edge_label) { continue; }
 
-          // Dynamic cast is expensive - only do it once per edge
-          auto * link_info = dynamic_cast<karto::LinkInfo *>(base_label);
+          auto * link_info = dynamic_cast<karto::LinkInfo *>(edge_label);
           if (!link_info) { continue; }
 
-          // Cache the relative pose
           const karto::Pose2 & rel_pose = link_info->GetPoseDifference();
           ev.edge.relative_pose.position.x = rel_pose.GetX();
           ev.edge.relative_pose.position.y = rel_pose.GetY();
@@ -1138,7 +1137,6 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
           edge_quat.setRPY(0.0, 0.0, rel_pose.GetHeading());
           ev.edge.relative_pose.orientation = tf2::toMsg(edge_quat);
 
-          // Cache the covariance matrix
           const karto::Matrix3 & cov = link_info->GetCovariance();
           for (int r = 0; r < 3; ++r) {
             for (int c = 0; c < 3; ++c) {
@@ -1146,7 +1144,7 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
             }
           }
 
-          // Found the sequential edge to new node
+          // Found the incoming edge to the new node, exit loop
           break;
         }
       }
