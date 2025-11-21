@@ -34,7 +34,10 @@ find_package(rviz_default_plugins REQUIRED)
 find_package(rviz_ogre_vendor REQUIRED)
 find_package(rviz_rendering REQUIRED)
 find_package(interactive_markers REQUIRED)
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
+
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Gui Widgets Test Concurrent)
+
 find_package(rclcpp_components REQUIRED)
 
 #karto_sdk lib
@@ -66,7 +69,7 @@ set(dependencies
   rviz_ogre_vendor
   rviz_rendering
   interactive_markers
-  Qt5
+  Qt${QT_VERSION_MAJOR}
   rclcpp_components
 )
 
@@ -121,7 +124,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 )
 
 #### rviz Plugin
-qt5_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
+qt_wrap_cpp(MOC_FILES rviz_plugin/slam_toolbox_rviz_plugin.hpp)
 add_library(SlamToolboxPlugin SHARED
   rviz_plugin/slam_toolbox_rviz_plugin.cpp
   ${MOC_FILES})
@@ -138,6 +141,7 @@ target_link_libraries(SlamToolboxPlugin PUBLIC
   interactive_markers::interactive_markers
   message_filters::message_filters
   pluginlib::pluginlib
+  Qt${QT_VERSION_MAJOR}::Widgets
   rclcpp::rclcpp
   rclcpp_components::component
   rclcpp_components::component_manager
@@ -153,7 +157,6 @@ target_link_libraries(SlamToolboxPlugin PUBLIC
   tf2_sensor_msgs::tf2_sensor_msgs
 )
 target_include_directories(SlamToolboxPlugin PUBLIC
-  ${Qt5Widgets_INCLUDE_DIRS}
   ${OGRE_INCLUDE_DIRS}
 )
 target_link_libraries(SlamToolboxPlugin PUBLIC ${QT_LIBRARIES} rviz_common::rviz_common)
