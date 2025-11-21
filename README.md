@@ -266,6 +266,10 @@ The following settings and options are exposed to you. My default configuration 
 
 `minimum_travel_distance` - Minimum distance of travel before processing a new scan
 
+`minimum_travel_heading` - Minimum changing in heading to justify an update.
+
+`check_min_dist_and_heading_precisely` - Whether to always check if either *`minimum_travel_distance`* or *`minimum_travel_heading`* is satisfied. With the default value *`false`*, the behavior suits most cases where, for example, rotational odometry is poor.
+
 `localization_on_configure` - Set to true to set the localization mode to localization during node on_configure transition. Set to false to set the localization mode to mapping instead. Only applies to `map_and_localization_slam_toolbox` node.
 
 ## Matcher Params
@@ -273,8 +277,6 @@ The following settings and options are exposed to you. My default configuration 
 `use_scan_matching` - whether to use scan matching to refine odometric pose (uh, why would you not?)
 
 `use_scan_barycenter` - Whether to use the barycenter or scan pose
-
-`minimum_travel_heading` - Minimum changing in heading to justify an update
 
 `scan_buffer_size` - The number of scans to buffer into a chain, also used as the number of scans in the circular buffer of localization mode
 

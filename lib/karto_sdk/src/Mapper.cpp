@@ -2333,6 +2333,11 @@ double Mapper::getParamMinimumTravelHeading()
   return math::RadiansToDegrees(static_cast<double>(m_pMinimumTravelHeading->GetValue()));
 }
 
+double Mapper::getParamMinimumTravelHeadingInRadians()
+{
+  return static_cast<double>(m_pMinimumTravelHeading->GetValue());
+}
+
 int Mapper::getParamScanBufferSize()
 {
   return static_cast<int>(m_pScanBufferSize->GetValue());
