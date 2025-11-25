@@ -28,6 +28,7 @@
 #include <cstdlib>
 #include <memory>
 #include <fstream>
+#include <atomic>
 
 #include "lifecycle_msgs/msg/state.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -53,6 +54,7 @@
 #include "slam_toolbox/get_pose_helper.hpp"
 #include "slam_toolbox/map_saver.hpp"
 #include "slam_toolbox/loop_closure_assistant.hpp"
+#include "slam_toolbox/loop_closure_listener.hpp"
 
 namespace slam_toolbox
 {
@@ -137,6 +139,9 @@ protected:
     const Pose2 & pose,
     const Matrix3 & cov,
     const rclcpp::Time & t);
+  void requestPoseGraphPublish();
+  void publishPoseGraph();
+  void publishNewNodeEvent(const karto::LocalizedRangeScan* lrs);
 
   // pausing bits
   bool isPaused(const PausedApplication & app);
@@ -155,6 +160,12 @@ protected:
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<nav_msgs::msg::MapMetaData>> sstm_;
   std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<
       geometry_msgs::msg::PoseWithCovarianceStamped>> pose_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<
+      slam_toolbox::msg::PoseGraph>> pose_graph_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<
+      slam_toolbox::msg::NewNodeEvent>> new_node_event_pub_;
+  std::shared_ptr<rclcpp_lifecycle::LifecyclePublisher<
+      slam_toolbox::msg::LoopClosureEvent>> loop_closure_event_pub_;
   std::shared_ptr<rclcpp::Service<nav_msgs::srv::GetMap>> ssMap_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::Pause>> ssPauseMeasurements_;
   std::shared_ptr<rclcpp::Service<slam_toolbox::srv::SerializePoseGraph>> ssSerialize_;
@@ -187,6 +198,7 @@ protected:
   std::unique_ptr<map_saver::MapSaver> map_saver_;
   std::unique_ptr<loop_closure_assistant::LoopClosureAssistant> closure_assistant_;
   std::unique_ptr<laser_utils::ScanHolder> scan_holder_;
+  std::unique_ptr<slam_toolbox::LoopClosureListener> loop_closure_listener_;
 
   // Internal state
   std::vector<std::unique_ptr<boost::thread>> threads_;
@@ -197,6 +209,9 @@ protected:
   ProcessType processor_type_;
   std::unique_ptr<karto::Pose2> process_near_pose_;
   tf2::Transform reprocessing_transform_;
+
+  // Pose graph publishing control
+  std::atomic<bool> publish_pose_graph_requested_{false};
 
   // pluginlib
   pluginlib::ClassLoader<karto::ScanSolver> solver_loader_;

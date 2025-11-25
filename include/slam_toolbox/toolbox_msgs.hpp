@@ -41,5 +41,10 @@
 #include "slam_toolbox/srv/merge_maps.hpp"
 #include "slam_toolbox/srv/add_submap.hpp"
 #include "slam_toolbox/msg/localized_laser_scan.hpp"
+#include "slam_toolbox/msg/pose_graph.hpp"
+#include "slam_toolbox/msg/graph_node.hpp"
+#include "slam_toolbox/msg/graph_edge.hpp"
+#include "slam_toolbox/msg/new_node_event.hpp"
+#include "slam_toolbox/msg/loop_closure_event.hpp"
 
 #endif  // SLAM_TOOLBOX__TOOLBOX_MSGS_HPP_

@@ -46,6 +46,7 @@
   <depend>rviz_default_plugins</depend>
   <depend>rviz_ogre_vendor</depend>
   <depend>rviz_rendering</depend>
+  <depend>geometry_msgs</depend>
   <exec_depend>eigen</exec_depend>
   <exec_depend>pluginlib</exec_depend>
   <exec_depend>message_filters</exec_depend>
