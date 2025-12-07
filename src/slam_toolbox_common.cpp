@@ -453,6 +453,23 @@ void SlamToolbox::setParams()
   }
 
   smapper_->configure(shared_from_this());
+
+  // CUDA acceleration for scan matching (optional)
+  bool use_cuda = false;
+  if (!this->has_parameter("use_cuda")) {
+    this->declare_parameter("use_cuda", use_cuda);
+  }
+  use_cuda = this->get_parameter("use_cuda").as_bool();
+  if (use_cuda) {
+    RCLCPP_INFO(get_logger(), "Enabling CUDA acceleration for scan matching");
+  }
+  if (smapper_->getMapper()->GetSequentialScanMatcher()) {
+    smapper_->getMapper()->GetSequentialScanMatcher()->setUseCuda(use_cuda);
+  }
+  if (smapper_->getMapper()->GetLoopScanMatcher()) {
+    smapper_->getMapper()->GetLoopScanMatcher()->setUseCuda(use_cuda);
+  }
+
   if (!this->has_parameter("paused_new_measurements")) {
     this->declare_parameter("paused_new_measurements", false);
   }

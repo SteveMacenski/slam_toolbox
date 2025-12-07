@@ -35,6 +35,10 @@
 
 #include "karto_sdk/Mapper.h"
 
+#ifdef SLAM_TOOLBOX_CUDA_ENABLED
+#include "karto_sdk/cuda/ScanMatcherCuda.h"
+#endif
+
 BOOST_CLASS_EXPORT(karto::MapperGraph);
 BOOST_CLASS_EXPORT(karto::Graph<karto::LocalizedRangeScan>);
 BOOST_CLASS_EXPORT(karto::EdgeLabel);
@@ -474,6 +478,27 @@ ScanMatcher::~ScanMatcher()
   }
 }
 
+void ScanMatcher::setUseCuda(kt_bool useCuda)
+{
+#ifdef SLAM_TOOLBOX_CUDA_ENABLED
+  if (useCuda && !m_pCudaMatcher) {
+    m_pCudaMatcher = std::make_unique<cuda::ScanMatcherCuda>();
+    if (!m_pCudaMatcher->initialize()) {
+      std::cerr << "CUDA scan matcher initialization failed, falling back to TBB" << std::endl;
+      m_pCudaMatcher.reset();
+      m_useCuda = false;
+      return;
+    }
+  }
+  m_useCuda = useCuda && m_pCudaMatcher && m_pCudaMatcher->isInitialized();
+#else
+  if (useCuda) {
+    std::cerr << "CUDA support not compiled, using TBB" << std::endl;
+  }
+  m_useCuda = false;
+#endif
+}
+
 ScanMatcher * ScanMatcher::Create(
   Mapper * pMapper, kt_double searchSize, kt_double resolution,
   kt_double smearDeviation, kt_double rangeThreshold)
@@ -770,7 +795,35 @@ kt_double ScanMatcher::CorrelateScan(
   m_nAngles = nAngles;
   m_searchAngleResolution = searchAngleResolution;
   m_doPenalize = doPenalize;
-  tbb::parallel_for_each(m_yPoses, (*this));
+
+#ifdef SLAM_TOOLBOX_CUDA_ENABLED
+  if (m_useCuda && m_pCudaMatcher && m_pCudaMatcher->isInitialized()) {
+    // CUDA path - evaluate all pose hypotheses on GPU
+    m_pCudaMatcher->correlateScanParallel(
+      m_pCorrelationGrid->GetDataPointer(),
+      m_pCorrelationGrid->GetDataSize(),
+      m_pCorrelationGrid->GetWidth(),
+      m_pCorrelationGrid->GetWidthStep(),
+      m_xPoses,
+      m_yPoses,
+      nAngles,
+      rSearchCenter,
+      searchAngleOffset,
+      searchAngleResolution,
+      doPenalize,
+      m_pMapper->m_pDistanceVariancePenalty->GetValue(),
+      m_pMapper->m_pAngleVariancePenalty->GetValue(),
+      m_pMapper->m_pMinimumDistancePenalty->GetValue(),
+      m_pMapper->m_pMinimumAnglePenalty->GetValue(),
+      m_pGridLookup,
+      startGridPoint,
+      m_pPoseResponse);
+  } else
+#endif
+  {
+    // TBB path - evaluate pose hypotheses on CPU
+    tbb::parallel_for_each(m_yPoses, (*this));
+  }
 
   // find value of best response (in [0; 1])
   kt_double bestResponse = -1;

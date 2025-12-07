@@ -36,9 +36,19 @@
 #include "Karto.h"  // NOLINT
 #include "nanoflann_adaptors.h"  // NOLINT
 
+#ifdef SLAM_TOOLBOX_CUDA_ENABLED
+#include <memory>
+#endif
 
 namespace karto
 {
+
+#ifdef SLAM_TOOLBOX_CUDA_ENABLED
+namespace cuda {
+class ScanMatcherCuda;
+}  // namespace cuda
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // Listener classes
 
@@ -1437,6 +1447,18 @@ public:
     return m_pCorrelationGrid;
   }
 
+  /**
+   * Enable or disable CUDA acceleration for scan matching
+   * @param useCuda true to enable CUDA, false to use TBB
+   */
+  void setUseCuda(kt_bool useCuda);
+
+  /**
+   * Check if CUDA acceleration is enabled
+   * @return true if CUDA is enabled
+   */
+  kt_bool getUseCuda() const { return m_useCuda; }
+
 private:
   /**
    * Marks cells where scans' points hit as being occupied
@@ -1484,7 +1506,8 @@ protected:
     m_pSearchSpaceProbs(NULL),
     m_pGridLookup(NULL),
     m_pPoseResponse(NULL),
-    m_doPenalize(false)
+    m_doPenalize(false),
+    m_useCuda(false)
   {
   }
 
@@ -1501,6 +1524,11 @@ private:
   kt_int32u m_nAngles;
   kt_double m_searchAngleResolution;
   kt_bool m_doPenalize;
+  kt_bool m_useCuda;
+
+#ifdef SLAM_TOOLBOX_CUDA_ENABLED
+  std::unique_ptr<cuda::ScanMatcherCuda> m_pCudaMatcher;
+#endif
 
   /**
    * Serialization: class ScanMatcher
