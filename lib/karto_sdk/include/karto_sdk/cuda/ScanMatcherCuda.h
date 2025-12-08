@@ -67,6 +67,7 @@ public:
      * @param gridDataSize Total size of grid data array
      * @param gridWidth Grid width in cells
      * @param gridWidthStep Grid row stride (aligned width)
+     * @param gridScale Grid scale factor (1.0 / resolution) for WorldToGrid conversion
      * @param xPoses X position offsets to evaluate
      * @param yPoses Y position offsets to evaluate
      * @param nAngles Number of angle bins
@@ -87,6 +88,7 @@ public:
         kt_int32s gridDataSize,
         kt_int32s gridWidth,
         kt_int32s gridWidthStep,
+        kt_double gridScale,
         const std::vector<kt_double>& xPoses,
         const std::vector<kt_double>& yPoses,
         kt_int32u nAngles,
@@ -126,6 +128,9 @@ private:
 
     /**
      * @brief Compute grid indices for all (x,y) positions
+     *
+     * Correctly converts world coordinate offsets to grid indices using
+     * the grid scale factor, matching the CPU WorldToGrid behavior.
      */
     void computeGridIndices(
         const std::vector<kt_double>& xPoses,
@@ -133,6 +138,7 @@ private:
         const Pose2& searchCenter,
         kt_int32s gridWidth,
         kt_int32s gridWidthStep,
+        kt_double gridScale,
         const Vector2<kt_int32s>& startGridPoint);
 
     std::unique_ptr<CudaMemoryManager> m_memManager;

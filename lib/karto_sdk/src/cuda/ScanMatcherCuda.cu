@@ -261,28 +261,54 @@ void ScanMatcherCuda::computeGridIndices(
     const Pose2& searchCenter,
     kt_int32s gridWidth,
     kt_int32s gridWidthStep,
+    kt_double gridScale,
     const Vector2<kt_int32s>& startGridPoint)
 {
     size_t nX = xPoses.size();
     size_t nY = yPoses.size();
     size_t totalXY = nX * nY;
 
-    auto& buffers = m_memManager->getBuffers(totalXY * 100, m_cachedLookupSize, m_cachedNAngles);
+    // Request buffers for all pose combinations (nX * nY * nAngles total poses)
+    // Using totalXY here since we only need grid indices for XY combinations
+    auto& buffers = m_memManager->getBuffers(totalXY * m_cachedNAngles, m_cachedLookupSize, m_cachedNAngles);
 
     // Copy pose arrays
     std::memcpy(buffers.xPoses, xPoses.data(), nX * sizeof(double));
     std::memcpy(buffers.yPoses, yPoses.data(), nY * sizeof(double));
 
+    // Get the first pose offset (corresponds to startGridPoint)
+    double startX = xPoses.empty() ? 0.0 : xPoses[0];
+    double startY = yPoses.empty() ? 0.0 : yPoses[0];
+
     // Pre-compute grid indices for all (x, y) combinations
-    // This mirrors the WorldToGrid + GridIndex computation in the CPU code
+    // This mirrors the WorldToGrid + GridIndex computation in the CPU code:
+    //   gridX = round((worldX - offset) * scale)
+    //   gridIndex = gridX + gridY * widthStep
+    //
+    // Since startGridPoint = WorldToGrid(searchCenter + startPose),
+    // we compute the grid offset from startGridPoint for each pose
     for (size_t yIdx = 0; yIdx < nY; yIdx++) {
         for (size_t xIdx = 0; xIdx < nX; xIdx++) {
-            // Grid point is startGridPoint offset by search position indices
-            int32_t gridX = startGridPoint.GetX() + static_cast<int32_t>(xIdx);
-            int32_t gridY = startGridPoint.GetY() + static_cast<int32_t>(yIdx);
+            // Get world coordinate offsets relative to the start position
+            double worldOffsetX = xPoses[xIdx] - startX;
+            double worldOffsetY = yPoses[yIdx] - startY;
+
+            // Convert world offsets to grid offsets using scale (matching WorldToGrid)
+            int32_t gridOffsetX = static_cast<int32_t>(std::round(worldOffsetX * gridScale));
+            int32_t gridOffsetY = static_cast<int32_t>(std::round(worldOffsetY * gridScale));
+
+            // Compute final grid coordinates
+            int32_t gridX = startGridPoint.GetX() + gridOffsetX;
+            int32_t gridY = startGridPoint.GetY() + gridOffsetY;
 
             // Compute linear grid index (row-major)
             int32_t gridIndex = gridX + gridY * gridWidthStep;
+
+            // Validate grid index - mark invalid indices with -1
+            // This will be handled in the kernel with the gridPositionIndex >= 0 check
+            if (gridX < 0 || gridX >= gridWidth || gridY < 0) {
+                gridIndex = -1;  // Invalid, will be skipped in kernel
+            }
 
             buffers.gridIndices[yIdx * nX + xIdx] = gridIndex;
         }
@@ -294,6 +320,7 @@ void ScanMatcherCuda::correlateScanParallel(
     kt_int32s gridDataSize,
     kt_int32s gridWidth,
     kt_int32s gridWidthStep,
+    kt_double gridScale,
     const std::vector<kt_double>& xPoses,
     const std::vector<kt_double>& yPoses,
     kt_int32u nAngles,
@@ -320,11 +347,17 @@ void ScanMatcherCuda::correlateScanParallel(
 
     if (totalPoses == 0) return;
 
+    // Validate inputs
+    if (xPoses.empty() || yPoses.empty()) {
+        std::cerr << "CUDA scan matcher: empty pose arrays" << std::endl;
+        return;
+    }
+
     // Prepare lookup arrays on GPU
     prepareLookupArrays(gridLookup, nAngles);
 
-    // Compute grid indices for all positions
-    computeGridIndices(xPoses, yPoses, searchCenter, gridWidth, gridWidthStep, startGridPoint);
+    // Compute grid indices for all positions using proper world-to-grid conversion
+    computeGridIndices(xPoses, yPoses, searchCenter, gridWidth, gridWidthStep, gridScale, startGridPoint);
 
     // Get buffers (now properly sized)
     auto& buffers = m_memManager->getBuffers(totalPoses, m_cachedLookupSize, nAngles);

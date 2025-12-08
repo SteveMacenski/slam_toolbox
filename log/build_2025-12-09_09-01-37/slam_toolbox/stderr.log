@@ -1,0 +1,13 @@
+CMake Error at /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreVersionlessTargets.cmake:42 (message):
+  Some (but not all) targets in this export set were already defined.
+
+  Targets Defined: Qt::Core
+
+  Targets not yet defined: Qt::CorePrivate
+
+Call Stack (most recent call first):
+  /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfig.cmake:65 (include)
+  /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake:167 (find_package)
+  CMakeLists.txt:39 (find_package)
+
+

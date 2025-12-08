@@ -782,8 +782,8 @@ kt_double ScanMatcher::CorrelateScan(
 
   kt_int32u poseResponseSize = static_cast<kt_int32u>(m_xPoses.size() * m_yPoses.size() * nAngles);
 
-  // allocate array
-  m_pPoseResponse = new std::pair<kt_double, Pose2>[poseResponseSize];
+  // allocate array using unique_ptr for exception safety
+  m_pPoseResponse = std::make_unique<std::pair<kt_double, Pose2>[]>(poseResponseSize);
 
   Vector2<kt_int32s> startGridPoint =
     m_pCorrelationGrid->WorldToGrid(Vector2<kt_double>(rSearchCenter.GetX() +
@@ -804,6 +804,7 @@ kt_double ScanMatcher::CorrelateScan(
       m_pCorrelationGrid->GetDataSize(),
       m_pCorrelationGrid->GetWidth(),
       m_pCorrelationGrid->GetWidthStep(),
+      m_pCorrelationGrid->GetCoordinateConverter()->GetScale(),
       m_xPoses,
       m_yPoses,
       nAngles,
@@ -817,7 +818,7 @@ kt_double ScanMatcher::CorrelateScan(
       m_pMapper->m_pMinimumAnglePenalty->GetValue(),
       m_pGridLookup,
       startGridPoint,
-      m_pPoseResponse);
+      m_pPoseResponse.get());
   } else
 #endif
   {
@@ -881,9 +882,8 @@ kt_double ScanMatcher::CorrelateScan(
     throw std::runtime_error("Mapper FATAL ERROR - Unable to find best position");
   }
 
-  // delete pose response array
-  delete[] m_pPoseResponse;
-  m_pPoseResponse = nullptr;
+  // Reset pose response array (unique_ptr handles cleanup)
+  m_pPoseResponse.reset();
 
 #ifdef KARTO_DEBUG
   std::cout << "bestPose: " << averagePose << std::endl;

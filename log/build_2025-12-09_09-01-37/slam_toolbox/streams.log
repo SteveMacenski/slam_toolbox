@@ -1,0 +1,94 @@
+[0.016s] Invoking command in '/home/dingo/Programming/slam_toolbox/build/slam_toolbox': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/dingo/Programming/slam_toolbox -DSLAM_TOOLBOX_USE_CUDA=ON -DCMAKE_INSTALL_PREFIX=/home/dingo/Programming/slam_toolbox/install/slam_toolbox
+[0.212s] -- The C compiler identification is GNU 13.3.0
+[0.368s] -- The CXX compiler identification is GNU 13.3.0
+[0.409s] -- Detecting C compiler ABI info
+[0.613s] -- Detecting C compiler ABI info - done
+[0.635s] -- Check for working C compiler: /usr/bin/cc - skipped
+[0.636s] -- Detecting C compile features
+[0.637s] -- Detecting C compile features - done
+[0.660s] -- Detecting CXX compiler ABI info
+[0.853s] -- Detecting CXX compiler ABI info - done
+[0.870s] -- Check for working CXX compiler: /usr/bin/c++ - skipped
+[0.870s] -- Detecting CXX compile features
+[0.871s] -- Detecting CXX compile features - done
+[0.903s] -- Found ament_cmake: 2.5.4 (/opt/ros/jazzy/share/ament_cmake/cmake)
+[1.213s] -- Found Python3: /usr/bin/python3 (found version "3.12.3") found components: Interpreter 
+[1.423s] -- Found message_filters: 4.11.8 (/opt/ros/jazzy/share/message_filters/cmake)
+[1.545s] -- Found rosidl_generator_c: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_c/cmake)
+[1.585s] -- Found rosidl_generator_cpp: 4.6.6 (/opt/ros/jazzy/share/rosidl_generator_cpp/cmake)
+[1.614s] -- Using all available rosidl_typesupport_c: rosidl_typesupport_fastrtps_c;rosidl_typesupport_introspection_c
+[1.645s] -- Using all available rosidl_typesupport_cpp: rosidl_typesupport_fastrtps_cpp;rosidl_typesupport_introspection_cpp
+[1.778s] -- Found rmw_implementation_cmake: 7.3.2 (/opt/ros/jazzy/share/rmw_implementation_cmake/cmake)
+[1.784s] -- Found rmw_fastrtps_cpp: 8.4.3 (/opt/ros/jazzy/share/rmw_fastrtps_cpp/cmake)
+[1.983s] -- Found OpenSSL: /usr/lib/x86_64-linux-gnu/libcrypto.so (found version "3.0.13")  
+[2.053s] -- Found FastRTPS: /opt/ros/jazzy/include (Required is at least version "2.13") 
+[2.117s] -- Using RMW implementation 'rmw_fastrtps_cpp' as default
+[2.318s] -- Found nav_msgs: 5.3.6 (/opt/ros/jazzy/share/nav_msgs/cmake)
+[2.420s] -- Found sensor_msgs: 5.3.6 (/opt/ros/jazzy/share/sensor_msgs/cmake)
+[2.459s] -- Found tf2: 0.36.14 (/opt/ros/jazzy/share/tf2/cmake)
+[2.469s] -- Found tf2_ros: 0.36.14 (/opt/ros/jazzy/share/tf2_ros/cmake)
+[2.682s] -- Found visualization_msgs: 5.3.6 (/opt/ros/jazzy/share/visualization_msgs/cmake)
+[2.726s] -- Found pluginlib: 5.4.2 (/opt/ros/jazzy/share/pluginlib/cmake)
+[2.739s] -- Found tf2_geometry_msgs: 0.36.14 (/opt/ros/jazzy/share/tf2_geometry_msgs/cmake)
+[2.774s] -- Found eigen3_cmake_module: 0.3.0 (/opt/ros/jazzy/share/eigen3_cmake_module/cmake)
+[2.776s] -- Found Eigen3: TRUE (found version "3.4.0") 
+[2.776s] -- Ensuring Eigen3 include directory is part of orocos-kdl CMake target
+[2.783s] -- Found tf2_sensor_msgs: 0.36.14 (/opt/ros/jazzy/share/tf2_sensor_msgs/cmake)
+[2.794s] -- Found std_srvs: 5.3.6 (/opt/ros/jazzy/share/std_srvs/cmake)
+[2.826s] -- Found rosidl_default_generators: 1.6.0 (/opt/ros/jazzy/share/rosidl_default_generators/cmake)
+[2.854s] -- Found rosidl_adapter: 4.6.6 (/opt/ros/jazzy/share/rosidl_adapter/cmake)
+[2.867s] -- Found lifecycle_msgs: 2.0.3 (/opt/ros/jazzy/share/lifecycle_msgs/cmake)
+[2.913s] -- Found bondcpp: 4.1.2 (/opt/ros/jazzy/share/bondcpp/cmake)
+[2.996s] -- Found rviz_common: 14.1.16 (/opt/ros/jazzy/share/rviz_common/cmake)
+[3.032s] -- Setting OGRE_DIR to: '/opt/ros/jazzy/share/rviz_ogre_vendor/cmake/../../../opt/rviz_ogre_vendor/lib/OGRE/cmake'
+[3.034s] -- Found OGRE
+[3.034s] --   static     : OFF
+[3.034s] --   components : MeshLodGenerator;Overlay;Paging;Property;RTShaderSystem;Terrain;Volume
+[3.034s] --   plugins    : Plugin_BSPSceneManager;Plugin_OctreeSceneManager;Plugin_PCZSceneManager;Plugin_ParticleFX;RenderSystem_GL;RenderSystem_GL3Plus;Codec_STBI
+[3.034s] --   media      : /opt/ros/jazzy/opt/rviz_ogre_vendor/share/OGRE/Media
+[3.035s] -- OGRE_LIBRARIES: OgreMeshLodGenerator;OgreOverlay;OgrePaging;OgreProperty;OgreRTShaderSystem;OgreTerrain;OgreVolume;OgreMain
+[3.035s] -- OGRE_LIBRARY_DIRS: /opt/ros/jazzy/opt/rviz_ogre_vendor/lib
+[3.035s] -- OGRE_PLUGINS: Plugin_BSPSceneManager;Plugin_OctreeSceneManager;Plugin_PCZSceneManager;Plugin_ParticleFX;RenderSystem_GL;RenderSystem_GL3Plus;Codec_STBI
+[3.035s] -- OGRE_PLUGIN_DIR: /opt/ros/jazzy/opt/rviz_ogre_vendor/lib/OGRE
+[3.035s] -- rviz_ogre_vendor::OgreOverlay for IMPORTED_LOCATION_RELEASE: /opt/ros/jazzy/opt/rviz_ogre_vendor/lib/libOgreOverlay.so
+[3.035s] -- rviz_ogre_vendor::OgreOverlay for IMPORTED_LOCATION_DEBUG: /opt/ros/jazzy/opt/rviz_ogre_vendor/lib/libOgreOverlay.so
+[3.036s] -- rviz_ogre_vendor::OgreMain for IMPORTED_LOCATION_RELEASE: /opt/ros/jazzy/opt/rviz_ogre_vendor/lib/libOgreMain.so
+[3.036s] -- rviz_ogre_vendor::OgreMain for IMPORTED_LOCATION_DEBUG: /opt/ros/jazzy/opt/rviz_ogre_vendor/lib/libOgreMain.so
+[3.095s] -- Found ZLIB: /usr/lib/x86_64-linux-gnu/libz.so (found version "1.3")  
+[3.124s] -- Found OpenGL: /usr/lib/x86_64-linux-gnu/libOpenGL.so   
+[3.459s] -- Found X11: /usr/include   
+[3.460s] -- Looking for XOpenDisplay in /usr/lib/x86_64-linux-gnu/libX11.so;/usr/lib/x86_64-linux-gnu/libXext.so
+[3.652s] -- Looking for XOpenDisplay in /usr/lib/x86_64-linux-gnu/libX11.so;/usr/lib/x86_64-linux-gnu/libXext.so - found
+[3.653s] -- Looking for gethostbyname
+[3.821s] -- Looking for gethostbyname - found
+[3.822s] -- Looking for connect
+[4.012s] -- Looking for connect - found
+[4.012s] -- Looking for remove
+[4.191s] -- Looking for remove - found
+[4.192s] -- Looking for shmat
+[4.361s] -- Looking for shmat - found
+[4.361s] -- Looking for IceConnectionNumber in ICE
+[4.529s] -- Looking for IceConnectionNumber in ICE - found
+[4.565s] -- Setting yaml-cpp_DIR to: '/opt/ros/jazzy/share/yaml_cpp_vendor/cmake/../../../opt/yaml_cpp_vendor/share/cmake/yaml-cpp'
+[4.580s] -- Found rviz_default_plugins: 14.1.16 (/opt/ros/jazzy/share/rviz_default_plugins/cmake)
+[4.750s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+[4.939s] -- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+[4.942s] -- Found Threads: TRUE  
+[4.964s] -- Performing Test HAVE_STDATOMIC
+[5.227s] -- Performing Test HAVE_STDATOMIC - Success
+[5.229s] -- Found WrapAtomic: TRUE  
+[5.243s] CMake Error at /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreVersionlessTargets.cmake:42 (message):
+[5.243s]   Some (but not all) targets in this export set were already defined.
+[5.244s] 
+[5.244s]   Targets Defined: Qt::Core
+[5.244s] 
+[5.244s]   Targets not yet defined: Qt::CorePrivate
+[5.244s] 
+[5.244s] Call Stack (most recent call first):
+[5.244s]   /usr/lib/x86_64-linux-gnu/cmake/Qt6Core/Qt6CoreConfig.cmake:65 (include)
+[5.244s]   /usr/lib/x86_64-linux-gnu/cmake/Qt6/Qt6Config.cmake:167 (find_package)
+[5.244s]   CMakeLists.txt:39 (find_package)
+[5.244s] 
+[5.244s] 
+[5.244s] -- Configuring incomplete, errors occurred!
+[5.271s] Invoked command in '/home/dingo/Programming/slam_toolbox/build/slam_toolbox' returned '1': CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}:/opt/ros/jazzy DEBUGINFOD_URLS=https://debuginfod.ubuntu.com /usr/bin/cmake /home/dingo/Programming/slam_toolbox -DSLAM_TOOLBOX_USE_CUDA=ON -DCMAKE_INSTALL_PREFIX=/home/dingo/Programming/slam_toolbox/install/slam_toolbox
