@@ -37,9 +37,15 @@ def generate_launch_description():
                                    'config', 'mapper_params_online_sync.yaml'),
         description='Full path to the ROS2 parameters file to use for the slam_toolbox node')
 
+    # Perform substitution `$find-pkg-share`
+    slam_params_file_w_subst = ParameterFile(
+        slam_params_file,
+        allow_substs=True,
+    )
+    
     start_sync_slam_toolbox_node = LifecycleNode(
         parameters=[
-          slam_params_file,
+          slam_params_file_w_subst,
           {
             'use_lifecycle_manager': use_lifecycle_manager,
             'use_sim_time': use_sim_time

@@ -38,9 +38,15 @@ def generate_launch_description():
         'use_lifecycle_manager', default_value='false',
         description='Enable bond connection during node activation')
 
+    # Perform substitution `$find-pkg-share`
+    slam_params_file_w_subst = ParameterFile(
+        slam_params_file,
+        allow_substs=True,
+    )
+    
     start_localization_slam_toolbox_node = LifecycleNode(
         parameters=[
-          slam_params_file,
+          slam_params_file_w_subst,
           {
             'use_lifecycle_manager': use_lifecycle_manager,
             'use_sim_time': use_sim_time
