@@ -13,6 +13,7 @@ from launch_ros.actions import LifecycleNode
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
 from lifecycle_msgs.msg import Transition
+from launch_ros.descriptions import ParameterFile
 
 
 def generate_launch_description():
@@ -38,9 +39,15 @@ def generate_launch_description():
         'use_lifecycle_manager', default_value='false',
         description='Enable bond connection during node activation')
 
+    # Perform substitution `$find-pkg-share`
+    slam_params_file_w_subst = ParameterFile(
+        slam_params_file,
+        allow_substs=True,
+    )
+    
     start_localization_slam_toolbox_node = LifecycleNode(
         parameters=[
-          slam_params_file,
+          slam_params_file_w_subst,
           {
             'use_lifecycle_manager': use_lifecycle_manager,
             'use_sim_time': use_sim_time
