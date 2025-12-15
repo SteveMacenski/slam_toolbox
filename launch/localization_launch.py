@@ -13,6 +13,7 @@ from launch_ros.actions import LifecycleNode
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
 from lifecycle_msgs.msg import Transition
+from launch_ros.descriptions import ParameterFile
 
 
 def generate_launch_description():
