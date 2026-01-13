@@ -10,3 +10,12 @@ string filename
 int8 match_type
 geometry_msgs/Pose initial_pose
 ---
+
+# Result code definitions
+uint8 RESULT_SUCCESS=0
+uint8 RESULT_INVALID_FILENAME=1
+uint8 RESULT_INVALID_PROCESSOR_TYPE=2
+uint8 RESULT_FAILED_TO_READ_FILE=3
+uint8 RESULT_UNDEFINED_FAILURE=255
+
+uint8 result
