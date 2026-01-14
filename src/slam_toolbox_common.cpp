@@ -1297,7 +1297,7 @@ bool SlamToolbox::deserializePoseGraphCallback(
   if (req->match_type == slam_toolbox::srv::DeserializePoseGraph::Request::UNSET) {
     RCLCPP_ERROR(get_logger(), "Deserialization called without valid"
       " processor type set. Undefined behavior!");
-    resp->result=slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_INVALID_PROCESSOR_TYPE;
+    resp->result = slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_INVALID_PROCESSOR_TYPE;
     return false;
   }
 
@@ -1305,7 +1305,7 @@ bool SlamToolbox::deserializePoseGraphCallback(
 
   if (filename.empty()) {
     RCLCPP_WARN(get_logger(), "No map file given!");
-    resp->result=slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_INVALID_FILENAME;
+    resp->result = slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_INVALID_FILENAME;
     return true;
   }
 
@@ -1320,11 +1320,11 @@ bool SlamToolbox::deserializePoseGraphCallback(
   if (!serialization::read(filename, *mapper, *dataset, shared_from_this())) {
     RCLCPP_ERROR(get_logger(), "DeserializePoseGraph: Failed to read "
       "file: %s.", filename.c_str());
-    resp->result=slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_FAILED_TO_READ_FILE;
+    resp->result = slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_FAILED_TO_READ_FILE;
     return true;
   }
   RCLCPP_DEBUG(get_logger(), "DeserializePoseGraph: Successfully read file.");
-  resp->result=slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_SUCCESS;
+  resp->result = slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_SUCCESS;
 
   loadSerializedPoseGraph(mapper, dataset);
   updateMap();
@@ -1348,7 +1348,7 @@ bool SlamToolbox::deserializePoseGraphCallback(
     default:
       RCLCPP_FATAL(get_logger(),
         "Deserialization called without valid processor type set.");
-      resp->result=slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_INVALID_PROCESSOR_TYPE;
+      resp->result = slam_toolbox::srv::DeserializePoseGraph::Response::RESULT_INVALID_PROCESSOR_TYPE;
   }
 
   return true;
