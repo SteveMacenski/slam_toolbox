@@ -637,9 +637,7 @@ bool SlamToolbox::shouldStartWithPoseGraph(
   filename = this->get_parameter("map_file_name").as_string();
   if (!filename.empty()) {
     std::vector<double> read_pose;
-    if (map_start_pose.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE_ARRAY) {
-      read_pose = map_start_pose.get<std::vector<double>>();
-    }
+    read_pose = map_start_pose.get<std::vector<double>>();
     if (read_pose.size() != 0) {
       // due to the default initialization unset map_start_pose will appear as size 0
       start_at_dock = false;
