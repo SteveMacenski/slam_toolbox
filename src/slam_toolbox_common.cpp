@@ -630,15 +630,16 @@ bool SlamToolbox::shouldStartWithPoseGraph(
   if (!this->has_parameter("map_start_at_dock")) {
     this->declare_parameter("map_start_at_dock", false);
   }
-  auto map_start_at_dock = this->get_parameter("map_start_at_dock").get_parameter_value();
+  start_at_dock = this->get_parameter("map_start_at_dock").as_bool();
   if (!this->has_parameter("map_file_name")) {
     this->declare_parameter("map_file_name", std::string(""));
   }
   filename = this->get_parameter("map_file_name").as_string();
   if (!filename.empty()) {
     std::vector<double> read_pose;
-    if (map_start_pose.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET) {
-      read_pose = map_start_pose.get<std::vector<double>>();
+    read_pose = map_start_pose.get<std::vector<double>>();
+    if (read_pose.size() != 0) {
+      // due to the default initialization unset map_start_pose will appear as size 0
       start_at_dock = false;
       if (read_pose.size() != 3) {
         RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Incorrect "
@@ -653,9 +654,7 @@ bool SlamToolbox::shouldStartWithPoseGraph(
         q.setRPY(0.0, 0.0, read_pose[2]);
         pose.orientation = tf2::toMsg(q);
       }
-    } else if (map_start_at_dock.get_type() != rclcpp::ParameterType::PARAMETER_NOT_SET) {
-      start_at_dock = map_start_at_dock.get<bool>();
-    } else {
+    } else if (!start_at_dock) {
       RCLCPP_ERROR(get_logger(), "LocalizationSlamToolbox: Map starting "
           "pose not specified. Set either map_start_pose or map_start_at_dock.");
       return false;
