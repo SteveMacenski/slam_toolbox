@@ -18,6 +18,7 @@
 /* Author: Steven Macenski */
 
 #include "slam_toolbox/slam_toolbox_sync.hpp"
+#include "std_msgs/Int32.h"
 
 namespace slam_toolbox
 {
@@ -29,6 +30,8 @@ SynchronousSlamToolbox::SynchronousSlamToolbox(ros::NodeHandle& nh)
 {
   ssClear_ = nh.advertiseService("clear_queue",
     &SynchronousSlamToolbox::clearQueueCallback, this);
+
+  pubQueueSize_ = nh.advertise<std_msgs::Int32>("scan_queue_size", 1);
 
   threads_.push_back(std::make_unique<boost::thread>(
     boost::bind(&SynchronousSlamToolbox::run, this)));
@@ -62,6 +65,10 @@ void SynchronousSlamToolbox::run()
               (int)q_.size());
           }
         }
+
+        std_msgs::Int32 queue_size_msg;
+        queue_size_msg.data = static_cast<int32_t>(q_.size());
+        pubQueueSize_.publish(queue_size_msg);
       }
       if(!queue_empty){
         addScan(getLaser(scan_w_pose.scan), scan_w_pose);
