@@ -60,7 +60,7 @@ void SynchronousSlamToolbox::run()
         }
       }
       if (!queue_empty) {
-        addScan(getLaser(scan_w_pose.scan), scan_w_pose);
+        addScan(nullptr, scan_w_pose);
         continue;
       }
     }
@@ -84,7 +84,11 @@ void SynchronousSlamToolbox::laserCallback(
   }
 
   // ensure the laser can be used
-  LaserRangeFinder * laser = getLaser(scan);
+  LaserRangeFinder * laser = nullptr;
+  {
+    boost::mutex::scoped_lock lock(smapper_mutex_);
+    laser = getLaser(scan);
+  }
 
   if (!laser) {
     RCLCPP_WARN(get_logger(), "SynchronousSlamToolbox: Failed to create laser"
