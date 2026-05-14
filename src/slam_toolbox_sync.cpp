@@ -128,11 +128,16 @@ bool SynchronousSlamToolbox::clearQueueCallback(
   std::shared_ptr<slam_toolbox::srv::ClearQueue::Response> resp)
 /*****************************************************************************/
 {
-  RCLCPP_INFO(get_logger(), "SynchronousSlamToolbox: "
-    "Clearing all queued scans to add to map.");
+  RCLCPP_INFO(
+    get_logger(),
+    "SynchronousSlamToolbox: Clearing all queued scans to add to map.");
+
+  boost::mutex::scoped_lock lock(q_mutex_);
+
   while (!q_.empty()) {
     q_.pop();
   }
+
   resp->status = true;
   return resp->status;
 }
