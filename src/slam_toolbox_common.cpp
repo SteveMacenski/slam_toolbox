@@ -875,18 +875,23 @@ LocalizedRangeScan * SlamToolbox::addScan(
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
   Pose2 & odom_pose)
 {
-  // Protect the full lifetime of dataset-backed laser/sensor state.
-  // This must cover both getLaser() and getLocalizedRangeScan().
   boost::mutex::scoped_lock lock(smapper_mutex_);
-
   if (!laser) {
-    laser = getLaser(scan);
-    if (!laser) {
-      RCLCPP_WARN(get_logger(), "SlamToolbox: getLaser() failed, ignoring scan.");
-      return nullptr;
-    }
+    RCLCPP_WARN(get_logger(), "SlamToolbox: addScan() called without a laser, "
+      "ignoring scan.");
+    return nullptr;
   }
 
+  return addScanImpl(laser, scan, odom_pose);
+}
+
+/*****************************************************************************/
+LocalizedRangeScan * SlamToolbox::addScanImpl(
+  LaserRangeFinder * laser,
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
+  Pose2 & odom_pose)
+/*****************************************************************************/
+{
   // get our localized range scan
   LocalizedRangeScan * range_scan = getLocalizedRangeScan(
     laser, scan, odom_pose);
