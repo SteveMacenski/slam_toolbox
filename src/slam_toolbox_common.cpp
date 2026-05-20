@@ -874,14 +874,28 @@ LocalizedRangeScan * SlamToolbox::addScan(
   LaserRangeFinder * laser,
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
   Pose2 & odom_pose)
+{
+  boost::mutex::scoped_lock lock(smapper_mutex_);
+  if (!laser) {
+    RCLCPP_WARN(get_logger(), "SlamToolbox: addScan() called without a laser, "
+      "ignoring scan.");
+    return nullptr;
+  }
+
+  return addScanImpl(laser, scan, odom_pose);
+}
+
+/*****************************************************************************/
+LocalizedRangeScan * SlamToolbox::addScanImpl(
+  LaserRangeFinder * laser,
+  const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
+  Pose2 & odom_pose)
 /*****************************************************************************/
 {
   // get our localized range scan
   LocalizedRangeScan * range_scan = getLocalizedRangeScan(
     laser, scan, odom_pose);
 
-  // Add the localized range scan to the smapper
-  boost::mutex::scoped_lock lock(smapper_mutex_);
   bool processed = false, update_reprocessing_transform = false;
 
   Matrix3 covariance;

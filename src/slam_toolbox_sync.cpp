@@ -55,7 +55,16 @@ void SynchronousSlamToolbox::run()
         }
       }
       if (!queue_empty) {
-        addScan(getLaser(scan_w_pose.scan), scan_w_pose);
+        boost::mutex::scoped_lock lock(smapper_mutex_);
+        LaserRangeFinder * laser = getLaser(scan_w_pose.scan);
+        if (!laser) {
+          RCLCPP_WARN(get_logger(), "SynchronousSlamToolbox: Failed to create laser"
+            " device for %s; discarding scan",
+            scan_w_pose.scan->header.frame_id.c_str());
+          continue;
+        }
+
+        addScanImpl(laser, scan_w_pose.scan, scan_w_pose.pose);
         continue;
       }
     }
@@ -106,7 +115,11 @@ void SynchronousSlamToolbox::laserCallback(
   }
 
   // ensure the laser can be used
-  LaserRangeFinder * laser = getLaser(scan);
+  LaserRangeFinder * laser = nullptr;
+  {
+    boost::mutex::scoped_lock lock(smapper_mutex_);
+    laser = getLaser(scan);
+  }
 
   if (!laser) {
     RCLCPP_WARN(get_logger(), "SynchronousSlamToolbox: Failed to create laser"
