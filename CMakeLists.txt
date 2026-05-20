@@ -96,7 +96,7 @@ find_package(Ceres REQUIRED COMPONENTS SuiteSparse)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 add_definitions(-DQT_NO_KEYWORDS)
-find_package(Boost REQUIRED system serialization filesystem thread)
+find_package(Boost REQUIRED serialization filesystem thread)
 
 include_directories(include lib/karto_sdk/include
                             ${EIGEN3_INCLUDE_DIRS}

@@ -12,7 +12,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(Eigen3 REQUIRED)
-find_package(Boost REQUIRED system serialization filesystem thread)
+find_package(Boost REQUIRED serialization filesystem thread)
 find_package(TBB REQUIRED NO_CMAKE_PACKAGE_REGISTRY)
 
 set(dependencies
