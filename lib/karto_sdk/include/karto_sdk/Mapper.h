@@ -2207,18 +2207,11 @@ protected:
   Parameter<kt_bool> * m_pUseScanBarycenter;
 
   /**
-   * When set to true, ScanMatcher debug information will be printed to stdout.
-   * Controlled via the "scan_matcher_debug_logging" YAML parameter.
+   * When set to true, ScanMatcher and LoopClosure debug information will be printed to stdout.
+   * Controlled via the "debug_logging" YAML parameter.
    * Default value is false.
    */
-  Parameter<kt_bool> * m_pScanMatcherDebugLogging;
-
-  /**
-   * When set to true, LoopClosure debug information will be printed to stdout.
-   * Controlled via the "loop_closure_debug_logging" YAML parameter.
-   * Default value is false.
-   */
-  Parameter<kt_bool> * m_pLoopClosureDebugLogging;
+  Parameter<kt_bool> * m_pDebugLogging;
 
   /**
    * Sets the minimum time between scans. If a new scan's time stamp is
@@ -2414,8 +2407,7 @@ protected:
     ar & BOOST_SERIALIZATION_NVP(m_Listeners);
     ar & BOOST_SERIALIZATION_NVP(m_pUseScanMatching);
     ar & BOOST_SERIALIZATION_NVP(m_pUseScanBarycenter);
-    ar & BOOST_SERIALIZATION_NVP(m_pScanMatcherDebugLogging);
-    ar & BOOST_SERIALIZATION_NVP(m_pLoopClosureDebugLogging);
+    ar & BOOST_SERIALIZATION_NVP(m_pDebugLogging);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumTimeInterval);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumTravelDistance);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumTravelHeading);
@@ -2456,8 +2448,7 @@ public:
   // General Parameters
   bool getParamUseScanMatching();
   bool getParamUseScanBarycenter();
-  bool getParamScanMatcherDebugLogging();
-  bool getParamLoopClosureDebugLogging();
+  bool getParamDebugLogging();
   double getParamMinimumTimeInterval();
   double getParamMinimumTravelDistance();
   double getParamMinimumTravelHeading();
@@ -2498,8 +2489,7 @@ public:
   // General Parameters
   void setParamUseScanMatching(bool b);
   void setParamUseScanBarycenter(bool b);
-  void setParamScanMatcherDebugLogging(bool b);
-  void setParamLoopClosureDebugLogging(bool b);
+  void setParamDebugLogging(bool b);
   void setParamMinimumTimeInterval(double d);
   void setParamMinimumTravelDistance(double d);
   void setParamMinimumTravelHeading(double d);
