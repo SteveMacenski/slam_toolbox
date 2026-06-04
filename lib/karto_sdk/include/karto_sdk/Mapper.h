@@ -758,6 +758,14 @@ public:
   kt_bool TryCloseLoop(LocalizedRangeScan * pScan, const Name & rSensorName);
 
   /**
+   * Tries to close a manual loop using the given scan id and pose, also returns the best pose found for the scan
+   * @param id
+   * @param pose
+   * @param bestPoseOut
+   */
+  kt_bool TryCloseManualLoop(const int & id, const Eigen::Vector3d & pose, Eigen::Vector3d & bestPoseOut);
+
+  /**
    * Optimizes scan poses
    */
   void CorrectPoses();
@@ -2079,6 +2087,17 @@ public:
   inline kt_bool TryCloseLoop(LocalizedRangeScan * pScan, const Name & rSensorName)
   {
     return m_pGraph->TryCloseLoop(pScan, rSensorName);
+  }
+
+  /**
+   * Tries to close a manual loop using the given scan id and pose, also returns the best pose found for the scan
+   * @param id
+   * @param pose
+   * @param bestPoseOut
+   */
+  inline kt_bool TryCloseManualLoop(const int & id, const Eigen::Vector3d & pose, Eigen::Vector3d & bestPoseOut)
+  {
+    return m_pGraph->TryCloseManualLoop(id, pose, bestPoseOut);
   }
 
   inline void CorrectPoses()
