@@ -474,8 +474,8 @@ ScanMatcher::~ScanMatcher()
   }
 }
 
-const kt_double MIN_MAPPER_VALUE = 1e-4;
-const kt_double MAX_MAPEER_VALUE = 1e+4;
+const kt_double MIN_MAPPER_VALUE = 1e-6;
+const kt_double MAX_MAPEER_VALUE = 1e6;
 
 ScanMatcher * ScanMatcher::Create(
   Mapper * pMapper, kt_double searchSize, kt_double resolution,
