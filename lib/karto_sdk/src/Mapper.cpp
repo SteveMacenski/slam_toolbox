@@ -474,22 +474,37 @@ ScanMatcher::~ScanMatcher()
   }
 }
 
+const kt_double MIN_MAPPER_VALUE = 1e-6;
+const kt_double MAX_MAPEER_VALUE = 1e6;
+
 ScanMatcher * ScanMatcher::Create(
   Mapper * pMapper, kt_double searchSize, kt_double resolution,
   kt_double smearDeviation, kt_double rangeThreshold)
 {
   // invalid parameters
-  if (resolution <= 0) {
-    return NULL;
+  if (resolution < MIN_MAPPER_VALUE || resolution > MAX_MAPEER_VALUE) {
+    std::stringstream error;
+    error << "Invalid resolution " << resolution << " passed to ScanMatcher::Create. Must be between "
+          << MIN_MAPPER_VALUE << " and " << MAX_MAPEER_VALUE << ".";
+    throw std::invalid_argument(error.str());
   }
-  if (searchSize <= 0) {
-    return NULL;
+  if (searchSize < MIN_MAPPER_VALUE || searchSize > MAX_MAPEER_VALUE) {
+    std::stringstream error;
+    error << "Invalid search size " << searchSize << " passed to ScanMatcher::Create. Must be between "
+          << MIN_MAPPER_VALUE << " and " << MAX_MAPEER_VALUE << ".";
+    throw std::invalid_argument(error.str());
   }
-  if (smearDeviation < 0) {
-    return NULL;
+  if (smearDeviation < MIN_MAPPER_VALUE || smearDeviation > MAX_MAPEER_VALUE) {
+    std::stringstream error;
+    error << "Invalid smear deviation " << smearDeviation << " passed to ScanMatcher::Create. Must be between "
+          << MIN_MAPPER_VALUE << " and " << MAX_MAPEER_VALUE << ".";
+    throw std::invalid_argument(error.str());
   }
-  if (rangeThreshold <= 0) {
-    return NULL;
+  if (rangeThreshold < MIN_MAPPER_VALUE || rangeThreshold > MAX_MAPEER_VALUE) {
+    std::stringstream error;
+    error << "Invalid range threshold " << rangeThreshold << " passed to ScanMatcher::Create. Must be between "
+          << MIN_MAPPER_VALUE << " and " << MAX_MAPEER_VALUE << ".";
+    throw std::invalid_argument(error.str());
   }
 
   assert(math::DoubleEqual(math::Round(searchSize / resolution), (searchSize / resolution)));
