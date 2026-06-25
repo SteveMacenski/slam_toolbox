@@ -35,8 +35,6 @@ This project contains the ability to do most everything any other available SLAM
 - Map serialization and lossless data storage
 - ... more but those are the highlights 
 
-For running on live production robots, I recommend using the snap: slam-toolbox, it has optimizations in it that make it about 10x faster. You need the deb/source install for the other developer level tools that don't need to be on the robot (rviz plugins, etc).
-
 This package has been benchmarked mapping building at 5x+ real-time up to about 30,000 sq. ft. and 3x real-time up to about 60,000 sq. ft. with the largest area (I'm aware of) used was a 200,000 sq. ft. building in synchronous mode (i.e. processing all scans, regardless of lag), and *much* larger spaces in asynchronous mode. 
 
 The video below was collected at [Circuit Launch](https://www.circuitlaunch.com/) in Oakland, California. Thanks to [Silicon Valley Robotics](https://svrobo.org/) & Circuit Launch for being a testbed for some of this work.
@@ -372,26 +370,6 @@ You can run via `ros2 launch slam_toolbox online_sync_launch.py`
 ## NanoFlann!
 
 In order to do some operations quickly for continued mapping and localization, I make liberal use of NanoFlann (shout out!).
-
-
-## Brief incursion into snaps
-
-Snap are completely isolated containerized packages that one can run through the Canonical organization on a large number of Linux distributions. They're similar to Docker containers but it doesn't share the kernel or any of the libraries, and rather has everything internal as essentially a separate partitioned operating system based on Ubuntu Core. 
-
-We package up slam toolbox in this way for a nice multiple-on speed up in execution from a couple of pretty nuanced reasons in this particular project, but generally speaking you shouldn't expect a speedup from a snap. 
-
-Since Snaps are totally isolated and there's no override flags like in Docker, there's only a couple of fixed directories that both the snap and the host system can write and read from, including SNAP_COMMON (usually in `/var/snap/[snap name]/common`). Therefore, this is the place that if you're serializing and deserializing maps, you need to have them accessible to that directory. 
-
-You can optionally store all your serialized maps there, move maps there as needed, take maps from there after serialization, or do my favorite option and `link` the directories with `ln` to where ever you normally store your maps and you're wanting to dump your serialized map files. 
-
-Example of `ln`:
-```
-#           Source                           Linked
-sudo ln -s /home/steve/maps/serialized_map/ /var/snap/slam-toolbox/common
-```
-
-and then all you have to do when you specify a map to use is set the filename to `slam-toolbox/map_name` and it should work no matter if you're running in a snap, docker, or on bare metal. The `-s` makes a symbol link so rather than `/var/snap/slam-toolbox/common/*` containing the maps, `/var/snap/slam-toolbox/common/serialized_map/*` will. By default on bare metal, the maps will be saved in `.ros`
-
 
 ## More Gifs!
 
