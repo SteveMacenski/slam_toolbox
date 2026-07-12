@@ -82,6 +82,5 @@ slam_toolbox:
     # (confirmed free space); NaN means "no valid data" (unknown) and is
     # always ignored regardless of this setting. When true, clear free
     # space along +Inf beams out to max_laser_range. Default false
-    # preserves legacy behavior of ignoring both +Inf and NaN identically;
-    # enabled here for local testing.
+    # preserves legacy behavior of ignoring both +Inf and NaN identically.
     clear_max_range: false
