@@ -2318,6 +2318,16 @@ void Mapper::InitializeParameters()
     "OccupancyThreshold",
     "Minimum ratio of beams hitting cell to beams passing through cell to be marked as occupied",
     0.1, GetParameterManager());
+
+  // Per REP117, +Inf readings mean "no obstacle out to max range" (free
+  // space); NaN means "no valid data" and is always ignored regardless of
+  // this setting. Off by default so existing behavior/maps are unaffected.
+  m_pClearMaxRange = new Parameter<kt_bool>(
+    "ClearMaxRange",
+    "Whether to clear free space for +Inf (max range, no obstacle per "
+    "REP117) laser readings out to the range threshold. NaN readings are "
+    "always ignored regardless of this setting.",
+    false, GetParameterManager());
 }
 /* Adding in getters and setters here for easy parameter access */
 
@@ -2489,6 +2499,11 @@ double Mapper::getParamOccupancyThreshold()
   return static_cast<double>(m_pOccupancyThreshold->GetValue());
 }
 
+bool Mapper::getParamClearMaxRange()
+{
+  return static_cast<bool>(m_pClearMaxRange->GetValue());
+}
+
 /* Setters for parameters */
 // General Parameters
 void Mapper::setParamUseScanMatching(bool b)
@@ -2649,6 +2664,11 @@ void Mapper::setParamMinPassThrough(int i)
 void Mapper::setParamOccupancyThreshold(double d)
 {
   m_pOccupancyThreshold->SetValue((kt_double)d);
+}
+
+void Mapper::setParamClearMaxRange(bool b)
+{
+  m_pClearMaxRange->SetValue((kt_bool)b);
 }
 
 

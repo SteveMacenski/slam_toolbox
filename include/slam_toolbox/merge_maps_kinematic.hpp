@@ -105,6 +105,9 @@ private:
   double resolution_;
   int min_pass_through_;
   double occupancy_threshold_;
+  // Opt-in, off by default: see ClearMaxRange param docs (REP117 +Inf
+  // handling) in Mapper.cpp for what this controls.
+  bool clear_max_range_;
   int num_submaps_;
 };
 

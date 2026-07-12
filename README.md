@@ -347,6 +347,8 @@ The following settings and options are exposed to you. My default configuration 
 
 `occupancy_threshold` - Minimum ratio of beams hitting cell to beams passing through cell to be marked as occupied
 
+`clear_max_range` - Per REP117, a laser range of +Inf means "no obstacle detected out to max range" (confirmed free space), while NaN means "no valid data" (unknown). When true, +Inf readings clear free space along the beam out to `max_laser_range`; NaN readings are always ignored regardless of this setting. Default `false` preserves legacy behavior of ignoring both +Inf and NaN identically.
+
 # Install
 
 ROSDep will take care of the major things

@@ -5919,6 +5919,7 @@ public:
 
     m_pMinPassThrough = new Parameter<kt_int32u>("MinPassThrough", 2);
     m_pOccupancyThreshold = new Parameter<kt_double>("OccupancyThreshold", 0.1);
+    m_pClearMaxRange = new Parameter<kt_bool>("ClearMaxRange", false);
 
     GetCoordinateConverter()->SetScale(1.0 / resolution);
     GetCoordinateConverter()->SetOffset(rOffset);
@@ -5936,6 +5937,7 @@ public:
 
     delete m_pMinPassThrough;
     delete m_pOccupancyThreshold;
+    delete m_pClearMaxRange;
   }
 
 public:
@@ -5943,10 +5945,12 @@ public:
    * Create an occupancy grid from the given scans using the given resolution
    * @param rScans
    * @param resolution
+   * @param clear_max_range whether to clear free space for +Inf readings
+   * out to the range threshold (see SetClearMaxRange)
    */
   static OccupancyGrid * CreateFromScans(
     const LocalizedRangeScanVector & rScans,
-    kt_double resolution, kt_int32u min_pass_through, kt_double occupancy_threshold)
+    kt_double resolution, kt_int32u min_pass_through, kt_double occupancy_threshold, kt_bool clear_max_range)
   {
     if (rScans.empty()) {
       return NULL;
@@ -5958,6 +5962,7 @@ public:
     OccupancyGrid * pOccupancyGrid = new OccupancyGrid(width, height, offset, resolution);
     pOccupancyGrid->SetMinPassThrough(min_pass_through); 
     pOccupancyGrid->SetOccupancyThreshold(occupancy_threshold); 
+    pOccupancyGrid->SetClearMaxRange(clear_max_range);
     pOccupancyGrid->CreateFromScans(rScans);
 
     return pOccupancyGrid;
@@ -6059,6 +6064,19 @@ public:
     m_pOccupancyThreshold->SetValue(thresh);
   }
 
+  /**
+   * Sets whether +Inf (max range, no obstacle detected per REP117) laser
+   * readings should clear free space out to the range threshold, instead of
+   * being ignored like a NaN (no data) reading. Off by default so existing
+   * behavior/maps are unaffected; NaN readings are always ignored
+   * regardless of this setting.
+   * @param clearMaxRange
+   */
+  void SetClearMaxRange(kt_bool clearMaxRange)
+  {
+    m_pClearMaxRange->SetValue(clearMaxRange);
+  }
+
 protected:
   /**
    * Get cell hit grid
@@ -6151,6 +6169,11 @@ protected:
     kt_double rangeThreshold = laserRangeFinder->GetRangeThreshold();
     kt_double maxRange = laserRangeFinder->GetMaximumRange();
     kt_double minRange = laserRangeFinder->GetMinimumRange();
+    // Needed to recompute a beam's endpoint from scratch when clamping a
+    // +Inf reading below -- see the ClearMaxRange handling in the loop.
+    Pose2 scanPose = pScan->GetSensorPose();
+    kt_double minimumAngle = laserRangeFinder->GetMinimumAngle();
+    kt_double angularResolution = laserRangeFinder->GetAngularResolution();
 
     Vector2<kt_double> scanPosition = pScan->GetSensorPose().GetPosition();
     // get scan point readings
@@ -6166,7 +6189,28 @@ protected:
       kt_double rangeReading = pScan->GetRangeReadings()[pointIndex];
       kt_bool isEndPointValid = rangeReading < (rangeThreshold - KT_TOLERANCE);
 
-      if (rangeReading <= minRange || rangeReading >= maxRange || std::isnan(rangeReading)) {
+      // Per REP117, +Inf means "no obstacle out to max range" (confirmed free
+      // space), while NaN means "no valid data" (unknown) -- NaN is always
+      // ignored below regardless of ClearMaxRange. When opted in, treat a
+      // +Inf reading as a beam that should clear free space out to
+      // rangeThreshold. `point` (from GetPointReadings) is itself +Inf/NaN
+      // for a +Inf rangeReading, so it can't be rescaled like the finite
+      // case below (rangeThreshold / Inf == 0, then 0 * Inf == NaN) --
+      // instead recompute a fresh, finite endpoint directly from the beam's
+      // angle, the same way LocalizedRangeScan::Update() does.
+      kt_bool clampedToThreshold = false;
+      if(m_pClearMaxRange->GetValue() == true){
+        if(std::isinf(rangeReading)){
+          rangeReading = rangeThreshold;
+          clampedToThreshold = true;
+          kt_double angle = scanPose.GetHeading() + minimumAngle + pointIndex * angularResolution;
+          point.SetX(scanPose.GetX() + (rangeReading * cos(angle)));
+          point.SetY(scanPose.GetY() + (rangeReading * sin(angle)));
+        }
+      }
+      if (!clampedToThreshold &&
+        (rangeReading <= minRange || rangeReading >= maxRange || std::isnan(rangeReading)))
+      {
         // ignore these readings
         pointIndex++;
         continue;
@@ -6322,6 +6366,11 @@ private:
 
   // Minimum ratio of beams hitting cell to beams passing through cell to be marked as occupied
   Parameter<kt_double> * m_pOccupancyThreshold;
+
+  // Whether +Inf (confirmed no obstacle out to max range, per REP117) laser
+  // readings clear free space out to the range threshold. Off by default;
+  // NaN (no data) readings are always ignored regardless of this setting.
+  Parameter<kt_bool> * m_pClearMaxRange;
 };    // OccupancyGrid
 
 ////////////////////////////////////////////////////////////////////////////////////////

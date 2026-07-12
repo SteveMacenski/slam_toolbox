@@ -2364,6 +2364,11 @@ protected:
   // Minimum ratio of beams hitting cell to beams passing through cell to be marked as occupied
   Parameter<kt_double> * m_pOccupancyThreshold;
 
+  // Whether +Inf (confirmed no obstacle out to max range, per REP117) laser
+  // readings clear free space out to the range threshold. Off by default;
+  // NaN (no data) readings are always ignored regardless of this setting.
+  Parameter<kt_bool> * m_pClearMaxRange;
+
   friend class boost::serialization::access;
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
@@ -2408,9 +2413,10 @@ protected:
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumAnglePenalty);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumDistancePenalty);
     ar & BOOST_SERIALIZATION_NVP(m_pUseResponseExpansion);
-// NOTE: the following two lines are commented out to avoid breaking the serialization of already existing maps
-//    ar & BOOST_SERIALIZATION_NVP(m_pMinPassThrough); 
+// NOTE: the following three lines are commented out to avoid breaking the serialization of already existing maps
+//    ar & BOOST_SERIALIZATION_NVP(m_pMinPassThrough);
 //    ar & BOOST_SERIALIZATION_NVP(m_pOccupancyThreshold);
+//    ar & BOOST_SERIALIZATION_NVP(m_pClearMaxRange);
     std::cout << "**Finished serializing Mapper**\n";
   }
 
@@ -2457,6 +2463,7 @@ public:
   bool getParamUseResponseExpansion();
   int getParamMinPassThrough();
   double getParamOccupancyThreshold();
+  bool getParamClearMaxRange();
 
   /* Setters */
   // General Parameters
@@ -2497,6 +2504,7 @@ public:
   void setParamUseResponseExpansion(bool b);
   void setParamMinPassThrough(int i);
   void setParamOccupancyThreshold(double d);
+  void setParamClearMaxRange(bool b);
 };
 BOOST_SERIALIZATION_ASSUME_ABSTRACT(Mapper)
 }  // namespace karto

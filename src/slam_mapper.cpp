@@ -66,7 +66,7 @@ karto::OccupancyGrid * SMapper::getOccupancyGrid(const double & resolution)
   karto::OccupancyGrid * occ_grid = nullptr;
   return karto::OccupancyGrid::CreateFromScans(
     mapper_->GetAllProcessedScans(),
-    resolution, (kt_int32u)mapper_->getParamMinPassThrough(), (kt_double)mapper_->getParamOccupancyThreshold());
+    resolution, (kt_int32u)mapper_->getParamMinPassThrough(), (kt_double)mapper_->getParamOccupancyThreshold(), (kt_bool)mapper_->getParamClearMaxRange());
 }
 
 /*****************************************************************************/
@@ -370,6 +370,15 @@ void SMapper::configure(const NodeT & node)
   }
   node->get_parameter("occupancy_threshold", occupancy_threshold);
   mapper_->setParamOccupancyThreshold(occupancy_threshold);
+
+  // Opt-in, off by default: see ClearMaxRange param docs (REP117 +Inf
+  // handling) in Mapper.cpp for what this controls.
+  bool clear_max_range = false;
+  if (!node->has_parameter("clear_max_range")) {
+    node->declare_parameter("clear_max_range", clear_max_range);
+  }
+  node->get_parameter("clear_max_range", clear_max_range);
+  mapper_->setParamClearMaxRange(clear_max_range);
 }
 
 /*****************************************************************************/

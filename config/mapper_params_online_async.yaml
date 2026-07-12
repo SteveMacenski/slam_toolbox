@@ -77,3 +77,11 @@ slam_toolbox:
     use_response_expansion: true
     min_pass_through: 2
     occupancy_threshold: 0.1
+
+    # Per REP117, +Inf laser readings mean "no obstacle out to max range"
+    # (confirmed free space); NaN means "no valid data" (unknown) and is
+    # always ignored regardless of this setting. When true, clear free
+    # space along +Inf beams out to max_laser_range. Default false
+    # preserves legacy behavior of ignoring both +Inf and NaN identically;
+    # enabled here for local testing.
+    clear_max_range: false
