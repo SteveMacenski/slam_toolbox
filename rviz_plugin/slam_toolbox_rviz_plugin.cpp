@@ -52,7 +52,9 @@ SlamToolboxPlugin::SlamToolboxPlugin(QWidget * parent)
   interactive = ros_node_->declare_parameter(
     "slam_toolbox/interactive_mode", interactive);
 
-  _initialposeSub =
+    tf_buffer_ = std::make_shared<tf2_ros::Buffer>(ros_node_->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    _initialposeSub =
     ros_node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
     "initialpose", 10,
     std::bind(&SlamToolboxPlugin::InitialPoseCallback, this, std::placeholders::_1));
@@ -262,11 +264,28 @@ void SlamToolboxPlugin::InitialPoseCallback(
   RCLCPP_INFO(
     ros_node_->get_logger(),
     "Setting initial pose from rviz; you can now deserialize a map given that pose.");
+  
+  std::string fixed_frame = msg->header.frame_id;
+  geometry_msgs::msg::PoseStamped pose_in, pose_out;
+  pose_out.pose = msg->pose.pose;
+  if (fixed_frame != map_frame_) {
+      pose_in.header = msg->header;
+      pose_in.pose = msg->pose.pose;
+      try {
+        tf_buffer_->transform(pose_in, pose_out, map_frame_, tf2::durationFromSec(0.5));
+      } catch (const tf2::TransformException & ex) {
+        RCLCPP_ERROR(ros_node_->get_logger(),
+          "InitialPoseCallback: could not transform pose from %s to %s: %s",
+          msg->header.frame_id.c_str(), map_frame_.c_str(), ex.what());
+        return;
+    }
+  }
+
   _radio2->setChecked(true);
-  _line5->setText(QString::number(msg->pose.pose.position.x, 'f', 2));
-  _line6->setText(QString::number(msg->pose.pose.position.y, 'f', 2));
+  _line5->setText(QString::number(pose_out.pose.position.x, 'f', 2));
+  _line6->setText(QString::number(pose_out.pose.position.y, 'f', 2));
   tf2::Quaternion quat_tf;
-  tf2::convert(msg->pose.pose.orientation , quat_tf);
+  tf2::convert(pose_out.pose.orientation , quat_tf);
   tf2::Matrix3x3 m(quat_tf);
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
@@ -557,7 +576,7 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
 
   while (rclcpp::ok()) {
     auto parameters = parameters_client->get_parameters(
-      {"paused_new_measurements", "interactive_mode"}, std::chrono::seconds(1));
+      {"paused_new_measurements", "interactive_mode", "map_frame"}, std::chrono::seconds(1));
     if (parameters.empty()) {
       RCLCPP_INFO_THROTTLE(
         ros_node_->get_logger(), *ros_node_->get_clock(), 5000,
@@ -571,7 +590,7 @@ void SlamToolboxPlugin::updateCheckStateIfExternalChange()
 
       paused_measure = parameters[0].as_bool();
       interactive = parameters[1].as_bool();
-
+      map_frame_ = parameters[2].as_string();
       bool oldState = _check1->blockSignals(true);
       _check1->setChecked(interactive);
       _check1->blockSignals(oldState);
