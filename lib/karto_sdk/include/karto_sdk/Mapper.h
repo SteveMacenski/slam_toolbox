@@ -2377,8 +2377,13 @@ protected:
     ar & BOOST_SERIALIZATION_NVP(m_pGraph);
     std::cout << "Mapper <- m_pMapperSensorManager\n";
     ar & BOOST_SERIALIZATION_NVP(m_pMapperSensorManager);
-    std::cout << "Mapper <- m_Listeners\n";
-    ar & BOOST_SERIALIZATION_NVP(m_Listeners);
+    // m_Listeners is intentionally NOT serialized. The only listener type
+    // slam_toolbox registers, LoopClosureListener, wraps a live ROS publisher
+    // and std::function and has no BOOST_CLASS_EXPORT, so serializing it
+    // throws "unregistered class" and aborts both SaveToFile() and
+    // LoadFromFile() (this function is used for both). Listeners are
+    // re-registered by the owning node on activation, so skipping them here
+    // loses nothing.
     ar & BOOST_SERIALIZATION_NVP(m_pUseScanMatching);
     ar & BOOST_SERIALIZATION_NVP(m_pUseScanBarycenter);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumTimeInterval);
