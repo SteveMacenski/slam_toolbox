@@ -7,6 +7,11 @@ if(NOT CMAKE_CXX_STANDARD)
 endif()
 cmake_policy(SET CMP0077 NEW)
 
+if(MSVC)
+  add_compile_definitions(_USE_MATH_DEFINES)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/CMake/")
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/lib/karto_sdk/cmake)
 
@@ -271,6 +276,19 @@ add_library(map_and_localization_slam_toolbox src/experimental/slam_toolbox_map_
 target_link_libraries(map_and_localization_slam_toolbox localization_slam_toolbox toolbox_common kartoSlamToolbox ${Boost_LIBRARIES})
 add_executable(map_and_localization_slam_toolbox_node src/experimental/slam_toolbox_map_and_localization_node.cpp)
 target_link_libraries(map_and_localization_slam_toolbox_node map_and_localization_slam_toolbox)
+
+if(MSVC)
+  foreach(
+    target
+    decentralized_multirobot_slam_toolbox_node
+    async_slam_toolbox_node
+    sync_slam_toolbox_node
+    localization_slam_toolbox_node
+    lifelong_slam_toolbox_node
+    map_and_localization_slam_toolbox_node)
+    target_compile_options(${target} PRIVATE /F40000000)
+  endforeach()
+endif()
 
 #### Merging maps tool
 add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
