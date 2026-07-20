@@ -16,6 +16,7 @@
 
 /* Author: Steven Macenski */
 
+#include <chrono>
 #include <memory>
 #include <utility>
 #include "slam_toolbox/merge_maps_kinematic.hpp"
@@ -105,7 +106,7 @@ bool MergeMapsKinematic::addSubmapCallback(
       "/map_" + std::to_string(num_submaps_), rclcpp::QoS(1)));
   sstmS_.push_back(this->create_publisher<nav_msgs::msg::MapMetaData>(
       "/map_metadata_" + std::to_string(num_submaps_), rclcpp::QoS(1)));
-  sleep(1.0);
+  std::this_thread::sleep_for(std::chrono::seconds(1));
 
   nav_msgs::srv::GetMap::Response map;
   nav_msgs::msg::OccupancyGrid & og = map.map;

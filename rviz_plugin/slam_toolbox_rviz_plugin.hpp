@@ -32,6 +32,11 @@
 #include <QLabel>
 #include <QFrame>
 #include <QRadioButton>
+#if defined(_WIN32) && defined(NO_ERROR)
+#pragma push_macro("NO_ERROR")
+#undef NO_ERROR
+#define SLAM_TOOLBOX_RESTORE_NO_ERROR_MACRO
+#endif
 // STL
 #include <thread>
 #include <chrono>
@@ -160,5 +165,10 @@ protected:
 };
 
 }  // namespace slam_toolbox
+
+#ifdef SLAM_TOOLBOX_RESTORE_NO_ERROR_MACRO
+#pragma pop_macro("NO_ERROR")
+#undef SLAM_TOOLBOX_RESTORE_NO_ERROR_MACRO
+#endif
 
 #endif  // RVIZ_PLUGIN__SLAM_TOOLBOX_RVIZ_PLUGIN_H_
