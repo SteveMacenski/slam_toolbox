@@ -7025,6 +7025,7 @@ BOOST_CLASS_EXPORT_KEY(karto::Module);
 BOOST_CLASS_EXPORT_KEY(karto::Rectangle2<kt_double>);
 BOOST_CLASS_EXPORT_KEY(karto::CoordinateConverter);
 BOOST_CLASS_EXPORT_KEY(karto::Dataset);
+BOOST_CLASS_EXPORT_KEY(karto::DatasetInfo);
 BOOST_CLASS_EXPORT_KEY(karto::SensorManager);
 BOOST_CLASS_EXPORT_KEY(karto::Size2<kt_double>);
 BOOST_CLASS_EXPORT_KEY(karto::GridIndexLookup<kt_int8u>);
