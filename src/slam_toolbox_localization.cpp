@@ -249,13 +249,30 @@ void LocalizationSlamToolbox::localizePoseCallback(
     return;
   }
 
+  // process_near_pose_ must be in map_frame_, so transform if msg arrived in a different frame
+  std::string fixed_frame = msg->header.frame_id;
+  geometry_msgs::msg::PoseStamped pose_in, pose_out;
+  pose_out.pose = msg->pose.pose;
+  if (fixed_frame != map_frame_) {
+    pose_in.header = msg->header;
+    pose_in.pose = msg->pose.pose;
+    try {
+      tf_->transform(pose_in, pose_out, map_frame_, tf2::durationFromSec(0.5));
+    } catch (const tf2::TransformException & ex) {
+      RCLCPP_ERROR(get_logger(),
+        "LocalizePoseCallback: could not transform pose from %s to %s: %s",
+        msg->header.frame_id.c_str(), map_frame_.c_str(), ex.what());
+      return;
+    }
+  }
+
   boost::mutex::scoped_lock l(pose_mutex_);
   if (process_near_pose_) {
-    process_near_pose_.reset(new Pose2(msg->pose.pose.position.x,
-      msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation)));
+    process_near_pose_.reset(new Pose2(pose_out.pose.position.x,
+      pose_out.pose.position.y, tf2::getYaw(pose_out.pose.orientation)));
   } else {
-    process_near_pose_ = std::make_unique<Pose2>(msg->pose.pose.position.x,
-        msg->pose.pose.position.y, tf2::getYaw(msg->pose.pose.orientation));
+    process_near_pose_ = std::make_unique<Pose2>(pose_out.pose.position.x,
+        pose_out.pose.position.y, tf2::getYaw(pose_out.pose.orientation));
   }
 
   first_measurement_ = true;
@@ -265,8 +282,8 @@ void LocalizationSlamToolbox::localizePoseCallback(
 
   RCLCPP_INFO(get_logger(),
     "LocalizePoseCallback: Localizing to: (%0.2f %0.2f), theta=%0.2f",
-    msg->pose.pose.position.x, msg->pose.pose.position.y,
-    tf2::getYaw(msg->pose.pose.orientation));
+    pose_out.pose.position.x, pose_out.pose.position.y,
+    tf2::getYaw(pose_out.pose.orientation));
 }
 
 }  // namespace slam_toolbox
