@@ -1256,7 +1256,7 @@ protected:
 #endif
         kt_double z = exp(-0.5 * pow(distanceFromMean / m_SmearDeviation, 2));
 
-        kt_int32u kernelValue = static_cast<kt_int32u>(math::Round(z * GridStates_Occupied));
+        kt_int32u kernelValue = static_cast<kt_int32u>(math::Round(z * static_cast<kt_double>(GridStates_Occupied)));
         assert(math::IsUpTo(kernelValue, static_cast<kt_int32u>(255)));
 
         int kernelArrayIndex = (i + halfKernel) + m_KernelSize * (j + halfKernel);

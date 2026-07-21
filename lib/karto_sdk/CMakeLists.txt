@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.20)
 project(karto_sdk)
 
 if(NOT CMAKE_CXX_STANDARD)
@@ -14,6 +14,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(Eigen3 REQUIRED)
+cmake_policy(SET CMP0167 OLD)
 find_package(Boost REQUIRED serialization filesystem thread)
 find_package(TBB REQUIRED NO_CMAKE_PACKAGE_REGISTRY)
 
