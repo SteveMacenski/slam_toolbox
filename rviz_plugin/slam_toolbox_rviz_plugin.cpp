@@ -264,7 +264,8 @@ void SlamToolboxPlugin::InitialPoseCallback(
   RCLCPP_INFO(
     ros_node_->get_logger(),
     "Setting initial pose from rviz; you can now deserialize a map given that pose.");
-
+  
+  // msg must be in map_frame_, so transform if msg arrived in a different frame
   std::string fixed_frame = msg->header.frame_id;
   geometry_msgs::msg::PoseStamped pose_in, pose_out;
   pose_out.pose = msg->pose.pose;
