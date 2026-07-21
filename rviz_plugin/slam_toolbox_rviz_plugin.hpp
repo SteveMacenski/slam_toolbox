@@ -41,6 +41,8 @@
 #include "rviz_common/panel.hpp"
 #include "slam_toolbox/toolbox_msgs.hpp"
 #include "geometry_msgs/msg/pose_with_covariance_stamped.hpp"
+#include "tf2_ros/transform_listener.h"
+#include "tf2_ros/buffer.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
 class QLineEdit;
@@ -151,6 +153,9 @@ protected:
   rclcpp::Client<slam_toolbox::srv::DeserializePoseGraph>::SharedPtr _load_map;
 
   std::unique_ptr<std::thread> _thread;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  std::string map_frame_;
 
   ContinueMappingType _match_type;
   
