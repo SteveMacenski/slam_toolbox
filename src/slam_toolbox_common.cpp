@@ -432,6 +432,50 @@ void SlamToolbox::setParams()
     this->declare_parameter("paused_new_measurements", false);
   }
   this->set_parameter(rclcpp::Parameter("paused_new_measurements", false));
+
+  if (!this->has_parameter("runtime_disable_scan_matching")) {
+    this->declare_parameter("runtime_disable_scan_matching", false);
+  }
+  runtime_disable_scan_matching_ =
+    this->get_parameter("runtime_disable_scan_matching").as_bool();
+  RCLCPP_INFO(get_logger(), "Runtime scan matching %s",
+    runtime_disable_scan_matching_ ? "disabled" : "enabled");
+
+  updateScanMatchingState();
+
+  parameter_callback_ =
+    this->add_on_set_parameters_callback(
+    [this](const std::vector<rclcpp::Parameter> & params)
+    {
+      rcl_interfaces::msg::SetParametersResult result;
+      result.successful = true;
+
+      for (const auto & p : params) {
+        if (p.get_name() == "runtime_disable_scan_matching") {
+          runtime_disable_scan_matching_ = p.as_bool();
+          RCLCPP_INFO(get_logger(), "Runtime scan matching %s",
+            runtime_disable_scan_matching_ ? "disabled" : "enabled");
+          updateScanMatchingState();
+        }
+      }
+
+      return result;
+    });
+}
+
+/*****************************************************************************/
+void SlamToolbox::updateScanMatchingState()
+/*****************************************************************************/
+{
+  bool use_scan_matching = true;
+  if (this->has_parameter("use_scan_matching")) {
+    use_scan_matching = this->get_parameter("use_scan_matching").as_bool();
+  }
+
+  if (smapper_ && smapper_->getMapper()) {
+    smapper_->getMapper()->setParamUseScanMatching(
+      use_scan_matching && !runtime_disable_scan_matching_);
+  }
 }
 
 /*****************************************************************************/

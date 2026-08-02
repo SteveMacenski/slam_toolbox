@@ -2775,6 +2775,11 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan, Matrix3 * covariance)
           m_pGraph->TryCloseLoop(pScan, *iter);
         }
       }
+    } else {
+      // Keep running context aligned with odometric scans so re-enabling
+      // scan matching does not immediately correlate against stale history.
+      m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
+      m_pMapperSensorManager->AddRunningScan(pScan);
     }
 
     m_pMapperSensorManager->SetLastScan(pScan);
@@ -2851,6 +2856,11 @@ kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool ad
           m_pGraph->TryCloseLoop(pScan, *iter);
         }
       }
+    } else {
+      // Keep running context aligned with odometric scans so re-enabling
+      // scan matching does not immediately correlate against stale history.
+      m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
+      m_pMapperSensorManager->AddRunningScan(pScan);
     }
 
     m_pMapperSensorManager->SetLastScan(pScan);
@@ -2937,6 +2947,11 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan, Matrix3 * covari
         m_pGraph->TryCloseLoop(pScan, *iter);
       }
     }
+  } else {
+    // Keep running context aligned with odometric scans so re-enabling
+    // scan matching does not immediately correlate against stale history.
+    m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
+    m_pMapperSensorManager->AddRunningScan(pScan);
   }
 
   m_pMapperSensorManager->SetLastScan(pScan);
@@ -3122,6 +3137,11 @@ kt_bool Mapper::ProcessAgainstNode(
           m_pGraph->TryCloseLoop(pScan, *iter);
         }
       }
+    } else {
+      // Keep running context aligned with odometric scans so re-enabling
+      // scan matching does not immediately correlate against stale history.
+      m_pMapperSensorManager->ClearRunningScans(pScan->GetSensorName());
+      m_pMapperSensorManager->AddRunningScan(pScan);
     }
 
     m_pMapperSensorManager->SetLastScan(pScan);
