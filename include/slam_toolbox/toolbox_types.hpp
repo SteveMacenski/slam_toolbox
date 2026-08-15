@@ -95,6 +95,13 @@ struct PausedState
 {
   PausedState()
   {
+    reset();
+  }
+
+  // Return every application to unpaused.
+  void reset()
+  {
+    boost::mutex::scoped_lock lock(pause_mutex_);
     state_map_[NEW_MEASUREMENTS] = false;
     state_map_[VISUALIZING_GRAPH] = false;
     state_map_[PROCESSING] = false;
