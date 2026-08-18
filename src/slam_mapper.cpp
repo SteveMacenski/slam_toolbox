@@ -259,6 +259,19 @@ void SMapper::configure(const NodeT & node)
   }
   mapper_->setParamCorrelationSearchSpaceSmearDeviation(correlation_search_space_smear_deviation);
 
+  int correlation_search_space_coarse_resolution_multiplier = 2;
+  if (!node->has_parameter("correlation_search_space_coarse_resolution_multiplier")) {
+    node->declare_parameter("correlation_search_space_coarse_resolution_multiplier", correlation_search_space_coarse_resolution_multiplier);
+  }
+  node->get_parameter("correlation_search_space_coarse_resolution_multiplier", correlation_search_space_coarse_resolution_multiplier);
+  if (correlation_search_space_coarse_resolution_multiplier <= 0) {
+    RCLCPP_WARN(node->get_logger(),
+      "You've set correlation_search_space_coarse_resolution_multiplier to be negative,"
+      "this isn't allowed so it will be set to default value 2.");
+    correlation_search_space_coarse_resolution_multiplier = 2;
+  }
+  mapper_->setParamCorrelationSearchSpaceCoarseResolutionMultiplier(correlation_search_space_coarse_resolution_multiplier);
+
   // Setting Correlation Parameters, Loop Closure Parameters
   double loop_search_space_dimension = 8.0;
   if (!node->has_parameter("loop_search_space_dimension")) {
@@ -298,6 +311,19 @@ void SMapper::configure(const NodeT & node)
     loop_search_space_smear_deviation = 0.03;
   }
   mapper_->setParamLoopSearchSpaceSmearDeviation(loop_search_space_smear_deviation);
+
+  int loop_search_space_coarse_resolution_multiplier = 2;
+  if (!node->has_parameter("loop_search_space_coarse_resolution_multiplier")) {
+    node->declare_parameter("loop_search_space_coarse_resolution_multiplier", loop_search_space_coarse_resolution_multiplier);
+  }
+  node->get_parameter("loop_search_space_coarse_resolution_multiplier", loop_search_space_coarse_resolution_multiplier);
+  if (loop_search_space_coarse_resolution_multiplier <= 0) {
+    RCLCPP_WARN(node->get_logger(),
+      "You've set loop_search_space_coarse_resolution_multiplier to be negative,"
+      "this isn't allowed so it will be set to default value 2.");
+    loop_search_space_coarse_resolution_multiplier = 2;
+  }
+  mapper_->setParamLoopSearchSpaceCoarseResolutionMultiplier(loop_search_space_coarse_resolution_multiplier);
 
   // Setting Scan Matcher Parameters
   double distance_variance_penalty = 0.5;
