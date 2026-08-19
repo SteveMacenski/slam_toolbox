@@ -114,6 +114,9 @@ CallbackReturn SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
   processor_type_ = PROCESS;
   first_measurement_ = true;
   process_near_pose_ = nullptr;
+  // Pause flags are per-session. Stale ones desync from the parameters
+  // republished below and by LoopClosureAssistant.
+  state_.reset();
   smapper_ = std::make_unique<mapper_utils::SMapper>();
   dataset_ = std::make_unique<Dataset>();
 
