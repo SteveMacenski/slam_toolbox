@@ -2091,6 +2091,19 @@ public:
     return m_LocalizationScanVertices;
   }
 
+  /**
+   * Test if pose/time deltas meet the minimum travel thresholds (time interval,
+   * heading change, or distance) configured on this mapper. Usable without a
+   * full LocalizedRangeScan; this is the single implementation shared by
+   * Process()/ProcessAgainstNodesNearBy() and external callers (e.g. the ROS
+   * wrapper's pre-filter).
+   * @param pose pose to be checked
+   * @param lastPose last pose added to mapper
+   * @param timeInterval time elapsed between pose and lastPose
+   * @return true if the thresholds are met or exceeded
+   */
+  kt_bool HasMovedEnough(const Pose2 & pose, const Pose2 & lastPose, kt_double timeInterval) const;
+
 protected:
   void InitializeParameters();
 

@@ -113,7 +113,7 @@ protected:
     bool & start_at_dock);
   bool shouldProcessScan(
     const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
-    const karto::Pose2 & pose);
+    const karto::Pose2 & sensor_pose);
   void publishPose(
     const Pose2 & pose,
     const Matrix3 & cov,
@@ -143,7 +143,7 @@ protected:
   // Storage for ROS parameters
   std::string odom_frame_, map_frame_, base_frame_, map_name_, scan_topic_;
   bool use_map_saver_;
-  rclcpp::Duration transform_timeout_, minimum_time_interval_;
+  rclcpp::Duration transform_timeout_;
   std_msgs::msg::Header scan_header;
   int throttle_scans_, scan_queue_size_;
 
@@ -151,6 +151,11 @@ protected:
   double position_covariance_scale_;
   double yaw_covariance_scale_;
   bool first_measurement_, enable_interactive_mode_;
+
+  // shouldProcessScan bookkeeping (last *sensor* pose/time passed to it)
+  karto::Pose2 last_scan_pose_;
+  rclcpp::Time last_scan_time_;
+  int scan_ctr_;
 
   // Book keeping
   std::unique_ptr<mapper_utils::SMapper> smapper_;

@@ -53,8 +53,10 @@ void AsynchronousSlamToolbox::laserCallback(
     return;
   }
 
+  const Pose2 sensor_pose = karto::Transform(pose).TransformPose(laser->GetOffsetPose());
+
   // if not paused, process scan
-  if (shouldProcessScan(scan, pose)) {
+  if (shouldProcessScan(scan, sensor_pose)) {
     addScan(laser, scan, pose);
   }
 }

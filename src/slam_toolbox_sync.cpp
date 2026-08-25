@@ -92,8 +92,10 @@ void SynchronousSlamToolbox::laserCallback(
     return;
   }
 
+  const Pose2 sensor_pose = karto::Transform(pose).TransformPose(laser->GetOffsetPose());
+
   // if sync and valid, add to queue
-  if (shouldProcessScan(scan, pose)) {
+  if (shouldProcessScan(scan, sensor_pose)) {
     boost::mutex::scoped_lock lock(q_mutex_);
     q_.push(PosedScan(scan, pose));
   }

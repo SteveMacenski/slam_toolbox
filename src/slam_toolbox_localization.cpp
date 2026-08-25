@@ -136,7 +136,9 @@ void LocalizationSlamToolbox::laserCallback(
     return;
   }
 
-  if (shouldProcessScan(scan, pose)) {
+  const Pose2 sensor_pose = karto::Transform(pose).TransformPose(laser->GetOffsetPose());
+
+  if (shouldProcessScan(scan, sensor_pose)) {
     addScan(laser, scan, pose);
   }
 }

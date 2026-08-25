@@ -124,6 +124,13 @@ void SMapper::configure(const rclcpp::Node::SharedPtr & node)
   node->get_parameter("minimum_travel_heading", minimum_travel_heading);
   mapper_->setParamMinimumTravelHeading(minimum_travel_heading);
 
+  double minimum_time_interval = 0.5;
+  if (!node->has_parameter("minimum_time_interval")) {
+    node->declare_parameter("minimum_time_interval", minimum_time_interval);
+  }
+  node->get_parameter("minimum_time_interval", minimum_time_interval);
+  mapper_->setParamMinimumTimeInterval(minimum_time_interval);
+
   int scan_buffer_size = 10;
   if (!node->has_parameter("scan_buffer_size")) {
     node->declare_parameter("scan_buffer_size", scan_buffer_size);

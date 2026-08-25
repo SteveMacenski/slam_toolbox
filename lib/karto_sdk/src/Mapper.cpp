@@ -3146,25 +3146,30 @@ kt_bool Mapper::HasMovedEnough(LocalizedRangeScan * pScan, LocalizedRangeScan * 
     return true;
   }
 
-  // test if enough time has passed
   kt_double timeInterval = pScan->GetTime() - pLastScan->GetTime();
+  Pose2 lastScannerPose = pLastScan->GetSensorAt(pLastScan->GetOdometricPose());
+  Pose2 scannerPose = pScan->GetSensorAt(pScan->GetOdometricPose());
+
+  return HasMovedEnough(scannerPose, lastScannerPose, timeInterval);
+}
+
+kt_bool Mapper::HasMovedEnough(const Pose2 & pose, const Pose2 & lastPose, kt_double timeInterval) const
+{
+  // test if enough time has passed
   if (timeInterval >= m_pMinimumTimeInterval->GetValue()) {
     return true;
   }
 
-  Pose2 lastScannerPose = pLastScan->GetSensorAt(pLastScan->GetOdometricPose());
-  Pose2 scannerPose = pScan->GetSensorAt(pScan->GetOdometricPose());
-
   // test if we have turned enough
   kt_double deltaHeading = math::NormalizeAngle(
-    scannerPose.GetHeading() - lastScannerPose.GetHeading());
+    pose.GetHeading() - lastPose.GetHeading());
   if (fabs(deltaHeading) >= m_pMinimumTravelHeading->GetValue()) {
     return true;
   }
 
   // test if we have moved enough
-  kt_double squaredTravelDistance = lastScannerPose.GetPosition().SquaredDistance(
-    scannerPose.GetPosition());
+  kt_double squaredTravelDistance = lastPose.GetPosition().SquaredDistance(
+    pose.GetPosition());
   if (squaredTravelDistance >= math::Square(m_pMinimumTravelDistance->GetValue()) - KT_TOLERANCE) {
     return true;
   }

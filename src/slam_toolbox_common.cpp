@@ -41,7 +41,8 @@ SlamToolbox::SlamToolbox(rclcpp::NodeOptions options)
   first_measurement_(true),
   process_near_pose_(nullptr),
   transform_timeout_(rclcpp::Duration::from_seconds(0.5)),
-  minimum_time_interval_(std::chrono::nanoseconds(0))
+  last_scan_time_(rclcpp::Time(0.)),
+  scan_ctr_(0)
 /*****************************************************************************/
 {
   smapper_ = std::make_unique<mapper_utils::SMapper>();
@@ -176,8 +177,6 @@ void SlamToolbox::setParams()
   double tmp_val = 0.5;
   tmp_val = this->declare_parameter("transform_timeout", tmp_val);
   transform_timeout_ = rclcpp::Duration::from_seconds(tmp_val);
-  tmp_val = this->declare_parameter("minimum_time_interval", tmp_val);
-  minimum_time_interval_ = rclcpp::Duration::from_seconds(tmp_val);
 
   bool debug = false;
   debug = this->declare_parameter("debug_logging", debug);
@@ -501,21 +500,15 @@ LocalizedRangeScan * SlamToolbox::getLocalizedRangeScan(
 /*****************************************************************************/
 bool SlamToolbox::shouldProcessScan(
   const sensor_msgs::msg::LaserScan::ConstSharedPtr & scan,
-  const Pose2 & pose)
+  const Pose2 & sensor_pose)
 /*****************************************************************************/
 {
-  static Pose2 last_pose;
-  static rclcpp::Time last_scan_time = rclcpp::Time(0.);
-  static double min_dist2 =
-    smapper_->getMapper()->getParamMinimumTravelDistance() *
-    smapper_->getMapper()->getParamMinimumTravelDistance();
-  static int scan_ctr = 0;
-  scan_ctr++;
+  scan_ctr_++;
 
   // we give it a pass on the first measurement to get the ball rolling
   if (first_measurement_) {
-    last_scan_time = scan->header.stamp;
-    last_pose = pose;
+    last_scan_time_ = scan->header.stamp;
+    last_scan_pose_ = sensor_pose;
     first_measurement_ = false;
     return true;
   }
@@ -526,23 +519,24 @@ bool SlamToolbox::shouldProcessScan(
   }
 
   // throttled out
-  if ((scan_ctr % throttle_scans_) != 0) {
+  if ((scan_ctr_ % throttle_scans_) != 0) {
     return false;
   }
 
-  // not enough time
-  if (rclcpp::Time(scan->header.stamp) - last_scan_time < minimum_time_interval_) {
+  // give odometry/localization a few scans to stabilize after (re)start
+  if (scan_ctr_ < 5) {
     return false;
   }
 
-  // check moved enough, within 10% for correction error
-  const double dist2 = last_pose.SquaredDistance(pose);
-  if (dist2 < 0.8 * min_dist2 || scan_ctr < 5) {
+  // single source of truth: same time/heading/distance OR check karto uses internally
+  const double time_interval =
+    (rclcpp::Time(scan->header.stamp) - last_scan_time_).seconds();
+  if (!smapper_->getMapper()->HasMovedEnough(sensor_pose, last_scan_pose_, time_interval)) {
     return false;
   }
 
-  last_pose = pose;
-  last_scan_time = scan->header.stamp;
+  last_scan_pose_ = sensor_pose;
+  last_scan_time_ = scan->header.stamp;
 
   return true;
 }
