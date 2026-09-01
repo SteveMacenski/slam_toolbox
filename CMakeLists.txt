@@ -299,14 +299,27 @@ add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 target_link_libraries(merge_maps_kinematic kartoSlamToolbox toolbox_common)
 
 #### testing
-#if(BUILD_TESTING)
-#  find_package(ament_cmake_gtest REQUIRED)
-#  find_package(ament_lint_auto REQUIRED)
-#  ament_lint_auto_find_test_dependencies()
-#  include_directories(test)
-#  ament_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
-#  target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
-#endif()
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+  include_directories(test)
+
+  ament_add_gtest(lifelong_metrics_test test/lifelong_metrics_test.cpp)
+  if(TARGET lifelong_metrics_test)
+    target_link_libraries(lifelong_metrics_test lifelong_slam_toolbox)
+  endif()
+
+  ament_add_gtest(initial_pose_utils_test test/initial_pose_utils_test.cpp)
+  if(TARGET initial_pose_utils_test)
+    target_link_libraries(initial_pose_utils_test
+      rclcpp::rclcpp
+      tf2::tf2
+      tf2_geometry_msgs::tf2_geometry_msgs
+      tf2_ros::tf2_ros
+    )
+  endif()
+endif()
 
 rclcpp_components_register_nodes(async_slam_toolbox "slam_toolbox::AsynchronousSlamToolbox")
 rclcpp_components_register_nodes(sync_slam_toolbox "slam_toolbox::SynchronousSlamToolbox")

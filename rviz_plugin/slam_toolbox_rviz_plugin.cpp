@@ -17,6 +17,7 @@
 /* Author: Steven Macenski */
 
 // Header
+#include "slam_toolbox/initial_pose_utils.hpp"
 #include "rviz_plugin/slam_toolbox_rviz_plugin.hpp"
 // ROS
 #include <tf2_ros/transform_listener.hpp>
@@ -266,21 +267,11 @@ void SlamToolboxPlugin::InitialPoseCallback(
     ros_node_->get_logger(),
     "Setting initial pose from rviz; you can now deserialize a map given that pose.");
   
-  // msg must be in map_frame_, so transform if msg arrived in a different frame
-  std::string fixed_frame = msg->header.frame_id;
-  geometry_msgs::msg::PoseStamped pose_in, pose_out;
-  pose_out.pose = msg->pose.pose;
-  if (fixed_frame != map_frame_) {
-    pose_in.header = msg->header;
-    pose_in.pose = msg->pose.pose;
-    try {
-      tf_buffer_->transform(pose_in, pose_out, map_frame_, tf2::durationFromSec(0.5));
-    } catch (const tf2::TransformException & ex) {
-      RCLCPP_ERROR(ros_node_->get_logger(),
-        "InitialPoseCallback: could not transform pose from %s to %s: %s",
-        msg->header.frame_id.c_str(), map_frame_.c_str(), ex.what());
-      return;
-    }
+  geometry_msgs::msg::PoseStamped pose_out;
+  if (!transformInitialPoseToFrame(
+      *msg, map_frame_, *tf_buffer_, ros_node_->get_logger(), "InitialPoseCallback", pose_out))
+  {
+    return;
   }
 
   _radio2->setChecked(true);
