@@ -44,10 +44,9 @@ protected:
     node_ = std::make_shared<rclcpp::Node>("map_saver_test");
     saver_ = std::make_unique<TestableMapSaver>(node_, "map");
     // second subscription on the same topic, used to know when the map was delivered
-    bool delivered = false;
     sentinel_ = node_->create_subscription<nav_msgs::msg::OccupancyGrid>(
       "map", rclcpp::QoS(1),
-      [&delivered](nav_msgs::msg::OccupancyGrid::SharedPtr) {delivered = true;});
+      [this](nav_msgs::msg::OccupancyGrid::SharedPtr) {delivered_ = true;});
     pub_ = node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
       "map", rclcpp::QoS(1).transient_local());
     nav_msgs::msg::OccupancyGrid grid;
@@ -57,7 +56,7 @@ protected:
     grid.info.height = 2;
     grid.data = {0, 0, 100, -1};
     pub_->publish(grid);
-    for (int i = 0; i < 250 && !delivered; ++i) {
+    for (int i = 0; i < 250 && !delivered_; ++i) {
       rclcpp::spin_some(node_);
       std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
@@ -65,7 +64,7 @@ protected:
       rclcpp::spin_some(node_);
       std::this_thread::sleep_for(std::chrono::milliseconds(20));
     }
-    ASSERT_TRUE(delivered);
+    ASSERT_TRUE(delivered_);
   }
 
   static bool fileExists(const std::string & path)
@@ -78,6 +77,7 @@ protected:
   std::unique_ptr<TestableMapSaver> saver_;
   rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr sentinel_;
   rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr pub_;
+  bool delivered_ = false;
 };
 
 TEST_F(MapSaverTest, RejectsShellMetacharactersInName)
