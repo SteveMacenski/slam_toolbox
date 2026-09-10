@@ -110,6 +110,13 @@ void SMapper::configure(const rclcpp::Node::SharedPtr & node)
   node->get_parameter("use_scan_barycenter", use_scan_barycenter);
   mapper_->setParamUseScanBarycenter(use_scan_barycenter);
 
+  bool debug_logging = false;
+  if (!node->has_parameter("debug_logging")) {
+    node->declare_parameter("debug_logging", debug_logging);
+  }
+  node->get_parameter("debug_logging", debug_logging);
+  mapper_->setParamDebugLogging(debug_logging);
+
   double minimum_travel_distance = 0.5;
   if (!node->has_parameter("minimum_travel_distance")) {
     node->declare_parameter("minimum_travel_distance", minimum_travel_distance);

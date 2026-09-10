@@ -2188,6 +2188,13 @@ protected:
   Parameter<kt_bool> * m_pUseScanBarycenter;
 
   /**
+   * When set to true, ScanMatcher and LoopClosure debug information will be printed to stdout.
+   * Controlled via the "debug_logging" YAML parameter.
+   * Default value is false.
+   */
+  Parameter<kt_bool> * m_pDebugLogging;
+
+  /**
    * Sets the minimum time between scans. If a new scan's time stamp is
    * longer than MinimumTimeInterval from the previously processed scan,
    * the mapper will use the data from the new scan. Otherwise, it will
@@ -2381,6 +2388,7 @@ protected:
     ar & BOOST_SERIALIZATION_NVP(m_Listeners);
     ar & BOOST_SERIALIZATION_NVP(m_pUseScanMatching);
     ar & BOOST_SERIALIZATION_NVP(m_pUseScanBarycenter);
+    ar & BOOST_SERIALIZATION_NVP(m_pDebugLogging);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumTimeInterval);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumTravelDistance);
     ar & BOOST_SERIALIZATION_NVP(m_pMinimumTravelHeading);
@@ -2421,6 +2429,7 @@ public:
   // General Parameters
   bool getParamUseScanMatching();
   bool getParamUseScanBarycenter();
+  bool getParamDebugLogging();
   double getParamMinimumTimeInterval();
   double getParamMinimumTravelDistance();
   double getParamMinimumTravelHeading();
@@ -2461,6 +2470,7 @@ public:
   // General Parameters
   void setParamUseScanMatching(bool b);
   void setParamUseScanBarycenter(bool b);
+  void setParamDebugLogging(bool b);
   void setParamMinimumTimeInterval(double d);
   void setParamMinimumTravelDistance(double d);
   void setParamMinimumTravelHeading(double d);
