@@ -190,16 +190,17 @@ bool LaserAssistant::isInverted(double & mountingYaw)
     laser_pose_.transform.translation.y,
     laser_pose_.transform.translation.z, mountingYaw);
   
-  // For external scanners, we cannot query tf topic. Hence using laser_pose_
-  tf2::Vector3 laser_orient;
-  tf2::Transform laser_pose;
-  tf2::convert(laser_pose_.transform, laser_pose);
-  laser_orient.setY(0.);
-  laser_orient.setZ(0.);
-  laser_orient.setZ(1 + laser_pose_.transform.translation.z);
-  laser_orient = laser_pose * laser_orient;
+  // For external scanners, we cannot query tf topic. Hence using laser_pose_.
+  //
+  // The laser is upside down exactly when its own +Z axis points down in the
+  // base frame, which is the Z component of the third column of the mount's
+  // rotation matrix. A direction must not be translated, so only the rotation
+  // is applied.
+  tf2::Quaternion mount_rotation;
+  tf2::convert(laser_pose_.transform.rotation, mount_rotation);
+  const tf2::Vector3 laser_z_in_base = tf2::Matrix3x3(mount_rotation).getColumn(2);
 
-  if (laser_orient.z() <= 0) {
+  if (laser_z_in_base.z() <= 0) {
     RCLCPP_DEBUG(
       logger_, "laser is mounted upside-down");
     return true;
