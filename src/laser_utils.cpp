@@ -57,7 +57,9 @@ void LaserMetadata::invertScan(sensor_msgs::msg::LaserScan & scan) const
   temp.ranges.reserve(scan.ranges.size());
   const bool has_intensities = scan.intensities.size() > 0 ? true : false;
 
-  for (int i = scan.ranges.size(); i != 0; i--) {
+  // Walk from the last element down to index 0. Starting at size() read one
+  // past the end, and stopping at i != 0 dropped ranges[0] entirely.
+  for (int i = static_cast<int>(scan.ranges.size()) - 1; i >= 0; i--) {
     temp.ranges.push_back(scan.ranges[i]);
     if (has_intensities) {
       temp.intensities.push_back(scan.intensities[i]);
