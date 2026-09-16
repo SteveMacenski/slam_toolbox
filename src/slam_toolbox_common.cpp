@@ -537,9 +537,10 @@ void SlamToolbox::publishTransformLoop(
     boost::this_thread::interruption_point();
     {
       boost::mutex::scoped_lock lock(map_to_odom_mutex_);
-      rclcpp::Time scan_timestamp = scan_header.stamp;
+      const std_msgs::msg::Header scan_header_copy = scan_header;
+      rclcpp::Time scan_timestamp = scan_header_copy.stamp;
       // Avoid publishing tf with initial 0.0 scan timestamp
-      if (scan_timestamp.seconds() > 0.0 && !scan_header.frame_id.empty()) {
+      if (scan_timestamp.seconds() > 0.0 && !scan_header_copy.frame_id.empty()) {
         geometry_msgs::msg::TransformStamped msg;
         msg.transform = tf2::toMsg(map_to_odom_);
         msg.child_frame_id = odom_frame_;
@@ -706,6 +707,12 @@ bool SlamToolbox::updateMap()
   if (!sst_ || !sst_->is_activated() || sst_->get_subscription_count() == 0) {
     return true;
   }
+  std_msgs::msg::Header scan_header_copy;
+  {
+    // Snapshot before taking smapper_mutex_ to preserve the existing lock order.
+    boost::mutex::scoped_lock scan_header_lock(map_to_odom_mutex_);
+    scan_header_copy = scan_header;
+  }
   boost::mutex::scoped_lock lock(smapper_mutex_);
   OccupancyGrid * occ_grid = smapper_->getOccupancyGrid(resolution_);
   if (!occ_grid) {
@@ -715,7 +722,7 @@ bool SlamToolbox::updateMap()
   vis_utils::toNavMap(occ_grid, map_.map);
 
   // publish map as current
-  map_.map.header.stamp = scan_header.stamp;
+  map_.map.header.stamp = scan_header_copy.stamp;
   sst_->publish(
     std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
   sstm_->publish(
@@ -1105,7 +1112,12 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
   }
 
   slam_toolbox::msg::NewNodeEvent ev;
-  ev.stamp = scan_header.stamp;
+  std_msgs::msg::Header scan_header_copy;
+  {
+    boost::mutex::scoped_lock scan_header_lock(map_to_odom_mutex_);
+    scan_header_copy = scan_header;
+  }
+  ev.stamp = scan_header_copy.stamp;
   ev.new_node_id = lrs->GetUniqueId();
 
   // Cache the corrected pose to avoid multiple function calls
