@@ -162,6 +162,28 @@ It can map _very_ large spaces with reasonable CPU and memory consumption. My de
 
 You can get away without a loss function if your odometry is good (i.e. likelihood for outliers is extremely low). If you have an abnormal application or expect wheel slippage, I might recommend a `HuberLoss` function, which is a really good catch-all loss function if you're looking for a place to start. All these options and more are available from the ROS parameter server.
 
+# Multi-Robot SLAM
+
+SLAM Toolbox supports multi-robot SLAM.
+
+For operation, all robots must be part of the same transformation tree and provide accurate transformations between their base link frames and laser scan frames. They must start close to each other; the first robot to connect establishes the map frame origin and the relative starting poses of the other robots are determined using laser scan matching from the SLAM Toolbox solver. This setup enables all robots to contribute to a shared pose graph, making possible:
+- Localization of multiple robots
+- Mapping using information from all available sensors
+- Loop closure across paths from multiple robots
+- Robust and comprehensive map creation through collaborative SLAM
+
+![two_robot_slam_toolbox_gif](/images/multirobot/two_robot_slam_toolbox.gif?raw=true)
+
+Currently, both synchronous and asynchronous mapping is supported. Parameters `odom_frames`, `base_frames`, and `laser_topics` define the respective information for each robot. These parameters must match in order and number of elements, ensuring each robot is configured with a single LiDAR. On the other hand, parameter `map_frame` remains singular and defines the global map frame for all robots.
+
+Pose graph colors are randomly assigned for each robot (nodes and edges). Edges between graphs of different robots are solid blue.
+
+![pose_graph_colors](/images/multirobot/pose_graph_colors.png)
+
+Source code and launch files are provided separately from the default SLAM Toolbox files. These can be found in dedicated multirobot directories.
+
+A sample configuration file can be found [here](config/mapper_params_online_multirobot.yaml).
+
 # API
 
 The following are the services/topics that are exposed for use. See the rviz plugin for an implementation of their use. 
