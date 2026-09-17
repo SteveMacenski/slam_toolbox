@@ -57,8 +57,6 @@ void LaserMetadata::invertScan(sensor_msgs::msg::LaserScan & scan) const
   temp.ranges.reserve(scan.ranges.size());
   const bool has_intensities = scan.intensities.size() > 0 ? true : false;
 
-  // Walk from the last element down to index 0. Starting at size() read one
-  // past the end, and stopping at i != 0 dropped ranges[0] entirely.
   for (int i = static_cast<int>(scan.ranges.size()) - 1; i >= 0; i--) {
     temp.ranges.push_back(scan.ranges[i]);
     if (has_intensities) {
@@ -192,12 +190,7 @@ bool LaserAssistant::isInverted(double & mountingYaw)
     laser_pose_.transform.translation.y,
     laser_pose_.transform.translation.z, mountingYaw);
   
-  // For external scanners, we cannot query tf topic. Hence using laser_pose_.
-  //
-  // The laser is upside down exactly when its own +Z axis points down in the
-  // base frame, which is the Z component of the third column of the mount's
-  // rotation matrix. A direction must not be translated, so only the rotation
-  // is applied.
+  // For external scanners, we cannot query tf topic. Hence using laser_pose_
   tf2::Quaternion mount_rotation;
   tf2::convert(laser_pose_.transform.rotation, mount_rotation);
   const tf2::Vector3 laser_z_in_base = tf2::Matrix3x3(mount_rotation).getColumn(2);
