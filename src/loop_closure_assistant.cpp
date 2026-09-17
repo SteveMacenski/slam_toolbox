@@ -117,16 +117,12 @@ void LoopClosureAssistant::processInteractiveFeedback(const
     sensor_msgs::msg::LaserScan scan = scan_holder_->getCorrectedScan(id);
 
     // get correct orientation
-    tf2::Quaternion quat(0.,0.,0.,1.0), msg_quat(0.,0.,0.,1.0);
-    double node_yaw, first_node_yaw;
+    const double mounting_yaw = scan_holder_->getMountingYaw(scan.header.frame_id);
+
+    tf2::Quaternion quat(0., 0., 0., 1.0), msg_quat(0., 0., 0., 1.0);
+    double node_yaw;
     solver_->GetNodeOrientation(id, node_yaw);
-    solver_->GetNodeOrientation(0, first_node_yaw);
-    tf2::Quaternion q1(0.,0.,0.,1.0);
-    q1.setEuler(0., 0., node_yaw - 3.14159);
-    tf2::Quaternion q2(0.,0.,0.,1.0);
-    q2.setEuler(0., 0., 3.14159);
-    quat *= q1;
-    quat *= q2;
+    quat.setRPY(0., 0., node_yaw + mounting_yaw);
 
     // interactive move
     tf2::convert(feedback->pose.orientation, msg_quat);

@@ -93,7 +93,8 @@ bool MergeMapsKinematic::addSubmapCallback(
   dataset_vec_.push_back(std::move(dataset));
 
   if (lasers_.find(laser->GetName().GetName()) == lasers_.end()) {
-    laser_utils::LaserMetadata laserMeta(laser, false);
+    laser_utils::LaserMetadata laserMeta(
+      laser, false, laser->GetOffsetPose().GetHeading());
     lasers_[laser->GetName().GetName()] = laserMeta;
   }
 
