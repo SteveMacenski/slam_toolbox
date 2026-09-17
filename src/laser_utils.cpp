@@ -57,7 +57,7 @@ void LaserMetadata::invertScan(sensor_msgs::msg::LaserScan & scan) const
   temp.ranges.reserve(scan.ranges.size());
   const bool has_intensities = scan.intensities.size() > 0 ? true : false;
 
-  for (int i = scan.ranges.size(); i != 0; i--) {
+  for (int i = static_cast<int>(scan.ranges.size()) - 1; i >= 0; i--) {
     temp.ranges.push_back(scan.ranges[i]);
     if (has_intensities) {
       temp.intensities.push_back(scan.intensities[i]);
@@ -191,15 +191,11 @@ bool LaserAssistant::isInverted(double & mountingYaw)
     laser_pose_.transform.translation.z, mountingYaw);
   
   // For external scanners, we cannot query tf topic. Hence using laser_pose_
-  tf2::Vector3 laser_orient;
-  tf2::Transform laser_pose;
-  tf2::convert(laser_pose_.transform, laser_pose);
-  laser_orient.setY(0.);
-  laser_orient.setZ(0.);
-  laser_orient.setZ(1 + laser_pose_.transform.translation.z);
-  laser_orient = laser_pose * laser_orient;
+  tf2::Quaternion mount_rotation;
+  tf2::convert(laser_pose_.transform.rotation, mount_rotation);
+  const tf2::Vector3 laser_z_in_base = tf2::Matrix3x3(mount_rotation).getColumn(2);
 
-  if (laser_orient.z() <= 0) {
+  if (laser_z_in_base.z() <= 0) {
     RCLCPP_DEBUG(
       logger_, "laser is mounted upside-down");
     return true;
