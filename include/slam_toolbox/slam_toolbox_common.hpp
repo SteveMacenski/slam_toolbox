@@ -182,6 +182,7 @@ protected:
   bool use_map_saver_;
   bool use_lifecycle_manager_;
   rclcpp::Duration transform_timeout_, minimum_time_interval_;
+  // Protected by map_to_odom_mutex_ when shared with background threads.
   std_msgs::msg::Header scan_header;
   int throttle_scans_, scan_queue_size_;
 
