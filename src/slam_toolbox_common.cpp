@@ -816,9 +816,8 @@ bool SlamToolbox::shouldProcessScan(
   const Pose2 & pose)
 /*****************************************************************************/
 {
-  const double min_dist2 =
-    smapper_->getMapper()->getParamMinimumTravelDistance() *
-    smapper_->getMapper()->getParamMinimumTravelDistance();
+  const double min_dist = smapper_->getMapper()->getParamMinimumTravelDistance();
+  const double min_dist2 = min_dist * min_dist;
   const double min_rotation =
     smapper_->getMapper()->getParamMinimumTravelHeadingInRadians();
   scan_count_++;

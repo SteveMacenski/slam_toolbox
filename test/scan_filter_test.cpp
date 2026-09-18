@@ -64,13 +64,13 @@ protected:
     rclcpp::NodeOptions options;
     options.arguments({"--ros-args", "-r", "__node:=scan_filter_" + std::to_string(nodes_.size())});
     options.parameter_overrides({
-      rclcpp::Parameter("use_map_saver", false),
-      rclcpp::Parameter("enable_interactive_mode", false),
-      rclcpp::Parameter("minimum_travel_distance", distance),
-      rclcpp::Parameter("minimum_travel_heading", heading),
-      rclcpp::Parameter("minimum_time_interval", interval),
-      rclcpp::Parameter("throttle_scans", throttle),
-      rclcpp::Parameter("check_min_dist_and_heading_precisely", precise)});
+        rclcpp::Parameter("use_map_saver", false),
+        rclcpp::Parameter("enable_interactive_mode", false),
+        rclcpp::Parameter("minimum_travel_distance", distance),
+        rclcpp::Parameter("minimum_travel_heading", heading),
+        rclcpp::Parameter("minimum_time_interval", interval),
+        rclcpp::Parameter("throttle_scans", throttle),
+        rclcpp::Parameter("check_min_dist_and_heading_precisely", precise)});
     auto node = std::make_shared<ScanFilterProbe>(options);
     nodes_.push_back(node);
     if (node->configure().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE) {
