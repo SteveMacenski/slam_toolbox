@@ -206,6 +206,9 @@ protected:
   std::unique_ptr<slam_toolbox::LoopClosureListener> loop_closure_listener_;
 
   // Internal state
+  karto::Pose2 last_scan_pose_;
+  rclcpp::Time last_scan_time_{0, 0, RCL_ROS_TIME};
+  int scan_count_{0};
   std::vector<std::unique_ptr<boost::thread>> threads_;
   tf2::Transform map_to_odom_;
   boost::mutex map_to_odom_mutex_, smapper_mutex_, pose_mutex_;

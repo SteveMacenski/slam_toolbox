@@ -113,6 +113,7 @@ CallbackReturn SlamToolbox::on_configure(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Configuring");
   processor_type_ = PROCESS;
   first_measurement_ = true;
+  scan_count_ = 0;
   process_near_pose_ = nullptr;
   // Pause flags are per-session. Stale ones desync from the parameters
   // republished below and by LoopClosureAssistant.
@@ -815,20 +816,16 @@ bool SlamToolbox::shouldProcessScan(
   const Pose2 & pose)
 /*****************************************************************************/
 {
-  static Pose2 last_pose;
-  static rclcpp::Time last_scan_time = rclcpp::Time(0.);
-  static double min_dist2 =
-    smapper_->getMapper()->getParamMinimumTravelDistance() *
-    smapper_->getMapper()->getParamMinimumTravelDistance();
-  static double min_rotation =
+  const double min_dist = smapper_->getMapper()->getParamMinimumTravelDistance();
+  const double min_dist2 = min_dist * min_dist;
+  const double min_rotation =
     smapper_->getMapper()->getParamMinimumTravelHeadingInRadians();
-  static int scan_ctr = 0;
-  scan_ctr++;
+  scan_count_++;
 
   // we give it a pass on the first measurement to get the ball rolling
   if (first_measurement_) {
-    last_scan_time = scan->header.stamp;
-    last_pose = pose;
+    last_scan_time_ = scan->header.stamp;
+    last_scan_pose_ = pose;
     first_measurement_ = false;
     return true;
   }
@@ -839,25 +836,25 @@ bool SlamToolbox::shouldProcessScan(
   }
 
   // throttled out
-  if ((scan_ctr % throttle_scans_) != 0) {
+  if ((scan_count_ % throttle_scans_) != 0) {
     return false;
   }
 
   // not enough time
-  if (rclcpp::Time(scan->header.stamp) - last_scan_time < minimum_time_interval_) {
+  if (rclcpp::Time(scan->header.stamp) - last_scan_time_ < minimum_time_interval_) {
     return false;
   }
 
   // for initial stabilization
-  if (scan_ctr < 5) {
+  if (scan_count_ < 5) {
     return false;
   }
 
   // check if the movement is enough
-  const double dist2 = last_pose.SquaredDistance(pose);
+  const double dist2 = last_scan_pose_.SquaredDistance(pose);
   if (check_min_dist_and_heading_precisely_) {
     const double heading_diff =
-      fabs(math::NormalizeAngle(pose.GetHeading() - last_pose.GetHeading()));
+      fabs(math::NormalizeAngle(pose.GetHeading() - last_scan_pose_.GetHeading()));
     if (dist2 < min_dist2 && heading_diff < min_rotation) {
       return false;
     }
@@ -866,8 +863,8 @@ bool SlamToolbox::shouldProcessScan(
     return false;
   }
 
-  last_pose = pose;
-  last_scan_time = scan->header.stamp;
+  last_scan_pose_ = pose;
+  last_scan_time_ = scan->header.stamp;
 
   return true;
 }
