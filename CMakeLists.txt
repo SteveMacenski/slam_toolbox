@@ -299,6 +299,13 @@ add_executable(merge_maps_kinematic src/merge_maps_kinematic.cpp)
 target_link_libraries(merge_maps_kinematic kartoSlamToolbox toolbox_common)
 
 #### testing
+if(BUILD_TESTING)
+  find_package(ament_cmake_gtest REQUIRED)
+  ament_add_gtest(scan_filter_test test/scan_filter_test.cpp)
+  target_link_libraries(scan_filter_test toolbox_common)
+  add_dependencies(scan_filter_test ceres_solver_plugin)
+endif()
+
 #if(BUILD_TESTING)
 #  find_package(ament_cmake_gtest REQUIRED)
 #  find_package(ament_lint_auto REQUIRED)
