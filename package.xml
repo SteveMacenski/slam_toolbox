@@ -8,7 +8,7 @@
   </description>
   <maintainer email="stevenmacenski@gmail.com">Steve Macenski</maintainer>
   <maintainer email="michel@ekumenlabs.com">Michel Hidalgo</maintainer>
-  <license>LGPL</license>
+  <license>LGPL-2.1-only</license>
   <author>Steve Macenski</author>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
