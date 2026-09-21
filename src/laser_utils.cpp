@@ -34,15 +34,21 @@ LaserMetadata::~LaserMetadata()
 {
 }
 
-LaserMetadata::LaserMetadata(karto::LaserRangeFinder * lsr, bool invert)
+LaserMetadata::LaserMetadata(karto::LaserRangeFinder * lsr, bool invert, double mount_yaw)
 {
   laser = lsr;
   inverted = invert;
+  mounting_yaw = mount_yaw;
 }
 
 bool LaserMetadata::isInverted() const
 {
   return inverted;
+}
+
+double LaserMetadata::getMountingYaw() const
+{
+  return mounting_yaw;
 }
 
 karto::LaserRangeFinder * LaserMetadata::getLaser()
@@ -95,7 +101,7 @@ LaserMetadata LaserAssistant::toLaserMetadata(
   double mountingYaw;
   bool inverted = isInverted(mountingYaw);
   karto::LaserRangeFinder * laser = makeLaser(mountingYaw);
-  LaserMetadata laserMeta(laser, inverted);
+  LaserMetadata laserMeta(laser, inverted, mountingYaw);
   return laserMeta;
 }
 
@@ -233,6 +239,11 @@ sensor_msgs::msg::LaserScan ScanHolder::getCorrectedScan(const int & id)
     laser.invertScan(scan);
   }
   return scan;
+}
+
+double ScanHolder::getMountingYaw(const std::string & frame_id)
+{
+  return lasers_[frame_id].getMountingYaw();
 }
 
 void ScanHolder::addScan(const sensor_msgs::msg::LaserScan scan)

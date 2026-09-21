@@ -62,14 +62,16 @@ class LaserMetadata
 public:
   LaserMetadata();
   ~LaserMetadata();
-  LaserMetadata(karto::LaserRangeFinder * lsr, bool invert);
+  LaserMetadata(karto::LaserRangeFinder * lsr, bool invert, double mounting_yaw);
   bool isInverted() const;
+  double getMountingYaw() const;
   karto::LaserRangeFinder * getLaser();
   void invertScan(sensor_msgs::msg::LaserScan & scan) const;
 
 private:
   karto::LaserRangeFinder * laser;
   bool inverted;
+  double mounting_yaw;
 };
 
 // Help take a scan from a laser and create a laser object
@@ -105,6 +107,7 @@ public:
   explicit ScanHolder(std::map<std::string, laser_utils::LaserMetadata> & lasers);
   ~ScanHolder();
   sensor_msgs::msg::LaserScan getCorrectedScan(const int & id);
+  double getMountingYaw(const std::string & frame_id);
   void addScan(const sensor_msgs::msg::LaserScan scan);
 
 private:
