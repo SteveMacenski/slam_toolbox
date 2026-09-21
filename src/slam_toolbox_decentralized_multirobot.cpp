@@ -56,7 +56,10 @@ void DecentralizedMultiRobotSlamToolbox::laserCallback(
 /*****************************************************************************/
 {
   // store scan header
-  scan_header = scan->header;
+  {
+    boost::mutex::scoped_lock lock(map_to_odom_mutex_);
+    scan_header = scan->header;
+  }
   // no odom info
   Pose2 pose;
   if (!pose_helper_->getOdomPose(pose, scan->header.stamp)) {

@@ -715,7 +715,10 @@ bool SlamToolbox::updateMap()
   vis_utils::toNavMap(occ_grid, map_.map);
 
   // publish map as current
-  map_.map.header.stamp = scan_header.stamp;
+  {
+    boost::mutex::scoped_lock scan_header_lock(map_to_odom_mutex_);
+    map_.map.header.stamp = scan_header.stamp;
+  }
   sst_->publish(
     std::move(std::make_unique<nav_msgs::msg::OccupancyGrid>(map_.map)));
   sstm_->publish(
@@ -1105,7 +1108,10 @@ void SlamToolbox::publishNewNodeEvent(const karto::LocalizedRangeScan* lrs)
   }
 
   slam_toolbox::msg::NewNodeEvent ev;
-  ev.stamp = scan_header.stamp;
+  {
+    boost::mutex::scoped_lock scan_header_lock(map_to_odom_mutex_);
+    ev.stamp = scan_header.stamp;
+  }
   ev.new_node_id = lrs->GetUniqueId();
 
   // Cache the corrected pose to avoid multiple function calls
