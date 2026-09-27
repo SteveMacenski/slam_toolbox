@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <string>
+#include <regex>
 #include "slam_toolbox/map_saver.hpp"
 
 namespace map_saver
@@ -58,6 +59,15 @@ bool MapSaver::saveMapCallback(
   }
 
   const std::string name = req->name.data;
+
+  // check if name is formatted file path
+  static const std::regex allowed("^[A-Za-z0-9_./-]+$");
+  if (!std::regex_match(name, allowed)) {
+    RCLCPP_ERROR(node_->get_logger(), "Invalid map file path: %s", name.c_str());
+    response->result = response->RESULT_UNDEFINED_FAILURE;
+    return false;
+  }
+
   std::string set_namespace;
   const std::string namespace_str = std::string(node_->get_namespace());
   if (!namespace_str.empty()) {
