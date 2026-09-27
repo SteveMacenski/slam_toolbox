@@ -191,6 +191,8 @@ void SlamToolbox::setParams()
     rcutils_ret_t rtn = rcutils_logging_set_logger_level("logger_name",
         RCUTILS_LOG_SEVERITY_DEBUG);
   }
+  
+  smapper_->getMapper()->setParamDebugLogging(debug);
 
   smapper_->configure(shared_from_this());
   this->declare_parameter("paused_new_measurements",rclcpp::ParameterType::PARAMETER_BOOL);
