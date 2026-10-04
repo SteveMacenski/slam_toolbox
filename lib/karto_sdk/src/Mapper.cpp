@@ -627,6 +627,11 @@ kt_double ScanMatcher::MatchScan(
         doPenalize, rMean, rCovariance, true);
   }
 
+  if (g_KartoDebugLogging) {
+    std::cout << " [ScanMatcher][Result] BEST POSE = " << rMean << " BEST RESPONSE = " << bestResponse <<
+    ",  VARIANCE = " << rCovariance(0, 0) << ", " << rCovariance(1, 1) << std::endl;
+  }
+
   assert(math::InRange(rMean.GetHeading(), -KT_PI, KT_PI));
 
   return bestResponse;
@@ -826,6 +831,10 @@ kt_double ScanMatcher::CorrelateScan(
   delete[] m_pPoseResponse;
   m_pPoseResponse = nullptr;
 
+  if (g_KartoDebugLogging) {
+    std::cout << " [ScanMatcher] bestPose: " << averagePose << ", bestResponse: " << bestResponse << std::endl;
+  }
+
   if (!doingFineMatch) {
     ComputePositionalCovariance(averagePose, bestResponse, rSearchCenter, rSearchSpaceOffset,
       rSearchSpaceResolution, searchAngleResolution, rCovariance);
@@ -835,6 +844,10 @@ kt_double ScanMatcher::CorrelateScan(
   }
 
   rMean = averagePose;
+
+  if (g_KartoDebugLogging) {
+    std::cout << " [ScanMatcher] bestPose: " << averagePose << std::endl;
+  }
 
   if (bestResponse > 1.0) {
     bestResponse = 1.0;
