@@ -46,8 +46,7 @@ BOOST_CLASS_EXPORT(karto::Mapper)
 namespace karto
 {
 
-// enable this for verbose debug information
-// #define KARTO_DEBUG
+bool g_KartoDebugLogging = false;
 
   #define MAX_VARIANCE            500.0
   #define DISTANCE_PENALTY_GAIN   0.2
@@ -593,9 +592,9 @@ kt_double ScanMatcher::MatchScan(
 
   if (m_pMapper->m_pUseResponseExpansion->GetValue() == true) {
     if (math::DoubleEqual(bestResponse, 0.0)) {
-#ifdef KARTO_DEBUG
-      std::cout << "Mapper Info: Expanding response search space!" << std::endl;
-#endif
+      if (g_KartoDebugLogging) {
+        std::cout << "[ScanMatcher] Expanding response search space!" << std::endl;
+      }
       // try and increase search angle offset with 20 degrees and do another match
       kt_double newSearchAngleOffset = m_pMapper->m_pCoarseSearchAngleOffset->GetValue();
       for (kt_int32u i = 0; i < 3; i++) {
@@ -610,11 +609,11 @@ kt_double ScanMatcher::MatchScan(
         }
       }
 
-#ifdef KARTO_DEBUG
-      if (math::DoubleEqual(bestResponse, 0.0)) {
-        std::cout << "Mapper Warning: Unable to calculate response!" << std::endl;
+      if (g_KartoDebugLogging) {
+        if (math::DoubleEqual(bestResponse, 0.0)) {
+          std::cout << "[ScanMatcher] Unable to calculate response!" << std::endl;
+        }
       }
-#endif
     }
   }
 
@@ -628,11 +627,11 @@ kt_double ScanMatcher::MatchScan(
         doPenalize, rMean, rCovariance, true);
   }
 
-#ifdef KARTO_DEBUG
-  std::cout << "  BEST POSE = " << rMean << " BEST RESPONSE = " << bestResponse <<
-    ",  VARIANCE = " <<
-    rCovariance(0, 0) << ", " << rCovariance(1, 1) << std::endl;
-#endif
+  if (g_KartoDebugLogging) {
+    std::cout << " [ScanMatcher][Result] BEST POSE = " << rMean << " BEST RESPONSE = " << bestResponse <<
+    ",  VARIANCE = " << rCovariance(0, 0) << ", " << rCovariance(1, 1) << std::endl;
+  }
+
   assert(math::InRange(rMean.GetHeading(), -KT_PI, KT_PI));
 
   return bestResponse;
@@ -832,10 +831,9 @@ kt_double ScanMatcher::CorrelateScan(
   delete[] m_pPoseResponse;
   m_pPoseResponse = nullptr;
 
-#ifdef KARTO_DEBUG
-  std::cout << "bestPose: " << averagePose << std::endl;
-  std::cout << "bestResponse: " << bestResponse << std::endl;
-#endif
+  if (g_KartoDebugLogging) {
+    std::cout << " [ScanMatcher] bestPose: " << averagePose << ", bestResponse: " << bestResponse << std::endl;
+  }
 
   if (!doingFineMatch) {
     ComputePositionalCovariance(averagePose, bestResponse, rSearchCenter, rSearchSpaceOffset,
@@ -847,9 +845,9 @@ kt_double ScanMatcher::CorrelateScan(
 
   rMean = averagePose;
 
-#ifdef KARTO_DEBUG
-  std::cout << "bestPose: " << averagePose << std::endl;
-#endif
+  if (g_KartoDebugLogging) {
+    std::cout << " [ScanMatcher] bestPose: " << averagePose << std::endl;
+  }
 
   if (bestResponse > 1.0) {
     bestResponse = 1.0;
@@ -1520,6 +1518,15 @@ kt_bool MapperGraph::TryCloseLoop(LocalizedRangeScan * pScan, const Name & rSens
 
     m_pMapper->FireLoopClosureCheck(stream.str());
 
+    if (g_KartoDebugLogging) {
+      std::cout << "[LoopClosure] ScanID = " << pScan->GetStateId() <<
+        " | Coarse response = " << coarseResponse <<
+        " (threshold > " << m_pMapper->m_pLoopMatchMinimumResponseCoarse->GetValue() << ")" <<
+        " | Covariance = (" << covariance(0, 0) << ", " << covariance(1, 1) << ")" <<
+        " (threshold < " << m_pMapper->m_pLoopMatchMaximumVarianceCoarse->GetValue() << ")" <<
+        std::endl;
+    }
+
     if ((coarseResponse > m_pMapper->m_pLoopMatchMinimumResponseCoarse->GetValue()) &&
       (covariance(0, 0) < m_pMapper->m_pLoopMatchMaximumVarianceCoarse->GetValue()) &&
       (covariance(1, 1) < m_pMapper->m_pLoopMatchMaximumVarianceCoarse->GetValue()))
@@ -1539,8 +1546,19 @@ kt_bool MapperGraph::TryCloseLoop(LocalizedRangeScan * pScan, const Name & rSens
         m_pMapper->m_pLoopMatchMinimumResponseFine->GetValue() << ")" << std::endl;
       m_pMapper->FireLoopClosureCheck(stream1.str());
 
+      if (g_KartoDebugLogging) {
+        std::cout << "[LoopClosure] ScanID = " << pScan->GetStateId() <<
+          " | Fine response = " << fineResponse <<
+          " (threshold > " << m_pMapper->m_pLoopMatchMinimumResponseFine->GetValue() << ")" <<
+          std::endl;
+      }
+
       if (fineResponse < m_pMapper->m_pLoopMatchMinimumResponseFine->GetValue()) {
         m_pMapper->FireLoopClosureCheck("REJECTED!");
+        if (g_KartoDebugLogging) {
+          std::cout << "[LoopClosure] ScanID = " << pScan->GetStateId() <<
+            " | REJECTED at fine stage" << std::endl;
+        }
       } else {
         m_pMapper->FireBeginLoopClosure("Closing loop...");
 
@@ -1551,6 +1569,16 @@ kt_bool MapperGraph::TryCloseLoop(LocalizedRangeScan * pScan, const Name & rSens
         m_pMapper->FireEndLoopClosure("Loop closed!");
 
         loopClosed = true;
+
+        if (g_KartoDebugLogging) {
+          std::cout << "[LoopClosure] ScanID = " << pScan->GetStateId() <<
+            " | ✓ LOOP CLOSED!" << std::endl;
+        }
+      }
+    } else {
+      if (g_KartoDebugLogging) {
+        std::cout << "[LoopClosure] ScanID = " << pScan->GetStateId() <<
+          " | REJECTED at coarse stage" << std::endl;
       }
     }
 
@@ -1999,6 +2027,11 @@ LocalizedRangeScanVector MapperGraph::FindPossibleLoopClosure(
     } else {
       // return chain if it is long "enough"
       if (chain.size() >= m_pMapper->m_pLoopMatchMinimumChainSize->GetValue()) {
+        if (g_KartoDebugLogging) {
+          std::cout << "[LoopClosure] Attempting Loop Closure | Chain size = " <<
+            chain.size() << " | Excluded near-linked scans = " << nearLinkedScans.size() <<
+            std::endl;
+        }
         return chain;
       } else {
         chain.clear();
@@ -2318,6 +2351,11 @@ bool Mapper::getParamUseScanBarycenter()
   return static_cast<bool>(m_pUseScanBarycenter->GetValue());
 }
 
+bool Mapper::getParamDebugLogging()
+{
+  return g_KartoDebugLogging;
+}
+
 double Mapper::getParamMinimumTimeInterval()
 {
   return static_cast<double>(m_pMinimumTimeInterval->GetValue());
@@ -2479,6 +2517,13 @@ void Mapper::setParamUseScanMatching(bool b)
 void Mapper::setParamUseScanBarycenter(bool b)
 {
   m_pUseScanBarycenter->SetValue((kt_bool)b);
+}
+
+// Toggles the shared runtime debug-logging flag, not a serialized Parameter, so this
+// can never affect the serialized graph format.
+void Mapper::setParamDebugLogging(bool b)
+{
+  g_KartoDebugLogging = b;
 }
 
 void Mapper::setParamMinimumTimeInterval(double d)
@@ -2740,10 +2785,13 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan, Matrix3 * covariance)
     Matrix3 cov;
     cov.SetToIdentity();
 
+    Pose2 bestPose;
+    kt_double response = 0.0;
+    Pose2 odometricPoseBeforeMatch = pScan->GetOdometricPose();
+
     // correct scan (if not first scan)
     if (m_pUseScanMatching->GetValue() && pLastScan != NULL) {
-      Pose2 bestPose;
-      m_pSequentialScanMatcher->MatchScan(pScan,
+      response = m_pSequentialScanMatcher->MatchScan(pScan,
         m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
         bestPose,
         cov);
@@ -2760,6 +2808,16 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan, Matrix3 * covariance)
       // add to graph
       m_pGraph->AddVertex(pScan);
       m_pGraph->AddEdges(pScan, cov);
+
+      if (g_KartoDebugLogging) {
+        kt_double dx = bestPose.GetX() - odometricPoseBeforeMatch.GetX();
+        kt_double dy = bestPose.GetY() - odometricPoseBeforeMatch.GetY();
+        kt_double dtheta = math::NormalizeAngle(
+          bestPose.GetHeading() - odometricPoseBeforeMatch.GetHeading());
+        std::cout << "[ScanMatcher] New Node Added | ScanID = " << pScan->GetStateId() <<
+          " | Response = " << response <<
+          " | Correction = (" << dx << ", " << dy << ", " << dtheta << ")" << std::endl;
+      }
 
       m_pMapperSensorManager->AddRunningScan(pScan);
 
@@ -2811,10 +2869,14 @@ kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool ad
     Matrix3 cov;
     cov.SetToIdentity();
 
+    Pose2 bestPose;
+    kt_double response = 0.0;
+    // Capture the pre-match odometric pose before SetOdometricPose() below reassigns it.
+    Pose2 odometricPoseBeforeMatch = pScan->GetOdometricPose();
+
     // correct scan (if not first scan)
     if (m_pUseScanMatching->GetValue() && pLastScan != NULL) {
-      Pose2 bestPose;
-      m_pSequentialScanMatcher->MatchScan(pScan,
+      response = m_pSequentialScanMatcher->MatchScan(pScan,
         m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
         bestPose,
         cov);
@@ -2835,6 +2897,16 @@ kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool ad
       // add to graph
       scan_vertex = m_pGraph->AddVertex(pScan);
       m_pGraph->AddEdges(pScan, cov);
+
+      if (g_KartoDebugLogging) {
+        kt_double dx = bestPose.GetX() - odometricPoseBeforeMatch.GetX();
+        kt_double dy = bestPose.GetY() - odometricPoseBeforeMatch.GetY();
+        kt_double dtheta = math::NormalizeAngle(
+          bestPose.GetHeading() - odometricPoseBeforeMatch.GetHeading());
+        std::cout << "[ScanMatcher][NearBy] New Node Added | ScanID = " << pScan->GetStateId() <<
+          " | Response = " << response <<
+          " | Correction = (" << dx << ", " << dy << ", " << dtheta << ")" << std::endl;
+      }
 
       m_pMapperSensorManager->AddRunningScan(pScan);
 
@@ -2901,10 +2973,13 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan, Matrix3 * covari
   Matrix3 cov;
   cov.SetToIdentity();
 
+  Pose2 bestPose;
+  kt_double response = 0.0;
+  Pose2 odometricPoseBeforeMatch = pScan->GetOdometricPose();
+
   // correct scan (if not first scan)
   if (m_pUseScanMatching->GetValue() && pLastScan != NULL) {
-    Pose2 bestPose;
-    m_pSequentialScanMatcher->MatchScan(pScan,
+    response = m_pSequentialScanMatcher->MatchScan(pScan,
       m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
       bestPose,
       cov);
@@ -2922,6 +2997,17 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan, Matrix3 * covari
     // add to graph
     scan_vertex = m_pGraph->AddVertex(pScan);
     m_pGraph->AddEdges(pScan, cov);
+
+    if (g_KartoDebugLogging) {
+      kt_double dx = bestPose.GetX() - odometricPoseBeforeMatch.GetX();
+      kt_double dy = bestPose.GetY() - odometricPoseBeforeMatch.GetY();
+      kt_double dtheta = math::NormalizeAngle(
+        bestPose.GetHeading() - odometricPoseBeforeMatch.GetHeading());
+      std::cout << "[ScanMatcher][Localization] New Node Added | ScanID = " <<
+        pScan->GetStateId() <<
+        " | Response = " << response <<
+        " | Correction = (" << dx << ", " << dy << ", " << dtheta << ")" << std::endl;
+    }
 
     m_pMapperSensorManager->AddRunningScan(pScan);
 
@@ -3084,10 +3170,14 @@ kt_bool Mapper::ProcessAgainstNode(
     Matrix3 cov;
     cov.SetToIdentity();
 
+    Pose2 bestPose;
+    kt_double response = 0.0;
+    // Capture the pre-match odometric pose before SetOdometricPose() below reassigns it.
+    Pose2 odometricPoseBeforeMatch = pScan->GetOdometricPose();
+
     // correct scan (if not first scan)
     if (m_pUseScanMatching->GetValue() && pLastScan != NULL) {
-      Pose2 bestPose;
-      m_pSequentialScanMatcher->MatchScan(pScan,
+      response = m_pSequentialScanMatcher->MatchScan(pScan,
         m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
         bestPose,
         cov);
@@ -3106,6 +3196,17 @@ kt_bool Mapper::ProcessAgainstNode(
       // add to graph
       m_pGraph->AddVertex(pScan);
       m_pGraph->AddEdges(pScan, cov);
+
+      if (g_KartoDebugLogging) {
+        kt_double dx = bestPose.GetX() - odometricPoseBeforeMatch.GetX();
+        kt_double dy = bestPose.GetY() - odometricPoseBeforeMatch.GetY();
+        kt_double dtheta = math::NormalizeAngle(
+          bestPose.GetHeading() - odometricPoseBeforeMatch.GetHeading());
+        std::cout << "[ScanMatcher][AgainstNode] New Node Added | ScanID = " <<
+          pScan->GetStateId() <<
+          " | Response = " << response <<
+          " | Correction = (" << dx << ", " << dy << ", " << dtheta << ")" << std::endl;
+      }
 
       m_pMapperSensorManager->AddRunningScan(pScan);
 

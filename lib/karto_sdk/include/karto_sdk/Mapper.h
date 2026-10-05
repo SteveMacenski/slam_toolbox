@@ -39,6 +39,9 @@
 
 namespace karto
 {
+
+extern bool g_KartoDebugLogging;
+
 ////////////////////////////////////////////////////////////////////////////////////////
 // Listener classes
 
@@ -2421,6 +2424,7 @@ public:
   // General Parameters
   bool getParamUseScanMatching();
   bool getParamUseScanBarycenter();
+  bool getParamDebugLogging();
   double getParamMinimumTimeInterval();
   double getParamMinimumTravelDistance();
   double getParamMinimumTravelHeading();
@@ -2461,6 +2465,7 @@ public:
   // General Parameters
   void setParamUseScanMatching(bool b);
   void setParamUseScanBarycenter(bool b);
+  void setParamDebugLogging(bool b);
   void setParamMinimumTimeInterval(double d);
   void setParamMinimumTravelDistance(double d);
   void setParamMinimumTravelHeading(double d);
