@@ -80,6 +80,7 @@ set(dependencies
   interactive_markers
   Qt${QT_VERSION_MAJOR}
   rclcpp_components
+  nanoflann
 )
 
 set(libraries

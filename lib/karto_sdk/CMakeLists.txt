@@ -17,6 +17,7 @@ find_package(Eigen3 REQUIRED)
 cmake_policy(SET CMP0167 OLD)
 find_package(Boost REQUIRED serialization filesystem thread)
 find_package(TBB REQUIRED NO_CMAKE_PACKAGE_REGISTRY)
+find_package(nanoflann REQUIRED)
 
 set(dependencies
   rclcpp
@@ -38,7 +39,7 @@ target_link_libraries(kartoSlamToolbox PUBLIC
   rclcpp::rclcpp
   rclcpp_lifecycle::rclcpp_lifecycle
 )
-target_link_libraries(kartoSlamToolbox PUBLIC ${Boost_LIBRARIES} TBB::tbb)
+target_link_libraries(kartoSlamToolbox PUBLIC ${Boost_LIBRARIES} TBB::tbb nanoflann::nanoflann)
 
 install(DIRECTORY include/
 	DESTINATION include/
