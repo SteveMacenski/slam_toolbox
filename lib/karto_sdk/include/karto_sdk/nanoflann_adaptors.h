@@ -20,7 +20,7 @@
 #ifndef KARTO_SDK__NANOFLANN_ADAPTORS_H_
 #define KARTO_SDK__NANOFLANN_ADAPTORS_H_
 
-#include "nanoflann.hpp"
+#include <nanoflann.hpp>
 
 // And this is the "dataset to kd-tree" adaptor class:
 template<typename Derived>

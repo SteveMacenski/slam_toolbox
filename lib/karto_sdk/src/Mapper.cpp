@@ -1871,14 +1871,14 @@ std::vector<Vertex<LocalizedRangeScan> *> MapperGraph::FindNearByVertices(
   const P2KD p2kd(vertices_to_search);
 
   typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, P2KD>, P2KD,
-      dim> my_kd_tree_t;
+      dim, size_t> my_kd_tree_t;
 
   my_kd_tree_t index(dim, p2kd, nanoflann::KDTreeSingleIndexAdaptorParams(10) );
   index.buildIndex();
 
-  std::vector<std::pair<size_t, double>> ret_matches;
+  std::vector<nanoflann::ResultItem<size_t, double>> ret_matches;
   const double query_pt[2] = {refPose.GetX(), refPose.GetY()};
-  nanoflann::SearchParams params;
+  nanoflann::SearchParameters params;
   const size_t num_results = index.radiusSearch(&query_pt[0], maxDistance, ret_matches, params);
 
   std::vector<Vertex<LocalizedRangeScan> *> rtn_vertices;
@@ -1909,7 +1909,7 @@ Vertex<LocalizedRangeScan> * MapperGraph::FindNearByScan(Name name, const Pose2 
   const P2KD p2kd(vertices_to_search);
 
   typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::L2_Simple_Adaptor<double, P2KD>, P2KD,
-      dim> my_kd_tree_t;
+      dim, size_t> my_kd_tree_t;
 
   my_kd_tree_t index(dim, p2kd, nanoflann::KDTreeSingleIndexAdaptorParams(10) );
   index.buildIndex();
