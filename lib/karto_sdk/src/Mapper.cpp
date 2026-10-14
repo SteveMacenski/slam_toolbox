@@ -3029,8 +3029,8 @@ kt_bool Mapper::RemoveNodeFromGraph(Vertex<LocalizedRangeScan> * vertex_to_remov
         m_pScanOptimizer->RemoveConstraint(
           adjEdges[j]->GetSource()->GetObject()->GetUniqueId(),
           adjEdges[j]->GetTarget()->GetObject()->GetUniqueId());
-        std::vector<Edge<LocalizedRangeScan> *> edges = m_pGraph->GetEdges();
-        std::vector<Edge<LocalizedRangeScan> *>::iterator edgeGraphIt =
+        const std::vector<Edge<LocalizedRangeScan> *> & edges = m_pGraph->GetEdges();
+        std::vector<Edge<LocalizedRangeScan> *>::const_iterator edgeGraphIt =
           std::find(edges.begin(), edges.end(), adjEdges[j]);
 
         if (edgeGraphIt == edges.end()) {
@@ -3038,10 +3038,11 @@ kt_bool Mapper::RemoveNodeFromGraph(Vertex<LocalizedRangeScan> * vertex_to_remov
           continue;
         }
 
+        // RemoveEdge() erases from the vector that edgeGraphIt points into
+        Edge<LocalizedRangeScan> * edgeToDelete = *edgeGraphIt;
         int posEdge = edgeGraphIt - edges.begin();
         m_pGraph->RemoveEdge(posEdge);   // remove from graph
-        delete *edgeGraphIt;   // free hat!
-        *edgeGraphIt = NULL;
+        delete edgeToDelete;   // free hat!
         found = true;
       }
     }
@@ -3055,11 +3056,15 @@ kt_bool Mapper::RemoveNodeFromGraph(Vertex<LocalizedRangeScan> * vertex_to_remov
   m_pScanOptimizer->RemoveNode(vertex_to_remove->GetObject()->GetUniqueId());
 
   // 3) delete from vertex map
-  std::map<Name, std::map<int, Vertex<LocalizedRangeScan> *>>
-  vertexMap = m_pGraph->GetVertices();
-  std::map<int, Vertex<LocalizedRangeScan> *> graphVertices =
-    vertexMap[vertex_to_remove->GetObject()->GetSensorName()];
-  std::map<int, Vertex<LocalizedRangeScan> *>::iterator
+  const std::map<Name, std::map<int, Vertex<LocalizedRangeScan> *>> & vertexMap =
+    m_pGraph->GetVertices();
+  const auto sensorVerticesIt = vertexMap.find(vertex_to_remove->GetObject()->GetSensorName());
+  if (sensorVerticesIt == vertexMap.end()) {
+    std::cout << "Vertex not found in graph to remove!" << std::endl;
+    return false;
+  }
+  const std::map<int, Vertex<LocalizedRangeScan> *> & graphVertices = sensorVerticesIt->second;
+  std::map<int, Vertex<LocalizedRangeScan> *>::const_iterator
     vertexGraphIt = graphVertices.find(vertex_to_remove->GetObject()->GetStateId());
   if (vertexGraphIt != graphVertices.end()) {
     m_pGraph->RemoveVertex(vertex_to_remove->GetObject()->GetSensorName(),
