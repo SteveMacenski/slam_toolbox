@@ -3038,11 +3038,9 @@ kt_bool Mapper::RemoveNodeFromGraph(Vertex<LocalizedRangeScan> * vertex_to_remov
           continue;
         }
 
-        // RemoveEdge() erases from the vector that edgeGraphIt points into
-        Edge<LocalizedRangeScan> * edgeToDelete = *edgeGraphIt;
         int posEdge = edgeGraphIt - edges.begin();
-        m_pGraph->RemoveEdge(posEdge);   // remove from graph
-        delete edgeToDelete;   // free hat!
+        delete *edgeGraphIt;   // free hat!
+        m_pGraph->RemoveEdge(posEdge);   // sets the slot to NULL, then erases it
         found = true;
       }
     }
