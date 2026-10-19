@@ -298,8 +298,11 @@ bool LoopClosureAssistant::manualLoopClosureCallback(
     std::map<int, Eigen::Vector3d>::const_iterator it = moved_nodes_.begin();
     for (it; it != moved_nodes_.end(); ++it)
     {
-      moveNode(it->first,
-        Eigen::Vector3d(it->second(0),it->second(1), it->second(2)));
+      Eigen::Vector3d bestPoseOut = it->second;
+      if (mapper_->TryCloseManualLoop(it->first, Eigen::Vector3d(it->second(0),it->second(1), it->second(2)), bestPoseOut))
+      {
+        moveNode(it->first, bestPoseOut);
+      }
     }
   }
 
