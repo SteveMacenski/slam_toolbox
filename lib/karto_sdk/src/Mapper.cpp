@@ -2157,15 +2157,15 @@ LocalizedRangeScanVector MapperGraph::FindPossibleLoopClosure(
     kt_double squaredDistance = candidateScanPose.GetPosition().SquaredDistance(pose.GetPosition());
     if (squaredDistance <
       math::Square(m_pMapper->m_pLoopSearchMaximumDistance->GetValue()) + KT_TOLERANCE)
-      {
-        // a linked scan cannot be in the chain
-        if (find(nearLinkedScans.begin(), nearLinkedScans.end(),
+    {
+      // a linked scan cannot be in the chain
+      if (find(nearLinkedScans.begin(), nearLinkedScans.end(),
         pCandidateScan) != nearLinkedScans.end())
       {
-          chain.clear();
-        } else {
-          chain.push_back(pCandidateScan);
-        }
+        chain.clear();
+      } else {
+        chain.push_back(pCandidateScan);
+      }
     } else {
       // return chain if it is long "enough"
       if (chain.size() >= m_pMapper->m_pLoopMatchMinimumChainSize->GetValue()) {
@@ -2934,10 +2934,10 @@ kt_bool Mapper::Process(LocalizedRangeScan * pScan, Matrix3 * covariance)
     // correct scan (if not first scan)
     if (m_pUseScanMatching->GetValue() && pLastScan != NULL) {
       response = m_pSequentialScanMatcher->MatchScan(pScan,
-          m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
+        m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
         bestPose,
         cov);
-        pScan->SetSensorPose(bestPose);
+      pScan->SetSensorPose(bestPose);
       if (covariance) {
         *covariance = cov;
       }
@@ -3019,10 +3019,10 @@ kt_bool Mapper::ProcessAgainstNodesNearBy(LocalizedRangeScan * pScan, kt_bool ad
     // correct scan (if not first scan)
     if (m_pUseScanMatching->GetValue() && pLastScan != NULL) {
       response = m_pSequentialScanMatcher->MatchScan(pScan,
-          m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
+        m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
         bestPose,
         cov);
-        pScan->SetSensorPose(bestPose);
+      pScan->SetSensorPose(bestPose);
     }
 
     pScan->SetOdometricPose(pScan->GetCorrectedPose());
@@ -3122,10 +3122,10 @@ kt_bool Mapper::ProcessLocalization(LocalizedRangeScan * pScan, Matrix3 * covari
   // correct scan (if not first scan)
   if (m_pUseScanMatching->GetValue() && pLastScan != NULL) {
     response = m_pSequentialScanMatcher->MatchScan(pScan,
-        m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
+      m_pMapperSensorManager->GetRunningScans(pScan->GetSensorName()),
       bestPose,
       cov);
-      pScan->SetSensorPose(bestPose);
+    pScan->SetSensorPose(bestPose);
     if (covariance) {
       *covariance = cov;
     }
