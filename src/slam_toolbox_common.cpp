@@ -532,7 +532,7 @@ void SlamToolbox::publishTransformLoop(
     return;
   }
 
-  rclcpp::Rate r(1.0 / transform_publish_period);
+  rclcpp::WallRate r(1.0 / transform_publish_period);
   while (rclcpp::ok()) {
     boost::this_thread::interruption_point();
     {
@@ -576,7 +576,7 @@ void SlamToolbox::publishVisualizations()
     this->declare_parameter("map_update_interval", map_update_interval);
   }
   map_update_interval = this->get_parameter("map_update_interval").as_double();
-  rclcpp::Rate r(1.0 / map_update_interval);
+  rclcpp::WallRate r(1.0 / map_update_interval);
 
   while (rclcpp::ok()) {
     boost::this_thread::interruption_point();
