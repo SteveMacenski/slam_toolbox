@@ -34,7 +34,7 @@ SynchronousSlamToolbox::SynchronousSlamToolbox(rclcpp::NodeOptions options)
 void SynchronousSlamToolbox::run()
 /*****************************************************************************/
 {
-  rclcpp::Rate r(100);
+  rclcpp::WallRate r(100);
   while (rclcpp::ok()) {
     boost::this_thread::interruption_point();
     if (!isPaused(PROCESSING)) {
