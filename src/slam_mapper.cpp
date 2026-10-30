@@ -319,6 +319,12 @@ void SMapper::configure(const NodeT & node)
     node->declare_parameter("fine_search_angle_offset", fine_search_angle_offset);
   }
   node->get_parameter("fine_search_angle_offset", fine_search_angle_offset);
+  if (fine_search_angle_offset <= 0) {
+    RCLCPP_WARN(node->get_logger(),
+      "You've set fine_search_angle_offset to be zero or negative, "
+      "this isn't allowed so it will be set to default value 0.00349.");
+    fine_search_angle_offset = 0.00349;
+  }
   mapper_->setParamFineSearchAngleOffset(fine_search_angle_offset);
 
   double coarse_search_angle_offset = 0.349;
@@ -333,6 +339,12 @@ void SMapper::configure(const NodeT & node)
     node->declare_parameter("coarse_angle_resolution", coarse_angle_resolution);
   }
   node->get_parameter("coarse_angle_resolution", coarse_angle_resolution);
+  if (coarse_angle_resolution <= 0) {
+    RCLCPP_WARN(node->get_logger(),
+      "You've set coarse_angle_resolution to be zero or negative, "
+      "this isn't allowed so it will be set to default value 0.0349.");
+    coarse_angle_resolution = 0.0349;
+  }
   mapper_->setParamCoarseAngleResolution(coarse_angle_resolution);
 
   double minimum_angle_penalty = 0.9;
