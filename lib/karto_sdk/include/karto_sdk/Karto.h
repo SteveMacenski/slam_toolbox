@@ -6108,8 +6108,12 @@ protected:
     kt_double scale = 1.0 / resolution;
     Size2<kt_double> size = boundingBox.GetSize();
 
-    rWidth = static_cast<kt_int32s>(math::Round(size.GetWidth() * scale));
-    rHeight = static_cast<kt_int32s>(math::Round(size.GetHeight() * scale));
+    // WorldToGrid rounds to the nearest cell, so a point on the bounding box's
+    // maximum edge maps to index Round(size * scale), one past the last cell,
+    // and RayTrace drops its hit: walls on the +x/+y edge of the map came out
+    // as free space. One more cell keeps the whole bounding box on the grid.
+    rWidth = static_cast<kt_int32s>(math::Round(size.GetWidth() * scale)) + 1;
+    rHeight = static_cast<kt_int32s>(math::Round(size.GetHeight() * scale)) + 1;
     rOffset = boundingBox.GetMinimum();
   }
 
